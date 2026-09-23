@@ -1,5 +1,6 @@
 package com.agridispatch.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -12,6 +13,8 @@ import jakarta.persistence.Table;
 public class User {
     @Id
     private String username;
+    /** 密碼雜湊（pbkdf2$...），舊版明碼於啟動時自動升級；永不序列化輸出 */
+    @JsonIgnore
     private String password;
     private String name;
     private String role;
@@ -32,6 +35,7 @@ public class User {
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
 
+    @JsonIgnore
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
 

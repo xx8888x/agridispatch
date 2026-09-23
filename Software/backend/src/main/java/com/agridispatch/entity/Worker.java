@@ -1,5 +1,8 @@
 package com.agridispatch.entity;
 
+import com.agridispatch.security.Masking;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -23,13 +26,19 @@ public class Worker {
     private int transportAllowance;
 
     // 外展移工法定與派遣名冊擴充欄位
-    private String arcNumber;          // 居留證號 (ARC)
-    private String passportNumber;     // 護照號碼
+    @JsonSerialize(using = Masking.MaskedIdSerializer.class)
+    private String arcNumber;          // 居留證號 (ARC)，API 輸出一律遮罩
+    @JsonSerialize(using = Masking.MaskedIdSerializer.class)
+    private String passportNumber;     // 護照號碼，API 輸出一律遮罩
     private String permitExpiry;       // 聘僱許可效期 (例如 2027-10-31)
     private String insuranceStatus;    // 勞健保與職災險狀態 (例如 "已納保 (勞/健/職災)")
     private String currentTask;        // 目前派遣作業 (例如 "八德有機蔬菜採收")
     private String dispatchStatus;     // 派遣狀態 (dispatched_field, hedged_indoor, standby)
     private String phone;              // 聯絡電話
+
+    /** 農工登入密碼雜湊（pbkdf2$...）；永不序列化輸出，也不接受由 JSON 寫入 */
+    @JsonIgnore
+    private String passwordHash;
 
     public Worker() {}
 
@@ -114,4 +123,9 @@ public class Worker {
 
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+
+    @JsonIgnore
+    public String getPasswordHash() { return passwordHash; }
+    @JsonIgnore
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 }

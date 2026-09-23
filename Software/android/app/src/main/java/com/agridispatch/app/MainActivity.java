@@ -2,7 +2,9 @@ package com.agridispatch.app;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.webkit.GeolocationPermissions;
@@ -16,6 +18,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -25,6 +28,13 @@ public class MainActivity extends AppCompatActivity {
 
     private WebView bindingWebView;
     private PermissionCallback permissionCallback;
+
+    /**
+     * 目前頁面是否為「受信任頁面」(內建 asset 或白名單正式網域)。
+     * 由 WebViewClient 的導覽回呼於 UI 執行緒更新，JS bridge (WebAppInterface) 執行於非 UI 執行緒時讀取此欄位判斷，
+     * 避免在非 UI 執行緒呼叫 WebView#getUrl() 造成不確定行為。
+     */
+    private volatile boolean currentPageTrusted = true;
 
     public interface PermissionCallback {
         void onResult(boolean granted);
@@ -85,7 +95,11 @@ public class MainActivity extends AppCompatActivity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
-        settings.setAllowFileAccess(true);
+        // 停用任意檔案系統存取；僅停用 file:// 對一般檔案系統的存取，
+        // 不影響內建 file:///android_asset/ 與 file:///android_res/ 資源載入。
+        settings.setAllowFileAccess(false);
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
         settings.setAllowContentAccess(true);
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
@@ -96,8 +110,26 @@ public class MainActivity extends AppCompatActivity {
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
+            public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                super.onPageStarted(view, url, favicon);
+                currentPageTrusted = isTrustedUrl(url);
+            }
+
+            @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return false;
+                Uri uri = request.getUrl();
+                if (isTrustedUrl(uri.toString())) {
+                    return false; // 交由 WebView 自行載入 (內建 asset 或白名單正式網域)
+                }
+                // 其餘任意連結一律交給外部系統瀏覽器/App 處理，避免 WebView 被導去任意網域 (open redirect / 釣魚風險)
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                } catch (Exception e) {
+                    // 裝置上無對應 App 可處理該連結時忽略即可，不中斷使用者體驗
+                }
+                return true;
             }
 
             @Override
@@ -112,6 +144,38 @@ public class MainActivity extends AppCompatActivity {
                 callback.invoke(origin, true, false);
             }
         });
+    }
+
+    /**
+     * 判斷網址是否為受信任來源：內建 asset，或白名單正式網域 (含子網域，需 HTTPS)。
+     */
+    private boolean isTrustedUrl(String url) {
+        if (url == null) {
+            return false;
+        }
+        if (url.startsWith("file:///android_asset/")) {
+            return true;
+        }
+        try {
+            Uri uri = Uri.parse(url);
+            String scheme = uri.getScheme();
+            String host = uri.getHost();
+            if (!"https".equalsIgnoreCase(scheme) || host == null) {
+                return false;
+            }
+            String allowedDomain = getString(R.string.allowed_web_domain).toLowerCase(Locale.ROOT);
+            String lowerHost = host.toLowerCase(Locale.ROOT);
+            return lowerHost.equals(allowedDomain) || lowerHost.endsWith("." + allowedDomain);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * 供 WebAppInterface 判斷：目前頁面是否可安全回傳敏感資料 (FCM Token、GPS 座標、離線快取等)。
+     */
+    public boolean isTrustedPage() {
+        return currentPageTrusted;
     }
 
     public void checkLocationPermission(PermissionCallback callback) {

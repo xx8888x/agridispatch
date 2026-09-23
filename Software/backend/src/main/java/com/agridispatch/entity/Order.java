@@ -12,6 +12,7 @@ import jakarta.persistence.Table;
 public class Order {
     @Id
     private String id;
+    private String farmerId;   // 下單農場主編號（token.ref），用於擁有者權限檢查
     private String farmerName;
     private String phone;
     private String farmLocation;
@@ -42,6 +43,9 @@ public class Order {
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
+
+    public String getFarmerId() { return farmerId; }
+    public void setFarmerId(String farmerId) { this.farmerId = farmerId; }
 
     public String getFarmerName() { return farmerName; }
     public void setFarmerName(String farmerName) { this.farmerName = farmerName; }

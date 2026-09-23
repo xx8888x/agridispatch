@@ -226,47 +226,19 @@
             </button>
           </form>
 
-          <!-- Quick Fill Demo Foreign Workers -->
-          <div class="mt-6 pt-5 border-t border-slate-800">
+          <!-- Quick Fill Demo Foreign Workers（僅 demo 模式顯示，資料來自 js/demo-accounts.js） -->
+          <div v-if="isDemo && demoCfg" class="mt-6 pt-5 border-t border-slate-800">
             <div class="text-[11px] font-bold text-slate-400 mb-2.5 flex items-center justify-between">
               <span>⚡ {{ t.quickDemoTitle }}</span>
               <span class="text-[10px] text-slate-500">Click to fill</span>
             </div>
             <div class="grid grid-cols-2 gap-2">
-              <!-- Worker 1: 阮文雄 -->
-              <button @click="fillProfile('AD88123451', '123456', 'W001')" type="button"
+              <button v-for="p in demoCfg.profiles" :key="p.identifier" @click="fillProfile(p.identifier, p.password, p.workerId)" type="button"
                 class="text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 transition">
                 <div class="flex items-center gap-1 font-bold text-white text-[11px]">
-                  <span>🇻🇳</span> 阮文雄 (A組長)
+                  <span>{{ p.flag }}</span> {{ p.name }}
                 </div>
-                <div class="text-[10px] text-slate-400 font-mono mt-0.5">ARC: AD88123451</div>
-              </button>
-
-              <!-- Worker 2: Budi Santoso -->
-              <button @click="fillProfile('AD77234561', '123456', 'W006')" type="button"
-                class="text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 transition">
-                <div class="flex items-center gap-1 font-bold text-white text-[11px]">
-                  <span>🇮🇩</span> Budi (B組長)
-                </div>
-                <div class="text-[10px] text-slate-400 font-mono mt-0.5">ARC: AD77234561</div>
-              </button>
-
-              <!-- Worker 3: Somchai Prasert -->
-              <button @click="fillProfile('AD66345671', '123456', 'W020')" type="button"
-                class="text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 transition">
-                <div class="flex items-center gap-1 font-bold text-white text-[11px]">
-                  <span>🇹🇭</span> Somchai (D組)
-                </div>
-                <div class="text-[10px] text-slate-400 font-mono mt-0.5">ARC: AD66345671</div>
-              </button>
-
-              <!-- Worker 4: Maria Santos -->
-              <button @click="fillProfile('AD55456781', '123456', 'W023')" type="button"
-                class="text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 transition">
-                <div class="flex items-center gap-1 font-bold text-white text-[11px]">
-                  <span>🇵🇭</span> Maria (B組)
-                </div>
-                <div class="text-[10px] text-slate-400 font-mono mt-0.5">ARC: AD55456781</div>
+                <div class="text-[10px] text-slate-400 font-mono mt-0.5">ARC: {{ p.identifier }}</div>
               </button>
             </div>
           </div>

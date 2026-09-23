@@ -4,41 +4,54 @@
 
 ---
 
-## ⚠️ 建置環境限制（本次修改未實際編譯驗證）
+## ✅ 建置驗證狀態（2026-09-23）
 
-本次修改是在**沒有 Android SDK / 無網路下載套件**的環境下完成，僅能：
-- 人工檢查 Java 原始碼的 import、型別與呼叫是否正確
-- 確認 Gradle 檔案（`build.gradle`、`settings.gradle`、`gradle-wrapper.properties`）語法正確
+已在本機實際建置成功：`assembleDebug` → `app/build/outputs/apk/debug/app-debug.apk`（約 7.3 MB）。
+尚未在實機或模擬器上安裝執行。
 
-**尚未實際跑過 `gradle build` 或 `gradle assembleDebug`**，請在您本機（有 Android Studio / 網路）的環境下建置一次以確認無誤。
+本機建置環境（免安裝版，皆位於 `D:\Android\`，不修改系統環境變數）：
+
+| 項目 | 位置 / 版本 |
+|---|---|
+| JDK | `D:\Android\jdk17`（Temurin 17；本機預設的 JDK 26 太新，Gradle 8.7 無法執行） |
+| Android SDK | `D:\Android\sdk`（platform-tools、platforms;android-35、build-tools;35.0.0） |
+| Gradle | 專案內 `gradlew`（8.7），或 `D:\Android\gradle-8.7` |
+| SDK 路徑 | `local.properties`：`sdk.dir=D:/Android/sdk`（用正斜線；此檔已 gitignore） |
 
 ---
 
-## 🧩 Gradle Wrapper 缺少 gradlew / gradlew.bat / gradle-wrapper.jar
+## ⚠️ 專案路徑含中文與括號：必須對應英文磁碟代號才能建置
 
-本專案目錄目前只有 `gradle/wrapper/gradle-wrapper.properties`，缺少 `gradlew`、`gradlew.bat`、`gradle/wrapper/gradle-wrapper.jar`（依規定不可在此環境下載檔案，故未補上）。請擇一方式補齊：
+專案位於 `D:\派遣專案網站(農事及其它)\`，會造成兩個問題：
+1. Android Gradle Plugin 拒絕在含非 ASCII 字元的路徑下建置（`Your project path contains non-ASCII characters`）。
+2. `gradlew.bat` 在含括號 `(` `)` 的路徑下會被 cmd 誤判語法而無法啟動。
 
-1. **用 Android Studio 開啟本目錄**（`Software/android`）：Android Studio 偵測到專案後會自動產生缺少的 wrapper 檔案。
-2. **或已安裝 Gradle 的情況下**，在本目錄執行：
-   ```bash
-   gradle wrapper --gradle-version 8.7
-   ```
-   會依 `gradle-wrapper.properties` 內的版本設定補齊 `gradlew` / `gradlew.bat` / `gradle-wrapper.jar`。
+解法：用 `subst` 暫時把本目錄對應成英文磁碟代號（只在本次登入有效，不改動任何檔案），建完再移除：
+
+```bat
+subst Z: "D:\派遣專案網站(農事及其它)\Software\android"
+set JAVA_HOME=D:\Android\jdk17
+Z:
+gradlew.bat assembleDebug
+subst Z: /D
+```
+
+或以 Android Studio 開啟 `Z:\`（同樣先 subst）。長期建議把專案搬到純英文路徑（例如 `D:\AgriDispatch\`）。
 
 ---
 
 ## 🏗️ 建置 APK 步驟
 
-1. 用 Android Studio 開啟 `Software/android` 目錄（或依上一節補齊 gradle wrapper 後用終端機）。
+1. 依上一節以 `subst` 對應英文磁碟代號（或用 Android Studio 開啟對應後的目錄）。
 2. 視需要設定 FCM（見下方「FCM 推播設定」）與正式網域（見 `app/src/main/res/values/strings.xml` 的 `allowed_web_domain`，預設 `agridispatch.tw`；`MainActivity` 的 WebView 只允許載入內建 assets 與此白名單網域）。
 3. Debug 建置：
-   ```bash
-   ./gradlew assembleDebug
+   ```bat
+   gradlew.bat assembleDebug
    ```
-   或直接在 Android Studio 點擊 Run。
+   或直接在 Android Studio 點擊 Run。前端頁面來自 `app/src/main/assets/www/`，由 `Software/tools/sync-frontend.js` 從 `Software/demo/` 同步產生，建置前請先執行同步。
 4. Release 建置（需先完成「Release 簽章設定」）：
-   ```bash
-   ./gradlew assembleRelease
+   ```bat
+   gradlew.bat assembleRelease
    ```
    輸出於 `app/build/outputs/apk/release/`。
 
@@ -67,7 +80,7 @@
    keytool -genkeypair -v -keystore my-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias my-key-alias
    ```
 2. 複製 `keystore.properties.example` 為 `keystore.properties`，填入實際的 `storeFile` / `storePassword` / `keyAlias` / `keyPassword`。
-3. 重新執行 `./gradlew assembleRelease`，輸出的 APK 即為已簽章版本。
+3. 重新執行 `gradlew.bat assembleRelease`（同樣需先 subst），輸出的 APK 即為已簽章版本。
 
 ---
 

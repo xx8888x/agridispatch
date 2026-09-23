@@ -15,8 +15,8 @@ if %errorlevel% equ 0 (
 ) else (
     echo       🚀 正在啟動後端 Spring Boot 伺服器（demo 路演模式）...
     rem 正式上線改為 call run.bat（production，需設定 AGRI_TOKEN_SECRET、AGRI_ADMIN_PASSWORD）
-    start "AgriDispatch-Backend-3000" cmd /k "cd /d ""%ROOT_DIR%Software\backend"" && call compile.bat && call run.bat demo"
-    timeout /t 5 >nul
+    start "AgriDispatch-Backend-3000" /D "%ROOT_DIR%Software\backend" cmd /k "call compile.bat && call run.bat demo"
+    ping 127.0.0.1 -n 6 >nul
 )
 
 echo.
@@ -26,8 +26,8 @@ if %errorlevel% equ 0 (
     echo       ✅ LINE Bot 服務引擎已在運行中 (Port: 5000)
 ) else (
     echo       🚀 正在啟動 LINE Bot 服務引擎...
-    start "AgriDispatch-LineBot-5000" cmd /k "cd /d ""%ROOT_DIR%Software\Line Bot"" && call run.bat"
-    timeout /t 2 >nul
+    start "AgriDispatch-LineBot-5000" /D "%ROOT_DIR%Software\Line Bot" cmd /k "call run.bat"
+    ping 127.0.0.1 -n 3 >nul
 )
 
 echo.

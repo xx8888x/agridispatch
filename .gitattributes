@@ -1,0 +1,15 @@
+# 統一換行：版本庫內一律存 LF，避免不同工具（CRLF/LF）造成整檔假差異
+* text=auto
+# Windows 批次檔必須是 CRLF 才能正確執行
+*.bat text eol=crlf
+*.cmd text eol=crlf
+# 二進位檔
+*.docx binary
+*.xlsx binary
+*.pptx binary
+*.vsdx binary
+*.vdx binary
+*.png binary
+*.jpg binary
+*.jar binary
+*.dll binary

@@ -1,68 +1,103 @@
 package com.agridispatch.service;
 
+import com.agridispatch.common.ApiException;
 import com.agridispatch.entity.Attendance;
 import com.agridispatch.repository.AttendanceRepository;
+import com.agridispatch.repository.WorkerRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * GPS 出勤打卡服務
+ * - 上班：同一工人不得同時有兩筆未下班紀錄（以鎖 + 檢查確保）
+ * - 下班：找該工人「最近一筆未下班」紀錄（可跨日），查無則拒絕，不再捏造工時
+ */
 @Service
 public class AttendanceService {
 
-    private final AttendanceRepository attendanceRepository;
+    /** 單班超過此時數視為疑似忘記下班打卡，回應中附上提醒 */
+    public static final double LONG_SHIFT_WARNING_HOURS = 16.0;
 
-    public AttendanceService(AttendanceRepository attendanceRepository) {
+    private final AttendanceRepository attendanceRepository;
+    private final WorkerRepository workerRepository;
+    private final Object clockLock = new Object();
+    private Clock clock = Clock.systemDefaultZone();
+
+    public AttendanceService(AttendanceRepository attendanceRepository, WorkerRepository workerRepository) {
         this.attendanceRepository = attendanceRepository;
+        this.workerRepository = workerRepository;
+    }
+
+    /** 測試用：替換時鐘以模擬跨日 */
+    void setClock(Clock clock) {
+        this.clock = clock;
+    }
+
+    private void requireWorker(String workerId) {
+        if (workerId == null || workerId.trim().isEmpty()) {
+            throw ApiException.badRequest("農工工號 (workerId) 不得為空！");
+        }
+        if (!workerRepository.existsById(workerId)) {
+            throw ApiException.notFound("找不到該農工編號: " + workerId);
+        }
     }
 
     /**
      * 執行上班 GPS 打卡
+     * @throws ApiException 409：已有未下班的打卡紀錄
      */
     public Attendance clockIn(String workerId, String location, Double gpsAccuracy) {
-        if (workerId == null || workerId.trim().isEmpty()) {
-            throw new IllegalArgumentException("農工工號 (workerId) 不得為空！");
+        requireWorker(workerId);
+        if (location != null && location.length() > 200) {
+            throw ApiException.badRequest("打卡位置描述過長（上限 200 字）");
         }
-
-        LocalDate today = LocalDate.now();
-        // 檢查今日是否已打過上班卡且尚未下班
-        Optional<Attendance> existing = attendanceRepository.findByWorkerIdAndWorkDateAndClockOutTimeIsNull(workerId, today);
-        if (existing.isPresent()) {
-            return existing.get(); // 已在出勤中
+        if (gpsAccuracy != null && (gpsAccuracy.isNaN() || gpsAccuracy < 0 || gpsAccuracy > 100_000)) {
+            throw ApiException.badRequest("GPS 精確度數值不合理");
         }
-
-        Attendance attendance = new Attendance(
-                workerId,
-                LocalDateTime.now(),
-                location != null ? location : "桃園八德有機蔬菜園區 (24.9351°N, 121.2842°E)",
-                gpsAccuracy != null ? gpsAccuracy : 3.5
-        );
-        return attendanceRepository.save(attendance);
+        synchronized (clockLock) {
+            Optional<Attendance> open = attendanceRepository.findFirstByWorkerIdAndClockOutTimeIsNullOrderByClockInTimeDesc(workerId);
+            if (open.isPresent()) {
+                throw ApiException.conflict("已有未下班的打卡紀錄（" + open.get().getClockInTime().toLocalDate()
+                        + "），請先完成下班打卡");
+            }
+            Attendance attendance = new Attendance(
+                    workerId,
+                    LocalDateTime.now(clock),
+                    location != null && !location.isBlank() ? location : "未提供 GPS 位置描述",
+                    gpsAccuracy
+            );
+            return attendanceRepository.save(attendance);
+        }
     }
 
     /**
-     * 執行下班簽核打卡
+     * 執行下班簽核打卡：關閉最近一筆未下班紀錄（可跨日）
+     * @throws ApiException 409：查無未下班的上班紀錄
      */
     public Attendance clockOut(String workerId, String foremanSignature) {
-        LocalDate today = LocalDate.now();
-        Optional<Attendance> currentShift = attendanceRepository.findByWorkerIdAndWorkDateAndClockOutTimeIsNull(workerId, today);
-        
-        Attendance attendance;
-        if (currentShift.isPresent()) {
-            attendance = currentShift.get();
-        } else {
-            // 若忘記打上班卡，自動補建立
-            attendance = new Attendance(
-                    workerId,
-                    LocalDateTime.now().minusHours(8).minusMinutes(30),
-                    "屏東枋山愛文芒果產區 (22.2612°N, 120.6543°E)",
-                    5.0
-            );
+        requireWorker(workerId);
+        if (foremanSignature != null && foremanSignature.length() > 50) {
+            throw ApiException.badRequest("簽核姓名過長（上限 50 字）");
         }
+        synchronized (clockLock) {
+            Attendance attendance = attendanceRepository
+                    .findFirstByWorkerIdAndClockOutTimeIsNullOrderByClockInTimeDesc(workerId)
+                    .orElseThrow(() -> ApiException.conflict("找不到尚未下班的上班打卡紀錄，請先上班打卡"));
+            LocalDateTime now = LocalDateTime.now(clock);
+            if (now.isBefore(attendance.getClockInTime())) {
+                now = attendance.getClockInTime();
+            }
+            attendance.completeShift(now, foremanSignature != null && !foremanSignature.isBlank() ? foremanSignature : null);
+            return attendanceRepository.save(attendance);
+        }
+    }
 
-        attendance.completeShift(LocalDateTime.now(), foremanSignature != null ? foremanSignature : "林小祥 (帶隊小工頭)");
-        return attendanceRepository.save(attendance);
+    public static boolean isLongShift(Attendance a) {
+        return a.getActualHours() != null && a.getActualHours() > LONG_SHIFT_WARNING_HOURS;
     }
 
     /**
@@ -72,17 +107,24 @@ public class AttendanceService {
         return attendanceRepository.findByWorkerIdOrderByWorkDateDesc(workerId);
     }
 
+    public List<Attendance> getAttendanceByMonth(String workerId, int year, int month) {
+        if (month < 1 || month > 12 || year < 2000 || year > 2100) {
+            throw ApiException.badRequest("年月參數不合理");
+        }
+        return attendanceRepository.findByWorkerIdAndYearMonth(workerId, year, month);
+    }
+
     /**
      * 查詢今日出勤打卡紀錄
      */
     public List<Attendance> getTodayAttendance(String workerId) {
-        return attendanceRepository.findByWorkerIdAndWorkDate(workerId, LocalDate.now());
+        return attendanceRepository.findByWorkerIdAndWorkDate(workerId, LocalDate.now(clock));
     }
 
     /**
      * 取得本日全工班出勤在線人數
      */
     public long getTodayPresentCount() {
-        return attendanceRepository.countPresentWorkersByDate(LocalDate.now());
+        return attendanceRepository.countPresentWorkersByDate(LocalDate.now(clock));
     }
 }

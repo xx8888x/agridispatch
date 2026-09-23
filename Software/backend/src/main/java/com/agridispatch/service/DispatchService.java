@@ -6,15 +6,24 @@ import com.agridispatch.repository.DispatchTeamRepository;
 import com.agridispatch.repository.WeatherStateRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * 智慧派遣與天候避險服務
+ * 天候狀態為全域可變狀態：所有讀寫皆以 synchronized 保護，並於啟動時由 weather_states 讀回。
+ */
 @Service
 @Transactional
 public class DispatchService {
+
+    private static final Logger log = LoggerFactory.getLogger(DispatchService.class);
+    private static final int MAX_REGIONS = 50;
 
     private final DispatchTeamRepository teamRepository;
     private final WeatherStateRepository weatherStateRepository;
@@ -39,6 +48,34 @@ public class DispatchService {
 
     private void initDefaultRegionalWeather() {
         currentRegionalWeather = createScenarioRegions("cloudy");
+    }
+
+    /**
+     * 啟動時從 weather_states（WS-ACTIVE）讀回天候避險狀態，避免重啟後回到預設值
+     */
+    public synchronized void restoreStateFromDb() {
+        try {
+            weatherStateRepository.findById("WS-ACTIVE").ifPresent(ws -> {
+                if (ws.getScenarioId() != null) this.currentScenarioId = ws.getScenarioId();
+                this.isRainMode = "Y".equalsIgnoreCase(ws.getIsRainMode());
+                if (ws.getCurrentWeather() != null) this.currentWeather = ws.getCurrentWeather();
+                if (ws.getAlertLevel() != null) this.alertLevel = ws.getAlertLevel();
+                if (ws.getMessage() != null) this.weatherMessage = ws.getMessage();
+                if (ws.getSecuredRevenue() != null) this.securedRevenue = ws.getSecuredRevenue();
+                if (ws.getDailyCapacityHrs() != null) this.dailyCapacityHrs = ws.getDailyCapacityHrs();
+                if (ws.getRegionalJson() != null && !ws.getRegionalJson().isBlank()) {
+                    try {
+                        List<Map<String, Object>> regions = objectMapper.readValue(ws.getRegionalJson(),
+                                new TypeReference<List<Map<String, Object>>>() {});
+                        if (regions != null && !regions.isEmpty()) this.currentRegionalWeather = new ArrayList<>(regions);
+                    } catch (Exception e) {
+                        log.warn("weather_states.regional_json 解析失敗，沿用預設產區氣象：{}", e.getMessage());
+                    }
+                }
+            });
+        } catch (Exception e) {
+            log.warn("無法從 weather_states 讀回天候狀態：{}", e.getMessage());
+        }
     }
 
     public List<DispatchTeam> getAllTeams() {
@@ -67,26 +104,41 @@ public class DispatchService {
             existing.setHedgeTask(updated.getHedgeTask());
             existing.setStatus(updated.getStatus());
             return teamRepository.save(existing);
-        }).orElseThrow(() -> new RuntimeException("DispatchTeam not found: " + id));
+        }).orElseThrow(() -> new NoSuchElementException("找不到該工班代號: " + id));
     }
 
     public void deleteTeam(String id) {
         teamRepository.deleteById(id);
     }
 
-    public boolean isRainMode() { return isRainMode; }
-    public String getCurrentWeather() { return currentWeather; }
-    public String getWeatherMessage() { return weatherMessage; }
-    public String getCurrentScenarioId() { return currentScenarioId; }
-    public String getAlertLevel() { return alertLevel; }
-    public List<Map<String, Object>> getRegionalWeather() { return currentRegionalWeather; }
+    public synchronized boolean isRainMode() { return isRainMode; }
+    public synchronized String getCurrentWeather() { return currentWeather; }
+    public synchronized String getWeatherMessage() { return weatherMessage; }
+    public synchronized String getCurrentScenarioId() { return currentScenarioId; }
+    public synchronized String getAlertLevel() { return alertLevel; }
+    public synchronized List<Map<String, Object>> getRegionalWeather() { return new ArrayList<>(currentRegionalWeather); }
+
+    /** 一次取得完整天候狀態快照（避免多次呼叫 getter 之間狀態被改動） */
+    public synchronized Map<String, Object> getWeatherStateSnapshot() {
+        Map<String, Object> state = new LinkedHashMap<>();
+        state.put("scenarioId", currentScenarioId);
+        state.put("isRainMode", isRainMode);
+        state.put("currentWeather", currentWeather);
+        state.put("alertLevel", alertLevel);
+        state.put("weatherMessage", weatherMessage);
+        state.put("regionalWeather", new ArrayList<>(currentRegionalWeather));
+        return state;
+    }
 
     /**
      * 應用指定的天氣情境 (sunny, cloudy, shower, heavy_rain, typhoon, cold_wave)
      */
-    public Map<String, Object> applyWeatherScenario(String scenarioId) {
+    public synchronized Map<String, Object> applyWeatherScenario(String scenarioId) {
         if (scenarioId == null || scenarioId.trim().isEmpty()) {
             scenarioId = "sunny";
+        }
+        if (!List.of("sunny", "cloudy", "shower", "heavy_rain", "typhoon", "cold_wave").contains(scenarioId)) {
+            throw new IllegalArgumentException("不支援的天候情境：" + scenarioId);
         }
         this.currentScenarioId = scenarioId;
 
@@ -214,7 +266,7 @@ public class DispatchService {
         result.put("weatherMessage", this.weatherMessage);
         result.put("securedRevenue", this.securedRevenue);
         result.put("dailyCapacityHrs", this.dailyCapacityHrs);
-        result.put("regionalWeather", this.currentRegionalWeather);
+        result.put("regionalWeather", new ArrayList<>(this.currentRegionalWeather));
         result.put("teams", teams);
 
         return result;
@@ -223,19 +275,22 @@ public class DispatchService {
     /**
      * 更新自訂單一產區或全部產區氣象
      */
-    public List<Map<String, Object>> updateRegionalWeather(List<Map<String, Object>> newRegions) {
+    public synchronized List<Map<String, Object>> updateRegionalWeather(List<Map<String, Object>> newRegions) {
+        if (newRegions != null && newRegions.size() > MAX_REGIONS) {
+            throw new IllegalArgumentException("產區數量不得超過 " + MAX_REGIONS + " 筆");
+        }
         if (newRegions != null && !newRegions.isEmpty()) {
             this.currentRegionalWeather = new ArrayList<>(newRegions);
             saveWeatherStateToDb(this.currentScenarioId, "自訂產區氣象");
         }
-        return this.currentRegionalWeather;
+        return new ArrayList<>(this.currentRegionalWeather);
     }
 
-    public Map<String, Object> setRainMode(boolean rain) {
+    public synchronized Map<String, Object> setRainMode(boolean rain) {
         return applyWeatherScenario(rain ? "heavy_rain" : "sunny");
     }
 
-    public Map<String, Object> getOverview() {
+    public synchronized Map<String, Object> getOverview() {
         Map<String, Object> overview = new LinkedHashMap<>();
         overview.put("scenarioId", currentScenarioId);
         overview.put("isRainMode", isRainMode);
@@ -244,7 +299,7 @@ public class DispatchService {
         overview.put("alertLevel", alertLevel);
         overview.put("securedRevenue", securedRevenue);
         overview.put("dailyCapacityHrs", dailyCapacityHrs);
-        overview.put("regionalWeather", currentRegionalWeather);
+        overview.put("regionalWeather", new ArrayList<>(currentRegionalWeather));
         overview.put("teams", teamRepository.findAll());
         return overview;
     }
@@ -272,7 +327,7 @@ public class DispatchService {
             weatherStateRepository.save(state);
         } catch (Exception e) {
             // Log and tolerate persistence error
-            System.err.println("Could not persist WeatherState to DB: " + e.getMessage());
+            log.warn("無法寫入 weather_states：{}", e.getMessage());
         }
     }
 

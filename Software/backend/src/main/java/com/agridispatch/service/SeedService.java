@@ -1,15 +1,39 @@
 package com.agridispatch.service;
 
+import com.agridispatch.common.LaborConstants;
+import com.agridispatch.config.AgriSettings;
 import com.agridispatch.entity.*;
 import com.agridispatch.repository.*;
+import com.agridispatch.security.PasswordHasher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
 
+/**
+ * 擬真示範資料種子服務
+ * - 「依 ID 補缺」：資料不存在才新增，不覆蓋既有資料（取代舊版 count()==0 才種子）
+ * - 帳號密碼一律以 PBKDF2 雜湊儲存，並於啟動時把舊版明碼升級為雜湊
+ */
 @Service
 @Transactional
 public class SeedService {
+
+    private static final Logger log = LoggerFactory.getLogger(SeedService.class);
+
+    /** demo 模式示範密碼（僅 demo 模式使用） */
+    static final String DEMO_PASSWORD = "123456";
+    /** demo 模式管理員示範密碼（沿用既有前端示範帳密） */
+    static final String DEMO_ADMIN_PASSWORD = "admin888";
+    /** 舊版曾寫死的預設密碼：非 demo 模式偵測到時於 log 警告 */
+    private static final Set<String> KNOWN_DEFAULT_PASSWORDS = Set.of("123456", "admin888");
 
     private final UserRepository userRepository;
     private final CropRepository cropRepository;
@@ -20,6 +44,12 @@ public class SeedService {
     private final BrochureRepository brochureRepository;
     private final WeatherStateRepository weatherStateRepository;
     private final AttendanceRepository attendanceRepository;
+    private final PaymentTransactionRepository paymentTransactionRepository;
+    private final PasswordHasher passwordHasher;
+    private final AgriSettings settings;
+
+    /** demo 密碼雜湊快取（310,000 次 PBKDF2 較耗時，demo 種子共用同一組雜湊） */
+    private String demoPasswordHash;
 
     public SeedService(UserRepository userRepository,
                        CropRepository cropRepository,
@@ -29,7 +59,10 @@ public class SeedService {
                        TalentRepository talentRepository,
                        BrochureRepository brochureRepository,
                        WeatherStateRepository weatherStateRepository,
-                       AttendanceRepository attendanceRepository) {
+                       AttendanceRepository attendanceRepository,
+                       PaymentTransactionRepository paymentTransactionRepository,
+                       PasswordHasher passwordHasher,
+                       AgriSettings settings) {
         this.userRepository = userRepository;
         this.cropRepository = cropRepository;
         this.teamRepository = teamRepository;
@@ -39,10 +72,14 @@ public class SeedService {
         this.brochureRepository = brochureRepository;
         this.weatherStateRepository = weatherStateRepository;
         this.attendanceRepository = attendanceRepository;
+        this.paymentTransactionRepository = paymentTransactionRepository;
+        this.passwordHasher = passwordHasher;
+        this.settings = settings;
     }
 
     public void seedAll(boolean cleanFirst) {
         if (cleanFirst) {
+            paymentTransactionRepository.deleteAll();
             orderRepository.deleteAll();
             workerRepository.deleteAll();
             talentRepository.deleteAll();
@@ -63,23 +100,131 @@ public class SeedService {
         seedBrochures();
         seedWeatherStates();
         seedAttendance();
+        migrateLegacyData();
+        ensureCredentials();
     }
 
+    /** 依 ID 補缺：不存在才新增，既有資料一律保留 */
+    private <T, ID> int saveMissing(JpaRepository<T, ID> repo, List<T> items, Function<T, ID> idOf) {
+        int added = 0;
+        for (T item : items) {
+            if (!repo.existsById(idOf.apply(item))) {
+                repo.save(item);
+                added++;
+            }
+        }
+        return added;
+    }
+
+    // =========================================================================
+    // 帳號與密碼
+    // =========================================================================
+
     private void seedUsers() {
-        if (userRepository.count() == 0) {
-            userRepository.saveAll(List.of(
-                new User("worker_foreign", "123456", "Nguyễn Văn Hùng (阮文雄)", "worker_foreign", "W001", "外籍特許外展農工 (Tier 1)"),
-                new User("worker_local", "123456", "林小祥 (帶工領班) / 陳建宏 (機耕)", "worker_local", "W026", "本國帶工領班與機耕 (Tier 2/3)"),
-                new User("worker_labor", "123456", "張志明 (合作社農業勞務員)", "worker_local", "W030", "合作社在籍農業勞務員 (月薪 $28,590 + 獎勵金 $8,800)"),
-                new User("farmer", "123456", "陳建龍 (阿龍班長)", "farmer", "F001", "八德有機蔬菜產銷班負責人"),
-                new User("admin_tech", "admin888", "智農科技調度總監", "admin_tech", "ADM01", "科技公司系統調度與數據管理員")
-            ));
+        boolean demo = settings.isDemoEnabled();
+        // 非 demo 模式：示範帳號不給預設密碼（無法登入），需由管理員以 reset-password 設定
+        String userPw = demo ? demoHash() : null;
+        List<User> users = List.of(
+            new User("worker_foreign", userPw, "Nguyễn Văn Hùng (阮文雄)", "worker_foreign", "W001", "外籍特許外展農工 (Tier 1)"),
+            new User("worker_local", userPw, "林小祥 (帶工領班) / 陳建宏 (機耕)", "worker_local", "W026", "本國帶工領班與機耕 (Tier 2/3)"),
+            new User("worker_labor", userPw, "張志明 (合作社農業勞務員)", "worker_local", "W030", AuthService.laborRoleDesc()),
+            new User("farmer", userPw, "陳建龍 (阿龍班長)", "farmer", "F001", "八德有機蔬菜產銷班負責人"),
+            new User("farmer_yilan", userPw, "李春發 (春發伯)", "farmer", "F002", "宜蘭三星青蔥專班負責人"),
+            new User("admin_tech", null, "智農科技調度總監", "admin_tech", "ADM01", "科技公司系統調度與數據管理員")
+        );
+        for (User u : users) {
+            if (userRepository.existsById(u.getUsername())) continue;
+            if ("admin_tech".equals(u.getRole())) {
+                u.setPassword(passwordHasher.hash(initialAdminPassword()));
+            }
+            userRepository.save(u);
+        }
+    }
+
+    /** 管理員初始密碼：AGRI_ADMIN_PASSWORD → demo 示範密碼 → 隨機產生（只在 log 顯示一次） */
+    private String initialAdminPassword() {
+        String env = settings.getAdminPassword();
+        if (env != null && !env.isBlank()) return env;
+        if (settings.isDemoEnabled()) return DEMO_ADMIN_PASSWORD;
+        byte[] rnd = new byte[12];
+        new SecureRandom().nextBytes(rnd);
+        String generated = Base64.getUrlEncoder().withoutPadding().encodeToString(rnd);
+        log.warn("====================================================");
+        log.warn("[安全] 未設定 AGRI_ADMIN_PASSWORD，已為 admin_tech 隨機產生初始密碼（僅顯示這一次）：{}", generated);
+        log.warn("[安全] 請登入後立即以 POST /api/auth/change-password 變更密碼。");
+        log.warn("====================================================");
+        return generated;
+    }
+
+    private String demoHash() {
+        if (demoPasswordHash == null) {
+            demoPasswordHash = passwordHasher.hash(DEMO_PASSWORD);
+        }
+        return demoPasswordHash;
+    }
+
+    /**
+     * 啟動時把舊版明碼升級為 PBKDF2 雜湊；demo 模式替尚無密碼的農工補上示範密碼
+     */
+    public void ensureCredentials() {
+        boolean demo = settings.isDemoEnabled();
+        int upgraded = 0;
+        for (User u : userRepository.findAll()) {
+            String pw = u.getPassword();
+            if (pw != null && !pw.isEmpty() && !PasswordHasher.isHashed(pw)) {
+                if (!demo && KNOWN_DEFAULT_PASSWORDS.contains(pw)) {
+                    log.warn("[安全] 帳號 {} 仍使用舊版預設密碼，請以 POST /api/auth/reset-password 重設。", u.getUsername());
+                }
+                u.setPassword(demo && DEMO_PASSWORD.equals(pw) ? demoHash() : passwordHasher.hash(pw));
+                userRepository.save(u);
+                upgraded++;
+            }
+        }
+        for (Worker w : workerRepository.findAll()) {
+            String pw = w.getPasswordHash();
+            if (pw != null && !pw.isEmpty() && !PasswordHasher.isHashed(pw)) {
+                w.setPasswordHash(passwordHasher.hash(pw));
+                workerRepository.save(w);
+                upgraded++;
+            } else if (demo && (pw == null || pw.isEmpty())) {
+                w.setPasswordHash(demoHash());
+                workerRepository.save(w);
+            }
+        }
+        if (upgraded > 0) {
+            log.info("[安全] 已將 {} 筆舊版明碼密碼升級為 PBKDF2 雜湊。", upgraded);
+        }
+    }
+
+    /**
+     * 既有資料修正（不覆蓋使用者資料，只修正已知錯誤值）
+     * - 本國工 arcNumber 佔位字「本國身分證」→ null（避免證號查詢重複）
+     * - 舊版基本工資說明文字 28,590 → 現行常數
+     */
+    private void migrateLegacyData() {
+        for (Worker w : workerRepository.findAll()) {
+            if ("本國身分證".equals(w.getArcNumber())) {
+                w.setArcNumber(null);
+                workerRepository.save(w);
+            }
+            if (w.getBaseSalary() > 0 && w.getBaseSalary() < LaborConstants.MIN_MONTHLY_WAGE
+                    && !"tier3_turnkey".equals(w.getTier())) {
+                log.warn("[薪資] 農工 {} 底薪 {} 低於現行基本工資 {}，薪資試算將以基本工資計。",
+                        w.getId(), w.getBaseSalary(), LaborConstants.MIN_MONTHLY_WAGE);
+            }
+        }
+        for (User u : userRepository.findAll()) {
+            if (u.getRoleDesc() != null && u.getRoleDesc().contains("28,590")) {
+                u.setRoleDesc("worker_labor".equals(u.getUsername()) ? AuthService.laborRoleDesc()
+                        : u.getRoleDesc().replace("28,590", LaborConstants.formatMoney(LaborConstants.MIN_MONTHLY_WAGE)));
+                userRepository.save(u);
+            }
         }
     }
 
     private void seedCrops() {
-        if (cropRepository.count() == 0) {
-            cropRepository.saveAll(List.of(
+        {
+            saveMissing(cropRepository, List.of(
                 new Crop("taoyuan_veg", "桃園溫室有機蔬菜 (八德/大溪)", 20, 3, 290, "全年365天溫室採收",
                         "採收、精緻挑菜、田間分級修葉、生鮮小包裝",
                         "八德蔬果預冷冷鏈包裝中心 (室內B棟：蔬果預冷、自動光波秤重、外銷包裝)"),
@@ -110,13 +255,13 @@ public class SeedService {
                 new Crop("melon", "宜蘭壯圍網紋洋香瓜", 30, 4, 330, "5月 ~ 8月",
                         "溫室一株一果精緻管理、掛果防磨套袋、成熟度測糖採收",
                         "壯圍農會冷藏包裝作業場 (自動甜度光波檢測、精品禮盒排裝)")
-            ));
+            ), Crop::getId);
         }
     }
 
     private void seedTeams() {
-        if (teamRepository.count() == 0) {
-            teamRepository.saveAll(List.of(
+        {
+            saveMissing(teamRepository, List.of(
                 new DispatchTeam("team_a", "工班 A 組 (桃園溫室組)", 7, "阮文雄 (Nguyễn Văn Hùng)", "0988-111-222",
                         "智農 1 號專車 (RBF-8899)", "張大哥 (0912-111-333)",
                         "🌾 八德有機蔬菜專銷班 溫室第 3 區", "有機葉菜採收、修葉分級、生鮮小包裝",
@@ -133,56 +278,60 @@ public class SeedService {
                         "智農專車固定專線", "王大哥 (0912-555-666)",
                         "🏢 八德蔬果預冷冷鏈包裝中心 (室內B棟)", "蔬果預冷降溫、外銷精密秤重分級、冷鏈櫃裝櫃",
                         "🏢 八德蔬果預冷冷鏈包裝中心 (室內B棟)", "蔬果預冷降溫、外銷精密秤重分級、冷鏈櫃裝櫃", "hedged_indoor")
-            ));
+            ), DispatchTeam::getId);
         }
     }
 
     private void seedWorkers() {
-        if (workerRepository.count() == 0) {
+        {
+            // 底薪欄位 "MIN" = 現行基本工資常數；獎勵金 "BONUS" = 農業部就業獎勵金常數
+            // 本國工無居留證，arcNumber 以空字串表示並存為 null
             String[][] raw = {
-                {"W001", "Nguyễn Văn Hùng", "阮文雄", "越南", "team_a", "true", "tier1_foreign", "28590", "8800", "1200", "AD88123451", "C9823101", "2027-08-31", "已納保 (勞/健/職災)", "八德有機蔬菜專區 採收與修葉分級", "dispatched_field", "0988-111-222"},
-                {"W002", "Trần Văn Bình", "陳文平", "越南", "team_a", "false", "tier1_foreign", "28590", "8800", "1200", "AD88123452", "C9823102", "2027-08-31", "已納保 (勞/健/職災)", "八德有機蔬菜專區 溫室採收裝箱", "dispatched_field", "0988-111-223"},
-                {"W003", "Lê Thị Mai", "黎氏梅", "越南", "team_a", "false", "tier1_foreign", "28590", "8800", "1200", "AD88123453", "C9823103", "2027-08-31", "已納保 (勞/健/職災)", "八德有機蔬菜專區 生鮮小包裝貼標", "dispatched_field", "0988-111-224"},
-                {"W004", "Phạm Văn Đức", "范文德", "越南", "team_a", "false", "tier1_foreign", "28590", "8800", "1200", "AD88123454", "C9823104", "2027-08-31", "已納保 (勞/健/職災)", "八德有機蔬菜專區 搬運上埂裝車", "dispatched_field", "0988-111-225"},
-                {"W005", "Hoàng Minh Tuấn", "黃明俊", "越南", "team_a", "false", "tier1_foreign", "28590", "8800", "1200", "AD88123455", "C9823105", "2027-08-31", "已納保 (勞/健/職災)", "八德有機蔬菜專區 溫室翻土整畦", "dispatched_field", "0988-111-226"},
-                {"W006", "Agus Santoso", "阿迪", "印尼", "team_b", "true", "tier1_foreign", "28590", "8800", "1200", "AD77234561", "X8812301", "2027-06-30", "已納保 (勞/健/職災)", "枋山愛文芒果園 套袋疏果與外銷採收", "dispatched_field", "0988-222-333"},
-                {"W007", "Budi Setiawan", "布迪", "印尼", "team_b", "false", "tier1_foreign", "28590", "8800", "1200", "AD77234562", "X8812302", "2027-06-30", "已納保 (勞/健/職災)", "枋山愛文芒果園 剪枝留蒂與果品初選", "dispatched_field", "0988-222-334"},
-                {"W008", "Dewi Lestari", "蒂薇", "印尼", "team_b", "false", "tier1_foreign", "28590", "8800", "1200", "AD77234563", "X8812303", "2027-06-30", "已納保 (勞/健/職災)", "枋山愛文芒果園 防菌果袋封口", "dispatched_field", "0988-222-335"},
-                {"W009", "Eko Prasetyo", "艾科", "印尼", "team_b", "false", "tier1_foreign", "28590", "8800", "1200", "AD77234564", "X8812304", "2027-06-30", "已納保 (勞/健/職災)", "宜蘭三星青蔥田 洗蔥與分級束捆", "dispatched_field", "0988-222-336"},
-                {"W010", "Fajar Hidayat", "法賈", "印尼", "team_b", "false", "tier1_foreign", "28590", "8800", "1200", "AD77234565", "X8812305", "2027-06-30", "已納保 (勞/健/職災)", "宜蘭三星青蔥田 拔蔥與田間裝簍", "dispatched_field", "0988-222-337"},
-                {"W011", "Gita Pratama", "吉塔", "印尼", "team_b", "false", "tier1_foreign", "28590", "8800", "1200", "AD77234566", "X8812306", "2027-06-30", "已納保 (勞/健/職災)", "宜蘭三星青蔥田 水洗機操作與套袋", "dispatched_field", "0988-222-338"},
-                {"W012", "陳建宏", "陳建宏", "本國", "team_c", "true", "tier3_turnkey", "45000", "8800", "3000", "本國身分證", "312456789", "永久有效", "已納保 (勞保/職災/雇主責任險)", "新竹峨眉茶園 植保機無人機精準代噴", "dispatched_field", "0988-333-444"},
-                {"W013", "林志強", "林志強", "本國", "team_c", "false", "tier3_turnkey", "42000", "8800", "3000", "本國身分證", "312456790", "永久有效", "已納保 (勞保/職災/雇主責任險)", "大溪溫室群 大疆T50巡檢與代噴", "dispatched_field", "0988-333-445"},
-                {"W014", "Đặng Văn Lâm", "鄧文林", "越南", "team_c", "false", "tier1_foreign", "29500", "8800", "1200", "AD88123456", "C9823106", "2027-09-15", "已納保 (勞/健/職災)", "資材維護所 噴嘴超音波清洗與混藥", "dispatched_field", "0988-333-446"},
-                {"W015", "Hadi Wijaya", "哈迪", "印尼", "team_c", "false", "tier1_foreign", "29500", "8800", "1200", "AD77234567", "X8812307", "2027-09-15", "已納保 (勞/健/職災)", "機耕隊 曳引機整地翻土隨車輔助", "dispatched_field", "0988-333-447"},
-                {"W016", "Phạm Thị Hồng", "范氏紅", "越南", "team_d", "true", "tier1_foreign", "29000", "8800", "1200", "AD88123457", "C9823107", "2027-11-20", "已納保 (勞/健/職災)", "八德蔬果冷鏈包裝中心 外銷精密秤重分級", "hedged_indoor", "0988-444-555"},
-                {"W017", "Vũ Thị Hương", "武氏香", "越南", "team_d", "false", "tier1_foreign", "28590", "8800", "1200", "AD88123458", "C9823108", "2027-11-20", "已納保 (勞/健/職災)", "八德蔬果冷鏈中心 預冷降溫與套袋", "hedged_indoor", "0988-444-556"},
-                {"W018", "Siti Rahma", "西蒂", "印尼", "team_d", "false", "tier1_foreign", "28590", "8800", "1200", "AD77234568", "X8812308", "2027-11-20", "已納保 (勞/健/職災)", "八德蔬果冷鏈中心 外銷紙箱組裝貼標", "hedged_indoor", "0988-444-557"},
-                {"W019", "Nurul Aini", "努魯", "印尼", "team_d", "false", "tier1_foreign", "28590", "8800", "1200", "AD77234569", "X8812309", "2027-11-20", "已納保 (勞/健/職災)", "八德蔬果冷鏈中心 光波選果機操作", "hedged_indoor", "0988-444-558"},
-                {"W020", "Somchai Prasert", "宋猜", "泰國", "team_d", "false", "tier1_foreign", "28590", "8800", "1200", "AD66345671", "T5512301", "2027-12-10", "已納保 (勞/健/職災)", "冷鏈常態組 低溫冷藏庫棧板堆疊", "hedged_indoor", "0988-444-559"},
-                {"W021", "黃慶龍", "黃慶龍", "本國", "team_a", "false", "tier2_local_flex", "33000", "8800", "2000", "本國身分證", "312456791", "永久有效", "已納保 (勞保/職災險)", "桃園八德 兼職採收與運搬支援", "standby", "0911-333-222"},
-                {"W022", "李麗珠", "李麗珠", "本國", "team_a", "false", "tier2_local_flex", "31000", "8800", "1800", "本國身分證", "312456792", "永久有效", "已納保 (勞保/職災險)", "大溪彩椒園 彈性兼職整枝摘果", "standby", "0922-444-333"},
-                {"W023", "Maria Santos", "瑪麗亞", "菲律賓", "team_b", "false", "tier1_foreign", "28590", "8800", "1200", "AD55456781", "P4412301", "2028-01-15", "已納保 (勞/健/職災)", "枋山愛文芒果產區 外銷果品裝箱", "dispatched_field", "0988-222-339"},
-                {"W024", "Korn Somsak", "阿頌", "泰國", "team_b", "false", "tier1_foreign", "28590", "8800", "1200", "AD66345672", "T5512302", "2028-01-15", "已納保 (勞/健/職災)", "宜蘭三星青蔥專區 清晨拔蔥出勤", "dispatched_field", "0988-222-340"},
-                {"W025", "張天成", "張天成", "本國", "team_c", "false", "tier3_turnkey", "43500", "8800", "3000", "本國身分證", "312456793", "永久有效", "已納保 (勞保/職災/雇主責任險)", "水稻與雜糧專區 80馬力曳引機深耕整地", "dispatched_field", "0933-555-666"},
-                {"W026", "林小祥", "林小祥", "本國", "team_b", "true", "tier2_local_flex", "42000", "8000", "2800", "本國身分證", "312456794", "永久有效", "已納保 (勞保/職災/雇主責任險)", "外展帶隊小工頭 帶領6名外勞於枋山芒果園作業與品質驗收", "dispatched_field", "0918-668-999"},
-                {"W030", "張志明", "張志明", "本國", "team_a", "false", "tier2_local_flex", "28590", "8800", "2400", "本國身分證", "312456795", "永久有效", "已納保 (勞保/健保/6%勞退)", "合作社在籍農業勞務員 八德有機蔬菜專區田間採收與出勤", "dispatched_field", "0975-123-456"}
+                {"W001", "Nguyễn Văn Hùng", "阮文雄", "越南", "team_a", "true", "tier1_foreign", "MIN", "BONUS", "1200", "AD88123451", "C9823101", "2027-08-31", "已納保 (勞/健/職災)", "八德有機蔬菜專區 採收與修葉分級", "dispatched_field", "0988-111-222"},
+                {"W002", "Trần Văn Bình", "陳文平", "越南", "team_a", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD88123452", "C9823102", "2027-08-31", "已納保 (勞/健/職災)", "八德有機蔬菜專區 溫室採收裝箱", "dispatched_field", "0988-111-223"},
+                {"W003", "Lê Thị Mai", "黎氏梅", "越南", "team_a", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD88123453", "C9823103", "2027-08-31", "已納保 (勞/健/職災)", "八德有機蔬菜專區 生鮮小包裝貼標", "dispatched_field", "0988-111-224"},
+                {"W004", "Phạm Văn Đức", "范文德", "越南", "team_a", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD88123454", "C9823104", "2027-08-31", "已納保 (勞/健/職災)", "八德有機蔬菜專區 搬運上埂裝車", "dispatched_field", "0988-111-225"},
+                {"W005", "Hoàng Minh Tuấn", "黃明俊", "越南", "team_a", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD88123455", "C9823105", "2027-08-31", "已納保 (勞/健/職災)", "八德有機蔬菜專區 溫室翻土整畦", "dispatched_field", "0988-111-226"},
+                {"W006", "Agus Santoso", "阿迪", "印尼", "team_b", "true", "tier1_foreign", "MIN", "BONUS", "1200", "AD77234561", "X8812301", "2027-06-30", "已納保 (勞/健/職災)", "枋山愛文芒果園 套袋疏果與外銷採收", "dispatched_field", "0988-222-333"},
+                {"W007", "Budi Setiawan", "布迪", "印尼", "team_b", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD77234562", "X8812302", "2027-06-30", "已納保 (勞/健/職災)", "枋山愛文芒果園 剪枝留蒂與果品初選", "dispatched_field", "0988-222-334"},
+                {"W008", "Dewi Lestari", "蒂薇", "印尼", "team_b", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD77234563", "X8812303", "2027-06-30", "已納保 (勞/健/職災)", "枋山愛文芒果園 防菌果袋封口", "dispatched_field", "0988-222-335"},
+                {"W009", "Eko Prasetyo", "艾科", "印尼", "team_b", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD77234564", "X8812304", "2027-06-30", "已納保 (勞/健/職災)", "宜蘭三星青蔥田 洗蔥與分級束捆", "dispatched_field", "0988-222-336"},
+                {"W010", "Fajar Hidayat", "法賈", "印尼", "team_b", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD77234565", "X8812305", "2027-06-30", "已納保 (勞/健/職災)", "宜蘭三星青蔥田 拔蔥與田間裝簍", "dispatched_field", "0988-222-337"},
+                {"W011", "Gita Pratama", "吉塔", "印尼", "team_b", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD77234566", "X8812306", "2027-06-30", "已納保 (勞/健/職災)", "宜蘭三星青蔥田 水洗機操作與套袋", "dispatched_field", "0988-222-338"},
+                {"W012", "陳建宏", "陳建宏", "本國", "team_c", "true", "tier3_turnkey", "45000", "BONUS", "3000", "", "312456789", "永久有效", "已納保 (勞保/職災/雇主責任險)", "新竹峨眉茶園 植保機無人機精準代噴", "dispatched_field", "0988-333-444"},
+                {"W013", "林志強", "林志強", "本國", "team_c", "false", "tier3_turnkey", "42000", "BONUS", "3000", "", "312456790", "永久有效", "已納保 (勞保/職災/雇主責任險)", "大溪溫室群 大疆T50巡檢與代噴", "dispatched_field", "0988-333-445"},
+                {"W014", "Đặng Văn Lâm", "鄧文林", "越南", "team_c", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD88123456", "C9823106", "2027-09-15", "已納保 (勞/健/職災)", "資材維護所 噴嘴超音波清洗與混藥", "dispatched_field", "0988-333-446"},
+                {"W015", "Hadi Wijaya", "哈迪", "印尼", "team_c", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD77234567", "X8812307", "2027-09-15", "已納保 (勞/健/職災)", "機耕隊 曳引機整地翻土隨車輔助", "dispatched_field", "0988-333-447"},
+                {"W016", "Phạm Thị Hồng", "范氏紅", "越南", "team_d", "true", "tier1_foreign", "MIN", "BONUS", "1200", "AD88123457", "C9823107", "2027-11-20", "已納保 (勞/健/職災)", "八德蔬果冷鏈包裝中心 外銷精密秤重分級", "hedged_indoor", "0988-444-555"},
+                {"W017", "Vũ Thị Hương", "武氏香", "越南", "team_d", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD88123458", "C9823108", "2027-11-20", "已納保 (勞/健/職災)", "八德蔬果冷鏈中心 預冷降溫與套袋", "hedged_indoor", "0988-444-556"},
+                {"W018", "Siti Rahma", "西蒂", "印尼", "team_d", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD77234568", "X8812308", "2027-11-20", "已納保 (勞/健/職災)", "八德蔬果冷鏈中心 外銷紙箱組裝貼標", "hedged_indoor", "0988-444-557"},
+                {"W019", "Nurul Aini", "努魯", "印尼", "team_d", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD77234569", "X8812309", "2027-11-20", "已納保 (勞/健/職災)", "八德蔬果冷鏈中心 光波選果機操作", "hedged_indoor", "0988-444-558"},
+                {"W020", "Somchai Prasert", "宋猜", "泰國", "team_d", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD66345671", "T5512301", "2027-12-10", "已納保 (勞/健/職災)", "冷鏈常態組 低溫冷藏庫棧板堆疊", "hedged_indoor", "0988-444-559"},
+                {"W021", "黃慶龍", "黃慶龍", "本國", "team_a", "false", "tier2_local_flex", "33000", "BONUS", "2000", "", "312456791", "永久有效", "已納保 (勞保/職災險)", "桃園八德 兼職採收與運搬支援", "standby", "0911-333-222"},
+                {"W022", "李麗珠", "李麗珠", "本國", "team_a", "false", "tier2_local_flex", "31000", "BONUS", "1800", "", "312456792", "永久有效", "已納保 (勞保/職災險)", "大溪彩椒園 彈性兼職整枝摘果", "standby", "0922-444-333"},
+                {"W023", "Maria Santos", "瑪麗亞", "菲律賓", "team_b", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD55456781", "P4412301", "2028-01-15", "已納保 (勞/健/職災)", "枋山愛文芒果產區 外銷果品裝箱", "dispatched_field", "0988-222-339"},
+                {"W024", "Korn Somsak", "阿頌", "泰國", "team_b", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD66345672", "T5512302", "2028-01-15", "已納保 (勞/健/職災)", "宜蘭三星青蔥專區 清晨拔蔥出勤", "dispatched_field", "0988-222-340"},
+                {"W025", "張天成", "張天成", "本國", "team_c", "false", "tier3_turnkey", "43500", "BONUS", "3000", "", "312456793", "永久有效", "已納保 (勞保/職災/雇主責任險)", "水稻與雜糧專區 80馬力曳引機深耕整地", "dispatched_field", "0933-555-666"},
+                {"W026", "林小祥", "林小祥", "本國", "team_b", "true", "tier2_local_flex", "42000", "8000", "2800", "", "312456794", "永久有效", "已納保 (勞保/職災/雇主責任險)", "外展帶隊小工頭 帶領6名外勞於枋山芒果園作業與品質驗收", "dispatched_field", "0918-668-999"},
+                {"W030", "張志明", "張志明", "本國", "team_a", "false", "tier2_local_flex", "MIN", "BONUS", "2400", "", "312456795", "永久有效", "已納保 (勞保/健保/6%勞退)", "合作社在籍農業勞務員 八德有機蔬菜專區田間採收與出勤", "dispatched_field", "0975-123-456"}
             };
 
             for (String[] rw : raw) {
+                if (workerRepository.existsById(rw[0])) continue; // 依 ID 補缺，不覆蓋既有資料
                 boolean isLeader = Boolean.parseBoolean(rw[5]);
-                int baseSalary = Integer.parseInt(rw[7]);
-                int agriBonus = Integer.parseInt(rw[8]);
+                int baseSalary = "MIN".equals(rw[7]) ? LaborConstants.MIN_MONTHLY_WAGE : Integer.parseInt(rw[7]);
+                int agriBonus = "BONUS".equals(rw[8]) ? LaborConstants.AGRI_EMPLOYMENT_BONUS : Integer.parseInt(rw[8]);
                 int transport = Integer.parseInt(rw[9]);
+                String arc = rw[10].isEmpty() ? null : rw[10];
                 workerRepository.save(new Worker(rw[0], rw[1], rw[2], rw[3], rw[4], isLeader, rw[6],
-                        baseSalary, agriBonus, transport, rw[10], rw[11], rw[12], rw[13], rw[14], rw[15], rw[16]));
+                        baseSalary, agriBonus, transport, arc, rw[11], rw[12], rw[13], rw[14], rw[15], rw[16]));
             }
         }
     }
 
     private void seedOrders() {
-        if (orderRepository.count() == 0) {
-            orderRepository.saveAll(List.of(
+        {
+            List<Order> orders = List.of(
                 createOrder("ORD-2026-001", "陳建龍 (阿龍班長)", "0912-345-678", "桃園市八德區興豐路有機蔬菜專區",
                         "taoyuan_veg", "桃園溫室有機蔬菜 (八德)", 5.0, "early_bird", "【Tier 1】產季早鳥工時包 (9折保證出工)",
                         "harvest_grading", "【採收分級】田間採收與外銷分級",
@@ -243,7 +392,10 @@ public class SeedService {
                         "tillage_planting", "【整地種植】曳引機深耕與定植",
                         "許世芳 (溪州機耕隊長)", "0938-777-888", "大型曳引機翻土作業，請依地籍圖作畦",
                         "cross_region", 1200, 150, 4, 310, 47700, 45375, 13253, true, "completed", "team_c", "2026-09-10 09:00:00")
-            ));
+            );
+            // 示範農場主 F001（陳建龍）的訂單
+            orders.get(0).setFarmerId("F001");
+            saveMissing(orderRepository, orders, Order::getId);
         }
     }
 
@@ -285,8 +437,8 @@ public class SeedService {
     }
 
     private void seedTalents() {
-        if (talentRepository.count() == 0) {
-            talentRepository.saveAll(List.of(
+        {
+            saveMissing(talentRepository, List.of(
                 new Talent("TAL-001", "陳文義", "local_driver", "本國大型農機/曳引機駕駛員 (Tier 3)",
                         "0933-222-111", "具備 80 馬力曳引機 5 年耕作經驗、北部蔬菜溫室整地熟練", true, "2026-09-18 14:20:00"),
                 new Talent("TAL-002", "劉家銘", "drone_pilot", "本國專業植保機/無人機手 (Tier 3)",
@@ -303,12 +455,12 @@ public class SeedService {
                         "0929-111-444", "八德有機產銷班包裝線熟手、光波秤重與外銷貼標作業專精", true, "2026-09-22 13:25:00"),
                 new Talent("TAL-008", "王冠宇", "drone_pilot", "本國專業植保機/無人機手 (Tier 3)",
                         "0963-888-999", "具備大面積果園與茶園無人機低空精準代噴 3 年經驗", true, "2026-09-22 17:00:00")
-            ));
+            ), Talent::getId);
         }
     }
 
     private void seedBrochures() {
-        if (brochureRepository.count() == 0) {
+        {
             Brochure dm1 = new Brochure(
                 "dm-mango-2026",
                 "【屏東枋山外銷愛文芒果】產季早鳥保證出工 60 工時包",
@@ -433,12 +585,12 @@ public class SeedService {
                 "2026-09-04"
             );
 
-            brochureRepository.saveAll(List.of(dm1, dm2, dm3, dm4));
+            saveMissing(brochureRepository, List.of(dm1, dm2, dm3, dm4), Brochure::getId);
         }
     }
 
     private void seedWeatherStates() {
-        if (weatherStateRepository.count() == 0) {
+        {
             String defaultRegions = "[{\"region\":\"屏東枋山\",\"crop\":\"🥭 愛文芒果專區\",\"temp\":\"30°C\",\"icon\":\"⛅\",\"condition\":\"多雲時晴\",\"rainChance\":\"20%\",\"humidity\":\"68%\",\"uv\":\"中量 (6)\",\"advice\":\"果園採收與套袋作業正常推進，果實外觀品相優良。\"},{\"region\":\"桃園八德\",\"crop\":\"🥬 設施有機蔬菜\",\"temp\":\"26°C\",\"icon\":\"⛅\",\"condition\":\"多雲舒適\",\"rainChance\":\"20%\",\"humidity\":\"68%\",\"uv\":\"中量 (5)\",\"advice\":\"溫室通風良好，持續精緻修葉分級與生鮮冷鏈直配。\"},{\"region\":\"宜蘭三星\",\"crop\":\"🌱 三星青蔥專班\",\"temp\":\"25°C\",\"icon\":\"⛅\",\"condition\":\"陰天多雲\",\"rainChance\":\"25%\",\"humidity\":\"75%\",\"uv\":\"低量 (4)\",\"advice\":\"氣溫涼爽極利拔蔥，洗蔥機水線高效作業中。\"},{\"region\":\"雲林元長\",\"crop\":\"🫑 設施彩椒專區\",\"temp\":\"28°C\",\"icon\":\"⛅\",\"condition\":\"多雲微風\",\"rainChance\":\"15%\",\"humidity\":\"65%\",\"uv\":\"中量 (6)\",\"advice\":\"設施內溫度適宜，進行吊蔓修葉與病蟲害巡視。\"},{\"region\":\"新竹峨眉\",\"crop\":\"🍵 東方美人茶園\",\"temp\":\"26°C\",\"icon\":\"⛅\",\"condition\":\"多雲風輕\",\"rainChance\":\"15%\",\"humidity\":\"65%\",\"uv\":\"中量 (5)\",\"advice\":\"適合大疆 T50 執行大面積超低空精準施肥作業。\"}]";
 
             WeatherState wsActive = new WeatherState(
@@ -483,11 +635,12 @@ public class SeedService {
                     java.time.LocalDateTime.now()
             );
 
-            weatherStateRepository.saveAll(java.util.List.of(wsActive, wsSunny, wsRain));
+            saveMissing(weatherStateRepository, java.util.List.of(wsActive, wsSunny, wsRain), WeatherState::getId);
         }
     }
 
     private void seedAttendance() {
+        // 出勤紀錄為自動編號，無法依 ID 補缺：僅在完全無資料時灌入示範紀錄
         if (attendanceRepository.count() == 0) {
             java.time.LocalDate today = java.time.LocalDate.now();
             java.time.LocalDate yest = today.minusDays(1);

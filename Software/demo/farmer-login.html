@@ -393,8 +393,8 @@
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                identifier: form.identifier || 'farmer',
-                password: form.password || '123456'
+                identifier: form.identifier || (demoCfg && demoCfg.defaultIdentifier) || 'farmer',
+                password: form.password || (demoCfg && demoCfg.defaultPassword) || ''
               }),
               signal: controller.signal
             });

@@ -24,14 +24,7 @@ public class DispatchController {
 
     @GetMapping("/weather-state")
     public ResponseEntity<?> getWeatherState() {
-        Map<String, Object> state = new LinkedHashMap<>();
-        state.put("scenarioId", dispatchService.getCurrentScenarioId());
-        state.put("isRainMode", dispatchService.isRainMode());
-        state.put("currentWeather", dispatchService.getCurrentWeather());
-        state.put("alertLevel", dispatchService.getAlertLevel());
-        state.put("weatherMessage", dispatchService.getWeatherMessage());
-        state.put("regionalWeather", dispatchService.getRegionalWeather());
-        return ResponseEntity.ok(Map.of("success", true, "data", state));
+        return ResponseEntity.ok(Map.of("success", true, "data", dispatchService.getWeatherStateSnapshot()));
     }
 
     @PostMapping("/weather-scenario")
@@ -65,13 +58,8 @@ public class DispatchController {
 
     @PutMapping("/teams/{id}")
     public ResponseEntity<?> updateTeam(@PathVariable String id, @RequestBody DispatchTeam team) {
-        try {
-            DispatchTeam updated = dispatchService.updateTeam(id, team);
-            return ResponseEntity.ok(Map.of("success", true, "data", updated, "message", "成功更新工班資訊"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("success", false, "error", e.getMessage()));
-        }
+        DispatchTeam updated = dispatchService.updateTeam(id, team);
+        return ResponseEntity.ok(Map.of("success", true, "data", updated, "message", "成功更新工班資訊"));
     }
 
     @PostMapping("/weather-switch")

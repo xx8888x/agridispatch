@@ -311,7 +311,7 @@
             return;
           }
 
-          // demo 模式：維持既有免密展示體驗，後端在線則同步真實 token/user
+          // demo 模式：維持既有快速展示體驗，後端在線則同步真實 token/user
           const org = form.value.org || 'tech';
           const email = form.value.email || (demoCfg && demoCfg.profiles[0].email) || 'admin@agridispatch.tw';
           const matched = demoCfg && demoCfg.profiles.find(p => p.email === email);

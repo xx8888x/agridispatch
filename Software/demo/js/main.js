@@ -111,6 +111,23 @@ document.addEventListener('DOMContentLoaded', () => {
     currentLang = window.AgriNativeBridge.getSystemLanguage();
   }
 
+  // 僅 demo 模式顯示示範帳密提示（正式版不洩漏任何帳密資訊）
+  const isDemoPage = window.AgriAuth ? window.AgriAuth.MODE !== 'production' : true;
+  const legacyAccounts = window.AGRI_DEMO_ACCOUNTS && window.AGRI_DEMO_ACCOUNTS.legacyApp;
+  if (isDemoPage && legacyAccounts) {
+    const hintMap = {
+      'hint-farmer': legacyAccounts.farmer,
+      'hint-worker-foreign': legacyAccounts.worker_foreign,
+      'hint-worker-local': legacyAccounts.worker_local,
+      'hint-admin-tech': legacyAccounts.admin_tech
+    };
+    Object.keys(hintMap).forEach((id) => {
+      const el = document.getElementById(id);
+      const acc = hintMap[id];
+      if (el && acc) el.textContent = `帳號: ${acc.username} / 密碼: ${acc.password}`;
+    });
+  }
+
   // 處理 URL Hash
   const hash = window.location.hash.replace('#', '');
   if (['farmer', 'worker_foreign', 'worker_local', 'admin_tech', 'showcase'].includes(hash)) {
@@ -205,18 +222,18 @@ async function quickLogin(role) {
   closeLoginModal();
   switchUserRole(role);
 
-  const creds = {
-    farmer: { username: 'farmer', password: '123456' },
-    worker_foreign: { username: 'worker_foreign', password: '123456' },
-    worker_local: { username: 'worker_local', password: '123456' },
-    admin_tech: { username: 'admin_tech', password: 'admin888' }
-  };
+  const legacyAccounts = (window.AGRI_DEMO_ACCOUNTS && window.AGRI_DEMO_ACCOUNTS.legacyApp) || {};
+  const cred = legacyAccounts[role];
+  if (!cred) {
+    showNotification(`🔑 已切換至【${role}】專屬版本（展示模式）`);
+    return;
+  }
 
   try {
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(creds[role])
+      body: JSON.stringify({ identifier: cred.username, password: cred.password })
     });
     const data = await res.json();
     if (data.success) {

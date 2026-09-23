@@ -279,16 +279,16 @@ public class PaymentService {
         m1.put("id", "credit_card");
         m1.put("name", "綠界 ECPay 信用卡 / 3D 快速刷卡");
         m1.put("icon", "💳");
-        m1.put("fee", "0 元 (平台吸收手續費)");
-        m1.put("desc", "支援 Visa, MasterCard, JCB，全程 SSL 256-bit 加密安全認證");
+        m1.put("fee", "手續費依金流合約【待定】");
+        m1.put("desc", "經綠界 ECPay 付款頁刷卡（支援 Visa / MasterCard / JCB）");
         list.add(m1);
 
         Map<String, Object> m2 = new HashMap<>();
         m2.put("id", "line_pay");
-        m2.put("name", "LINE Pay 行動支付");
+        m2.put("name", "LINE Pay 行動支付（尚未串接）");
         m2.put("icon", "💚");
-        m2.put("fee", "0 元 (享 LINE POINTS 回饋)");
-        m2.put("desc", "雙擊即掃碼結帳，綁定手機免輸入卡號");
+        m2.put("fee", "手續費依金流合約【待定】");
+        m2.put("desc", "需另行申請 LINE Pay 特約商店並串接 API；目前僅展示模式模擬");
         list.add(m2);
 
         Map<String, Object> m3 = new HashMap<>();
@@ -296,7 +296,7 @@ public class PaymentService {
         m3.put("name", "ATM 虛擬帳號 / 跨行轉帳");
         m3.put("icon", "🏧");
         m3.put("fee", "依各銀行跨行費率");
-        m3.put("desc", "自動生成個人專屬 16 碼虛擬帳號，轉帳完成 3 秒內自動核銷");
+        m3.put("desc", "經綠界 ECPay 產生虛擬帳號，入帳後由綠界通知自動核銷");
         list.add(m3);
 
         return list;

@@ -166,7 +166,7 @@
                 <p class="font-bold text-emerald-800 flex items-center gap-1">
                   <span>👋</span> 歡迎加入智農派工官方助理！
                 </p>
-                <p>我們是台灣唯一合法特許外展農務移工智慧調度體系。免安裝 App，您可透過下方 <b>6宮格圖文選單</b> 體驗：</p>
+                <p>我們是台灣唯一合法外展農務移工智慧調度體系。免安裝 App，您可透過下方 <b>6宮格圖文選單</b> 體驗：</p>
                 <ul class="list-disc list-inside text-[11px] text-slate-600 space-y-0.5">
                   <li>📋 查閱今日出工與專車司機</li>
                   <li>🌧️ 突發暴雨室內冷鏈避險通報</li>
@@ -631,7 +631,7 @@
           { cmd: '緊急廣播', icon: '📢', title: '全區緊急廣播', desc: '暴雨冷鏈防颱指令', bg: 'from-blue-950 to-slate-900', titleCol: 'text-blue-300', descCol: 'text-blue-400/80', border: 'border-blue-900/40' },
           { cmd: '智慧調度', icon: '⚡', title: '一鍵智慧調度', desc: '演算法排班 / 缺工補位', bg: 'from-amber-950 to-slate-900', titleCol: 'text-amber-300', descCol: 'text-amber-400/80', border: 'border-amber-900/40' },
           { cmd: '雙軌金流', icon: '💵', title: '雙軌金流帳務', desc: '18%代管發票 / 82%流水帳', bg: 'from-emerald-950 to-slate-900', titleCol: 'text-emerald-300', descCol: 'text-emerald-400/80', border: 'border-emerald-500/40' },
-          { cmd: '特許合規', icon: '🛡️', title: '移工特許合規', desc: '全員職災投保 / 農業部稽核', bg: 'from-purple-950 to-slate-900', titleCol: 'text-purple-300', descCol: 'text-purple-400/80', border: 'border-purple-900/40' },
+          { cmd: '外展合規', icon: '🛡️', title: '移工外展合規', desc: '全員職災投保 / 農業部稽核', bg: 'from-purple-950 to-slate-900', titleCol: 'text-purple-300', descCol: 'text-purple-400/80', border: 'border-purple-900/40' },
           { cmd: 'DM管理', icon: '📑', title: '文宣DM發布', desc: '4大工時包促銷 / 審核上架', bg: 'from-slate-800 to-slate-900', titleCol: 'text-white', descCol: 'text-slate-400', border: 'border-slate-800' }
         ],
         chips: [
@@ -639,7 +639,7 @@
           { cmd: '緊急廣播', icon: '📢', text: '緊急廣播', color: 'text-blue-300' },
           { cmd: '智慧調度', icon: '⚡', text: '演算法調度', color: 'text-amber-300' },
           { cmd: '雙軌金流', icon: '💵', text: '18% 營收分流', color: 'text-emerald-300' },
-          { cmd: '特許合規', icon: '🛡️', text: '合規投保名冊', color: 'text-purple-300' }
+          { cmd: '外展合規', icon: '🛡️', text: '合規投保名冊', color: 'text-purple-300' }
         ]
       }
     };
@@ -1212,7 +1212,7 @@
         renderFlexCard(buildAdminAlgorithmDispatchFlex());
       } else if (clean.includes('雙軌金流帳務') || clean.includes('雙軌金流') || clean.includes('18% 營收分流') || clean.includes('金流') || clean.includes('18%') || clean.includes('82%') || clean.includes('代收轉付') || clean.includes('發票')) {
         renderFlexCard(buildAdminDualTrackFinanceFlex());
-      } else if (clean.includes('移工特許合規') || clean.includes('特許合規') || clean.includes('合規投保名冊') || clean.includes('合規') || clean.includes('職災納保') || clean.includes('名冊') || clean.includes('農業部')) {
+      } else if (clean.includes('移工外展合規') || clean.includes('外展合規') || clean.includes('合規投保名冊') || clean.includes('合規') || clean.includes('職災納保') || clean.includes('名冊') || clean.includes('農業部')) {
         renderFlexCard(buildAdminComplianceFlex());
       } else if (clean.includes('文宣dm發布') || clean.includes('dm管理') || clean.includes('dm') || clean.includes('文宣') || clean.includes('旋轉木馬') || clean.includes('促銷')) {
         renderFlexCard(buildAdminDmManagementFlex());
@@ -1309,7 +1309,7 @@
               { layout: 'baseline', contents: [{ text: '🍍 嘉義民雄金鑽鳳梨', color: '#64748B' }, { text: '倒數 25 天 (6/15 採收分級)', color: '#D97706' }] },
               { layout: 'baseline', contents: [{ text: '🍉 雲林二崙大西瓜', color: '#64748B' }, { text: '倒數 35 天 (6/25 搶收出貨)', color: '#047857' }] },
               { layout: 'baseline', contents: [{ text: '出工稼動率', color: '#64748B' }, { text: '98.5% (全台搶工高峰・日薪破 $3,500)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '調度建議', color: '#64748B' }, { text: '立即鎖定早鳥工時包，保證特許移工出工', color: '#2563EB' }] }
+              { layout: 'baseline', contents: [{ text: '調度建議', color: '#64748B' }, { text: '立即鎖定早鳥工時包，保證外展移工出工', color: '#2563EB' }] }
             ]
           },
           footer: {
@@ -1329,9 +1329,9 @@
           header: {
             backgroundColor: '#312E81',
             contents: [
-              { text: '在籍特許外展工班・即時人力戰情', color: '#C7D2FE', size: 'xs', weight: 'bold' },
+              { text: '在籍外展工班・即時人力戰情', color: '#C7D2FE', size: 'xs', weight: 'bold' },
               { text: '在籍人員 25 名 (100% 納保合規)', color: '#FFFFFF', size: 'xl', weight: 'bold' },
-              { text: '特許外展移工 20 名 ╳ 本國機耕師與兼職 5 名', color: '#E0E7FF', size: 'xs', weight: 'normal' }
+              { text: '外展移工 20 名 ╳ 本國機耕師與兼職 5 名', color: '#E0E7FF', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
@@ -1582,7 +1582,7 @@
             contents: [
               { text: '💰 Tiền lương & Trợ cấp 8.800 NTD ｜ 薪資津貼明細', color: '#FDE68A', size: 'xs', weight: 'bold' },
               { text: '阮文雄 (Nguyễn Văn Hùng) ｜ 本月明細', color: '#FFFFFF', size: 'xl', weight: 'bold' },
-              { text: '外展特許案號 #AG-V082 ｜ 雙軌合規入帳', color: '#FEF3C7', size: 'xs', weight: 'normal' }
+              { text: '外展案號 #AG-V082 ｜ 雙軌合規入帳', color: '#FEF3C7', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
@@ -1684,7 +1684,7 @@
               { layout: 'baseline', contents: [{ text: '🏥 合作特約診所', color: '#64748B' }, { text: '枋山安康診所 (支援多語醫護通譯)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '⚖️ 勞動部 1955', color: '#64748B' }, { text: '1955 移工免付費 24H 雙語申訴專線', color: '#DC2626' }] },
               { layout: 'baseline', contents: [{ text: '👷 現場帶工領班', color: '#64748B' }, { text: '林小祥 (0921-999-888，現場急難第1聯繫人)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '🛡️ 承諾保障', color: '#64748B' }, { text: '合法外展特許名額，享有 100% 法律保障', color: '#047857' }] }
+              { layout: 'baseline', contents: [{ text: '🛡️ 承諾保障', color: '#64748B' }, { text: '外展名額依法申請中，依法提供勞動保障', color: '#047857' }] }
             ]
           },
           footer: {
@@ -1902,7 +1902,7 @@
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '👥 在籍合法農工', color: '#64748B' }, { text: '26 人 (特許移工 21 + 本國機耕 5，出勤率 100%)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '👥 在籍合法農工', color: '#64748B' }, { text: '26 人 (外展移工 21 + 本國機耕 5，出勤率 100%)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '💰 本月撮合產值', color: '#64748B' }, { text: 'NT$ 1,486,000 (科技服務代管費 18%)', color: '#047857' }] },
               { layout: 'baseline', contents: [{ text: '⚡ 演算法稼動率', color: '#64748B' }, { text: '98.6% (零閒置、零非法轉派黑工風險)', color: '#2563EB' }] },
               { layout: 'baseline', contents: [{ text: '🚐 專車接送運轉', color: '#64748B' }, { text: '4 輛中型接駁專車即時在線行駛中', color: '#0F172A' }] },
@@ -2005,7 +2005,7 @@
           footer: {
             contents: [
               { action: { label: '📥 下載會計師審定雙軌金流報告', uri: 'javascript:lineBotToast("✅ 雙軌金流合規報告下載完成 (PDF)！")' }, color: '#059669' },
-              { action: { label: '🛡️ 檢視外展特許合規名冊', uri: 'javascript:handleQuickCmd("特許合規")' }, color: '#7E22CE' }
+              { action: { label: '🛡️ 檢視外展合規名冊', uri: 'javascript:handleQuickCmd("外展合規")' }, color: '#7E22CE' }
             ]
           }
         }
@@ -2019,9 +2019,9 @@
           header: {
             backgroundColor: '#581C87',
             contents: [
-              { text: '🛡️ 農業部特許外展資格 ｜ 100% 合規清冊', color: '#E9D5FF', size: 'xs', weight: 'bold' },
+              { text: '🛡️ 外展資格申請中 ｜ 合規清冊', color: '#E9D5FF', size: 'xs', weight: 'bold' },
               { text: '外展許可字號：農輔字第 1130099888 號', color: '#FFFFFF', size: 'xl', weight: 'bold' },
-              { text: '農業部與勞動部雙重特許核准 ｜ 全台示範合作社', color: '#F3E8FF', size: 'xs', weight: 'normal' }
+              { text: '農業部與勞動部雙重外展資格申請中 ｜ 全台示範合作社', color: '#F3E8FF', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
@@ -2035,7 +2035,7 @@
           },
           footer: {
             contents: [
-              { action: { label: '📑 匯出主管機關查核備查名冊', uri: 'javascript:window.AgriDocs && window.AgriDocs.notify("📑 備查名冊", "農業部特許合規名冊已由資料庫即時產生 (CSV/PDF)！")' }, color: '#7E22CE' },
+              { action: { label: '📑 匯出主管機關查核備查名冊', uri: 'javascript:window.AgriDocs && window.AgriDocs.notify("📑 備查名冊", "農業部外展合規名冊已由資料庫即時產生 (CSV/PDF)！")' }, color: '#7E22CE' },
               { action: { label: '📊 檢視全區戰情大腦', uri: 'javascript:handleQuickCmd("全區戰情")' }, color: '#4F46E5' }
             ]
           }

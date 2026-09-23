@@ -87,7 +87,7 @@
                 <span class="font-extrabold text-lg tracking-tight text-white">智農派工</span>
                 <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-semibold">科技營運後台 (Admin)</span>
               </div>
-              <p class="hidden sm:block text-[11px] text-slate-400">特許外展合作社 ╳ 科技公司 18% 技術代管 ╳ 智慧演算法調度大腦</p>
+              <p class="hidden sm:block text-[11px] text-slate-400">外展合作社 ╳ 科技公司 18% 技術代管 ╳ 智慧演算法調度大腦</p>
             </div>
           </a>
         </div>
@@ -208,9 +208,9 @@
             <div class="flex items-center gap-2">
               <h1 class="text-base font-extrabold text-white">科技營運與派工調度管理後台</h1>
               <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-bold">Admin Console</span>
-              <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">雙軌特許架構</span>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">雙軌外展架構</span>
             </div>
-            <p class="text-xs text-slate-400 mt-0.5">合法特許在籍移工 ╳ 6大派工類別 ╳ 現場小工頭 ╳ 暴雨冷鏈避險 ╳ 主管機關送審名冊</p>
+            <p class="text-xs text-slate-400 mt-0.5">合法外展在籍移工 ╳ 6大派工類別 ╳ 現場小工頭 ╳ 暴雨冷鏈避險 ╳ 主管機關送審名冊</p>
           </div>
         </div>
 
@@ -778,7 +778,7 @@
           </div>
 
           <div class="p-3 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex flex-col justify-between">
-            <span class="text-slate-400 font-medium">特許外展移工 (Tier 1)</span>
+            <span class="text-slate-400 font-medium">外展移工 (Tier 1)</span>
             <div class="flex items-baseline gap-1 mt-1">
               <span class="text-2xl font-black text-emerald-400 font-mono">
                 {{ workers.filter(w => w.tier === 'tier1_foreign').length }}
@@ -825,7 +825,7 @@
               <span>👷</span> 外展農工與派遣名冊 (Foreign & Local Worker Dispatch Roster)
               <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono">已篩選 {{ filteredWorkers.length }} 位</span>
             </h2>
-            <p class="text-xs text-slate-400 mt-1">完整收錄農業部特許在籍移工、居留證號 (ARC)、護照、派遣狀態與工班即時動態</p>
+            <p class="text-xs text-slate-400 mt-1">完整收錄農業部外展在籍移工、居留證號 (ARC)、護照、派遣狀態與工班即時動態</p>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
             <button @click="exportWorkerCSV()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/40 font-bold text-xs shadow transition flex items-center gap-1.5" title="匯出勞動部與主管機關查驗名冊">
@@ -882,7 +882,7 @@
             <label class="block text-slate-400 mb-1">三層等級篩選</label>
             <select v-model="workerTierFilter" class="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
               <option value="">全部等級</option>
-              <option value="tier1_foreign">【Tier 1】外籍特許外展農工</option>
+              <option value="tier1_foreign">【Tier 1】外籍外展農工</option>
               <option value="tier2_local_flex">【Tier 2】本國帶隊領班 / 彈性工</option>
               <option value="tier3_turnkey">【Tier 3】本國專業機耕師/無人機手</option>
             </select>
@@ -1424,11 +1424,11 @@
           <div class="space-y-1">
             <div class="flex items-center gap-2">
               <span class="text-xl">💰</span>
-              <h2 class="text-base font-extrabold text-white">科技公司 ╳ 特許合作社「雙軌金流」營收大腦</h2>
+              <h2 class="text-base font-extrabold text-white">科技公司 ╳ 外展合作社「雙軌金流」營收大腦</h2>
               <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[10px] font-bold">18% vs 82% 分流</span>
             </div>
             <p class="text-xs text-slate-300">
-              科技公司合法收取 <strong class="text-indigo-300">18% 技術代管費</strong>（自研演算法、LINE Bot、天候避險大腦，開立發票供小農抵稅）；特許合作社平移收取 <strong class="text-emerald-300">82% 移工法定成本</strong>（基本工資、勞健保、6% 勞退）。
+              科技公司合法收取 <strong class="text-indigo-300">18% 技術代管費</strong>（自研演算法、LINE Bot、天候避險大腦，開立發票供小農抵稅）；外展合作社平移收取 <strong class="text-emerald-300">82% 移工法定成本</strong>（基本工資、勞健保、6% 勞退）。
             </p>
           </div>
           <div class="flex items-center gap-2 shrink-0">
@@ -1457,7 +1457,7 @@
           </div>
 
           <div class="p-4 rounded-2xl bg-slate-800/80 border border-emerald-500/40 flex flex-col justify-between shadow-md">
-            <span class="text-slate-400 font-medium">特許合作社 82% 法定平移</span>
+            <span class="text-slate-400 font-medium">外展合作社 82% 法定平移</span>
             <div class="flex items-baseline gap-1 mt-1">
               <span class="text-xl sm:text-2xl font-black text-emerald-400 font-mono">NT$ {{ coopShare.toLocaleString() }}</span>
             </div>
@@ -1539,7 +1539,7 @@
               <div>
                 <div class="flex items-center justify-between mb-1">
                   <span class="text-slate-300 font-semibold">🧺 採收搬運與套袋 (外展農工)</span>
-                  <span class="font-mono text-emerald-400 font-bold">38% (NT$ 3,517,660)</span>
+                  <span class="font-mono text-emerald-400 font-bold">38% (NT$ 3,089,780)</span>
                 </div>
                 <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
                   <div class="h-full bg-emerald-500 rounded-full" style="width: 38%"></div>
@@ -1549,7 +1549,7 @@
               <div>
                 <div class="flex items-center justify-between mb-1">
                   <span class="text-slate-300 font-semibold">🚁 大型無人機精準植保 (代噴機隊)</span>
-                  <span class="font-mono text-indigo-400 font-bold">24% (NT$ 2,221,680)</span>
+                  <span class="font-mono text-indigo-400 font-bold">24% (NT$ 1,951,440)</span>
                 </div>
                 <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
                   <div class="h-full bg-indigo-500 rounded-full" style="width: 24%"></div>
@@ -1559,7 +1559,7 @@
               <div>
                 <div class="flex items-center justify-between mb-1">
                   <span class="text-slate-300 font-semibold">✂️ 嫁接與高空修剪 (專業技工)</span>
-                  <span class="font-mono text-amber-400 font-bold">16% (NT$ 1,481,120)</span>
+                  <span class="font-mono text-amber-400 font-bold">16% (NT$ 1,300,960)</span>
                 </div>
                 <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
                   <div class="h-full bg-amber-500 rounded-full" style="width: 16%"></div>
@@ -1569,7 +1569,7 @@
               <div>
                 <div class="flex items-center justify-between mb-1">
                   <span class="text-slate-300 font-semibold">🌱 設施溫室精緻管理 (溫室巡檢)</span>
-                  <span class="font-mono text-lime-400 font-bold">12% (NT$ 1,110,840)</span>
+                  <span class="font-mono text-lime-400 font-bold">12% (NT$ 975,720)</span>
                 </div>
                 <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
                   <div class="h-full bg-lime-500 rounded-full" style="width: 12%"></div>
@@ -1718,7 +1718,7 @@
           <div>
             <label class="text-slate-400 block mb-1">三層等級</label>
             <select v-model="workerModal.form.tier" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
-              <option value="tier1_foreign">【Tier 1】外籍特許外展農工</option>
+              <option value="tier1_foreign">【Tier 1】外籍外展農工</option>
               <option value="tier2_local_flex">【Tier 2】本國帶隊領班 / 彈性工</option>
               <option value="tier3_turnkey">【Tier 3】本國專業機耕師</option>
             </select>
@@ -1999,7 +1999,7 @@
             </div>
             <div class="sm:col-span-3">
               <label class="text-slate-400 block mb-1">副標題 / 核心 Slogan</label>
-              <input v-model="brochureModal.form.subtitle" placeholder="例如: 告別產季搶工被放鳥！合法特許外展工班 ╳ 產季保證出工 ╳ 梅雨冷鏈避險" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <input v-model="brochureModal.form.subtitle" placeholder="例如: 告別產季搶工被放鳥！合法外展工班 ╳ 產季保證出工 ╳ 梅雨冷鏈避險" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
             </div>
             <div>
               <label class="text-slate-400 block mb-1">文宣類別</label>
@@ -3489,7 +3489,7 @@
                 { icon: '🧾', title: '保證 4：開立合法合作社發票與名冊', desc: '100% 依法納保，開立合法進項統一發票供農場主扣抵營業稅！' }
               ]),
               comparisonJson: JSON.stringify([
-                { item: '法律合規性', illegal: '違法非法黑工，查獲重罰 15~75 萬', legal: '100% 農業部特許外展機構，零風險！' },
+                { item: '法律合規性', illegal: '違法非法黑工，查獲重罰 15~75 萬', legal: '依外展農務制度申請中，依法足額納保！' },
                 { item: '出工確定性', illegal: '口頭約定，隨時被隔壁加價截工放鳥', legal: '簽約白紙黑字保證出工，違約雙倍賠償！' },
                 { item: '採收手路技術', illegal: '烏合之眾，碰傷果皮蹭掉外銷果粉', legal: '外銷級 SOP 訓練，特級良率達標！' },
                 { item: '下雨天候停工', illegal: '田間泥濘白賠工資或沒收入', legal: '突發降雨自動專車轉派室內冷鏈場包裝！' },

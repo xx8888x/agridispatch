@@ -190,7 +190,7 @@ function switchUserRole(role) {
   // 更新右上角使用者資訊
   const roleInfo = {
     farmer: { name: '陳建龍 (阿龍班長)', roleDesc: '農場主 / 桃園八德有機蔬菜產銷班' },
-    worker_foreign: { name: 'Nguyễn Văn Hùng (阮文雄)', roleDesc: '特許外展移工 / 越南 (#001)' },
+    worker_foreign: { name: 'Nguyễn Văn Hùng (阮文雄)', roleDesc: '外展移工 / 越南 (#001)' },
     worker_local: { name: '陳建宏 (資深機耕技師)', roleDesc: '本國農機領航員 / 雙證照飛手' },
     admin_tech: { name: '智農科技調度總監', roleDesc: '科技公司後台 / 系統調度戰情室' },
     showcase: { name: '🌟 全景商業展示 Pitch', roleDesc: '投資人 / 主管機關 / 合作農企業全景體驗' }

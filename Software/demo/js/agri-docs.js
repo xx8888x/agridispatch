@@ -223,7 +223,7 @@ const AgriDocs = (function () {
     <div class="info-grid">
       <div><strong>農工姓名：</strong>${workerName}</div>
       <div><strong>員工工號：</strong><span style="font-family:monospace;">${workerId}</span></div>
-      <div><strong>職責身分：</strong>${isForeman ? '本國帶工領班 (小工頭)' : (isLabor ? '合作社在籍農業勞務員' : '外籍特許外展農工')}</div>
+      <div><strong>職責身分：</strong>${isForeman ? '本國帶工領班 (小工頭)' : (isLabor ? '合作社在籍農業勞務員' : '外籍外展農工')}</div>
       <div><strong>發薪日期：</strong>2026/09/05 (電匯入帳)</div>
       <div><strong>所屬調度工班：</strong>工班 A 組 (桃園八德 / 屏東枋山)</div>
       <div><strong>勞健保與職災：</strong>100% 依法足額提繳</div>

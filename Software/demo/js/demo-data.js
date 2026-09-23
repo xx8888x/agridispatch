@@ -1107,7 +1107,7 @@ const DEFAULT_ADMIN_DATA = {
     {
       id: "dm-mango-2026",
       title: "【屏東枋山外銷愛文芒果】產季早鳥保證出工 60 工時包",
-      subtitle: "告別產季搶工被放鳥！合法特許外展工班 ╳ 產季保證出工 ╳ 梅雨冷鏈避險",
+      subtitle: "告別產季搶工被放鳥！合法外展工班 ╳ 產季保證出工 ╳ 梅雨冷鏈避險",
       targetCategory: "採收早鳥",
       targetCrop: "愛文芒果",
       targetRegion: "屏東枋山、台南玉井",

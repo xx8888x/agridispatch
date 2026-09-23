@@ -269,28 +269,19 @@
             </button>
           </form>
 
-          <!-- Quick Fill Demo Profiles -->
-          <div class="mt-6 pt-5 border-t border-slate-800">
+          <!-- Quick Fill Demo Profiles（僅 demo 模式顯示，資料來自 js/demo-accounts.js） -->
+          <div v-if="isDemo && demoCfg" class="mt-6 pt-5 border-t border-slate-800">
             <div class="text-[11px] font-bold text-slate-400 mb-2 flex items-center gap-1">
               <span>⚡</span> 快速體驗示範帳號（點擊直接填入）：
             </div>
             <div class="space-y-2">
-              <button @click="fillProfile('farmer', '123456')" type="button"
+              <button v-for="p in demoCfg.profiles" :key="p.identifier" @click="fillProfile(p.identifier, p.password)" type="button"
                 class="w-full text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800/80 border border-slate-800 hover:border-emerald-500/40 transition flex items-center justify-between text-xs">
                 <div>
-                  <span class="font-bold text-emerald-300">陳建龍 (阿龍班長)</span>
-                  <span class="text-slate-400 text-[11px] ml-1.5">桃園八德有機蔬菜班</span>
+                  <span class="font-bold" :class="'text-' + p.accent + '-300'">{{ p.name }}</span>
+                  <span class="text-slate-400 text-[11px] ml-1.5">{{ p.desc }}</span>
                 </div>
-                <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-mono">契作 5.0 分地</span>
-              </button>
-
-              <button @click="fillProfile('farmer_yilan', '123456')" type="button"
-                class="w-full text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800/80 border border-slate-800 hover:border-emerald-500/40 transition flex items-center justify-between text-xs">
-                <div>
-                  <span class="font-bold text-teal-300">李春發 (春發伯)</span>
-                  <span class="text-slate-400 text-[11px] ml-1.5">宜蘭三星青蔥專班</span>
-                </div>
-                <span class="px-2 py-0.5 rounded bg-teal-500/20 text-teal-400 text-[10px] font-mono">契作 8.2 分地</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono" :class="'bg-' + p.accent + '-500/20 text-' + p.accent + '-400'">{{ p.tag }}</span>
               </button>
             </div>
           </div>

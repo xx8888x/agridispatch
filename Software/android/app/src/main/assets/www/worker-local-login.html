@@ -108,7 +108,7 @@
           <!-- Dynamic Title -->
           <h1 v-if="activeTrack === 'labor'" class="text-2xl sm:text-3xl font-black text-white leading-snug">
             合作社在籍農工<br>
-            <span class="text-emerald-400">保障底薪 $28,590 + 獎勵金 $8,800</span>
+            <span class="text-emerald-400">保障底薪 $29,500 + 獎勵金 $8,800</span>
           </h1>
           <h1 v-else-if="activeTrack === 'machinery'" class="text-2xl sm:text-3xl font-black text-white leading-snug">
             80hp 曳引機 ╳ 無人機代噴<br>
@@ -121,7 +121,7 @@
 
           <p class="text-xs text-slate-400 leading-relaxed">
             <span v-if="activeTrack === 'labor'">
-              合作社特許在籍農業勞務員享最高法定保障：勞健職災保險 100% 提繳、6% 勞退按月入帳、專車往返契作田區接送、農業部中央 $8,800 就業獎勵金。天候暴雨自動轉派冷鏈包裝廠，不扣工時！
+              合作社外展在籍農業勞務員享最高法定保障：勞健職災保險 100% 提繳、6% 勞退按月入帳、專車往返契作田區接送、農業部中央 $8,800 就業獎勵金。天候暴雨自動轉派冷鏈包裝廠，不扣工時！
             </span>
             <span v-else-if="activeTrack === 'machinery'">
               大馬力曳引機深耕（每分地 $1,500）與大疆 T50 植保無人機精準代噴（每甲地 $2,500）。平台一鍵媒合契作農戶，驗收完成線上撥款。
@@ -140,7 +140,7 @@
             <div class="space-y-1.5 text-[11px]">
               <div :class="activeTrack === 'labor' ? 'border-emerald-500/60 bg-emerald-950/30' : 'border-slate-800 bg-slate-950/60'" class="flex items-center justify-between p-2 rounded-xl border transition">
                 <span class="text-slate-300 font-bold">🧑‍🌾 【三軌】在籍農業勞務工</span>
-                <span class="font-bold text-emerald-400 font-mono">底薪 $28,590 + 獎勵 $8,800</span>
+                <span class="font-bold text-emerald-400 font-mono">底薪 $29,500 + 獎勵 $8,800</span>
               </div>
               <div :class="activeTrack === 'foreman' ? 'border-blue-500/60 bg-blue-950/30' : 'border-slate-800 bg-slate-950/60'" class="flex items-center justify-between p-2 rounded-xl border transition">
                 <span class="text-slate-300 font-bold">👨‍💼 【Tier 2】外展帶隊領班</span>
@@ -348,7 +348,7 @@
 
     <!-- Footer -->
     <footer class="border-t border-slate-800/80 py-5 text-center text-xs text-slate-500">
-      智農派工 AgriDispatch © 2026 農業部特許外展合作社 ╳ 本國農力與代耕服務網
+      智農派工 AgriDispatch © 2026 農業部外展合作社 ╳ 本國農力與代耕服務網
     </footer>
   </div>
 

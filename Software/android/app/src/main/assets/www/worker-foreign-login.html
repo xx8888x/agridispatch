@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>外籍特許農工專屬登入 - Cổng Đăng Nhập Lao Động Nước Ngoài - AgriDispatch</title>
+  <title>外籍外展農工專屬登入 - Cổng Đăng Nhập Lao Động Nước Ngoài - AgriDispatch</title>
   <!-- 執行模式設定（demo / production，每份副本各自一份） -->
   <script src="js/app-config.js"></script>
   <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
@@ -128,11 +128,11 @@
               <span>💰</span> {{ t.wageTitle }}
             </div>
             <div class="flex items-baseline gap-2">
-              <span class="text-2xl font-black text-white font-mono">NT$ 38,590</span>
+              <span class="text-2xl font-black text-white font-mono">NT$ 39,500</span>
               <span class="text-xs text-slate-400">/ {{ t.perMonth }}</span>
             </div>
             <div class="text-[11px] text-slate-300 border-t border-slate-800/80 pt-2 flex flex-col gap-1">
-              <div>• {{ t.wageBase }}: <span class="font-mono text-white font-bold">$28,590</span></div>
+              <div>• {{ t.wageBase }}: <span class="font-mono text-white font-bold">$29,500</span></div>
               <div>• {{ t.wageBonus }}: <span class="font-mono text-amber-400 font-bold">+$8,800</span></div>
               <div>• {{ t.wageAllowance }}: <span class="font-mono text-emerald-400 font-bold">+$1,200</span></div>
             </div>
@@ -312,7 +312,7 @@
               <div class="text-slate-400 text-[10px]">底薪 + 獎勵金 + 津貼</div>
             </div>
             <div class="text-lg font-black text-white font-mono">
-              NT$ {{ ((workerModal.data.workerProfile.baseSalary || 28590) + (workerModal.data.workerProfile.agriBonus || 8800) + (workerModal.data.workerProfile.transportAllowance || 1200)).toLocaleString() }}
+              NT$ {{ ((workerModal.data.workerProfile.baseSalary || 29500) + (workerModal.data.workerProfile.agriBonus || 8800) + (workerModal.data.workerProfile.transportAllowance || 1200)).toLocaleString() }}
             </div>
           </div>
         </div>
@@ -330,7 +330,7 @@
 
     <!-- Footer -->
     <footer class="border-t border-slate-800/80 py-5 text-center text-xs text-slate-500">
-      智農派工 AgriDispatch © 2026 農業部特許外展合作社 ╳ 外展移工工作服務網
+      智農派工 AgriDispatch © 2026 農業部外展合作社 ╳ 外展移工工作服務網
     </footer>
   </div>
 
@@ -457,9 +457,9 @@
       },
       zh: {
         switchRole: '切換身分',
-        legalTag: '農業部特許外展合作社 ╳ 合法在籍移工專用',
+        legalTag: '農業部外展合作社 ╳ 合法在籍移工專用',
         heroTitle1: '派遣任務與權益保障',
-        heroTitle2: '外籍特許農工門戶',
+        heroTitle2: '外籍外展農工門戶',
         heroDesc: '提供每日派工任務即時查詢、出勤集合地點、雨天室內冷鏈避險通知與透明薪資獎勵金明細。',
         wageTitle: '法定薪資與農業部就業獎勵保障',
         perMonth: '月',
@@ -563,23 +563,23 @@
 
           // Demo 版外展移工資料庫（示範資料，僅 demo 模式使用）
           const mockWorkerMap = {
-            'AD88123451': { id: 'W001', name: '阮文雄 (Nguyễn Văn Hùng)', role: 'WORKER_FOREIGN', arcNumber: 'AD88123451', passportNumber: 'P8921822', teamId: 'A組 (宜蘭蔬菜班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '青蔥採收分級 ╳ 留蒂 0.5cm', baseSalary: 28590, agriBonus: 8800, transportAllowance: 1200 },
-            'AD77234561': { id: 'W006', name: 'Budi Santoso', role: 'WORKER_FOREIGN', arcNumber: 'AD77234561', passportNumber: 'B1123490', teamId: 'B組 (屏東芒果班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '芒果套袋採收 ╳ 留蒂 0.5cm', baseSalary: 28590, agriBonus: 8800, transportAllowance: 1200 },
-            'AD66345671': { id: 'W020', name: 'Somchai Prasert', role: 'WORKER_FOREIGN', arcNumber: 'AD66345671', passportNumber: 'T5512301', teamId: 'D組 (元長落花生班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '落花生採收倒株曝曬', baseSalary: 28590, agriBonus: 8800, transportAllowance: 1200 },
-            'AD55456781': { id: 'W023', name: 'Maria Santos', role: 'WORKER_FOREIGN', arcNumber: 'AD55456781', passportNumber: 'P4412301', teamId: 'B組 (屏東芒果班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '包裝分級裝箱 ╳ 冷鏈預冷', baseSalary: 28590, agriBonus: 8800, transportAllowance: 1200 }
+            'AD88123451': { id: 'W001', name: '阮文雄 (Nguyễn Văn Hùng)', role: 'WORKER_FOREIGN', arcNumber: 'AD88123451', passportNumber: 'P8921822', teamId: 'A組 (宜蘭蔬菜班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '青蔥採收分級 ╳ 留蒂 0.5cm', baseSalary: 29500, agriBonus: 8800, transportAllowance: 1200 },
+            'AD77234561': { id: 'W006', name: 'Budi Santoso', role: 'WORKER_FOREIGN', arcNumber: 'AD77234561', passportNumber: 'B1123490', teamId: 'B組 (屏東芒果班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '芒果套袋採收 ╳ 留蒂 0.5cm', baseSalary: 29500, agriBonus: 8800, transportAllowance: 1200 },
+            'AD66345671': { id: 'W020', name: 'Somchai Prasert', role: 'WORKER_FOREIGN', arcNumber: 'AD66345671', passportNumber: 'T5512301', teamId: 'D組 (元長落花生班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '落花生採收倒株曝曬', baseSalary: 29500, agriBonus: 8800, transportAllowance: 1200 },
+            'AD55456781': { id: 'W023', name: 'Maria Santos', role: 'WORKER_FOREIGN', arcNumber: 'AD55456781', passportNumber: 'P4412301', teamId: 'B組 (屏東芒果班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '包裝分級裝箱 ╳ 冷鏈預冷', baseSalary: 29500, agriBonus: 8800, transportAllowance: 1200 }
           };
 
           const matchedWorker = mockWorkerMap[form.identifier] || {
             id: 'W001',
-            name: form.identifier ? `特許農工 (${form.identifier})` : '阮文雄 (Nguyễn Văn Hùng)',
+            name: form.identifier ? `外展農工 (${form.identifier})` : '阮文雄 (Nguyễn Văn Hùng)',
             role: 'WORKER_FOREIGN',
             arcNumber: form.identifier || 'AD88123451',
             passportNumber: 'P8921822',
-            teamId: 'A組 (特許外展專隊)',
+            teamId: 'A組 (外展專隊)',
             insuranceStatus: '已投保 (勞健職災)',
             dispatchStatus: 'dispatched_field',
             currentTask: '田間採收派遣 ╳ 現場作業',
-            baseSalary: 28590,
+            baseSalary: 29500,
             agriBonus: 8800,
             transportAllowance: 1200
           };

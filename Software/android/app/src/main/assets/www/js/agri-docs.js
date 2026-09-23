@@ -64,7 +64,7 @@ const AgriDocs = (function () {
   <div class="invoice-card">
     <div class="header">
       <h1>有限責任台灣智慧農業勞務生產合作社</h1>
-      <p>技術代管營運：智農派工科技股份有限公司 (統編: 90124883)</p>
+      <p>技術代管營運：智農派工科技股份有限公司 (統編：公司設立登記後填入)</p>
       <p>地址：桃園市八德區興豐路 1234 號 ╳ 電話：(03) 388-1234</p>
     </div>
 
@@ -94,9 +94,9 @@ const AgriDocs = (function () {
       <tbody>
         <tr>
           <td>${cropName} (早鳥工時包)</td>
-          <td style="text-align:right;">NT$ 22,400</td>
+          <td style="text-align:right;">NT$ ${amount.toLocaleString()}</td>
           <td style="text-align:center;">1 式</td>
-          <td style="text-align:right;">NT$ 22,400</td>
+          <td style="text-align:right;">NT$ ${amount.toLocaleString()}</td>
         </tr>
         <tr>
           <td colspan="3" style="text-align:right;"><strong>履約定金 (20% 已付)：</strong></td>
@@ -113,7 +113,7 @@ const AgriDocs = (function () {
       <strong>⚖️ 合作社與科技公司雙軌金流扣繳拆分：</strong><br>
       • 合作社外展農務勞務（免營業稅，農民社員交易）：<strong>NT$ ${coopAmount.toLocaleString()}</strong> (82%)<br>
       • 智農科技代管營運（專車 logistics 與系統代管，應稅 5%）：<strong>NT$ ${Math.round(amount * 0.18).toLocaleString()}</strong> (銷售額 $${techAmountTaxExcluded.toLocaleString()} / 稅額 $${techTax.toLocaleString()})<br>
-      • 備註：本憑證符合財政部電子發票載具規範，已同步上傳至財政部電子發票整合服務平台備查。
+      • 備註：本頁為系統展示用發票範本，並非正式統一發票；正式營運須串接財政部電子發票整合服務平台開立。
     </div>
 
     <div class="barcode-area">
@@ -161,7 +161,7 @@ const AgriDocs = (function () {
 
     let workerName = customData.name || (isForeign ? '阮文雄 (Nguyễn Văn Hùng)' : (isForeman ? '林小祥 (帶工領班)' : '張志明 (農業勞務工)'));
     let workerId = customData.id || (isForeign ? 'W001' : (isForeman ? 'W026' : 'W030'));
-    let baseSalary = isForeman ? 42000 : 28590;
+    let baseSalary = isForeman ? 42000 : 29500;
     let agriBonus = 8800; // 農業部中央外展就業獎勵金
     let foremanAllowance = isForeman ? 8000 : 0;
     let transportAllowance = isForeman ? 2800 : (isLabor ? 2400 : 1200);
@@ -223,7 +223,7 @@ const AgriDocs = (function () {
     <div class="info-grid">
       <div><strong>農工姓名：</strong>${workerName}</div>
       <div><strong>員工工號：</strong><span style="font-family:monospace;">${workerId}</span></div>
-      <div><strong>職責身分：</strong>${isForeman ? '本國帶工領班 (小工頭)' : (isLabor ? '合作社在籍農業勞務員' : '外籍特許外展農工')}</div>
+      <div><strong>職責身分：</strong>${isForeman ? '本國帶工領班 (小工頭)' : (isLabor ? '合作社在籍農業勞務員' : '外籍外展農工')}</div>
       <div><strong>發薪日期：</strong>2026/09/05 (電匯入帳)</div>
       <div><strong>所屬調度工班：</strong>工班 A 組 (桃園八德 / 屏東枋山)</div>
       <div><strong>勞健保與職災：</strong>100% 依法足額提繳</div>
@@ -317,7 +317,7 @@ const AgriDocs = (function () {
     </div>
 
     <div class="footer">
-      合作社出納印鑑：[ 台灣智農合作社核訖 ] ╳ 主管機關備查號：農授糧字第 1150092300 號
+      合作社出納印鑑：[ 台灣智農合作社核訖 ] ╳ 合作社立案字號：農授糧字第 1150092300 號
     </div>
   </div>
 
@@ -498,29 +498,67 @@ const AgriDocs = (function () {
     btn.disabled = true;
     btnText.innerText = '金流中心授權處理中...';
 
+    const isDemo = !window.AGRI_CONFIG || window.AGRI_CONFIG.mode !== 'production';
+    const esc = (s) => (window.AgriUtil && AgriUtil.escapeHtml) ? AgriUtil.escapeHtml(String(s ?? '')) : String(s ?? '');
+    const showError = (msg) => {
+      feedback.className = 'p-3.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-200 space-y-1 block';
+      feedback.innerHTML = `<div class="font-bold text-white flex items-center gap-1.5"><span>⚠️</span> 付款未完成</div>
+        <div class="text-[11px]">${esc(msg)}</div>`;
+      btn.disabled = false;
+      btnText.innerText = '重新付款';
+    };
+    // 後端明確拒絕（例如訂單已取消、無須定金、未登入）時不走離線備援
+    class PaymentRejected extends Error {}
+
     try {
+      // 1. 建立待付款交易（金額一律由後端依訂單計算，前端不傳 amount）
       const res = await fetch(`${API_BASE}/payments/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId: orderId || 'ORD-2026-002',
-          paymentMethod: 'credit_card',
-          amount: amount,
-          payerName: '陳建龍 (阿龍班長)',
-          payerPhone: '0912-345-678'
-        })
+        body: JSON.stringify({ orderId, paymentMethod: 'credit_card' })
       });
-      const data = await res.json();
+      let data = await res.json().catch(() => ({}));
+      if (!res.ok || data.success === false) {
+        throw new PaymentRejected(data.error || data.message || `付款失敗（HTTP ${res.status}）`);
+      }
+
+      // 2. 依金流供應商完成付款
+      if (data.status === 'PENDING' && data.next) {
+        if (data.next.actionUrl) {
+          // 綠界 ECPay：以 POST 表單導向綠界付款頁，付款結果由後端 /api/payments/ecpay/notify 接收
+          btnText.innerText = '正在前往綠界付款頁...';
+          const form = document.createElement('form');
+          form.method = data.next.method || 'POST';
+          form.action = data.next.actionUrl;
+          Object.entries(data.next.params || {}).forEach(([k, v]) => {
+            const input = document.createElement('input');
+            input.type = 'hidden'; input.name = k; input.value = v;
+            form.appendChild(input);
+          });
+          document.body.appendChild(form);
+          form.submit();
+          return;
+        }
+        if (data.next.confirmUrl) {
+          // 模擬金流（僅 demo 模式）：呼叫 confirmUrl 完成付款，不會實際扣款
+          const confirmRes = await fetch(API_BASE.replace(/\/api$/, '') + data.next.confirmUrl, { method: 'POST' });
+          const confirmData = await confirmRes.json().catch(() => ({}));
+          if (!confirmRes.ok || confirmData.success === false) {
+            throw new PaymentRejected(confirmData.error || `付款確認失敗（HTTP ${confirmRes.status}）`);
+          }
+          data = { ...data, ...confirmData };
+        }
+      }
 
       feedback.className = 'p-3.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 space-y-1 block';
       feedback.innerHTML = `
         <div class="font-bold text-white flex items-center gap-1.5">
-          <span>✅</span> 付款授權成功！(綠界 ECPay 交易序號: ${data.transactionId || 'TXN-20260923-88219'})
+          <span>✅</span> ${data.alreadyPaid ? '此訂單定金已付清' : '付款成功！'}（交易序號：${esc(data.transactionId)}）
         </div>
         <div class="text-[11px] text-slate-300">
-          授權授權碼：<span class="font-mono text-emerald-400 font-bold">${data.authCode || 'AUTH-991204'}</span> ╳ 電子發票號碼：<span class="font-mono text-emerald-400 font-bold">${data.invoiceNo || 'AG-98765432'}</span>
+          授權碼：<span class="font-mono text-emerald-400 font-bold">${esc(data.authCode || '—')}</span> ╳ 電子發票號碼：<span class="font-mono text-emerald-400 font-bold">${esc(data.invoiceNo || '—')}</span>
         </div>
-        <div class="text-[10px] text-slate-400">訂單已即時由【待付定金】轉為【🟢 專車已排定・定金已付清】。</div>
+        ${data.provider === 'mock' ? '<div class="text-[10px] text-amber-300">展示模式模擬金流，未實際扣款。</div>' : ''}
       `;
 
       btn.className = 'px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold';
@@ -535,7 +573,15 @@ const AgriDocs = (function () {
       }, 1500);
 
     } catch (e) {
-      // 本地展示備援
+      if (e instanceof PaymentRejected) {
+        showError(e.message);
+        return;
+      }
+      if (!isDemo) {
+        showError('無法連線金流伺服器，請稍後再試。');
+        return;
+      }
+      // 本地展示備援（僅 demo 模式、後端離線時）
       console.warn('Backend unavailable, simulating checkout locally', e);
       feedback.className = 'p-3.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 space-y-1 block';
       feedback.innerHTML = `
@@ -673,33 +719,49 @@ const AgriDocs = (function () {
     const nowStr = new Date().toLocaleTimeString('zh-TW');
     const path = isClockIn ? 'clock-in' : 'clock-out';
     const user = (window.AgriAuth && window.AgriAuth.getUser && window.AgriAuth.getUser()) || null;
-    const workerId = options.workerId || (user && user.refId) || (user && user.username) || 'self';
+    // 登入者本人的工號優先（正式版工人只能替自己打卡）；頁面傳入的 workerId 只作 demo 後備
+    const workerId = (user && user.refId) || options.workerId || (user && user.username) || 'self';
 
+    let res = null;
     try {
-      const res = await fetch(`${API_BASE}/attendance/${path}`, {
+      res = await fetch(`${API_BASE}/attendance/${path}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workerId, lat: options.lat, lng: options.lng, timestamp: new Date().toISOString() })
+        body: JSON.stringify({
+          workerId, lat: options.lat, lng: options.lng,
+          location: options.locationLabel, timestamp: new Date().toISOString()
+        })
       });
-      if (res.ok) {
-        const data = await res.json().catch(() => null);
-        if (data && data.success) {
-          notify(
-            isClockIn ? '🟢 上班打卡成功' : '🔴 下班打卡成功',
-            `時間：${nowStr}${data.data && data.data.workHours ? `　今日工時：${data.data.workHours} 小時` : ''}`,
-            { channel: 'attendance' }
-          );
-          return data;
-        }
-      }
     } catch (e) {
-      // 後端離線 / 舊版後端無此端點：走以下離線示範回應
+      res = null; // 後端離線：走以下離線示範回應
+    }
+
+    if (res && res.status !== 404) {
+      const data = await res.json().catch(() => null);
+      if (res.ok && data && data.success) {
+        if (!options.silent) notify(
+          isClockIn ? '🟢 上班打卡成功' : '🔴 下班打卡成功',
+          `時間：${nowStr}${data.data && data.data.workHours ? `　今日工時：${data.data.workHours} 小時` : ''}`,
+          { channel: 'attendance' }
+        );
+        return data;
+      }
+      // 後端明確拒絕（例如 409 重複上班打卡、尚未上班即下班）：如實告知，不假裝成功
+      const reason = (data && (data.error || data.message)) || `HTTP ${res.status}`;
+      notify(isClockIn ? '⚠️ 上班打卡未完成' : '⚠️ 下班打卡未完成', reason, { channel: 'attendance' });
+      return { success: false, status: res.status, error: reason };
+    }
+
+    const isDemo = !window.AGRI_CONFIG || window.AGRI_CONFIG.mode !== 'production';
+    if (!isDemo) {
+      notify('⚠️ 打卡失敗', '無法連線伺服器，請稍後再試或聯繫帶班組長。', { channel: 'attendance' });
+      return { success: false, offline: true };
     }
 
     const offlineDetail = isClockIn
       ? `時間：${nowStr}　GPS 定位：${options.locationLabel || '屏東縣枋山鄉 (22.6123°N, 120.6145°E)'}`
       : `時間：${nowStr}　今日工時：${options.demoHours || (Math.floor(Math.random() * 2) + 7)} 小時`;
-    notify(isClockIn ? '✅ 上班打卡成功（離線示範）' : '🔴 下班打卡成功（離線示範）', offlineDetail, { channel: 'attendance' });
+    if (!options.silent) notify(isClockIn ? '✅ 上班打卡成功（離線示範）' : '🔴 下班打卡成功（離線示範）', offlineDetail, { channel: 'attendance' });
     return { success: true, offline: true };
   }
 

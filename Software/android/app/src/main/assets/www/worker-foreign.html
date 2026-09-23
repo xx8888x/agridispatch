@@ -121,7 +121,7 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
       <div>
         <div class="flex items-center gap-2">
-          <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">特許在籍農工</span>
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">外展在籍農工</span>
           <h1 id="txt-main-title" class="text-2xl sm:text-3xl font-black text-white">外展移工每日智慧任務卡</h1>
         </div>
         <p id="txt-sub-title" class="text-slate-400 text-sm mt-1">支持越南語、印尼語與中文即時切換，薪資與農業部 8,800 就業獎勵清晰透明</p>
@@ -184,7 +184,7 @@
               </div>
               <div>
                 <h3 class="font-extrabold text-base text-white">Nguyễn Văn Hùng</h3>
-                <p class="text-xs text-purple-400">智農特許外展農工 #001 (越南)</p>
+                <p class="text-xs text-purple-400">智農外展農工 #001 (越南)</p>
               </div>
             </div>
             <span id="badge-dispatched" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
@@ -429,7 +429,7 @@
                   <strong class="text-white block">外展保障基本底薪</strong>
                   <span class="text-slate-400">法定最低月薪（全額保障出工）</span>
                 </div>
-                <span class="font-mono text-white font-bold text-sm">NT$ 28,590</span>
+                <span class="font-mono text-white font-bold text-sm">NT$ 29,500</span>
               </div>
 
               <div class="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 flex justify-between items-center">
@@ -579,7 +579,7 @@
   <footer class="border-t border-slate-800 bg-slate-950 py-8 text-center text-xs text-slate-500 mt-auto">
     <div class="max-w-7xl mx-auto px-4 space-y-2">
       <p>© 2026 智農派工 AgriDispatch. All rights reserved. 雙軌合規農事外展派遣平台</p>
-      <p>技術代管：智農科技有限公司 ╳ 特許主體：有限責任智農農業勞務生產合作社</p>
+      <p>技術代管：智農科技有限公司 ╳ 外展主體：有限責任智農農業勞務生產合作社</p>
     </div>
   </footer>
 
@@ -746,6 +746,12 @@
     let isClockedOut = false;
 
     async function handleClockIn() {
+      // 先向後端打卡，成功才更新畫面；後端拒絕（如重複打卡）時由 clockAction 顯示原因
+      const punch = window.AgriDocs
+        ? await AgriDocs.clockAction('clock-in', { workerId: 'W001', locationLabel: '屏東縣高樹鄉金牌洋蔥試驗田', silent: true })
+        : { success: true };
+      if (!punch.success) return;
+
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
       clockInTime = timeStr;
@@ -775,17 +781,6 @@
       const rowStatus = document.getElementById('row-today-status');
       if (rowStatus) rowStatus.innerText = `${timeStr} 上班打卡 (作業中)`;
 
-      try {
-        await fetch(`${API_BASE}/attendance/clock-in`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            workerId: 'W001',
-            location: '屏東縣高樹鄉金牌洋蔥試驗田 (22.8214°N, 120.5982°E)',
-            gpsAccuracyMeters: 2.1
-          })
-        });
-      } catch (e) {}
 
       if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
         window.AgriDocs.notify('📍 上班打卡成功', `時間: ${timeStr} ｜ GPS: 屏東高樹試驗田 (22.8214, 120.5982)。已同步調度大腦與現場小工頭。`, { channel: 'attendance' });
@@ -793,6 +788,12 @@
     }
 
     async function handleClockOut() {
+      // 先向後端打卡，成功才更新畫面；後端拒絕（如重複打卡）時由 clockAction 顯示原因
+      const punch = window.AgriDocs
+        ? await AgriDocs.clockAction('clock-out', { workerId: 'W001', locationLabel: '屏東縣高樹鄉金牌洋蔥試驗田', silent: true })
+        : { success: true };
+      if (!punch.success) return;
+
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
       isClockedOut = true;
@@ -823,17 +824,6 @@
         rowStatus.innerText = `${clockInTime} ~ ${timeStr} (8.5h 加班0.5h)`;
       }
 
-      try {
-        await fetch(`${API_BASE}/attendance/clock-out`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            workerId: 'W001',
-            location: '屏東縣高樹鄉金牌洋蔥試驗田',
-            actualHours: 8.5
-          })
-        });
-      } catch (e) {}
 
       if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
         window.AgriDocs.notify('🏁 下班打卡成功', `時間: ${timeStr} ｜ 今日工時 8.5h (含 0.5h 加班費)。小工頭林小祥已數位簽核，已記入本月薪酬！`, { channel: 'attendance' });

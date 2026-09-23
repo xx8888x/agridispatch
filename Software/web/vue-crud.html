@@ -223,7 +223,7 @@
           </div>
 
           <div class="p-3 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex flex-col justify-between">
-            <span class="text-slate-400 font-medium">特許外展移工 (Tier 1)</span>
+            <span class="text-slate-400 font-medium">外展移工 (Tier 1)</span>
             <div class="flex items-baseline gap-1 mt-1">
               <span class="text-2xl font-black text-emerald-400 font-mono">
                 {{ workers.filter(w => w.tier === 'tier1_foreign').length }}
@@ -270,7 +270,7 @@
               <span>👷</span> 外展農工與派遣名冊 (Foreign & Local Worker Dispatch Roster)
               <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono">已篩選 {{ filteredWorkers.length }} 位</span>
             </h2>
-            <p class="text-xs text-slate-400 mt-1">完整收錄農業部特許在籍移工、居留證號 (ARC)、護照、派遣狀態與工班即時動態</p>
+            <p class="text-xs text-slate-400 mt-1">完整收錄農業部外展在籍移工、居留證號 (ARC)、護照、派遣狀態與工班即時動態</p>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
             <button @click="exportWorkerCSV()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/40 font-bold text-xs shadow transition flex items-center gap-1.5" title="匯出勞動部與主管機關查驗名冊">
@@ -327,7 +327,7 @@
             <label class="block text-slate-400 mb-1">三層等級篩選</label>
             <select v-model="workerTierFilter" class="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
               <option value="">全部等級</option>
-              <option value="tier1_foreign">【Tier 1】外籍特許外展農工</option>
+              <option value="tier1_foreign">【Tier 1】外籍外展農工</option>
               <option value="tier2_local_flex">【Tier 2】本國彈性兼職農工</option>
               <option value="tier3_turnkey">【Tier 3】本國專業機耕師/無人機手</option>
             </select>
@@ -406,7 +406,7 @@
 
                   <!-- Salary -->
                   <td class="px-4 py-3 font-mono">
-                    <div class="text-white font-semibold">${{ (w.baseSalary || 28590).toLocaleString() }}</div>
+                    <div class="text-white font-semibold">${{ (w.baseSalary || 29500).toLocaleString() }}</div>
                     <div class="text-[10px] text-emerald-400">+獎勵 ${{ (w.agriBonus || 8800).toLocaleString() }} / 津貼 ${{ (w.transportAllowance || 1200).toLocaleString() }}</div>
                   </td>
 
@@ -1119,7 +1119,7 @@
           <div>
             <label class="text-slate-400 block mb-1">三層等級</label>
             <select v-model="workerModal.form.tier" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
-              <option value="tier1_foreign">【Tier 1】外籍特許外展農工</option>
+              <option value="tier1_foreign">【Tier 1】外籍外展農工</option>
               <option value="tier2_local_flex">【Tier 2】本國彈性兼職農工</option>
               <option value="tier3_turnkey">【Tier 3】本國專業機耕師</option>
             </select>
@@ -1600,7 +1600,7 @@
               teamId: 'team_a',
               leader: false,
               tier: 'tier1_foreign',
-              baseSalary: 28590,
+              baseSalary: 29500,
               agriBonus: 8800,
               transportAllowance: 1200,
               insuranceStatus: '已納保 (勞/健/職災)',

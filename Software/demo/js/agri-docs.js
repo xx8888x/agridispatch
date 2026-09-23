@@ -161,7 +161,7 @@ const AgriDocs = (function () {
 
     let workerName = customData.name || (isForeign ? '阮文雄 (Nguyễn Văn Hùng)' : (isForeman ? '林小祥 (帶工領班)' : '張志明 (農業勞務工)'));
     let workerId = customData.id || (isForeign ? 'W001' : (isForeman ? 'W026' : 'W030'));
-    let baseSalary = isForeman ? 42000 : 28590;
+    let baseSalary = isForeman ? 42000 : 29500;
     let agriBonus = 8800; // 農業部中央外展就業獎勵金
     let foremanAllowance = isForeman ? 8000 : 0;
     let transportAllowance = isForeman ? 2800 : (isLabor ? 2400 : 1200);

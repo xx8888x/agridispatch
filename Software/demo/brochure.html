@@ -292,13 +292,14 @@
         </div>
       </div>
 
-      <!-- Section 4: Real Testimonial (代言人真實見證) -->
+      <!-- Section 4: 預期效益示意 (非實際客戶見證，服務尚未營運) -->
       <div v-if="currentDm.testimonialName" class="px-6 sm:px-8 pb-4">
         <div class="p-5 rounded-2xl bg-amber-50/80 border border-amber-300 flex items-start gap-4">
           <div class="w-12 h-12 rounded-full bg-amber-200 text-amber-900 flex items-center justify-center font-black text-lg shrink-0 shadow-inner">
             {{ (currentDm.testimonialName || '農').charAt(0) }}
           </div>
           <div class="space-y-1 text-xs">
+            <span class="inline-block px-2 py-0.5 rounded-full bg-amber-200/70 text-amber-900 text-[10px] font-bold">預期效益示意．非實際客戶見證</span>
             <div class="flex items-center gap-2">
               <strong class="text-sm font-black text-slate-900">{{ currentDm.testimonialName }}</strong>
               <span class="text-amber-800 font-bold">{{ currentDm.testimonialTitle }}</span>

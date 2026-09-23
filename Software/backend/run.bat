@@ -12,4 +12,12 @@ if not exist "%MVN_CMD%" (
     )
 )
 
-call "%MVN_CMD%" spring-boot:run
+rem Usage: run.bat        -> production mode (default, real credentials required)
+rem        run.bat demo   -> demo mode (roadshow: demo-login, local-only H2 console)
+if /i "%~1"=="demo" (
+    echo [AgriDispatch] Profile: demo
+    call "%MVN_CMD%" spring-boot:run -Dspring-boot.run.profiles=demo
+) else (
+    echo [AgriDispatch] Profile: production
+    call "%MVN_CMD%" spring-boot:run
+)

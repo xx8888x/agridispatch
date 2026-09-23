@@ -516,6 +516,11 @@
               <input type="password" id="cfg-access-token" placeholder="填入 Long-lived Access Token" value="mock_token_agridispatch_line_bot"
                      class="w-full bg-slate-950 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs mt-1 font-mono">
             </div>
+            <div class="sm:col-span-2">
+              <label class="text-[11px] text-slate-400 font-bold">管理金鑰 (X-Admin-Key，呼叫 LINE Bot /api/config 所需)</label>
+              <input type="password" id="cfg-admin-key" placeholder="填入 LINE Bot 服務端設定的管理金鑰"
+                     class="w-full bg-slate-950 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs mt-1 font-mono">
+            </div>
           </div>
 
           <div class="pt-2 flex items-center justify-between gap-2">
@@ -540,6 +545,9 @@
     const API_BASE = window.location.origin.startsWith('http')
       ? `${window.location.origin}/api`
       : 'http://localhost:3000/api';
+
+    // LINE Bot 獨立服務（Port 5000），集中管理呼叫端點
+    const LINEBOT_BASE = 'http://localhost:5000';
 
     let currentUserId = 'U1001_FARMER';
     let currentRole = 'farmer';
@@ -767,7 +775,7 @@
       try {
         let replyJson = null;
         try {
-          const res5000 = await fetch('http://localhost:5000/mock/chat', {
+          const res5000 = await fetch(`${LINEBOT_BASE}/mock/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: currentUserId, text: text }),
@@ -823,7 +831,7 @@
       const target = document.getElementById('webhook-url-input');
       let val = input.value.trim();
       if (!val) {
-        target.value = 'http://localhost:5000/callback';
+        target.value = `${LINEBOT_BASE}/callback`;
       } else {
         if (!val.startsWith('http://') && !val.startsWith('https://')) {
           val = 'https://' + val;
@@ -856,7 +864,7 @@
         window.AgriDocs.notify('🧪 發送 Webhook 測試封包', '正在向 LINE Bot 伺服器傳送 HMAC-SHA256 簽章驗證測試...');
       }
       try {
-        const res = await fetch('http://localhost:5000/mock/chat', {
+        const res = await fetch(`${LINEBOT_BASE}/mock/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: currentUserId, text: '查訂單' }),
@@ -894,12 +902,17 @@
     async function saveLineConfig() {
       const secret = document.getElementById('cfg-channel-secret').value.trim();
       const token = document.getElementById('cfg-access-token').value.trim();
+      const adminKeyEl = document.getElementById('cfg-admin-key');
+      const adminKey = adminKeyEl ? adminKeyEl.value.trim() : '';
 
       try {
         await Promise.allSettled([
-          fetch('http://localhost:5000/api/config', {
+          fetch(`${LINEBOT_BASE}/api/config`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              ...(adminKey ? { 'X-Admin-Key': adminKey } : {})
+            },
             body: JSON.stringify({ channelSecret: secret, channelAccessToken: token })
           }),
           fetch(`${API_BASE}/line/config`, {
@@ -929,7 +942,7 @@
       if (!badge || !text) return;
 
       try {
-        const res = await fetch('http://localhost:5000/api/config', { signal: AbortSignal.timeout(2000) });
+        const res = await fetch(`${LINEBOT_BASE}/api/config`, { signal: AbortSignal.timeout(2000) });
         if (res.ok) {
           const cfg = await res.json();
           text.innerText = cfg.mode === 'PRODUCTION' ? '正式生產 (Port 5000)' : '模擬模式 (Port 5000)';
@@ -1131,26 +1144,16 @@
       return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
+    // LINE Bot 模擬對話框內「快速回覆」按鈕的假動作提示（取代 alert，避免打斷體驗）
+    function lineBotToast(msg) {
+      (window.AgriUtil ? window.AgriUtil.toast : (t, m) => alert(`${t}\n${m}`))('💬 LINE Bot', msg);
+    }
+
     function copyWebhookUrl() {
       const input = document.getElementById('webhook-url-input');
       input.select();
       document.execCommand('copy');
-      alert('✅ Webhook URL 已複製到剪貼簿！可貼入 LINE Developers 後台。');
-    }
-
-    async function saveLineConfig() {
-      const secret = document.getElementById('cfg-channel-secret').value;
-      const token = document.getElementById('cfg-access-token').value;
-      try {
-        await fetch(`${API_BASE}/line/config`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ channelSecret: secret, channelAccessToken: token })
-        });
-        alert('✅ LINE Channel 設定已成功儲存至後端！');
-      } catch (e) {
-        alert('設定已於本地生效。');
-      }
+      lineBotToast('✅ Webhook URL 已複製到剪貼簿！可貼入 LINE Developers 後台。');
     }
 
     function mockLocalResponse(text) {
@@ -1594,7 +1597,7 @@
           },
           footer: {
             contents: [
-              { action: { label: '📄 查看電子薪資袋明細 (Bảng lương)', uri: 'javascript:alert("薪資袋憑證單號: PAY-2026-09-V082，實發金額 NT$ 49,940 已全數入帳。")' }, color: '#D97706' },
+              { action: { label: '📄 查看電子薪資袋明細 (Bảng lương)', uri: 'javascript:lineBotToast("薪資袋憑證單號: PAY-2026-09-V082，實發金額 NT$ 49,940 已全數入帳。")' }, color: '#D97706' },
               { action: { label: '💬 雙語人資專員諮詢 (Tư vấn nhân sự)', uri: 'javascript:handleQuickCmd("雙語求助")' }, color: '#7E22CE' }
             ]
           }
@@ -1655,8 +1658,8 @@
           },
           footer: {
             contents: [
-              { action: { label: '🇻🇳 Giữ Tiếng Việt (維持越南語模式)', uri: 'javascript:alert("✅ Đã thiết lập Tiếng Việt làm ngôn ngữ chính (已設為越南語)。")' }, color: '#7E22CE' },
-              { action: { label: '🇹🇼 切換為繁體中文介面', uri: 'javascript:alert("✅ 已切換為繁體中文介面。")' }, color: '#059669' }
+              { action: { label: '🇻🇳 Giữ Tiếng Việt (維持越南語模式)', uri: 'javascript:lineBotToast("✅ Đã thiết lập Tiếng Việt làm ngôn ngữ chính (已設為越南語)。")' }, color: '#7E22CE' },
+              { action: { label: '🇹🇼 切換為繁體中文介面', uri: 'javascript:lineBotToast("✅ 已切換為繁體中文介面。")' }, color: '#059669' }
             ]
           }
         }
@@ -1721,7 +1724,7 @@
           },
           footer: {
             contents: [
-              { action: { label: '✍️ 簽核點名並啟動今日工時計算', uri: 'javascript:alert("✅ 點名紀錄已回傳科技總台大腦，工時已開始起算！")' }, color: '#2563EB' },
+              { action: { label: '✍️ 簽核點名並啟動今日工時計算', uri: 'javascript:lineBotToast("✅ 點名紀錄已回傳科技總台大腦，工時已開始起算！")' }, color: '#2563EB' },
               { action: { label: '🚁 檢視無人機與機耕支援進度', uri: 'javascript:handleQuickCmd("機耕航跡")' }, color: '#4F46E5' }
             ]
           }
@@ -1754,7 +1757,7 @@
           footer: {
             contents: [
               { action: { label: '🗺️ 查看無人機 RTK 飛行熱區圖資', uri: 'https://agridispatch.tw/track/drone-t50' }, color: '#4F46E5' },
-              { action: { label: '📑 下載防檢署合規代噴數位憑單', uri: 'javascript:alert("✅ 防檢署合規憑單 #DRN-2026-082 下載成功！")' }, color: '#059669' }
+              { action: { label: '📑 下載防檢署合規代噴數位憑單', uri: 'javascript:lineBotToast("✅ 防檢署合規憑單 #DRN-2026-082 下載成功！")' }, color: '#059669' }
             ]
           }
         }
@@ -1784,7 +1787,7 @@
           },
           footer: {
             contents: [
-              { action: { label: '✍️ 農友線上電子簽名確認', uri: 'javascript:alert("✅ 驗收簽核成功！發票與扣款收據已發送至農友信箱。")' }, color: '#059669' },
+              { action: { label: '✍️ 農友線上電子簽名確認', uri: 'javascript:lineBotToast("✅ 驗收簽核成功！發票與扣款收據已發送至農友信箱。")' }, color: '#059669' },
               { action: { label: '💵 檢視帶工領班加給分紅', uri: 'javascript:handleQuickCmd("領班分紅")' }, color: '#D97706' }
             ]
           }
@@ -1845,7 +1848,7 @@
           },
           footer: {
             contents: [
-              { action: { label: '📊 檢視本月各園區農友評核明細', uri: 'javascript:alert("本月服務 4 處果園，農友滿意度評分均為 5.0 滿分！")' }, color: '#D97706' },
+              { action: { label: '📊 檢視本月各園區農友評核明細', uri: 'javascript:lineBotToast("本月服務 4 處果園，農友滿意度評分均為 5.0 滿分！")' }, color: '#D97706' },
               { action: { label: '👷 返回工班點名中心', uri: 'javascript:handleQuickCmd("工班點名")' }, color: '#2563EB' }
             ]
           }
@@ -1940,7 +1943,7 @@
           footer: {
             contents: [
               { action: { label: '🚀 確認發送暴雨避險推播', uri: 'javascript:triggerSimulatedPush("weather_alert", "all")' }, color: '#2563EB' },
-              { action: { label: '📑 檢視推播記錄與已讀回條', uri: 'javascript:alert("過去24小時共推播 3 則訊息，總送達率 100%，已讀率 94.2%。")' }, color: '#4B5563' }
+              { action: { label: '📑 檢視推播記錄與已讀回條', uri: 'javascript:lineBotToast("過去24小時共推播 3 則訊息，總送達率 100%，已讀率 94.2%。")' }, color: '#4B5563' }
             ]
           }
         }
@@ -1970,7 +1973,7 @@
           },
           footer: {
             contents: [
-              { action: { label: '📑 匯出本日排班明細 Excel', uri: 'javascript:alert("✅ 最佳化排班明細已成功匯出至後台下載專區！")' }, color: '#D97706' },
+              { action: { label: '📑 匯出本日排班明細 Excel', uri: 'javascript:lineBotToast("✅ 最佳化排班明細已成功匯出至後台下載專區！")' }, color: '#D97706' },
               { action: { label: '📊 開啟後台全區戰情視窗', uri: 'admin.html' }, color: '#4F46E5' }
             ]
           }
@@ -2001,7 +2004,7 @@
           },
           footer: {
             contents: [
-              { action: { label: '📥 下載會計師審定雙軌金流報告', uri: 'javascript:alert("✅ 雙軌金流合規報告下載完成 (PDF)！")' }, color: '#059669' },
+              { action: { label: '📥 下載會計師審定雙軌金流報告', uri: 'javascript:lineBotToast("✅ 雙軌金流合規報告下載完成 (PDF)！")' }, color: '#059669' },
               { action: { label: '🛡️ 檢視外展特許合規名冊', uri: 'javascript:handleQuickCmd("特許合規")' }, color: '#7E22CE' }
             ]
           }

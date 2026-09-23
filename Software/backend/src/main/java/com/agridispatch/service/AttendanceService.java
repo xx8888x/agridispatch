@@ -6,7 +6,6 @@ import com.agridispatch.repository.AttendanceRepository;
 import com.agridispatch.repository.WorkerRepository;
 import org.springframework.stereotype.Service;
 
-import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -25,16 +24,10 @@ public class AttendanceService {
     private final AttendanceRepository attendanceRepository;
     private final WorkerRepository workerRepository;
     private final Object clockLock = new Object();
-    private Clock clock = Clock.systemDefaultZone();
 
     public AttendanceService(AttendanceRepository attendanceRepository, WorkerRepository workerRepository) {
         this.attendanceRepository = attendanceRepository;
         this.workerRepository = workerRepository;
-    }
-
-    /** 測試用：替換時鐘以模擬跨日 */
-    void setClock(Clock clock) {
-        this.clock = clock;
     }
 
     private void requireWorker(String workerId) {
@@ -66,7 +59,7 @@ public class AttendanceService {
             }
             Attendance attendance = new Attendance(
                     workerId,
-                    LocalDateTime.now(clock),
+                    LocalDateTime.now(),
                     location != null && !location.isBlank() ? location : "未提供 GPS 位置描述",
                     gpsAccuracy
             );
@@ -87,7 +80,7 @@ public class AttendanceService {
             Attendance attendance = attendanceRepository
                     .findFirstByWorkerIdAndClockOutTimeIsNullOrderByClockInTimeDesc(workerId)
                     .orElseThrow(() -> ApiException.conflict("找不到尚未下班的上班打卡紀錄，請先上班打卡"));
-            LocalDateTime now = LocalDateTime.now(clock);
+            LocalDateTime now = LocalDateTime.now();
             if (now.isBefore(attendance.getClockInTime())) {
                 now = attendance.getClockInTime();
             }
@@ -118,13 +111,13 @@ public class AttendanceService {
      * 查詢今日出勤打卡紀錄
      */
     public List<Attendance> getTodayAttendance(String workerId) {
-        return attendanceRepository.findByWorkerIdAndWorkDate(workerId, LocalDate.now(clock));
+        return attendanceRepository.findByWorkerIdAndWorkDate(workerId, LocalDate.now());
     }
 
     /**
      * 取得本日全工班出勤在線人數
      */
     public long getTodayPresentCount() {
-        return attendanceRepository.countPresentWorkersByDate(LocalDate.now(clock));
+        return attendanceRepository.countPresentWorkersByDate(LocalDate.now());
     }
 }

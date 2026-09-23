@@ -33,6 +33,10 @@ public class BrochureController {
 
     @PostMapping
     public ResponseEntity<?> createBrochure(@RequestBody Brochure brochure) {
+        // 新增時若 ID 已存在不可覆寫
+        if (brochure.getId() != null && !brochure.getId().isBlank() && brochureService.getBrochureById(brochure.getId()).isPresent()) {
+            throw com.agridispatch.common.ApiException.conflict("文宣 DM 編號已存在: " + brochure.getId());
+        }
         Brochure saved = brochureService.saveBrochure(brochure);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("success", true, "data", saved, "message", "成功上傳/發布產品文宣 DM"));
@@ -40,6 +44,9 @@ public class BrochureController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateBrochure(@PathVariable String id, @RequestBody Brochure brochure) {
+        if (brochureService.getBrochureById(id).isEmpty()) {
+            throw com.agridispatch.common.ApiException.notFound("找不到該產品文宣 DM: " + id);
+        }
         brochure.setId(id);
         Brochure updated = brochureService.saveBrochure(brochure);
         return ResponseEntity.ok(Map.of("success", true, "data", updated, "message", "成功更新產品文宣 DM"));

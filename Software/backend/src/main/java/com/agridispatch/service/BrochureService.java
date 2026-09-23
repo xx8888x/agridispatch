@@ -31,7 +31,11 @@ public class BrochureService {
 
     public Brochure saveBrochure(Brochure brochure) {
         if (brochure.getId() == null || brochure.getId().trim().isEmpty()) {
-            brochure.setId("dm-" + System.currentTimeMillis());
+            String id;
+            do {
+                id = "dm-" + System.currentTimeMillis() + "-" + java.util.UUID.randomUUID().toString().substring(0, 4);
+            } while (brochureRepository.existsById(id));
+            brochure.setId(id);
         }
         if (brochure.getDepositAmount() == 0 && brochure.getDiscountPrice() > 0) {
             int rate = brochure.getDepositRate() > 0 ? brochure.getDepositRate() : 20;

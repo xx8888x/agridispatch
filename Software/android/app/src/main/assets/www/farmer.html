@@ -9,6 +9,10 @@
   <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
   <script src="js/api-client.js"></script>
   <script>
+    // production 模式：無 token 或角色不符則導向登入頁（demo 模式不強制）
+    if (window.AgriAuth) window.AgriAuth.requireRole(['farmer'], 'farmer-login.html');
+  </script>
+  <script>
     if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode !== 'production') {
       document.write('<script src="js/demo-accounts.js"><\/script>');
     }
@@ -540,7 +544,7 @@
               <button onclick="AgriDocs.downloadInvoice('ORD-2026-001', { invoiceNo: 'AG-98765432', cropName: '枋山愛文芒果 (6.0 分地)', amount: 22400, deposit: 4480 })" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-xs font-bold border border-emerald-500/30 transition flex items-center gap-1 shadow">
                 <span>📄</span> 下載發票 PDF
               </button>
-              <button onclick="alert('專車 GPS 即時定位：屏東枋山集貨場專車，預計明日清晨 06:50 抵達果園門口。')" class="px-3 py-1.5 rounded-xl bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 text-xs font-bold border border-blue-500/30 transition flex items-center gap-1">
+              <button onclick="AgriDocs.showGpsLocation('🚐 專車 GPS 即時定位', '屏東枋山集貨場專車，預計明日清晨 06:50 抵達果園門口。')" class="px-3 py-1.5 rounded-xl bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 text-xs font-bold border border-blue-500/30 transition flex items-center gap-1">
                 <span>📍</span> 專車即時 GPS
               </button>
               <a href="tel:0921999888" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition flex items-center gap-1">
@@ -745,7 +749,7 @@
       };
 
       try {
-        await fetch('/api/orders', {
+        await fetch(`${(window.AgriAuth && window.AgriAuth.API_BASE) || '/api'}/orders`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -870,7 +874,8 @@
           const user = JSON.parse(rawUser);
           if (user.name) {
             const elName = document.getElementById('header-user-name');
-            if (elName) elName.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> ${user.name}`;
+            const safeName = window.AgriUtil ? window.AgriUtil.escapeHtml(user.name) : user.name;
+            if (elName) elName.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> ${safeName}`;
           }
           if (user.farmName) {
             const elFarm = document.getElementById('header-farm-name');

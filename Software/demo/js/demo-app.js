@@ -353,7 +353,7 @@ window.handleTalentSubmit = function(e) {
   if (e) e.preventDefault();
   const consent = document.getElementById('talent-consent');
   if (!consent || !consent.checked) {
-    alert("⚠️ 請先閱讀並勾選《個人資料蒐集、處理及利用同意書》，保障合規權益！");
+    showToast("⚠️ 請先閱讀並勾選《個人資料蒐集、處理及利用同意書》，保障合規權益！");
     return;
   }
   const name = document.getElementById('talent-name')?.value || "農工朋友";

@@ -645,11 +645,12 @@ const AgriDocs = (function () {
     toast.className = `p-4 rounded-2xl shadow-2xl border transition-all duration-300 pointer-events-auto flex items-start gap-3 backdrop-blur-md transform translate-y-[-10px] opacity-0 ${
       isAlert ? 'bg-red-950/95 border-red-500/50 text-red-200' : 'bg-slate-900/95 border-emerald-500/50 text-slate-100'
     }`;
+    const escFn = (window.AgriUtil && window.AgriUtil.escapeHtml) || ((s) => String(s == null ? '' : s));
     toast.innerHTML = `
       <div class="text-xl shrink-0">${isAlert ? '🚨' : '🌱'}</div>
       <div class="flex-1 min-w-0">
-        <div class="font-black text-sm text-white">${title}</div>
-        <div class="text-xs text-slate-300 mt-0.5 leading-snug">${message}</div>
+        <div class="font-black text-sm text-white">${escFn(title)}</div>
+        <div class="text-xs text-slate-300 mt-0.5 leading-snug">${escFn(message)}</div>
       </div>
       <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white text-xs p-1">✕</button>
     `;

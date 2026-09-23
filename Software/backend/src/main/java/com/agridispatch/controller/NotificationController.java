@@ -14,8 +14,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 @RestController
 @RequestMapping("/api/notifications")
-@CrossOrigin(origins = "*")
 public class NotificationController {
+
+    private static final int MAX_HISTORY = 500;
 
     private final List<Map<String, Object>> notificationHistory = new CopyOnWriteArrayList<>();
     private final Map<String, String> fcmTokens = new ConcurrentHashMap<>();
@@ -56,6 +57,12 @@ public class NotificationController {
     public ResponseEntity<?> sendNotification(@RequestBody Map<String, Object> payload) {
         String title = payload.getOrDefault("title", "智農派工訊息").toString();
         String message = payload.getOrDefault("message", "").toString();
+        if (message.isBlank()) {
+            throw new IllegalArgumentException("通知內容 (message) 為必填欄位");
+        }
+        if (title.length() > 100 || message.length() > 2000) {
+            throw new IllegalArgumentException("通知標題或內容過長");
+        }
         String channel = payload.getOrDefault("channel", "dispatch").toString();
         String target = payload.getOrDefault("target", "all").toString();
 
@@ -68,6 +75,9 @@ public class NotificationController {
         notif.put("target", target);
 
         notificationHistory.add(0, notif);
+        while (notificationHistory.size() > MAX_HISTORY) {
+            notificationHistory.remove(notificationHistory.size() - 1);
+        }
 
         return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -78,8 +88,13 @@ public class NotificationController {
 
     @PostMapping("/fcm/register")
     public ResponseEntity<?> registerFcmToken(@RequestBody Map<String, String> req) {
-        String userId = req.getOrDefault("userId", "ANONYMOUS");
+        // FCM token 一律綁定目前登入者，不接受替他人註冊
+        com.agridispatch.security.AuthContext ctx = com.agridispatch.security.AuthContext.require();
+        String userId = ctx.sub();
         String token = req.getOrDefault("token", "");
+        if (token.length() > 4096) {
+            throw new IllegalArgumentException("FCM token 過長");
+        }
         if (!token.isBlank()) {
             fcmTokens.put(userId, token);
         }

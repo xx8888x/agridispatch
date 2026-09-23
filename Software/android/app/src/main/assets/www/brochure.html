@@ -541,7 +541,7 @@
 
         const loadBrochures = async () => {
           try {
-            const res = await fetch('/api/brochures');
+            const res = await fetch(`${(window.AgriAuth && window.AgriAuth.API_BASE) || '/api'}/brochures`);
             if (res.ok) {
               const data = await res.json();
               if (data.success && data.data && data.data.length > 0) {

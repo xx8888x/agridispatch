@@ -1838,7 +1838,7 @@
 
       // 2. 非同步發送後端 API /api/orders
       try {
-        await fetch('/api/orders', {
+        await fetch(`${(window.AgriAuth && window.AgriAuth.API_BASE) || '/api'}/orders`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(orderData)
@@ -1883,9 +1883,10 @@
 
       let orders = [];
       try {
-        const res = await fetch('/api/orders');
+        const res = await fetch(`${(window.AgriAuth && window.AgriAuth.API_BASE) || '/api'}/orders`);
         if (res.ok) {
-          orders = await res.json();
+          const json = await res.json();
+          orders = Array.isArray(json) ? json : (json && Array.isArray(json.data) ? json.data : []);
         }
       } catch (e) {
         console.warn('Fetch /api/orders failed, reading localStorage', e);
@@ -1930,6 +1931,7 @@
         completed: { text: '已完工', bg: 'bg-slate-700/50', textCol: 'text-slate-300', border: 'border-slate-600' }
       };
 
+      const esc = window.AgriUtil ? window.AgriUtil.escapeHtml : (s) => s;
       container.innerHTML = orders.slice(0, 4).map(o => {
         const st = statusMap[o.status] || statusMap.pending;
         const timeStr = o.createdAt ? o.createdAt.split('T')[0] : '近期';
@@ -1937,15 +1939,15 @@
           <div class="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/70 hover:border-slate-600 transition flex items-center justify-between">
             <div class="space-y-1 text-left">
               <div class="flex items-center gap-2">
-                <span class="font-mono text-xs font-bold text-amber-400">${o.id}</span>
+                <span class="font-mono text-xs font-bold text-amber-400">${esc(o.id)}</span>
                 <span class="text-[10px] px-2 py-0.5 rounded-full ${st.bg} ${st.textCol} border ${st.border} font-bold">${st.text}</span>
               </div>
               <div class="text-xs font-bold text-white">
-                ${o.farmerName} ╳ ${o.cropName || '作物'}・${o.categoryName ? o.categoryName.split(' ')[1] || o.categoryName : '農事派工'}
+                ${esc(o.farmerName)} ╳ ${esc(o.cropName || '作物')}・${esc(o.categoryName ? o.categoryName.split(' ')[1] || o.categoryName : '農事派工')}
               </div>
               <div class="text-[11px] text-slate-400 flex items-center gap-2">
-                <span>👤 現場小工頭：<span class="text-slate-200">${o.foremanName || '本人'}</span></span>
-                <span>📅 ${timeStr}</span>
+                <span>👤 現場小工頭：<span class="text-slate-200">${esc(o.foremanName || '本人')}</span></span>
+                <span>📅 ${esc(timeStr)}</span>
               </div>
             </div>
             <div class="text-right">
@@ -2197,7 +2199,7 @@
 
       // 2. 後端 API
       try {
-        await fetch('/api/orders', {
+        await fetch(`${(window.AgriAuth && window.AgriAuth.API_BASE) || '/api'}/orders`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(orderData)

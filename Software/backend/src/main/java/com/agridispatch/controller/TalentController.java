@@ -32,27 +32,22 @@ public class TalentController {
 
     @PostMapping
     public ResponseEntity<?> createTalent(@RequestBody Talent talent) {
-        Talent created = talentService.createTalent(talent);
+        Talent created = talentService.createTalent(talent, false);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("success", true, "data", created, "message", "成功登錄人才"));
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> registerTalent(@RequestBody Talent talent) {
-        Talent created = talentService.createTalent(talent);
+        Talent created = talentService.createTalent(talent, true);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("success", true, "data", created, "message", "人才登錄成功，已進入調度人才池"));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateTalent(@PathVariable String id, @RequestBody Talent talent) {
-        try {
-            Talent updated = talentService.updateTalent(id, talent);
-            return ResponseEntity.ok(Map.of("success", true, "data", updated, "message", "成功更新人才資料"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("success", false, "error", e.getMessage()));
-        }
+        Talent updated = talentService.updateTalent(id, talent);
+        return ResponseEntity.ok(Map.of("success", true, "data", updated, "message", "成功更新人才資料"));
     }
 
     @DeleteMapping("/{id}")

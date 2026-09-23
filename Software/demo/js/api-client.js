@@ -212,6 +212,29 @@
     detectLoginPage
   };
 
+  // 輕量 Toast（給沒有載入 js/agri-docs.js 的頁面使用，例如 farmers_map.html）
+  function toast(title, message, opts = {}) {
+    const containerId = 'agriLiteToastContainer';
+    let container = document.getElementById(containerId);
+    if (!container) {
+      container = document.createElement('div');
+      container.id = containerId;
+      container.className = 'fixed top-5 right-5 z-[99999] flex flex-col gap-2.5 max-w-sm pointer-events-none';
+      document.body.appendChild(container);
+    }
+    const el = document.createElement('div');
+    el.className = 'p-4 rounded-2xl shadow-2xl border pointer-events-auto flex items-start gap-3 backdrop-blur-md bg-slate-900/95 border-emerald-500/50 text-slate-100';
+    const safeTitle = escapeHtml(title || '');
+    const safeMsg = escapeHtml(message || '');
+    el.innerHTML = `<div class="text-xl shrink-0">${opts.icon || '🌱'}</div>
+      <div class="flex-1 min-w-0"><div class="font-black text-sm text-white">${safeTitle}</div><div class="text-xs text-slate-300 mt-0.5 leading-snug">${safeMsg}</div></div>
+      <button class="text-slate-400 hover:text-white text-xs p-1">✕</button>`;
+    el.querySelector('button').addEventListener('click', () => el.remove());
+    container.appendChild(el);
+    setTimeout(() => el.remove(), opts.duration || 4000);
+  }
+
   global.AgriUtil = global.AgriUtil || {};
   global.AgriUtil.escapeHtml = escapeHtml;
+  global.AgriUtil.toast = toast;
 })(window);

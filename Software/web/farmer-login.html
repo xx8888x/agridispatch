@@ -429,7 +429,7 @@
         };
 
         const alertHelp = () => {
-          alert('如忘記密碼或欲開通契作農場主帳號，請撥打合作社專線：(03) 388-1234 或聯絡LINE官方客服。');
+          (window.AgriUtil ? window.AgriUtil.toast : (t, m) => alert(`${t}\n${m}`))('📞 需要協助？', '如忘記密碼或欲開通契作農場主帳號，請撥打合作社專線：(03) 388-1234 或聯絡LINE官方客服。');
         };
 
         return {

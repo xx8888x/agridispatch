@@ -2585,7 +2585,7 @@
       });
 
       navigator.clipboard.writeText(text).then(() => {
-        alert(`已成功複製 ${sorted.length} 家農會通訊錄至剪貼簿！`);
+        (window.AgriUtil ? window.AgriUtil.toast : (t, m) => alert(`${t}\n${m}`))('📋 複製成功', `已成功複製 ${sorted.length} 家農會通訊錄至剪貼簿！`);
       }).catch(err => {
         console.error("複製失敗:", err);
       });

@@ -9,6 +9,10 @@
   <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
   <script src="js/api-client.js"></script>
   <script>
+    // production 模式：無 token 或角色不符則導向登入頁（demo 模式不強制）
+    if (window.AgriAuth) window.AgriAuth.requireRole(['worker_local'], 'worker-local-login.html');
+  </script>
+  <script>
     if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode !== 'production') {
       document.write('<script src="js/demo-accounts.js"><\/script>');
     }

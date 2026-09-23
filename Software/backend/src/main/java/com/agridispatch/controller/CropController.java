@@ -39,13 +39,8 @@ public class CropController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateCrop(@PathVariable String id, @RequestBody Crop crop) {
-        try {
-            Crop updated = cropService.updateCrop(id, crop);
-            return ResponseEntity.ok(Map.of("success", true, "data", updated, "message", "成功更新作物基準"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("success", false, "error", e.getMessage()));
-        }
+        Crop updated = cropService.updateCrop(id, crop);
+        return ResponseEntity.ok(Map.of("success", true, "data", updated, "message", "成功更新作物基準"));
     }
 
     @DeleteMapping("/{id}")

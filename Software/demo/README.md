@@ -29,7 +29,7 @@
 | [`admin.html`](./admin.html) | **💻 科技營運與調度管理後台 (Admin Console)** | • 25 位特許外展移工名冊管理與主管機關送審 CSV 匯出<br>• 6 大派工類別與農場主自訂「現場派工小工頭」調度<br>• 突發午後暴雨冷鏈避險演練（保全 100% 出勤）<br>• 52 週全台產曆動態輪播與 12 處收穫倒數雷達<br>• 產品文宣與商業簡報內部專區 |
 | [`admin-login.html`](./admin-login.html) | **🔑 管理人員專屬登入門戶** | 科技公司技術長、合作社調度長、農業部稽核員一鍵填入實測 |
 | [`farmer-login.html`](./farmer-login.html) | **👨‍🌾 農場主 / 班長專屬門戶** | 產季早鳥 9 折預約、6大派工類別智慧試算、自訂現場小工頭 |
-| [`worker-foreign-login.html`](./worker-foreign-login.html) | **👷 外籍特許農工專屬門戶** | 越/印/泰/菲五語切換、ARC居留證號免密登入、今日派遣工單 |
+| [`worker-foreign-login.html`](./worker-foreign-login.html) | **👷 外籍特許農工專屬門戶** | 越/印/泰/菲五語切換、ARC居留證號快速登入、今日派遣工單 |
 | [`worker-local-login.html`](./worker-local-login.html) | **🚜 本國機耕 / 兼職門戶** | 80hp 曳引機深耕整地、無人機代噴驗收、時薪 $310 彈性排班 |
 | [`login.html`](./login.html) | **🏛️ 四大身分分流登入大廳** | 一目了然切換農場主、外展移工、本地機耕師與管理後台 |
 | [`index.html`](./index.html) | **🌱 智農派工官方首頁** | 整合產曆動態輪播、服務優勢、四大入口與痛點解法 |

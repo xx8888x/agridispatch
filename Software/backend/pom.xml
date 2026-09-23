@@ -22,6 +22,9 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- 本機離線 m2 僅有 surefire 3.5.4 / JUnit 5.11.4，覆寫 Spring Boot 3.2.5 預設版本 -->
+        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+        <junit-jupiter.version>5.11.4</junit-jupiter.version>
     </properties>
 
     <dependencies>

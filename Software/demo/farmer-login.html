@@ -4,8 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>農場主專屬登入 - 智農派工 AgriDispatch</title>
+  <!-- 執行模式設定（demo / production，每份副本各自一份） -->
+  <script src="js/app-config.js"></script>
+  <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode !== 'production') {
+      document.write('<script src="js/demo-accounts.js"><\/script>');
+    }
+  </script>
   <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
   <!-- Vue 3: Local Vendor First with CDN Fallback -->
   <script src="js/vendor/vue.global.prod.js"></script>
   <script>
@@ -194,12 +208,12 @@
             <p class="text-xs text-slate-400 mt-1">請輸入您的農場主帳號、手機號碼或農民登記代號</p>
           </div>
 
-          <!-- Demo Mode Notice -->
-          <div class="mb-5 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between gap-3">
+          <!-- Demo Mode Notice（僅 demo 模式顯示） -->
+          <div v-if="isDemo && demoCfg" class="mb-5 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between gap-3">
             <div class="flex items-center gap-2">
               <span class="text-base shrink-0">⚡</span>
               <div>
-                <div class="font-bold text-white">Demo 展示模式：已開通免密通行</div>
+                <div class="font-bold text-white">{{ demoCfg.bannerNotice }}</div>
                 <div class="text-[11px] text-slate-400">免控管帳密，任意輸入或直接點擊按鈕均可進入實測</div>
               </div>
             </div>
@@ -222,7 +236,7 @@
             <div>
               <label class="block text-slate-300 font-semibold mb-1.5">農場主帳號 / 手機號碼 / 農民代號</label>
               <div class="relative">
-                <input v-model="form.identifier" type="text" placeholder="如 farmer 或 0912-345-678 (Demo免密)"
+                <input v-model="form.identifier" type="text" :placeholder="isDemo && demoCfg ? demoCfg.idPlaceholder : '請輸入農場主帳號 / 手機號碼'"
                   class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition text-sm">
                 <span class="absolute right-3.5 top-3.5 text-slate-500">🧑‍🌾</span>
               </div>
@@ -234,7 +248,7 @@
                 <a href="#" @click.prevent="alertHelp" class="text-[11px] text-emerald-400 hover:underline">忘記密碼？</a>
               </div>
               <div class="relative">
-                <input v-model="form.password" type="password" placeholder="請輸入密碼 (預設 123456 / Demo免密)"
+                <input v-model="form.password" type="password" :placeholder="isDemo && demoCfg ? demoCfg.pwdPlaceholder : '請輸入密碼'"
                   class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition text-sm">
                 <span class="absolute right-3.5 top-3.5 text-slate-500">🔒</span>
               </div>
@@ -245,7 +259,7 @@
                 <input type="checkbox" v-model="rememberMe" class="rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-0">
                 <span>記住我的農場資訊</span>
               </label>
-              <span class="text-slate-500 text-[11px]">展示密碼：123456 (免驗證)</span>
+              <span v-if="isDemo && demoCfg" class="text-slate-500 text-[11px]">{{ demoCfg.pwdHint }}</span>
             </div>
 
             <button type="submit" :disabled="loading"

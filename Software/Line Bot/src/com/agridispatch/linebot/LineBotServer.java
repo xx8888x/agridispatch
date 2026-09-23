@@ -39,40 +39,51 @@ public class LineBotServer {
                 exchange.close();
             });
 
-            // 設定讀取與動態更新 API
+            // 設定讀取與動態更新 API (管理端點，須以 X-Admin-Key 驗證身分)
             server.createContext("/api/config", exchange -> {
-                exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-                exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-                exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
-                if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                HttpUtils.applyCors(exchange, "GET, POST, OPTIONS", "Content-Type, X-Admin-Key");
+                String method = exchange.getRequestMethod();
+
+                if ("OPTIONS".equalsIgnoreCase(method)) {
                     exchange.sendResponseHeaders(204, -1);
+                    exchange.close();
                     return;
                 }
 
-                if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                // 未設定管理金鑰時，整個設定 API 停用 (啟動時的 log 已提示如何設定 LINEBOT_ADMIN_KEY / admin.key)
+                if (Config.ADMIN_KEY == null) {
+                    HttpUtils.sendJson(exchange, 403,
+                            "{\"success\":false,\"message\":\"設定 API 尚未啟用：請設定環境變數 LINEBOT_ADMIN_KEY 或 config.properties 的 admin.key\"}");
+                    return;
+                }
+
+                // 驗證管理金鑰；注意透過 localtunnel/ngrok 對外時來源 IP 一律為 127.0.0.1，不可用來源位址當保護機制
+                if (!HttpUtils.isAdminAuthorized(exchange)) {
+                    HttpUtils.sendJson(exchange, 403,
+                            "{\"success\":false,\"message\":\"Forbidden: 缺少或錯誤的 X-Admin-Key 標頭\"}");
+                    return;
+                }
+
+                if ("POST".equalsIgnoreCase(method)) {
                     byte[] bytes = exchange.getRequestBody().readAllBytes();
                     String body = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
 
-                    String secret = extractJsonField(body, "channelSecret");
-                    String token = extractJsonField(body, "channelAccessToken");
-                    String backend = extractJsonField(body, "backendApiBase");
+                    java.util.Map<String, Object> fields = SimpleJson.parseObject(body);
+                    String secret = fields.get("channelSecret") != null ? String.valueOf(fields.get("channelSecret")) : null;
+                    String token = fields.get("channelAccessToken") != null ? String.valueOf(fields.get("channelAccessToken")) : null;
+                    String backend = fields.get("backendApiBase") != null ? String.valueOf(fields.get("backendApiBase")) : null;
 
                     boolean ok = Config.updateConfig(secret, token, backend);
                     String resp = "{\"success\":" + ok + ",\"mode\":\"" + (Config.IS_MOCK_MODE ? "MOCK" : "PRODUCTION") + "\",\"message\":\"LINE 設定已更新\"}";
-                    byte[] rb = resp.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-                    exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-                    exchange.sendResponseHeaders(200, rb.length);
-                    exchange.getResponseBody().write(rb);
-                    exchange.close();
-                } else {
+                    HttpUtils.sendJson(exchange, 200, resp);
+                } else if ("GET".equalsIgnoreCase(method)) {
+                    // GET 一律僅回傳遮罩後的值，不外洩完整金鑰
                     String maskedSecret = Config.CHANNEL_SECRET.length() > 6 ? Config.CHANNEL_SECRET.substring(0, 3) + "..." + Config.CHANNEL_SECRET.substring(Config.CHANNEL_SECRET.length() - 3) : "******";
                     String maskedToken = Config.CHANNEL_ACCESS_TOKEN.length() > 10 ? Config.CHANNEL_ACCESS_TOKEN.substring(0, 5) + "..." + Config.CHANNEL_ACCESS_TOKEN.substring(Config.CHANNEL_ACCESS_TOKEN.length() - 5) : "******";
                     String resp = "{\"status\":\"UP\",\"mode\":\"" + (Config.IS_MOCK_MODE ? "MOCK" : "PRODUCTION") + "\",\"port\":" + Config.PORT + ",\"channelSecretMasked\":\"" + maskedSecret + "\",\"channelAccessTokenMasked\":\"" + maskedToken + "\",\"backendApiBase\":\"" + Config.BACKEND_API_BASE + "\"}";
-                    byte[] rb = resp.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-                    exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-                    exchange.sendResponseHeaders(200, rb.length);
-                    exchange.getResponseBody().write(rb);
-                    exchange.close();
+                    HttpUtils.sendJson(exchange, 200, resp);
+                } else {
+                    HttpUtils.sendText(exchange, 405, "Method Not Allowed");
                 }
             });
 
@@ -87,6 +98,8 @@ public class LineBotServer {
             System.out.println("🛠️ 本地測試除錯路徑: http://localhost:" + port + "/mock/chat");
             System.out.println("🔍 健康檢查路徑:     http://localhost:" + port + "/health");
             System.out.println("⚙️ 目前運行模式:     " + (Config.IS_MOCK_MODE ? "【本地模擬模式 (Mock Mode)】" : "【正式生產模式 (Production)】"));
+            System.out.println("🌐 CORS 允許來源:    " + Config.ALLOWED_ORIGINS);
+            System.out.println("🔑 /api/config 管理金鑰: " + (Config.ADMIN_KEY == null ? "未設定 (API 已停用)" : "已設定"));
             System.out.println("☕ Java 執行環境:    " + System.getProperty("java.version") + " (" + System.getProperty("java.vendor") + ")");
             System.out.println("==================================================================");
             System.out.println("💡 提示：您可以使用 test_local.bat 進行本地模擬測試，免連外網即可查看！");
@@ -96,11 +109,5 @@ public class LineBotServer {
             System.err.println("❌ LINE Bot 伺服器啟動失敗: " + e.getMessage());
             e.printStackTrace();
         }
-    }
-
-    private static String extractJsonField(String json, String field) {
-        if (json == null) return "";
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"" + field + "\"\\s*:\\s*\"([^\"]+)\"").matcher(json);
-        return m.find() ? m.group(1) : "";
     }
 }

@@ -124,7 +124,7 @@ public class FlexMessageBuilder {
             ]
           }
         }
-        """.formatted(userId != null ? userId : "U_DEMO");
+        """.formatted(escapeJson(userId != null ? userId : "U_DEMO"));
         return wrapFlex("🔗 智農派工系統 - LINE 帳號綁定", bubble);
     }
 

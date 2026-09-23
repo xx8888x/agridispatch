@@ -30,11 +30,14 @@ Software\Line Bot\
 ├── rich_menu/                         # 六宮格圖文選單設計
 │   ├── rich_menu.json                 # LINE 官方 Rich Menu 結構定義 (2500x1686)
 │   └── rich_menu.svg                  # 高解析向量視覺底圖
-├── config.properties                  # 伺服器與 LINE 金鑰設定檔
+├── config.properties                  # 伺服器與 LINE 金鑰設定檔 (已列於 .gitignore，不會被提交)
+├── config.properties.example          # 設定檔範本 (含 admin.key / CORS 白名單說明)
+├── .env / .env.example                # 環境變數文件範本 (Java 不會自動讀取 .env，詳見下方說明)
 ├── pom.xml                            # Maven 專案設定檔 (亦可直接使用 bat 編譯)
 ├── compile.bat                        # Windows 一鍵編譯腳本
 ├── run.bat                            # Windows 一鍵啟動 LINE Bot 伺服器
 ├── test_local.bat                     # Windows 一鍵本地離線測試工具
+├── start_tunnel.bat                   # 轉呼根目錄 start_line_tunnel.bat 的 HTTPS 穿透捷徑
 └── README.md                          # 本說明文件
 ```
 
@@ -91,26 +94,46 @@ Invoke-RestMethod -Uri "http://localhost:5000/health"
 ### 方式四：連接真實 LINE 官方帳號（線上實機測試）
 若您已在 [LINE Developers Console](https://developers.line.biz/) 建立了 Messaging API Channel：
 1. **設定金鑰**：
-   編輯 `config.properties`：
+   複製 `config.properties.example` 為 `config.properties`（該檔已列於 .gitignore，不會被提交），並填入：
    ```properties
    line.channel.access.token=您的_Channel_Access_Token
    line.channel.secret=您的_Channel_Secret
+   admin.key=您自訂的高強度管理金鑰   # 用於保護 /api/config，詳見下方「管理端點與金鑰」
    ```
+   （也可改用環境變數 `LINE_CHANNEL_ACCESS_TOKEN` / `LINE_CHANNEL_SECRET` / `LINEBOT_ADMIN_KEY`，優先權高於 config.properties；請注意 Java 程式**不會**自動讀取 `.env` 檔，`.env`/`.env.example` 僅作為應設定哪些變數的文件參考。）
 2. **啟動本機伺服器**：
-   雙擊 `run.bat`（監聽 Port 5000）。
-3. **建立外網穿透 (透過 ngrok)**：
-   在終端機執行：
-   ```bash
-   ngrok http 5000
-   ```
-   取得 HTTPS 轉發網址（例如：`https://xxxx.ngrok-free.app`）。
+   雙擊 `run.bat`（監聽 Port 5000，可用環境變數 `PORT` 覆寫）。
+3. **建立外網穿透**：
+   - 方式 A：於專案根目錄雙擊 `..\..\start_line_tunnel.bat`（使用 `npx localtunnel`，免額外帳號）。
+   - 方式 B：或自行執行 `ngrok http 5000` 取得 HTTPS 轉發網址（例如：`https://xxxx.ngrok-free.app`）。
 4. **設定 LINE Developers Webhook**：
    - 進入 LINE Developers Console -> 您的 Channel -> **Messaging API**。
-   - **Webhook URL** 填入：`https://xxxx.ngrok-free.app/callback`
+   - **Webhook URL** 依實際路由填入（程式同時支援 `/callback` 與 `/webhook`，兩者行為相同，建議統一使用 `/callback`）：`https://xxxx.loca.lt/callback`（或您的 ngrok 網址）。
    - 啟用 **Use webhook**。
    - 點擊 **Verify** 確認回傳 Success。
 5. **在手機 LINE 上測試**：
    拿起手機加入官方帳號好友，發送「派工」、「避險」或點選選單，即可在真實 LINE 收到精美的 Flex Message！
+
+---
+
+## 🔐 管理端點與金鑰（/api/config）
+
+`/api/config` 可讀取（遮罩後）與更新 LINE 金鑰、後台 API 位址等設定，屬於高權限端點，因此：
+
+- **未設定管理金鑰時，此 API 會整個停用並回應 403**（啟動時的 console log 會提示如何設定）。
+- 設定方式：環境變數 `LINEBOT_ADMIN_KEY=<您的金鑰>`，或 `config.properties` 加入 `admin.key=<您的金鑰>`（環境變數優先）。
+- 呼叫時需於 HTTP 標頭帶上 `X-Admin-Key: <您的金鑰>`，伺服器以 constant-time 比對驗證，不會因為金鑰部分正確而洩漏比對進度。
+- **⚠️ 重要**：透過 localtunnel / ngrok 對外穿透時，所有外部請求在本機端的來源位址一律顯示為 `127.0.0.1`，因此「僅允許本機連線」**不是**有效的保護機制，請務必設定 `admin.key`／`LINEBOT_ADMIN_KEY`，且不要使用範例值。
+- `GET /api/config` 一律只回傳**遮罩後**的金鑰片段（例如 `abc...xyz`），不會回傳完整明文金鑰。
+
+### CORS 白名單
+`Access-Control-Allow-Origin` 已從先前的 `*`（允許任意網域）改為白名單機制：
+- 預設允許 `http://localhost:3000`、`http://127.0.0.1:3000`（本地前端開發用）。
+- 可用環境變數 `CORS_ALLOWED_ORIGINS`，或 `config.properties` 的 `cors.allowed.origins` 覆寫（以逗號分隔多個網域）。
+- 正式上線請改為您實際的前端網域（建議使用 `https://`）。
+
+### `/mock/chat` 除錯端點
+此端點僅供本地離線模擬測試使用，**只有在模擬模式（Mock Mode，即金鑰仍為預設的 `mock_*` 值）下才會回應**；一旦填入真實 LINE 金鑰進入正式模式，此端點會回應 403，避免正式環境曝露內部對話邏輯供外部匿名呼叫。
 
 ---
 

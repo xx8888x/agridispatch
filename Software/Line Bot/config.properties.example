@@ -1,0 +1,33 @@
+# ========================================================
+# 智農派工 (AgriDispatch) - LINE Bot 設定檔範本
+# 請複製此檔為 config.properties 並填入您自己的金鑰 (config.properties 已列於 .gitignore，不會被提交)
+# ========================================================
+
+# LINE Developers -> Messaging API -> Channel access token (long-lived)
+line.channel.access.token=請填入您的_Channel_Access_Token
+
+# LINE Developers -> Basic settings -> Channel secret
+line.channel.secret=請填入您的_Channel_Secret
+
+# 本地伺服器監聽埠號 (預設 5000)
+server.port=5000
+
+# 智農派工 Java 後台 API 基礎路徑
+backend.api.base=http://localhost:3000/api
+
+# ------------------------------------------------------------------
+# 管理端點金鑰 (保護 /api/config)
+# /api/config 可讀取/更新上述 LINE 金鑰設定，屬於高權限管理端點。
+# 未設定 admin.key (或環境變數 LINEBOT_ADMIN_KEY) 時，/api/config 會整個停用並回應 403。
+# 呼叫時需於 HTTP 標頭帶上： X-Admin-Key: <您設定的值>
+# 注意：透過 localtunnel/ngrok 對外穿透時，所有請求在本機端來源位址都會顯示為 127.0.0.1，
+# 因此「僅允許本機連線」不是有效的保護機制，務必設定此金鑰。
+# 請自行產生一組高強度亂數字串 (例如 32 碼以上)，切勿使用範例值。
+# ------------------------------------------------------------------
+admin.key=請填入您自訂的管理金鑰
+
+# ------------------------------------------------------------------
+# CORS 允許的來源網域 (以逗號分隔)，僅允許白名單內的網頁前端可跨域呼叫本伺服器的 API。
+# 預設僅允許本地開發用網址；正式上線請改為您實際的前端網域 (需為 https)。
+# ------------------------------------------------------------------
+cors.allowed.origins=http://localhost:3000,http://127.0.0.1:3000

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 智農派工 App 圖示前景：白色幼苗（自適應圖示 108dp 畫布，圖案位於中央安全區） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 莖 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M52.5,76 L52.5,52 Q52.5,49 54,49 Q55.5,49 55.5,52 L55.5,76 Z" />
+    <!-- 左葉 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M53,56 C44,56 36,50 34,38 C46,38 53,45 53,56 Z" />
+    <!-- 右葉 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M55,52 C55,39 63,31 76,31 C75,45 67,52 55,52 Z" />
+    <!-- 土壤 -->
+    <path
+        android:fillColor="#D1FAE5"
+        android:pathData="M38,76 L70,76 Q72,76 72,78 Q72,80 70,80 L38,80 Q36,80 36,78 Q36,76 38,76 Z" />
+</vector>

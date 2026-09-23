@@ -1,0 +1,30 @@
+{
+  "_comment_zh": "此檔為結構範本，非真實金鑰檔。請至 Firebase Console (https://console.firebase.google.com/) 建立/選擇專案，新增 Android App (套件名稱需為 com.agridispatch.app) 後，下載真正的 google-services.json 並覆蓋此檔案儲存為 app/google-services.json (已列於 .gitignore，不會被提交)。下列各欄位皆為佔位文字，非真實格式或真實金鑰，不可直接使用。",
+  "project_info": {
+    "project_number": "REPLACE_WITH_YOUR_FIREBASE_PROJECT_NUMBER",
+    "project_id": "REPLACE_WITH_YOUR_FIREBASE_PROJECT_ID",
+    "storage_bucket": "REPLACE_WITH_YOUR_FIREBASE_PROJECT_ID.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "REPLACE_WITH_YOUR_FIREBASE_MOBILE_SDK_APP_ID",
+        "android_client_info": {
+          "package_name": "com.agridispatch.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "REPLACE_WITH_YOUR_FIREBASE_ANDROID_API_KEY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

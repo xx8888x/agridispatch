@@ -2,14 +2,25 @@ plugins {
     id 'com.android.application'
 }
 
+// Release 簽章設定：從 keystore.properties 讀取 (該檔已列於 .gitignore，不會被提交)。
+// 檔案不存在時 (例如尚未申請正式簽章金鑰)，release 建置就不設定 signingConfig，
+// 僅產出未簽章的 APK，可自行以 apksigner 或 Android Studio 手動簽署。
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace 'com.agridispatch.app'
-    compileSdk 34
+    // Google Play 新上架 App 自 2025/8 起要求 targetSdk 35 以上；
+    // 2026 年後可能已進一步要求 36，上架前請務必以 Play Console 當下公告為準再行調整。
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.agridispatch.app"
         minSdk 24
-        targetSdk 34
+        targetSdk 35
         versionCode 1
         versionName "1.0.0"
 
@@ -19,10 +30,24 @@ android {
         }
     }
 
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            release {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 
@@ -47,4 +72,14 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
+
+// 僅在存在 app/google-services.json 時才套用 Firebase/FCM 設定外掛。
+// 未設定 Firebase 專案時 (例如本地開發或體驗館展示用途) 略過套用，建置仍可正常成功；
+// 此時 FCM 相關功能 (AgriFirebaseMessagingService) 會安全降級、不會導致 App 崩潰，
+// 但無法實際收到雲端推播。請參考 app/google-services.json.example 與 README.md 設定真實金鑰檔。
+if (file('google-services.json').exists()) {
+    apply plugin: 'com.google.gms.google-services'
+} else {
+    logger.warn('⚠️ [AgriDispatch] 未找到 app/google-services.json，已略過套用 google-services 外掛；FCM 推播將無法運作 (App 本身仍可正常建置與執行)。')
 }

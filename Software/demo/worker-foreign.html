@@ -746,6 +746,12 @@
     let isClockedOut = false;
 
     async function handleClockIn() {
+      // 先向後端打卡，成功才更新畫面；後端拒絕（如重複打卡）時由 clockAction 顯示原因
+      const punch = window.AgriDocs
+        ? await AgriDocs.clockAction('clock-in', { workerId: 'W001', locationLabel: '屏東縣高樹鄉金牌洋蔥試驗田', silent: true })
+        : { success: true };
+      if (!punch.success) return;
+
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
       clockInTime = timeStr;
@@ -775,17 +781,6 @@
       const rowStatus = document.getElementById('row-today-status');
       if (rowStatus) rowStatus.innerText = `${timeStr} 上班打卡 (作業中)`;
 
-      try {
-        await fetch(`${API_BASE}/attendance/clock-in`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            workerId: 'W001',
-            location: '屏東縣高樹鄉金牌洋蔥試驗田 (22.8214°N, 120.5982°E)',
-            gpsAccuracyMeters: 2.1
-          })
-        });
-      } catch (e) {}
 
       if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
         window.AgriDocs.notify('📍 上班打卡成功', `時間: ${timeStr} ｜ GPS: 屏東高樹試驗田 (22.8214, 120.5982)。已同步調度大腦與現場小工頭。`, { channel: 'attendance' });
@@ -793,6 +788,12 @@
     }
 
     async function handleClockOut() {
+      // 先向後端打卡，成功才更新畫面；後端拒絕（如重複打卡）時由 clockAction 顯示原因
+      const punch = window.AgriDocs
+        ? await AgriDocs.clockAction('clock-out', { workerId: 'W001', locationLabel: '屏東縣高樹鄉金牌洋蔥試驗田', silent: true })
+        : { success: true };
+      if (!punch.success) return;
+
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
       isClockedOut = true;
@@ -823,17 +824,6 @@
         rowStatus.innerText = `${clockInTime} ~ ${timeStr} (8.5h 加班0.5h)`;
       }
 
-      try {
-        await fetch(`${API_BASE}/attendance/clock-out`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            workerId: 'W001',
-            location: '屏東縣高樹鄉金牌洋蔥試驗田',
-            actualHours: 8.5
-          })
-        });
-      } catch (e) {}
 
       if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
         window.AgriDocs.notify('🏁 下班打卡成功', `時間: ${timeStr} ｜ 今日工時 8.5h (含 0.5h 加班費)。小工頭林小祥已數位簽核，已記入本月薪酬！`, { channel: 'attendance' });

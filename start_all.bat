@@ -13,8 +13,9 @@ netstat -ano | findstr ":3000 " | findstr "LISTENING" >nul
 if %errorlevel% equ 0 (
     echo       ✅ 後端 Spring Boot 伺服器已在運行中 (Port: 3000)
 ) else (
-    echo       🚀 正在啟動後端 Spring Boot 伺服器...
-    start "AgriDispatch-Backend-3000" cmd /k "cd /d ""%ROOT_DIR%Software\backend"" && call compile.bat && call run.bat"
+    echo       🚀 正在啟動後端 Spring Boot 伺服器（demo 路演模式）...
+    rem 正式上線改為 call run.bat（production，需設定 AGRI_TOKEN_SECRET、AGRI_ADMIN_PASSWORD）
+    start "AgriDispatch-Backend-3000" cmd /k "cd /d ""%ROOT_DIR%Software\backend"" && call compile.bat && call run.bat demo"
     timeout /t 5 >nul
 )
 

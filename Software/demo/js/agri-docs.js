@@ -666,6 +666,75 @@ const AgriDocs = (function () {
     }, options.duration || 4500);
   }
 
+  // 6. 出勤打卡（真實 API：/api/attendance/clock-in、/clock-out；離線或舊後端時走示範回應）
+  async function clockAction(type, options = {}) {
+    const isClockIn = type === 'clock-in';
+    const nowStr = new Date().toLocaleTimeString('zh-TW');
+    const path = isClockIn ? 'clock-in' : 'clock-out';
+    const user = (window.AgriAuth && window.AgriAuth.getUser && window.AgriAuth.getUser()) || null;
+    const workerId = options.workerId || (user && user.refId) || (user && user.username) || 'self';
+
+    try {
+      const res = await fetch(`${API_BASE}/attendance/${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workerId, lat: options.lat, lng: options.lng, timestamp: new Date().toISOString() })
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data && data.success) {
+          notify(
+            isClockIn ? '🟢 上班打卡成功' : '🔴 下班打卡成功',
+            `時間：${nowStr}${data.data && data.data.workHours ? `　今日工時：${data.data.workHours} 小時` : ''}`,
+            { channel: 'attendance' }
+          );
+          return data;
+        }
+      }
+    } catch (e) {
+      // 後端離線 / 舊版後端無此端點：走以下離線示範回應
+    }
+
+    const offlineDetail = isClockIn
+      ? `時間：${nowStr}　GPS 定位：${options.locationLabel || '屏東縣枋山鄉 (22.6123°N, 120.6145°E)'}`
+      : `時間：${nowStr}　今日工時：${options.demoHours || (Math.floor(Math.random() * 2) + 7)} 小時`;
+    notify(isClockIn ? '✅ 上班打卡成功（離線示範）' : '🔴 下班打卡成功（離線示範）', offlineDetail, { channel: 'attendance' });
+    return { success: true, offline: true };
+  }
+
+  // 7. 緊急求助（真實 API：POST /api/notifications/send；離線時走示範回應）
+  async function sendEmergencyAlert(message, options = {}) {
+    const user = (window.AgriAuth && window.AgriAuth.getUser && window.AgriAuth.getUser()) || null;
+    try {
+      const res = await fetch(`${API_BASE}/notifications/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'emergency',
+          message,
+          from: (user && (user.name || user.username)) || 'worker',
+          contact: options.contact
+        })
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data && data.success) {
+          notify('🚨 緊急求助已送出', message, { channel: 'emergency', isAlert: true });
+          return data;
+        }
+      }
+    } catch (e) {
+      // 後端離線：走以下離線示範回應
+    }
+    notify('🚨 緊急求助已送出（離線示範）', message, { channel: 'emergency', isAlert: true });
+    return { success: true, offline: true };
+  }
+
+  // 8. GPS 定位顯示（純前端展示，無需 API）
+  function showGpsLocation(title, message) {
+    notify(title || '📍 GPS 即時定位', message, { channel: 'gps' });
+  }
+
   return {
     downloadInvoice,
     downloadPayslip,
@@ -673,6 +742,9 @@ const AgriDocs = (function () {
     initServerStatusMonitor,
     retryServer,
     notify,
+    clockAction,
+    sendEmergencyAlert,
+    showGpsLocation,
     _selectPayTab,
     _fillTestCard,
     _doSubmitPayment

@@ -340,21 +340,20 @@
 
       </div>
 
-      <!-- Quick Demo Access Bar -->
+      <!-- Quick Access Bar -->
       <div class="mt-10 bg-slate-900/60 p-5 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
         <div class="flex items-center gap-3">
           <span class="text-xl">⚡</span>
           <div>
-            <div class="font-bold text-white">展示模式五大身分切換</div>
-            <div class="text-slate-400 text-[11px]">您可直接點選上方五大入口（含新三軌之「勞務勞工」），各入口均提供「一鍵填入示範身分」功能，免記帳密即可實測。</div>
+            <div v-if="isDemo" class="font-bold text-white">展示模式五大身分切換</div>
+            <div v-else class="font-bold text-white">快速前往管理後台</div>
+            <div v-if="isDemo" class="text-slate-400 text-[11px]">您可直接點選上方五大入口（含新三軌之「勞務勞工」），各入口均提供「一鍵填入示範身分」功能，免記帳密即可實測。</div>
+            <div v-else class="text-slate-400 text-[11px]">請使用上方各角色登入頁，以真實帳號密碼登入。</div>
           </div>
         </div>
         <div class="flex items-center gap-2">
           <a href="admin.html" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition flex items-center gap-1.5 shadow-md shadow-indigo-600/30">
             <span>💻</span> 科技管理後台
-          </a>
-          <a href="vue-crud.html" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition flex items-center gap-1.5 shadow">
-            <span>📊</span> 派工調度總台
           </a>
         </div>
       </div>

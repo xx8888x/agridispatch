@@ -334,10 +334,10 @@
                 </div>
 
                 <div class="flex items-center gap-2 pt-1">
-                  <button onclick="alert('✅ 領班已完成外展移工組員全體出勤簽核！已自動推播至農場主陳建龍之 LINE Bot。')" class="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow transition flex items-center justify-center gap-1.5">
+                  <button onclick="AgriDocs.notify('✅ 出勤簽核完成', '領班已完成外展移工組員全體出勤簽核！已自動推播至農場主陳建龍之 LINE Bot。')" class="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow transition flex items-center justify-center gap-1.5">
                     <span>✅</span> 一鍵確認全員簽核完畢
                   </button>
-                  <button onclick="alert('📍 工班 GPS 廣播：枋山鄉愛文芒果合作園區 2 號地 (精度 2.1m)。')" class="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs transition flex items-center gap-1">
+                  <button onclick="AgriDocs.showGpsLocation('📍 工班 GPS 廣播', '枋山鄉愛文芒果合作園區 2 號地 (精度 2.1m)')" class="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs transition flex items-center gap-1">
                     <span>📍</span> GPS 廣播
                   </button>
                 </div>
@@ -957,11 +957,11 @@
             <div class="space-y-3">
               <h4 class="text-sm font-bold text-slate-300">📍 今日出勤打卡</h4>
               <div class="grid grid-cols-2 gap-3">
-                <button onclick="alert('✅ 上班打卡成功！\n時間：' + new Date().toLocaleTimeString('zh-TW') + '\nGPS 定位：屏東縣枋山鄉 (22.6123°N, 120.6145°E)')"
+                <button onclick="AgriDocs.clockAction('clock-in')"
                         class="py-3 rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-extrabold text-sm shadow-lg shadow-green-600/30 transition flex items-center justify-center gap-2">
                   <span>🟢</span> 上班打卡
                 </button>
-                <button onclick="alert('🔴 下班打卡成功！\n時間：' + new Date().toLocaleTimeString('zh-TW') + '\n今日工時：' + Math.floor(Math.random()*2+7) + ' 小時')"
+                <button onclick="AgriDocs.clockAction('clock-out')"
                         class="py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-extrabold text-sm border border-slate-700 transition flex items-center justify-center gap-2">
                   <span>🔴</span> 下班打卡
                 </button>

@@ -1,10 +1,15 @@
 package com.agridispatch.service;
 
+import com.agridispatch.common.ApiException;
+import com.agridispatch.common.IdGenerator;
+import com.agridispatch.config.AgriSettings;
 import com.agridispatch.entity.Crop;
 import com.agridispatch.entity.Order;
 import com.agridispatch.repository.CropRepository;
 import com.agridispatch.repository.OrderRepository;
+import com.agridispatch.security.AuthContext;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
@@ -13,12 +18,21 @@ import java.util.*;
 @Service
 @Transactional
 public class OrderService {
+    public static final Set<String> PLANS = Set.of("early_bird", "hourly_flex", "turnkey");
+    public static final Set<String> CATEGORIES = Set.of("harvest_grading", "tillage_planting", "pruning_bagging",
+            "drone_pest_control", "cold_chain_pack", "typhoon_emergency");
+    /** 單筆訂單面積上限（分地），防止誤植或惡意輸入造成金額溢位 */
+    public static final double MAX_AREA = 10_000;
+
     private final OrderRepository orderRepository;
     private final CropRepository cropRepository;
+    private final AgriSettings settings;
+    private final Object idLock = new Object();
 
-    public OrderService(OrderRepository orderRepository, CropRepository cropRepository) {
+    public OrderService(OrderRepository orderRepository, CropRepository cropRepository, AgriSettings settings) {
         this.orderRepository = orderRepository;
         this.cropRepository = cropRepository;
+        this.settings = settings;
     }
 
     public List<Order> getAllOrders() {
@@ -96,11 +110,30 @@ public class OrderService {
         if (dispatchCategory == null || dispatchCategory.isBlank()) {
             dispatchCategory = "harvest_grading";
         }
-
-        Crop crop = cropRepository.findById(cropId).orElseGet(() -> {
-            List<Crop> all = cropRepository.findAll();
-            return all.isEmpty() ? null : all.get(0);
-        });
+        if (!CATEGORIES.contains(dispatchCategory)) {
+            throw ApiException.badRequest("不支援的派工類別：" + dispatchCategory);
+        }
+        if (plan == null || plan.isBlank()) {
+            plan = "early_bird";
+        }
+        if (!PLANS.contains(plan)) {
+            throw ApiException.badRequest("方案 (plan) 必須為 early_bird / hourly_flex / turnkey");
+        }
+        if (zone == null || zone.isBlank()) {
+            zone = "core_35km";
+        }
+        if (Double.isNaN(area) || Double.isInfinite(area) || area <= 0) {
+            throw ApiException.badRequest("面積 (area) 必須大於 0");
+        }
+        if (area > MAX_AREA) {
+            throw ApiException.badRequest("面積 (area) 超過上限 " + (int) MAX_AREA + " 分地");
+        }
+        if (cropId == null || cropId.isBlank()) {
+            throw ApiException.badRequest("作物代號 (cropId) 為必填欄位");
+        }
+        // 作物不存在回 400（不再默默改用第一筆作物）
+        Crop crop = cropRepository.findById(cropId)
+                .orElseThrow(() -> ApiException.badRequest("查無作物代號：" + cropId));
 
         int baseHours = (crop != null) ? crop.getBaseHoursPerFen() : 20;
         int workersPerFen = (crop != null) ? crop.getWorkersPerFen() : 3;
@@ -195,29 +228,193 @@ public class OrderService {
         return data;
     }
 
-    public Order createOrder(Order order) {
-        if (order.getId() == null || order.getId().trim().isEmpty()) {
-            String year = new SimpleDateFormat("yyyy").format(new Date());
-            order.setId("ORD-" + year + "-" + String.format("%03d", orderRepository.count() + 1));
+    // =========================================================================
+    // 訂單狀態機
+    //   pending（待付定金）→ confirmed（已排定）→ in_progress（履約中）→ completed（完工）
+    //   任一未完工狀態 → cancelled（已取消）
+    //   - 新訂單：需定金 → pending；免定金方案（hourly_flex 等）→ confirmed
+    //   - 定金付款成功：pending → confirmed（已是 confirmed / in_progress 的舊資料僅標記已付款）
+    //   - 其餘轉換只能經 admin 專用端點 PUT /api/orders/{id}/status
+    // =========================================================================
+
+    public static final String PENDING = "pending";
+    public static final String CONFIRMED = "confirmed";
+    public static final String IN_PROGRESS = "in_progress";
+    public static final String COMPLETED = "completed";
+    public static final String CANCELLED = "cancelled";
+
+    private static final Map<String, Set<String>> TRANSITIONS = Map.of(
+            PENDING, Set.of(CONFIRMED, CANCELLED),
+            CONFIRMED, Set.of(IN_PROGRESS, CANCELLED),
+            IN_PROGRESS, Set.of(COMPLETED, CANCELLED),
+            COMPLETED, Set.of(),
+            CANCELLED, Set.of()
+    );
+
+    public static boolean canTransition(String from, String to) {
+        return TRANSITIONS.getOrDefault(from, Set.of()).contains(to);
+    }
+
+    /** admin 明確變更訂單狀態 */
+    public Order changeStatus(String id, String newStatus) {
+        Order order = requireOrder(id);
+        if (newStatus == null || !TRANSITIONS.containsKey(newStatus)) {
+            throw ApiException.badRequest("status 必須為 pending / confirmed / in_progress / completed / cancelled");
         }
-        if (order.getCreatedAt() == null) {
-            order.setCreatedAt(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+        if (newStatus.equals(order.getStatus())) {
+            return order;
         }
-        if (order.getStatus() == null) {
-            order.setStatus("confirmed");
+        if (!canTransition(order.getStatus(), newStatus)) {
+            throw ApiException.conflict("訂單狀態不可由 " + order.getStatus() + " 變更為 " + newStatus);
         }
-        if (order.getDispatchCategory() == null || order.getDispatchCategory().isBlank()) {
-            order.setDispatchCategory("harvest_grading");
+        if (CONFIRMED.equals(newStatus) && order.getDepositAmount() > 0 && !order.isDepositPaid()) {
+            throw ApiException.conflict("訂單尚未收到定金，無法轉為已排定");
         }
+        order.setStatus(newStatus);
+        return orderRepository.save(order);
+    }
+
+    /** 定金付款成功（僅由 PaymentService 呼叫） */
+    public Order markDepositPaid(Order order) {
+        order.setDepositPaid(true);
+        if (PENDING.equals(order.getStatus())) {
+            order.setStatus(CONFIRMED);
+        }
+        return orderRepository.save(order);
+    }
+
+    // =========================================================================
+    // 建立 / 更新 / 刪除
+    // =========================================================================
+
+    public Order requireOrder(String id) {
+        return orderRepository.findById(id).orElseThrow(() -> ApiException.notFound("找不到該訂單編號: " + id));
+    }
+
+    /**
+     * 建立訂單：金額、狀態、定金一律由後端計算；client 傳入的 id / status / depositPaid / 金額欄位皆忽略
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public Order createOrder(Order input, String farmerId) {
+        if (input.getFarmerName() == null || input.getFarmerName().isBlank()) {
+            throw ApiException.badRequest("農場主姓名 (farmerName) 為必填欄位");
+        }
+        Order order = new Order();
+        order.setFarmerId(farmerId);
+        order.setFarmerName(input.getFarmerName().trim());
+        order.setPhone(input.getPhone());
+        order.setFarmLocation(input.getFarmLocation());
+        order.setCropId(input.getCropId());
+        order.setArea(input.getArea());
+        order.setPlan(input.getPlan() == null || input.getPlan().isBlank() ? "early_bird" : input.getPlan());
+        order.setTransportZone(input.getTransportZone() == null || input.getTransportZone().isBlank() ? "core_35km" : input.getTransportZone());
+        order.setDispatchCategory(input.getDispatchCategory() == null || input.getDispatchCategory().isBlank()
+                ? "harvest_grading" : input.getDispatchCategory());
+        order.setForemanName(input.getForemanName());
+        order.setForemanPhone(input.getForemanPhone());
+        order.setForemanNotes(input.getForemanNotes());
+        order.setAssignedTeamId(input.getAssignedTeamId());
+        order.setCreatedAt(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         if (order.getForemanName() == null || order.getForemanName().isBlank()) {
-            order.setForemanName(order.getFarmerName() != null ? order.getFarmerName() + " (本人帶隊)" : "同農場主本人");
+            order.setForemanName(order.getFarmerName() + " (本人帶隊)");
         }
         if (order.getForemanPhone() == null || order.getForemanPhone().isBlank()) {
             order.setForemanPhone(order.getPhone());
         }
 
-        // 自動精算總價
-        Map<String, Object> calc = calculateOrder(order.getCropId(), order.getArea(), order.getPlan(), order.getTransportZone(), order.getDispatchCategory());
+        Map<String, Object> calc = applyPricing(order); // 驗證作物 / 面積 / 方案並精算金額
+        if (order.getAssignedTeamId() == null || order.getAssignedTeamId().isBlank()) {
+            order.setAssignedTeamId((String) calc.get("suggestedTeam"));
+        }
+        order.setDepositPaid(false);
+        order.setStatus(order.getDepositAmount() > 0 ? PENDING : CONFIRMED);
+
+        synchronized (idLock) {
+            String prefix = "ORD-" + new SimpleDateFormat("yyyy").format(new Date()) + "-";
+            order.setId(IdGenerator.next(prefix, 3, orderRepository.findIdsByPrefix(prefix), orderRepository::existsById));
+            return orderRepository.saveAndFlush(order);
+        }
+    }
+
+    /**
+     * 更新訂單：不可由 client 直接改 depositPaid / status / 金額；
+     * 作物、面積、方案、運輸區、派工類別變更時自動重算金額
+     */
+    public Order updateOrder(String id, Order updated, boolean isAdmin) {
+        Order existing = requireOrder(id);
+        if (CANCELLED.equals(existing.getStatus()) || COMPLETED.equals(existing.getStatus())) {
+            throw ApiException.conflict("已取消或已完工的訂單不可修改");
+        }
+        if (updated.getArea() < 0 || Double.isNaN(updated.getArea())) {
+            throw ApiException.badRequest("面積必須大於 0");
+        }
+
+        boolean pricingChanged = false;
+        if (updated.getCropId() != null && !updated.getCropId().equals(existing.getCropId())) {
+            existing.setCropId(updated.getCropId());
+            pricingChanged = true;
+        }
+        if (updated.getArea() > 0 && updated.getArea() != existing.getArea()) {
+            existing.setArea(updated.getArea());
+            pricingChanged = true;
+        }
+        if (updated.getPlan() != null && !updated.getPlan().equals(existing.getPlan())) {
+            existing.setPlan(updated.getPlan());
+            pricingChanged = true;
+        }
+        if (updated.getTransportZone() != null && !updated.getTransportZone().equals(existing.getTransportZone())) {
+            existing.setTransportZone(updated.getTransportZone());
+            pricingChanged = true;
+        }
+        if (updated.getDispatchCategory() != null && !updated.getDispatchCategory().equals(existing.getDispatchCategory())) {
+            existing.setDispatchCategory(updated.getDispatchCategory());
+            pricingChanged = true;
+        }
+        if (pricingChanged && existing.isDepositPaid()) {
+            throw ApiException.conflict("已付定金的訂單不可變更作物、面積或方案，請聯繫調度中心");
+        }
+
+        if (updated.getFarmerName() != null && !updated.getFarmerName().isBlank()) existing.setFarmerName(updated.getFarmerName());
+        if (updated.getPhone() != null) existing.setPhone(updated.getPhone());
+        if (updated.getFarmLocation() != null) existing.setFarmLocation(updated.getFarmLocation());
+        if (updated.getForemanName() != null) existing.setForemanName(updated.getForemanName());
+        if (updated.getForemanPhone() != null) existing.setForemanPhone(updated.getForemanPhone());
+        if (updated.getForemanNotes() != null) existing.setForemanNotes(updated.getForemanNotes());
+        if (isAdmin && updated.getAssignedTeamId() != null) existing.setAssignedTeamId(updated.getAssignedTeamId());
+
+        if (pricingChanged) {
+            applyPricing(existing);
+            if (!existing.isDepositPaid()) {
+                // 重算後定金需求可能改變：需定金且尚未付 → pending；免定金 → confirmed
+                if (PENDING.equals(existing.getStatus()) && existing.getDepositAmount() <= 0) existing.setStatus(CONFIRMED);
+                else if (CONFIRMED.equals(existing.getStatus()) && existing.getDepositAmount() > 0) existing.setStatus(PENDING);
+            }
+        }
+        return orderRepository.save(existing);
+    }
+
+    /** admin 硬刪除 */
+    public void deleteOrder(String id) {
+        if (!orderRepository.existsById(id)) {
+            throw ApiException.notFound("找不到該訂單編號: " + id);
+        }
+        orderRepository.deleteById(id);
+    }
+
+    /** 農場主取消自己的訂單（保留紀錄，狀態改為 cancelled） */
+    public Order cancelOrder(String id) {
+        Order order = requireOrder(id);
+        if (CANCELLED.equals(order.getStatus())) return order;
+        if (!canTransition(order.getStatus(), CANCELLED) || IN_PROGRESS.equals(order.getStatus())) {
+            throw ApiException.conflict("此訂單目前狀態 (" + order.getStatus() + ") 無法自行取消，請聯繫調度中心");
+        }
+        order.setStatus(CANCELLED);
+        return orderRepository.save(order);
+    }
+
+    private Map<String, Object> applyPricing(Order order) {
+        Map<String, Object> calc = calculateOrder(order.getCropId(), order.getArea(), order.getPlan(),
+                order.getTransportZone(), order.getDispatchCategory());
         order.setCropName((String) calc.get("cropName"));
         order.setPlanName((String) calc.get("planName"));
         order.setCategoryName((String) calc.get("categoryName"));
@@ -228,38 +425,35 @@ public class OrderService {
         order.setFinalAmount((int) calc.get("actualTotal"));
         order.setDepositAmount((int) calc.get("deposit"));
         order.setTransportSurcharge((int) calc.get("transportSurcharge"));
-        if (order.getAssignedTeamId() == null || order.getAssignedTeamId().isBlank()) {
-            order.setAssignedTeamId((String) calc.get("suggestedTeam"));
-        }
-
-        return orderRepository.save(order);
+        return calc;
     }
 
-    public Order updateOrder(String id, Order updated) {
-        return orderRepository.findById(id).map(existing -> {
-            if (updated.getFarmerName() != null) existing.setFarmerName(updated.getFarmerName());
-            if (updated.getPhone() != null) existing.setPhone(updated.getPhone());
-            if (updated.getFarmLocation() != null) existing.setFarmLocation(updated.getFarmLocation());
-            if (updated.getCropId() != null) existing.setCropId(updated.getCropId());
-            if (updated.getCropName() != null) existing.setCropName(updated.getCropName());
-            if (updated.getArea() > 0) existing.setArea(updated.getArea());
-            if (updated.getPlan() != null) existing.setPlan(updated.getPlan());
-            if (updated.getDispatchCategory() != null) {
-                existing.setDispatchCategory(updated.getDispatchCategory());
-                existing.setCategoryName(updated.getCategoryName());
-            }
-            if (updated.getForemanName() != null) existing.setForemanName(updated.getForemanName());
-            if (updated.getForemanPhone() != null) existing.setForemanPhone(updated.getForemanPhone());
-            if (updated.getForemanNotes() != null) existing.setForemanNotes(updated.getForemanNotes());
-            if (updated.getStatus() != null) existing.setStatus(updated.getStatus());
-            if (updated.getAssignedTeamId() != null) existing.setAssignedTeamId(updated.getAssignedTeamId());
-            existing.setDepositPaid(updated.isDepositPaid());
-            if (updated.getFinalAmount() > 0) existing.setFinalAmount(updated.getFinalAmount());
-            return orderRepository.save(existing);
-        }).orElseThrow(() -> new RuntimeException("Order not found: " + id));
+    // =========================================================================
+    // 權限（規格第 5 節：farmer 只能查詢 / 付款自己的訂單）
+    // =========================================================================
+
+    /** farmer 是否為訂單擁有者；舊資料無 farmerId 時 demo 模式放行 */
+    public boolean isOwner(AuthContext ctx, Order order) {
+        if (ctx == null || !ctx.isFarmer()) return false;
+        if (order.getFarmerId() == null) return settings.isDemoEnabled();
+        return order.getFarmerId().equals(ctx.ref());
     }
 
-    public void deleteOrder(String id) {
-        orderRepository.deleteById(id);
+    public void checkReadable(AuthContext ctx, Order order) {
+        if (ctx.isAdmin() || ctx.isWorker() || isOwner(ctx, order)) return;
+        throw ApiException.forbidden();
+    }
+
+    /** 付款 / 修改 / 取消：admin 或訂單擁有者 */
+    public void checkOwnerOrAdmin(AuthContext ctx, Order order) {
+        if (ctx.isAdmin() || isOwner(ctx, order)) return;
+        throw ApiException.forbidden();
+    }
+
+    public List<Order> getOrdersVisibleTo(AuthContext ctx) {
+        List<Order> all = orderRepository.findAll();
+        if (ctx.isAdmin() || ctx.isWorker()) return all;
+        if (ctx.isFarmer()) return all.stream().filter(o -> isOwner(ctx, o)).toList();
+        return List.of();
     }
 }

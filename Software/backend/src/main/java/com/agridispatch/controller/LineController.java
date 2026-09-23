@@ -6,10 +6,21 @@ import com.agridispatch.entity.Crop;
 import com.agridispatch.repository.OrderRepository;
 import com.agridispatch.repository.WorkerRepository;
 import com.agridispatch.repository.CropRepository;
+import com.agridispatch.common.LaborConstants;
+import com.agridispatch.config.AgriSettings;
 import com.agridispatch.service.CalendarService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -19,29 +30,83 @@ import java.util.*;
  */
 @RestController
 @RequestMapping("/api/line")
-@CrossOrigin(origins = "*")
 public class LineController {
+
+    private static final Logger log = LoggerFactory.getLogger(LineController.class);
 
     private final OrderRepository orderRepository;
     private final WorkerRepository workerRepository;
     private final CropRepository cropRepository;
     private final CalendarService calendarService;
+    private final AgriSettings settings;
+    private final ObjectMapper objectMapper;
 
-    private String channelSecret = "mock_secret_88888888";
-    private String channelAccessToken = "mock_token_agridispatch_line_bot";
+    /** LINE Channel Secret / Access Token：由 agri.line.* 或環境變數 LINE_CHANNEL_SECRET / LINE_CHANNEL_ACCESS_TOKEN 提供，預設空值 */
+    private volatile String channelSecret;
+    private volatile String channelAccessToken;
 
     public LineController(OrderRepository orderRepository,
                           WorkerRepository workerRepository,
                           CropRepository cropRepository,
-                          CalendarService calendarService) {
+                          CalendarService calendarService,
+                          AgriSettings settings,
+                          ObjectMapper objectMapper,
+                          @Value("${agri.line.channel-secret:}") String channelSecret,
+                          @Value("${agri.line.channel-access-token:}") String channelAccessToken) {
         this.orderRepository = orderRepository;
         this.workerRepository = workerRepository;
         this.cropRepository = cropRepository;
         this.calendarService = calendarService;
+        this.settings = settings;
+        this.objectMapper = objectMapper;
+        this.channelSecret = channelSecret == null ? "" : channelSecret.trim();
+        this.channelAccessToken = channelAccessToken == null ? "" : channelAccessToken.trim();
+    }
+
+    /** 未設定 channel secret → 本地模擬（MOCK）模式（僅 demo 模式可處理 webhook） */
+    private boolean isMockMode() {
+        return channelSecret.isEmpty();
+    }
+
+    /**
+     * 驗證 X-Line-Signature：Base64(HMAC-SHA256(channelSecret, rawBody))，以 constant-time 比對
+     */
+    static boolean verifySignature(String secret, byte[] rawBody, String signatureHeader) {
+        if (secret == null || secret.isEmpty() || signatureHeader == null || signatureHeader.isBlank()) return false;
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            byte[] expected = Base64.getEncoder().encode(mac.doFinal(rawBody));
+            return MessageDigest.isEqual(expected, signatureHeader.trim().getBytes(StandardCharsets.US_ASCII));
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @PostMapping("/webhook")
-    public ResponseEntity<?> handleWebhook(@RequestBody Map<String, Object> body) {
+    @SuppressWarnings("unchecked")
+    public ResponseEntity<?> handleWebhook(@RequestBody(required = false) byte[] rawBody,
+                                           @RequestHeader(value = "X-Line-Signature", required = false) String signature) {
+        byte[] bodyBytes = rawBody == null ? new byte[0] : rawBody;
+        if (isMockMode()) {
+            if (!settings.isDemoEnabled()) {
+                // production 未設定 channel secret：無法驗證簽章，一律拒絕
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body(Map.of("success", false, "error", "LINE channel secret 未設定"));
+            }
+            // demo 模式且未設定金鑰：本地模擬，不驗證簽章
+        } else if (!verifySignature(channelSecret, bodyBytes, signature)) {
+            log.warn("[LINE] X-Line-Signature 驗證失敗，拒絕 webhook 請求");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "error", "INVALID_SIGNATURE"));
+        }
+
+        Map<String, Object> body;
+        try {
+            body = bodyBytes.length == 0 ? Map.of() : objectMapper.readValue(bodyBytes, Map.class);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", "請求內容格式錯誤"));
+        }
         List<Map<String, Object>> replies = new ArrayList<>();
 
         if (body.containsKey("events") && body.get("events") instanceof List) {
@@ -50,7 +115,7 @@ public class LineController {
                 if (eventObj instanceof Map) {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> event = (Map<String, Object>) eventObj;
-                    String userId = event.getOrDefault("userId", "U1001_FARMER").toString();
+                    String userId = extractUserId(event);
                     
                     String text = "";
                     if (event.containsKey("message") && event.get("message") instanceof Map) {
@@ -70,6 +135,17 @@ public class LineController {
         }
 
         return ResponseEntity.ok(Map.of("success", true, "replies", replies));
+    }
+
+    /** LINE 正式事件的 userId 位於 source.userId；相容舊版模擬格式 event.userId */
+    @SuppressWarnings("unchecked")
+    private static String extractUserId(Map<String, Object> event) {
+        Object source = event.get("source");
+        if (source instanceof Map && ((Map<String, Object>) source).get("userId") != null) {
+            return ((Map<String, Object>) source).get("userId").toString();
+        }
+        Object uid = event.get("userId");
+        return uid != null ? uid.toString() : "ANONYMOUS";
     }
 
     @PostMapping("/simulate-push")
@@ -101,29 +177,36 @@ public class LineController {
         return ResponseEntity.ok(Map.of("success", true, "flexMessage", flex));
     }
 
+    /** 僅 admin_tech（AuthInterceptor 檢查）；不回傳明文金鑰 */
     @GetMapping("/config")
     public ResponseEntity<?> getConfig() {
-        boolean isMock = "mock_secret_88888888".equals(channelSecret) || "mock_token_agridispatch_line_bot".equals(channelAccessToken);
-        String maskedSecret = channelSecret.length() > 6 ? channelSecret.substring(0, 3) + "..." + channelSecret.substring(channelSecret.length() - 3) : "******";
-        String maskedToken = channelAccessToken.length() > 10 ? channelAccessToken.substring(0, 5) + "..." + channelAccessToken.substring(channelAccessToken.length() - 5) : "******";
-        return ResponseEntity.ok(Map.of(
-                "status", "UP",
-                "mode", isMock ? "MOCK" : "PRODUCTION",
-                "channelSecretMasked", maskedSecret,
-                "channelAccessTokenMasked", maskedToken,
-                "webhookPath", "/api/line/webhook"
-        ));
+        boolean isMock = isMockMode();
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("success", true);
+        res.put("status", "UP");
+        res.put("mode", isMock ? "MOCK" : "PRODUCTION");
+        res.put("channelSecretConfigured", !channelSecret.isEmpty());
+        res.put("channelAccessTokenConfigured", !channelAccessToken.isEmpty());
+        res.put("channelSecretMasked", channelSecret.isEmpty() ? "" : "********");
+        res.put("channelAccessTokenMasked", channelAccessToken.isEmpty() ? "" : "********");
+        res.put("webhookPath", "/api/line/webhook");
+        return ResponseEntity.ok(res);
     }
 
+    /** 僅 admin_tech：執行期更新金鑰（僅存記憶體，重啟後以環境變數為準） */
     @PostMapping("/config")
     public ResponseEntity<?> updateConfig(@RequestBody Map<String, String> cfg) {
-        if (cfg.containsKey("channelSecret") && !cfg.get("channelSecret").isBlank()) {
-            this.channelSecret = cfg.get("channelSecret");
+        String secret = cfg.get("channelSecret");
+        String token = cfg.get("channelAccessToken");
+        if (secret != null && !secret.isBlank()) {
+            if (secret.length() > 256) throw new IllegalArgumentException("channelSecret 過長");
+            this.channelSecret = secret.trim();
         }
-        if (cfg.containsKey("channelAccessToken") && !cfg.get("channelAccessToken").isBlank()) {
-            this.channelAccessToken = cfg.get("channelAccessToken");
+        if (token != null && !token.isBlank()) {
+            if (token.length() > 1024) throw new IllegalArgumentException("channelAccessToken 過長");
+            this.channelAccessToken = token.trim();
         }
-        boolean isMock = "mock_secret_88888888".equals(channelSecret) || "mock_token_agridispatch_line_bot".equals(channelAccessToken);
+        boolean isMock = isMockMode();
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "mode", isMock ? "MOCK" : "PRODUCTION",
@@ -597,7 +680,8 @@ public class LineController {
 
         List<Map<String, Object>> hItems = new ArrayList<>();
         hItems.add(createLabel("農業部特許外展農工・政府津貼公示", "#E9D5FF", "xs", "bold"));
-        hItems.add(createLabel("就業獎勵金 NT$ 8,800 已入帳", "#FFFFFF", "xl", "bold"));
+        // TODO 待農業部確認適用對象（就業獎勵金）
+        hItems.add(createLabel("就業獎勵金 NT$ " + LaborConstants.formatMoney(LaborConstants.AGRI_EMPLOYMENT_BONUS) + " 已入帳", "#FFFFFF", "xl", "bold"));
         hItems.add(createLabel("工號: W001 阮文雄 ｜ 2026 年 5 月份津貼", "#F3E8FF", "xs", "regular"));
         header.put("contents", hItems);
         contents.put("header", header);
@@ -609,9 +693,9 @@ public class LineController {
         body.put("paddingAll", "20px");
 
         List<Map<String, Object>> bItems = new ArrayList<>();
-        bItems.add(createRowKV("基本薪資", "NT$ 28,590 (每月 5 日合作社入帳)"));
-        bItems.add(createRowKV("就業獎勵金", "NT$ 8,800 (農業部外展留台補助)"));
-        bItems.add(createRowKV("合計入帳", "NT$ 37,390 (合法特許・全額勞健保)"));
+        bItems.add(createRowKV("基本薪資", "NT$ " + LaborConstants.formatMoney(LaborConstants.MIN_MONTHLY_WAGE) + " (每月 5 日合作社入帳)"));
+        bItems.add(createRowKV("就業獎勵金", "NT$ " + LaborConstants.formatMoney(LaborConstants.AGRI_EMPLOYMENT_BONUS) + " (農業部外展留台補助)"));
+        bItems.add(createRowKV("合計入帳", "NT$ " + LaborConstants.formatMoney(LaborConstants.MIN_MONTHLY_WAGE + LaborConstants.AGRI_EMPLOYMENT_BONUS) + " (合法特許・全額勞健保)"));
         body.put("contents", bItems);
         contents.put("body", body);
 

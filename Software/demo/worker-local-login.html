@@ -357,15 +357,17 @@
 
     createApp({
       setup() {
-        const API_BASE = window.location.origin.startsWith('http')
+        const API_BASE = window.AgriAuth ? window.AgriAuth.API_BASE : (window.location.origin.startsWith('http')
           ? `${window.location.origin}/api`
-          : 'http://localhost:3000/api';
+          : 'http://localhost:3000/api');
+        const isDemo = window.AgriAuth ? window.AgriAuth.MODE !== 'production' : true;
+        const demoCfg = (window.AGRI_DEMO_ACCOUNTS && window.AGRI_DEMO_ACCOUNTS.workerLocal) || null;
 
         const activeTrack = ref('labor');
 
         const form = reactive({
-          identifier: '0975-123-456',
-          password: '123456'
+          identifier: '',
+          password: ''
         });
         const loading = ref(false);
         const errorMsg = ref('');
@@ -390,18 +392,24 @@
           }
         };
 
+        const findDemoProfile = (track) => demoCfg && demoCfg.profiles.find(p => p.track === track);
+
         const setTrack = (track) => {
           activeTrack.value = track;
+          if (!isDemo || !demoCfg) return;
           if (track === 'labor') {
-            fillProfile('0975-123-456', '123456', 'W030', 'labor');
+            const p = findDemoProfile('labor');
+            if (p) fillProfile(p.identifier, p.password, p.workerId, 'labor');
           } else if (track === 'machinery') {
-            fillProfile('0988-333-444', '123456', 'W012', 'machinery');
+            const p = findDemoProfile('machinery');
+            if (p) fillProfile(p.identifier, p.password, p.workerId, 'machinery');
           } else {
-            fillProfile('0918-668-999', '123456', 'W026', 'foreman');
+            const p = findDemoProfile('foreman');
+            if (p) fillProfile(p.identifier, p.password, p.workerId, 'foreman');
           }
         };
 
-        // 自動從 URL 參數或快取識別身分
+        // 自動從 URL 參數或快取識別身分（僅 demo 模式預先帶入示範身分）
         const urlParams = new URLSearchParams(window.location.search);
         const reqRole = urlParams.get('role') || sessionStorage.getItem('localRole');
         if (reqRole === 'foreman') {
@@ -426,12 +434,15 @@
                 password: form.password
               })
             });
-            const data = await res.json();
+            const data = await res.json().catch(() => null);
 
-            if (data.success) {
+            if (res.ok && data && data.success) {
               successMsg.value = `歡迎回來，${data.user.name}！`;
-              sessionStorage.setItem('agri_user', JSON.stringify(data.user));
-              sessionStorage.setItem('agri_token', data.token);
+              if (window.AgriAuth) window.AgriAuth.setSession(data.token, data.user);
+              else {
+                sessionStorage.setItem('agri_user', JSON.stringify(data.user));
+                sessionStorage.setItem('agri_token', data.token);
+              }
 
               if (window.AgriNativeBridge) {
                 if (typeof window.AgriNativeBridge.showToast === 'function') {
@@ -444,11 +455,56 @@
 
               localModal.data = data.user;
               localModal.show = true;
+            } else if (isDemo) {
+              // demo 模式：後端離線或舊版後端不支援時，沿用示範資料 fallback
+              const matched = demoCfg && demoCfg.profiles.find(p => p.identifier === form.identifier);
+              const finalUser = matched ? {
+                id: matched.workerId,
+                name: matched.name,
+                role: matched.track === 'labor' ? 'worker_local' : 'worker_local',
+                subRole: matched.track,
+                roleDesc: matched.tag,
+                demo: true
+              } : {
+                id: 'W030',
+                name: form.identifier ? `本地農工 (${form.identifier})` : '示範本地農工',
+                role: 'worker_local',
+                subRole: activeTrack.value,
+                demo: true
+              };
+              const token = 'demo-local-token-2026';
+              successMsg.value = `歡迎回來，${finalUser.name}！`;
+              window.AgriAuth ? window.AgriAuth.setSession(token, finalUser) : sessionStorage.setItem('agri_user', JSON.stringify(finalUser));
+              localModal.data = finalUser;
+              localModal.show = true;
             } else {
-              errorMsg.value = data.error || '帳號或密碼錯誤';
+              errorMsg.value = (data && data.error) || '帳號或密碼錯誤';
             }
           } catch (e) {
-            errorMsg.value = '無法連線伺服器，請檢查網路或後端狀態。';
+            if (isDemo) {
+              const matched = demoCfg && demoCfg.profiles.find(p => p.identifier === form.identifier);
+              const finalUser = matched ? {
+                id: matched.workerId,
+                name: matched.name,
+                role: 'worker_local',
+                subRole: matched.track,
+                roleDesc: matched.tag,
+                demo: true
+              } : {
+                id: 'W030',
+                name: form.identifier ? `本地農工 (${form.identifier})` : '示範本地農工',
+                role: 'worker_local',
+                subRole: activeTrack.value,
+                demo: true
+              };
+              const token = 'demo-local-token-2026';
+              successMsg.value = `歡迎回來，${finalUser.name}！（離線示範模式）`;
+              window.AgriAuth ? window.AgriAuth.setSession(token, finalUser) : sessionStorage.setItem('agri_user', JSON.stringify(finalUser));
+              localModal.data = finalUser;
+              localModal.show = true;
+            } else {
+              errorMsg.value = '無法連線伺服器，請檢查網路或後端狀態。';
+            }
           } finally {
             loading.value = false;
           }
@@ -465,6 +521,8 @@
           successMsg,
           localModal,
           activeTrack,
+          isDemo,
+          demoCfg,
           setTrack,
           fillProfile,
           handleLogin,

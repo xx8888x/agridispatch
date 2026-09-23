@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif">
+  <rect width="960" height="520" fill="#ffffff"/>
+  <text x="32" y="40" font-size="22" font-weight="700" fill="#0b0b0b">青創貸款 100 萬元：第 1 年寬限、第 2 年起每年還款約 20~21 萬</text>
+  <text x="32" y="68" font-size="14" fill="#52514e">前 2 年利息假設由政府補貼【待確認：補貼年限 2 年或 5 年】，單位：萬元</text>
+  <rect x="32" y="88" width="14" height="14" rx="3" fill="#2a78d6"/>
+  <text x="52" y="100" font-size="14" fill="#0b0b0b">償還本金</text>
+  <rect x="124" y="88" width="14" height="14" rx="3" fill="#eb6834"/>
+  <text x="144" y="100" font-size="14" fill="#0b0b0b">公司負擔利息</text>
+  <line x1="88" x2="928" y1="456.0" y2="456.0" stroke="#b9b8b2" stroke-width="1.5"/>
+  <text x="78" y="461.0" font-size="13" fill="#52514e" text-anchor="end">0</text>
+  <line x1="88" x2="928" y1="390.4" y2="390.4" stroke="#e6e5e0" stroke-width="1"/>
+  <text x="78" y="395.4" font-size="13" fill="#52514e" text-anchor="end">5</text>
+  <line x1="88" x2="928" y1="324.8" y2="324.8" stroke="#e6e5e0" stroke-width="1"/>
+  <text x="78" y="329.8" font-size="13" fill="#52514e" text-anchor="end">10</text>
+  <line x1="88" x2="928" y1="259.2" y2="259.2" stroke="#e6e5e0" stroke-width="1"/>
+  <text x="78" y="264.2" font-size="13" fill="#52514e" text-anchor="end">15</text>
+  <line x1="88" x2="928" y1="193.6" y2="193.6" stroke="#e6e5e0" stroke-width="1"/>
+  <text x="78" y="198.6" font-size="13" fill="#52514e" text-anchor="end">20</text>
+  <line x1="88" x2="928" y1="128.0" y2="128.0" stroke="#e6e5e0" stroke-width="1"/>
+  <text x="78" y="133.0" font-size="13" fill="#52514e" text-anchor="end">25</text>
+  <text x="158.0" y="446.0" font-size="14" font-weight="700" fill="#0b0b0b" text-anchor="middle"> 0</text>
+  <text x="158.0" y="482" font-size="15" fill="#0b0b0b" text-anchor="middle">第1年</text>
+  <path d="M263.0,456.0 L263.0,197.60000000000002 Q263.0,193.60000000000002 267.0,193.60000000000002 L329.0,193.60000000000002 Q333.0,193.60000000000002 333.0,197.60000000000002 L333.0,456.0 Z" fill="#2a78d6"><title>償還本金 第2年：20 萬元</title></path>
+  <text x="298.0" y="183.6" font-size="14" font-weight="700" fill="#0b0b0b" text-anchor="middle"> 20</text>
+  <text x="298.0" y="482" font-size="15" fill="#0b0b0b" text-anchor="middle">第2年</text>
+  <path d="M403.0,456.0 L473.0,456.0 L473.0,202.0 L403.0,202.0 Z" fill="#2a78d6"><title>償還本金 第3年：19.4 萬元</title></path>
+  <path d="M403.0,199.974496 L403.0,185.948128 Q403.0,181.948128 407.0,181.948128 L469.0,181.948128 Q473.0,181.948128 473.0,185.948128 L473.0,199.974496 Z" fill="#eb6834"><title>公司負擔利息 第3年：1.5 萬元</title></path>
+  <text x="438.0" y="171.9" font-size="14" font-weight="700" fill="#0b0b0b" text-anchor="middle"> 20.9</text>
+  <text x="438.0" y="482" font-size="15" fill="#0b0b0b" text-anchor="middle">第3年</text>
+  <path d="M543.0,456.0 L613.0,456.0 L613.0,196.5 L543.0,196.5 Z" fill="#2a78d6"><title>償還本金 第4年：19.8 萬元</title></path>
+  <path d="M543.0,194.470656 L543.0,185.946816 Q543.0,181.946816 547.0,181.946816 L609.0,181.946816 Q613.0,181.946816 613.0,185.946816 L613.0,194.470656 Z" fill="#eb6834"><title>公司負擔利息 第4年：1.1 萬元</title></path>
+  <text x="578.0" y="171.9" font-size="14" font-weight="700" fill="#0b0b0b" text-anchor="middle"> 20.9</text>
+  <text x="578.0" y="482" font-size="15" fill="#0b0b0b" text-anchor="middle">第4年</text>
+  <path d="M683.0,456.0 L753.0,456.0 L753.0,190.8 L683.0,190.8 Z" fill="#2a78d6"><title>償還本金 第5年：20.2 萬元</title></path>
+  <path d="M683.0,188.848736 L683.0,185.39777600000002 Q683.0,181.946816 686.45096,181.946816 L749.54904,181.946816 Q753.0,181.946816 753.0,185.39777600000002 L753.0,188.848736 Z" fill="#eb6834"><title>公司負擔利息 第5年：0.7 萬元</title></path>
+  <text x="718.0" y="171.9" font-size="14" font-weight="700" fill="#0b0b0b" text-anchor="middle"> 20.9</text>
+  <text x="718.0" y="482" font-size="15" fill="#0b0b0b" text-anchor="middle">第5年</text>
+  <path d="M823.0,456.0 L893.0,456.0 L893.0,185.1 L823.0,185.1 Z" fill="#2a78d6"><title>償還本金 第6年：20.6 萬元</title></path>
+  <path d="M823.0,183.106112 L823.0,182.52712 Q823.0,181.948128 823.578992,181.948128 L892.421008,181.948128 Q893.0,181.948128 893.0,182.52712 L893.0,183.106112 Z" fill="#eb6834"><title>公司負擔利息 第6年：0.2 萬元</title></path>
+  <text x="858.0" y="171.9" font-size="14" font-weight="700" fill="#0b0b0b" text-anchor="middle"> 20.9</text>
+  <text x="858.0" y="482" font-size="15" fill="#0b0b0b" text-anchor="middle">第6年</text>
+  <text x="32" y="504" font-size="12" fill="#7a7974">資料來源：F2 財務計畫報表 2（v2.1）第柒章 3 節，年息約 2.145%，6 年 72 期</text>
+</svg>

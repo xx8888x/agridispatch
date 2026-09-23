@@ -127,7 +127,7 @@ def create_presentation():
     p2.space_after = Pt(24)
 
     p3 = tf.add_paragraph()
-    p3.text = "AI 動態調度  |  特許雙軌合作社  |  農業 ESG 供應鏈閉環"
+    p3.text = "AI 動態調度  |  雙法人合作架構  |  農業 ESG 供應鏈閉環"
     p3.font.size = Pt(15)
     p3.font.color.rgb = TEXT_LIGHT
     p3.font.name = FONT_BODY
@@ -397,6 +397,35 @@ def create_presentation():
         p_r.space_after = Pt(6)
 
     add_notes(slide7, "我們把財務模型依 2026 年最低工資與法定工時全部重算。第一年平台流水約 813 萬，科技公司營收 171 萬、EBITDA 約 25 萬，約 9 名移工即可讓科技公司損益兩平。但我們也要誠實揭露：在現行定價下，身為法定雇主的合作社第一年約虧損 258 萬，所以我們已經研擬調整定價、交通費另收、帶班師傅計費與代管費率的組合方案，會在開業前決定。")
+
+    # ==========================================
+    # SLIDE 7b: 財務圖表（F2 v2.1，由 tools/make_charts.py 產生）
+    # ==========================================
+    charts_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                              "02_財務模型與政府補助", "charts")
+    chart_cons = os.path.join(charts_dir, "f2_consolidated.png")
+    chart_c1 = os.path.join(charts_dir, "f2_coop_base_vs_c1.png")
+    if os.path.exists(chart_cons) and os.path.exists(chart_c1):
+        slide7b = prs.slides.add_slide(blank_slide_layout)
+        set_bg(slide7b, LIGHT_BG)
+        add_header(slide7b, "如實揭露：現行定價下合作社虧損，建議方案 C1 可使其約損益兩平", category="FINANCIALS")
+        # 兩張圖左右並排（原圖 960×520，等比縮放）
+        slide7b.shapes.add_picture(chart_cons, Inches(0.5), Inches(1.9), width=Inches(6.1))
+        slide7b.shapes.add_picture(chart_c1, Inches(6.75), Inches(1.9), width=Inches(6.1))
+        tb_c = slide7b.shapes.add_textbox(Inches(0.8), Inches(5.4), Inches(11.7), Inches(1.4))
+        tf_c = tb_c.text_frame
+        tf_c.word_wrap = True
+        for line_text in [
+            "• 科技公司帳面獲利建立在合作社（法定雇主）承擔虧損之上，此狀態不可持續，須在開業前調整。",
+            "• C1＝第一層均價 +30 元/hr、交通費實報實銷、帶班師傅 80% 工時計費、代管費率 15%（待經營團隊決定，須經市場驗證）。",
+        ]:
+            p_c = tf_c.add_paragraph() if tf_c.paragraphs[0].text else tf_c.paragraphs[0]
+            p_c.text = line_text
+            p_c.font.size = Pt(14)
+            p_c.font.name = FONT_BODY
+            p_c.font.color.rgb = TEXT_MAIN
+            p_c.space_after = Pt(6)
+        add_notes(slide7b, "左圖是三年的科技公司 EBITDA、合作社損益與合併結果：在現行定價下合作社三年都虧損，合併也是負的。右圖是我們研擬的組合方案 C1，可以讓合作社第一年大約損益兩平、第三年轉為盈餘。這個方案還需要市場驗證，也要經合作社社員大會決議。")
 
     # ==========================================
     # SLIDE 8: DUAL-ENTITY MOAT

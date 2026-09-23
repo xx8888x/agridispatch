@@ -5,7 +5,7 @@
     python tools/md2docx.py <file.md> [<file2.md> ...]
     python tools/md2docx.py --all          # 轉換專案內所有 .md（略過 Software/ 與 tools/）
 
-支援：# 標題、段落、**粗體**、`程式碼`、- / * 項目、1. 編號、> 引言、| 表格 |、``` 程式碼區塊、--- 分隔線。
+支援：# 標題、![圖說](相對路徑.png) 圖片、段落、**粗體**、`程式碼`、- / * 項目、1. 編號、> 引言、| 表格 |、``` 程式碼區塊、--- 分隔線。
 mermaid 區塊會以等寬文字保留（Word 無法繪製）。
 """
 import re
@@ -14,8 +14,9 @@ from pathlib import Path
 
 from docx import Document
 from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
-from docx.shared import Pt, RGBColor
+from docx.shared import Cm, Pt, RGBColor
 
 ROOT = Path(__file__).resolve().parent.parent
 FONT = "Microsoft JhengHei"
@@ -105,6 +106,22 @@ def convert(md_path: Path):
                     cells[c].paragraphs[0].text = ""
                     add_inline(cells[c].paragraphs[0], r[c] if c < len(r) else "", size=10)
             doc.add_paragraph()
+            continue
+
+        img = re.match(r"^!\[([^\]]*)\]\(([^)]+)\)$", stripped)
+        if img:
+            # 圖片（相對於 md 檔位置）；寬度 16cm 符合 A4 版心，下方加圖說
+            src = (md_path.parent / img.group(2)).resolve()
+            if src.exists():
+                doc.add_picture(str(src), width=Cm(16))
+                doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
+                if img.group(1):
+                    cap = doc.add_paragraph()
+                    cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    set_font(cap.add_run(img.group(1)), size=9, color="52514E")
+            else:
+                add_inline(doc.add_paragraph(), f"【圖檔遺失：{img.group(2)}】")
+            i += 1
             continue
 
         m = re.match(r"^(#{1,6})\s+(.*)", stripped)

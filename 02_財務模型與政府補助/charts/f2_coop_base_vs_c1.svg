@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif">
+  <rect width="960" height="520" fill="#ffffff"/>
+  <text x="32" y="40" font-size="22" font-weight="700" fill="#0b0b0b">合作社損益：建議方案 C1 可使第一年約損益兩平</text>
+  <text x="32" y="68" font-size="14" fill="#52514e">C1＝第一層均價 +30 元/hr、交通費實報實銷、師傅 80% 工時計費、代管費率 15%，單位：萬元</text>
+  <rect x="32" y="88" width="14" height="14" rx="3" fill="#2a78d6"/>
+  <text x="52" y="100" font-size="14" fill="#0b0b0b">基本情境（現行定價、18% 代管費）</text>
+  <rect x="334" y="88" width="14" height="14" rx="3" fill="#eb6834"/>
+  <text x="354" y="100" font-size="14" fill="#0b0b0b">建議方案 C1（待經營團隊決定）</text>
+  <line x1="88" x2="928" y1="456.0" y2="456.0" stroke="#e6e5e0" stroke-width="1"/>
+  <text x="78" y="461.0" font-size="13" fill="#52514e" text-anchor="end">-3,000</text>
+  <line x1="88" x2="928" y1="390.4" y2="390.4" stroke="#e6e5e0" stroke-width="1"/>
+  <text x="78" y="395.4" font-size="13" fill="#52514e" text-anchor="end">-2,000</text>
+  <line x1="88" x2="928" y1="324.8" y2="324.8" stroke="#e6e5e0" stroke-width="1"/>
+  <text x="78" y="329.8" font-size="13" fill="#52514e" text-anchor="end">-1,000</text>
+  <line x1="88" x2="928" y1="259.2" y2="259.2" stroke="#b9b8b2" stroke-width="1.5"/>
+  <text x="78" y="264.2" font-size="13" fill="#52514e" text-anchor="end">0</text>
+  <line x1="88" x2="928" y1="193.6" y2="193.6" stroke="#e6e5e0" stroke-width="1"/>
+  <text x="78" y="198.6" font-size="13" fill="#52514e" text-anchor="end">1,000</text>
+  <line x1="88" x2="928" y1="128.0" y2="128.0" stroke="#e6e5e0" stroke-width="1"/>
+  <text x="78" y="133.0" font-size="13" fill="#52514e" text-anchor="end">2,000</text>
+  <path d="M163.0,259.20000000000005 L227.0,259.20000000000005 L227.0,272.15765248 Q227.0,276.15765248 223.0,276.15765248 L167.0,276.15765248 Q163.0,276.15765248 163.0,272.15765248 Z" fill="#2a78d6"><title>基本情境（現行定價、18% 代管費） 第一年：-258.5 萬元</title></path>
+  <text x="195.0" y="294.2" font-size="13" fill="#0b0b0b" text-anchor="middle">-258.5</text>
+  <text x="261.0" y="251.2" font-size="13" fill="#0b0b0b" text-anchor="middle">0.2</text>
+  <text x="228.0" y="482" font-size="15" fill="#0b0b0b" text-anchor="middle">第一年</text>
+  <path d="M443.0,259.20000000000005 L507.0,259.20000000000005 L507.0,311.403456 Q507.0,315.403456 503.0,315.403456 L447.0,315.403456 Q443.0,315.403456 443.0,311.403456 Z" fill="#2a78d6"><title>基本情境（現行定價、18% 代管費） 第二年：-856.8 萬元</title></path>
+  <text x="475.0" y="333.4" font-size="13" fill="#0b0b0b" text-anchor="middle">-856.8</text>
+  <path d="M509.0,259.20000000000005 L509.0,252.68253568 Q509.0,248.68253568 513.0,248.68253568 L569.0,248.68253568 Q573.0,248.68253568 573.0,252.68253568 L573.0,259.20000000000005 Z" fill="#eb6834"><title>建議方案 C1（待經營團隊決定） 第二年：160.3 萬元</title></path>
+  <text x="541.0" y="240.7" font-size="13" fill="#0b0b0b" text-anchor="middle">160.3</text>
+  <text x="508.0" y="482" font-size="15" fill="#0b0b0b" text-anchor="middle">第二年</text>
+  <path d="M723.0,259.20000000000005 L787.0,259.20000000000005 L787.0,381.426208 Q787.0,385.426208 783.0,385.426208 L727.0,385.426208 Q723.0,385.426208 723.0,381.426208 Z" fill="#2a78d6"><title>基本情境（現行定價、18% 代管費） 第三年：-1,924.2 萬元</title></path>
+  <text x="755.0" y="403.4" font-size="13" fill="#0b0b0b" text-anchor="middle">-1,924.2</text>
+  <path d="M789.0,259.20000000000005 L789.0,203.1596 Q789.0,199.1596 793.0,199.1596 L849.0,199.1596 Q853.0,199.1596 853.0,203.1596 L853.0,259.20000000000005 Z" fill="#eb6834"><title>建議方案 C1（待經營團隊決定） 第三年：915.3 萬元</title></path>
+  <text x="821.0" y="191.2" font-size="13" fill="#0b0b0b" text-anchor="middle">915.3</text>
+  <text x="788.0" y="482" font-size="15" fill="#0b0b0b" text-anchor="middle">第三年</text>
+  <text x="32" y="504" font-size="12" fill="#7a7974">資料來源：F2 財務計畫報表 2（v2.1 財務定版），基本情境不含政府補助</text>
+</svg>

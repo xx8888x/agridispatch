@@ -207,14 +207,15 @@
             <div>
               <label class="block text-slate-300 font-semibold mb-1.5">{{ t.pwdLabel }}</label>
               <div class="relative">
-                <input v-model="form.password" type="password" :placeholder="t.pwdPlaceholder"
+                <input v-model="form.password" type="password" :placeholder="pwdPlaceholderText"
                   class="w-full px-4 py-3.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition text-sm font-mono">
                 <span class="absolute right-3.5 top-3.5 text-slate-500">🔒</span>
               </div>
             </div>
 
             <div class="flex items-center justify-between text-xs pt-1">
-              <span class="text-slate-400 text-[11px]">💡 {{ t.pwdDefaultHint }}: <span class="font-mono text-amber-400 font-bold">123456</span></span>
+              <span v-if="isDemo && demoCfg" class="text-slate-400 text-[11px]">💡 {{ t.pwdDefaultHint }}: <span class="font-mono text-amber-400 font-bold">{{ demoCfg.defaultPassword }}</span></span>
+              <span v-else></span>
               <a href="tel:1955" class="text-amber-400 text-[11px] hover:underline">{{ t.helpForgot }}</a>
             </div>
 
@@ -388,7 +389,7 @@
         idPlaceholder: 'Ví dụ: AD88123451 hoặc C1234561',
         idPlaceholderHint: 'ARC / Passport',
         pwdLabel: 'Mật Khẩu',
-        pwdPlaceholder: 'Nhập mật khẩu (Mặc định 123456)',
+        pwdPlaceholder: 'Nhập mật khẩu',
         pwdDefaultHint: 'Mật khẩu mặc định',
         helpForgot: 'Quên mật khẩu? Gọi 1955',
         btnSubmit: 'Đăng Nhập Ngay ➔',
@@ -417,7 +418,7 @@
         idPlaceholder: 'Contoh: AD77234561 atau X8812301',
         idPlaceholderHint: 'ARC / Paspor',
         pwdLabel: 'Kata Sandi',
-        pwdPlaceholder: 'Masukkan kata sandi (Default 123456)',
+        pwdPlaceholder: 'Masukkan kata sandi',
         pwdDefaultHint: 'Kata sandi default',
         helpForgot: 'Lupa sandi? Hubungi 1955',
         btnSubmit: 'Masuk Sekarang ➔',
@@ -446,7 +447,7 @@
         idPlaceholder: 'เช่น: AD66345671 หรือ T5512301',
         idPlaceholderHint: 'ARC / Passport',
         pwdLabel: 'รหัสผ่าน',
-        pwdPlaceholder: 'กรอกรหัสผ่าน (ค่าเริ่มต้น 123456)',
+        pwdPlaceholder: 'กรอกรหัสผ่าน',
         pwdDefaultHint: 'รหัสผ่านเริ่มต้น',
         helpForgot: 'ลืมรหัสผ่าน? โทร 1955',
         btnSubmit: 'เข้าสู่ระบบทันที ➔',
@@ -475,7 +476,7 @@
         idPlaceholder: 'e.g. AD55456781 or P4412301',
         idPlaceholderHint: 'ARC / Passport',
         pwdLabel: 'Password',
-        pwdPlaceholder: 'Enter password (Default 123456)',
+        pwdPlaceholder: 'Enter password',
         pwdDefaultHint: 'Default password',
         helpForgot: 'Forgot password? Dial 1955',
         btnSubmit: 'Login to Portal ➔',
@@ -504,7 +505,7 @@
         idPlaceholder: '例如 AD88123451 或 C1234561',
         idPlaceholderHint: '居留證 / 護照',
         pwdLabel: '登入密碼',
-        pwdPlaceholder: '請輸入密碼 (預設 123456)',
+        pwdPlaceholder: '請輸入密碼',
         pwdDefaultHint: '預設密碼',
         helpForgot: '忘記密碼？請撥打 1955',
         btnSubmit: '登入移工工作台 ➔',

@@ -10,4 +10,9 @@
     <string name="clockin_success">打卡成功！已紀錄 GPS 座標與時間</string>
     <string name="weather_alert_title">天候避險啟動</string>
     <string name="weather_alert_msg">遇雨田區泥濘，工班即刻改派屏南冷鏈預冷包裝場！</string>
+
+    <!-- 正式上線網域白名單：WebView 僅允許載入內建 assets 與此網域 (及其子網域，需 HTTPS)，
+         其餘外部連結一律交由系統瀏覽器開啟，避免 WebView 被導去任意/惡意網域。
+         若正式網域不同，請於此處修改 (非可翻譯字串，不應隨語系變動)。 -->
+    <string name="allowed_web_domain" translatable="false">agridispatch.tw</string>
 </resources>

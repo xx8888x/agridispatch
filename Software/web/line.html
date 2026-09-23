@@ -4,8 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>智農派工 AgriDispatch - LINE Bot 智慧農務助理體驗館</title>
+  <!-- 執行模式設定（demo / production，每份副本各自一份） -->
+  <script src="js/app-config.js"></script>
+  <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode !== 'production') {
+      document.write('<script src="js/demo-accounts.js"><\/script>');
+    }
+  </script>
   <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
   <script>
@@ -76,7 +90,7 @@
         <a href="worker-foreign.html" class="hover:text-purple-400 transition whitespace-nowrap shrink-0">🇻🇳 外籍移工</a>
         <a href="worker-local.html" class="hover:text-blue-400 transition whitespace-nowrap shrink-0">🚜 本地工/領班</a>
         <a href="admin.html" class="hover:text-indigo-400 transition whitespace-nowrap shrink-0">💻 科技後台</a>
-        <a href="vue-crud.html" class="hover:text-amber-400 transition whitespace-nowrap shrink-0">⚡ 派工總台</a>
+        <a href="admin.html" class="hover:text-amber-400 transition whitespace-nowrap shrink-0">⚡ 派工總台</a>
       </div>
 
       <div class="flex items-center gap-2 shrink-0 whitespace-nowrap">
@@ -86,7 +100,7 @@
         <a href="admin.html" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition whitespace-nowrap shrink-0">
           <span>💻</span> 科技後台
         </a>
-        <a href="app.html" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition whitespace-nowrap shrink-0">
+        <a href="admin.html" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition whitespace-nowrap shrink-0">
           整合系統
         </a>
       </div>

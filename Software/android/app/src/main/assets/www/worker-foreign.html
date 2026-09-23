@@ -4,8 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>智農派工 AgriDispatch - 外展移工每日任務與工作台</title>
+  <!-- 執行模式設定（demo / production，每份副本各自一份） -->
+  <script src="js/app-config.js"></script>
+  <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode !== 'production') {
+      document.write('<script src="js/demo-accounts.js"><\/script>');
+    }
+  </script>
   <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
   <!-- AgriDocs: Document & Payslip Downloader -->
   <script src="js/agri-docs.js"></script>
   <!-- Custom CSS -->
@@ -68,7 +82,7 @@
         <a href="line.html" class="px-3 py-1.5 rounded-lg bg-[#06C755]/20 text-emerald-300 hover:bg-[#06C755]/30 border border-emerald-500/40 font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
           <span>💬</span> LINE Bot
         </a>
-        <a href="app.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+        <a href="admin.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
           <span>📱</span> 整合戰情
         </a>
       </nav>

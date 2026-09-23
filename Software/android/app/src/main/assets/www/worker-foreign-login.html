@@ -4,8 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>外籍特許農工專屬登入 - Cổng Đăng Nhập Lao Động Nước Ngoài - AgriDispatch</title>
+  <!-- 執行模式設定（demo / production，每份副本各自一份） -->
+  <script src="js/app-config.js"></script>
+  <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode !== 'production') {
+      document.write('<script src="js/demo-accounts.js"><\/script>');
+    }
+  </script>
   <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
   <!-- Vue 3: Local Vendor First with CDN Fallback -->
   <script src="js/vendor/vue.global.prod.js"></script>
   <script>
@@ -153,12 +167,12 @@
             <p class="text-xs text-slate-400 mt-1">{{ t.loginSubtitle }}</p>
           </div>
 
-          <!-- Demo Mode Notice -->
-          <div class="mb-5 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between gap-3">
+          <!-- Demo Mode Notice（僅 demo 模式顯示） -->
+          <div v-if="isDemo && demoCfg" class="mb-5 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between gap-3">
             <div class="flex items-center gap-2">
               <span class="text-base shrink-0">⚡</span>
               <div>
-                <div class="font-bold text-white">Demo 展示模式：已開通免密通行</div>
+                <div class="font-bold text-white">{{ demoCfg.bannerNotice }}</div>
                 <div class="text-[11px] text-slate-400">免控管帳密，任意輸入或點擊均可實測（正式帳密由後端控管）</div>
               </div>
             </div>
@@ -193,14 +207,15 @@
             <div>
               <label class="block text-slate-300 font-semibold mb-1.5">{{ t.pwdLabel }}</label>
               <div class="relative">
-                <input v-model="form.password" type="password" :placeholder="t.pwdPlaceholder"
+                <input v-model="form.password" type="password" :placeholder="pwdPlaceholderText"
                   class="w-full px-4 py-3.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition text-sm font-mono">
                 <span class="absolute right-3.5 top-3.5 text-slate-500">🔒</span>
               </div>
             </div>
 
             <div class="flex items-center justify-between text-xs pt-1">
-              <span class="text-slate-400 text-[11px]">💡 {{ t.pwdDefaultHint }}: <span class="font-mono text-amber-400 font-bold">123456</span></span>
+              <span v-if="isDemo && demoCfg" class="text-slate-400 text-[11px]">💡 {{ t.pwdDefaultHint }}: <span class="font-mono text-amber-400 font-bold">{{ demoCfg.defaultPassword }}</span></span>
+              <span v-else></span>
               <a href="tel:1955" class="text-amber-400 text-[11px] hover:underline">{{ t.helpForgot }}</a>
             </div>
 
@@ -211,47 +226,19 @@
             </button>
           </form>
 
-          <!-- Quick Fill Demo Foreign Workers -->
-          <div class="mt-6 pt-5 border-t border-slate-800">
+          <!-- Quick Fill Demo Foreign Workers（僅 demo 模式顯示，資料來自 js/demo-accounts.js） -->
+          <div v-if="isDemo && demoCfg" class="mt-6 pt-5 border-t border-slate-800">
             <div class="text-[11px] font-bold text-slate-400 mb-2.5 flex items-center justify-between">
               <span>⚡ {{ t.quickDemoTitle }}</span>
               <span class="text-[10px] text-slate-500">Click to fill</span>
             </div>
             <div class="grid grid-cols-2 gap-2">
-              <!-- Worker 1: 阮文雄 -->
-              <button @click="fillProfile('AD88123451', '123456', 'W001')" type="button"
+              <button v-for="p in demoCfg.profiles" :key="p.identifier" @click="fillProfile(p.identifier, p.password, p.workerId)" type="button"
                 class="text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 transition">
                 <div class="flex items-center gap-1 font-bold text-white text-[11px]">
-                  <span>🇻🇳</span> 阮文雄 (A組長)
+                  <span>{{ p.flag }}</span> {{ p.name }}
                 </div>
-                <div class="text-[10px] text-slate-400 font-mono mt-0.5">ARC: AD88123451</div>
-              </button>
-
-              <!-- Worker 2: Budi Santoso -->
-              <button @click="fillProfile('AD77234561', '123456', 'W006')" type="button"
-                class="text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 transition">
-                <div class="flex items-center gap-1 font-bold text-white text-[11px]">
-                  <span>🇮🇩</span> Budi (B組長)
-                </div>
-                <div class="text-[10px] text-slate-400 font-mono mt-0.5">ARC: AD77234561</div>
-              </button>
-
-              <!-- Worker 3: Somchai Prasert -->
-              <button @click="fillProfile('AD66345671', '123456', 'W020')" type="button"
-                class="text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 transition">
-                <div class="flex items-center gap-1 font-bold text-white text-[11px]">
-                  <span>🇹🇭</span> Somchai (D組)
-                </div>
-                <div class="text-[10px] text-slate-400 font-mono mt-0.5">ARC: AD66345671</div>
-              </button>
-
-              <!-- Worker 4: Maria Santos -->
-              <button @click="fillProfile('AD55456781', '123456', 'W023')" type="button"
-                class="text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 transition">
-                <div class="flex items-center gap-1 font-bold text-white text-[11px]">
-                  <span>🇵🇭</span> Maria (B組)
-                </div>
-                <div class="text-[10px] text-slate-400 font-mono mt-0.5">ARC: AD55456781</div>
+                <div class="text-[10px] text-slate-400 font-mono mt-0.5">ARC: {{ p.identifier }}</div>
               </button>
             </div>
           </div>
@@ -374,7 +361,7 @@
         idPlaceholder: 'Ví dụ: AD88123451 hoặc C1234561',
         idPlaceholderHint: 'ARC / Passport',
         pwdLabel: 'Mật Khẩu',
-        pwdPlaceholder: 'Nhập mật khẩu (Mặc định 123456)',
+        pwdPlaceholder: 'Nhập mật khẩu',
         pwdDefaultHint: 'Mật khẩu mặc định',
         helpForgot: 'Quên mật khẩu? Gọi 1955',
         btnSubmit: 'Đăng Nhập Ngay ➔',
@@ -403,7 +390,7 @@
         idPlaceholder: 'Contoh: AD77234561 atau X8812301',
         idPlaceholderHint: 'ARC / Paspor',
         pwdLabel: 'Kata Sandi',
-        pwdPlaceholder: 'Masukkan kata sandi (Default 123456)',
+        pwdPlaceholder: 'Masukkan kata sandi',
         pwdDefaultHint: 'Kata sandi default',
         helpForgot: 'Lupa sandi? Hubungi 1955',
         btnSubmit: 'Masuk Sekarang ➔',
@@ -432,7 +419,7 @@
         idPlaceholder: 'เช่น: AD66345671 หรือ T5512301',
         idPlaceholderHint: 'ARC / Passport',
         pwdLabel: 'รหัสผ่าน',
-        pwdPlaceholder: 'กรอกรหัสผ่าน (ค่าเริ่มต้น 123456)',
+        pwdPlaceholder: 'กรอกรหัสผ่าน',
         pwdDefaultHint: 'รหัสผ่านเริ่มต้น',
         helpForgot: 'ลืมรหัสผ่าน? โทร 1955',
         btnSubmit: 'เข้าสู่ระบบทันที ➔',
@@ -461,7 +448,7 @@
         idPlaceholder: 'e.g. AD55456781 or P4412301',
         idPlaceholderHint: 'ARC / Passport',
         pwdLabel: 'Password',
-        pwdPlaceholder: 'Enter password (Default 123456)',
+        pwdPlaceholder: 'Enter password',
         pwdDefaultHint: 'Default password',
         helpForgot: 'Forgot password? Dial 1955',
         btnSubmit: 'Login to Portal ➔',
@@ -490,7 +477,7 @@
         idPlaceholder: '例如 AD88123451 或 C1234561',
         idPlaceholderHint: '居留證 / 護照',
         pwdLabel: '登入密碼',
-        pwdPlaceholder: '請輸入密碼 (預設 123456)',
+        pwdPlaceholder: '請輸入密碼',
         pwdDefaultHint: '預設密碼',
         helpForgot: '忘記密碼？請撥打 1955',
         btnSubmit: '登入移工工作台 ➔',
@@ -501,16 +488,24 @@
 
     createApp({
       setup() {
-        const API_BASE = window.location.origin.startsWith('http')
+        const API_BASE = window.AgriAuth ? window.AgriAuth.API_BASE : (window.location.origin.startsWith('http')
           ? `${window.location.origin}/api`
-          : 'http://localhost:3000/api';
+          : 'http://localhost:3000/api');
+        const isDemo = window.AgriAuth ? window.AgriAuth.MODE !== 'production' : true;
+        const demoCfg = (window.AGRI_DEMO_ACCOUNTS && window.AGRI_DEMO_ACCOUNTS.workerForeign) || null;
 
         const lang = ref('vi'); // Default to Vietnamese for foreign workers
         const t = computed(() => translations[lang.value] || translations.zh);
+        const pwdPlaceholderText = computed(() => {
+          if (isDemo && demoCfg && demoCfg.pwdHintByLang) {
+            return demoCfg.pwdHintByLang[lang.value] || demoCfg.pwdHintByLang.zh;
+          }
+          return t.value.pwdPlaceholder;
+        });
 
         const form = reactive({
-          identifier: 'AD88123451',
-          password: '123456'
+          identifier: isDemo && demoCfg ? demoCfg.defaultIdentifier : '',
+          password: isDemo && demoCfg ? demoCfg.defaultPassword : ''
         });
         const loading = ref(false);
         const errorMsg = ref('');
@@ -542,7 +537,31 @@
           successMsg.value = '';
           loading.value = true;
 
-          // Demo 版外展移工資料庫（支援免密通行）
+          if (!isDemo) {
+            // production 模式：一律呼叫真實登入 API，失敗顯示錯誤、不做任何離線 fallback
+            try {
+              const res = await fetch(`${API_BASE}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier: form.identifier, password: form.password })
+              });
+              const data = await res.json().catch(() => null);
+              if (res.ok && data && data.success && data.user) {
+                window.AgriAuth.setSession(data.token, data.user);
+                workerModal.data = data.user;
+                workerModal.show = true;
+              } else {
+                errorMsg.value = (data && data.error) || '帳號或密碼錯誤';
+              }
+            } catch (e) {
+              errorMsg.value = '無法連線到伺服器，請稍後再試';
+            } finally {
+              loading.value = false;
+            }
+            return;
+          }
+
+          // Demo 版外展移工資料庫（示範資料，僅 demo 模式使用）
           const mockWorkerMap = {
             'AD88123451': { id: 'W001', name: '阮文雄 (Nguyễn Văn Hùng)', role: 'WORKER_FOREIGN', arcNumber: 'AD88123451', passportNumber: 'P8921822', teamId: 'A組 (宜蘭蔬菜班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '青蔥採收分級 ╳ 留蒂 0.5cm', baseSalary: 28590, agriBonus: 8800, transportAllowance: 1200 },
             'AD77234561': { id: 'W006', name: 'Budi Santoso', role: 'WORKER_FOREIGN', arcNumber: 'AD77234561', passportNumber: 'B1123490', teamId: 'B組 (屏東芒果班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '芒果套袋採收 ╳ 留蒂 0.5cm', baseSalary: 28590, agriBonus: 8800, transportAllowance: 1200 },
@@ -579,8 +598,8 @@
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                identifier: form.identifier || 'AD88123451',
-                password: form.password || '123456'
+                identifier: form.identifier || (demoCfg && demoCfg.defaultIdentifier) || 'AD88123451',
+                password: form.password || (demoCfg && demoCfg.defaultPassword) || ''
               }),
               signal: controller.signal
             });
@@ -596,9 +615,9 @@
             // Demo 離線容錯
           }
 
-          successMsg.value = `Xin chào / 歡迎，${finalUser.name}！Demo 免密通行通過`;
+          successMsg.value = `Xin chào / 歡迎，${finalUser.name}！`;
           sessionStorage.setItem('agri_user', JSON.stringify(finalUser));
-          sessionStorage.setItem('agri_token', finalUser.token || 'demo-foreign-token-2026');
+          window.AgriAuth.setSession(finalUser.token || 'demo-foreign-token-2026', finalUser);
 
           if (window.AgriNativeBridge) {
             if (typeof window.AgriNativeBridge.showToast === 'function') {
@@ -617,6 +636,9 @@
         return {
           lang,
           t,
+          isDemo,
+          demoCfg,
+          pwdPlaceholderText,
           setLang,
           form,
           loading,

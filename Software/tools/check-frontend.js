@@ -101,8 +101,9 @@ for (const file of htmlFiles) {
     }
   }
 
-  // 2. 本地連結存在性檢查
-  const links = extractLocalLinks(html);
+  // 2. 本地連結存在性檢查（inline <script> 內容先清空，避免誤判 JS 字串中的 src=/href=）
+  const htmlNoScript = html.replace(/(<script\b[^>]*>)([\s\S]*?)(<\/script>)/gi, '$1$3');
+  const links = extractLocalLinks(htmlNoScript);
   const fileDir = path.dirname(file);
   for (const link of links) {
     const clean = link.split('#')[0].split('?')[0];

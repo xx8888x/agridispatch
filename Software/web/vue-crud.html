@@ -4,8 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>智農派工 AgriDispatch - Vue 3 + Spring Boot 智慧調度管理平台</title>
+  <!-- 執行模式設定（demo / production，每份副本各自一份） -->
+  <script src="js/app-config.js"></script>
+  <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode !== 'production') {
+      document.write('<script src="js/demo-accounts.js"><\/script>');
+    }
+  </script>
   <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
   <!-- Vue 3: Local Vendor First with CDN Fallback -->
   <script src="js/vendor/vue.global.prod.js"></script>
   <script>
@@ -52,6 +66,11 @@
   </script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- 舊版頁面提示：功能已由 admin.html 管理後台取代 -->
+  <div class="bg-amber-500 text-slate-950 text-xs sm:text-sm font-bold text-center py-2 px-4">
+    ⚠️ 舊版頁面，請改用 <a href="admin.html" class="underline">admin.html</a> 管理後台
+  </div>
 
   <div id="app" v-cloak class="flex flex-col min-h-screen">
     <!-- Header -->

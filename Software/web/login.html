@@ -4,8 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>智農派工 AgriDispatch - 角色專屬身分登入大廳</title>
+  <!-- 執行模式設定（demo / production，每份副本各自一份） -->
+  <script src="js/app-config.js"></script>
+  <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode !== 'production') {
+      document.write('<script src="js/demo-accounts.js"><\/script>');
+    }
+  </script>
   <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
   <!-- Vue 3: Local Vendor First with CDN Fallback -->
   <script src="js/vendor/vue.global.prod.js"></script>
   <script>
@@ -164,7 +178,7 @@
               <span>🇻🇳 越</span>・<span>🇮🇩 印</span>・<span>🇹🇭 泰</span>・<span>🇵🇭 菲</span>
             </div>
             <p class="text-xs text-slate-400 mt-2 leading-relaxed">
-              農業部特許在籍移工專用。支援五國語言、居留證 (ARC) / 護照號碼免密登入與任務通知。
+              農業部特許在籍移工專用。支援五國語言、居留證 (ARC) / 護照號碼快速登入與任務通知。
             </p>
 
             <ul class="mt-4 space-y-2 text-xs text-slate-300 border-t border-slate-800/80 pt-3">
@@ -174,7 +188,8 @@
               </li>
               <li class="flex items-center gap-2">
                 <span class="text-amber-400">✔</span>
-                <span>ARC / 護照號碼免記密碼</span>
+                <span v-if="isDemo">ARC / 護照號碼免記密碼（Demo 展示）</span>
+                <span v-else>ARC / 護照號碼快速登入</span>
               </li>
               <li class="flex items-center gap-2">
                 <span class="text-amber-400">✔</span>
@@ -359,9 +374,11 @@
       createApp({
         setup() {
           const isOnline = ref(true);
+          const isDemo = window.AgriAuth ? window.AgriAuth.MODE !== 'production' : true;
+          const API_BASE = window.AgriAuth ? window.AgriAuth.API_BASE : '/api';
           const checkBackend = async () => {
             try {
-              const res = await fetch('/api/crops', { signal: AbortSignal.timeout(2500) });
+              const res = await fetch(`${API_BASE}/crops`, { signal: AbortSignal.timeout(2500) });
               if (res.ok) {
                 isOnline.value = true;
                 const badge = document.getElementById('serverStatusBadge');
@@ -384,7 +401,7 @@
             checkBackend();
           });
 
-          return { isOnline };
+          return { isOnline, isDemo };
         }
       }).mount('#app');
     }

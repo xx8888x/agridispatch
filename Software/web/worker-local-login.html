@@ -4,8 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>本國帶工領班與機耕師登入 - 智農派工 AgriDispatch</title>
+  <!-- 執行模式設定（demo / production，每份副本各自一份） -->
+  <script src="js/app-config.js"></script>
+  <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode !== 'production') {
+      document.write('<script src="js/demo-accounts.js"><\/script>');
+    }
+  </script>
   <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
   <!-- Vue 3: Local Vendor First with CDN Fallback -->
   <script src="js/vendor/vue.global.prod.js"></script>
   <script>
@@ -205,14 +219,15 @@
             <div>
               <label class="block text-slate-300 font-semibold mb-1.5">登入密碼</label>
               <div class="relative">
-                <input v-model="form.password" type="password" required placeholder="請輸入密碼 (預設 123456)"
+                <input v-model="form.password" type="password" required :placeholder="isDemo && demoCfg ? demoCfg.pwdPlaceholder : '請輸入密碼'"
                   class="w-full px-4 py-3.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition text-sm font-mono">
                 <span class="absolute right-3.5 top-3.5 text-slate-500">🔒</span>
               </div>
             </div>
 
             <div class="flex items-center justify-between text-xs pt-1">
-              <span class="text-slate-400 text-[11px]">💡 預設密碼：<span class="font-mono text-blue-400 font-bold">123456</span></span>
+              <span v-if="isDemo && demoCfg" class="text-slate-400 text-[11px]">💡 {{ demoCfg.pwdHint }}</span>
+              <span v-else></span>
               <a href="#" @click.prevent="alertHelp" class="text-blue-400 text-[11px] hover:underline">忘記密碼 / 人才登錄？</a>
             </div>
 
@@ -223,59 +238,22 @@
             </button>
           </form>
 
-          <!-- Quick Fill Demo Local Workers -->
-          <div class="mt-6 pt-5 border-t border-slate-800">
+          <!-- Quick Fill Demo Local Workers（僅 demo 模式顯示，資料來自 js/demo-accounts.js） -->
+          <div v-if="isDemo && demoCfg" class="mt-6 pt-5 border-t border-slate-800">
             <div class="text-[11px] font-bold text-slate-400 mb-2.5 flex items-center justify-between">
               <span>⚡ 快速體驗示範身分：</span>
               <span class="text-[10px] text-slate-500">點擊直接填入</span>
             </div>
             <div class="space-y-2">
-              <!-- Worker 1: 林小祥 (外展帶隊領班) -->
-              <button @click="fillProfile('0918-668-999', '123456', 'W026')" type="button"
+              <button v-for="p in demoCfg.profiles" :key="p.identifier" @click="fillProfile(p.identifier, p.password, p.workerId, p.track === 'labor' ? 'labor' : null)" type="button"
                 class="w-full text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-blue-500/40 transition flex items-center justify-between">
                 <div>
                   <div class="flex items-center gap-1.5 font-bold text-white text-xs">
-                    <span>👨‍💼</span> 林小祥 (外展帶隊領班)
+                    <span>{{ p.icon }}</span> {{ p.name }}
                   </div>
-                  <div class="text-[10px] text-slate-400 mt-0.5">帶領 6 名外展移工 ╳ 枋山芒果採收 (B組小工頭)</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">{{ p.desc }}</div>
                 </div>
-                <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono text-[10px]">Tier 2 帶隊領班</span>
-              </button>
-
-              <!-- Worker 2: 陳建宏 (專業機耕/飛手) -->
-              <button @click="fillProfile('0988-333-444', '123456', 'W012')" type="button"
-                class="w-full text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-blue-500/40 transition flex items-center justify-between">
-                <div>
-                  <div class="flex items-center gap-1.5 font-bold text-white text-xs">
-                    <span>🚜</span> 陳建宏 (專業機耕師)
-                  </div>
-                  <div class="text-[10px] text-slate-400 mt-0.5">大疆 T50 巡檢代噴 ╳ 溫室曳引機 (C組)</div>
-                </div>
-                <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono text-[10px]">Tier 3 專業代耕</span>
-              </button>
-
-              <!-- Worker 3: 林志成 (資深機耕師) -->
-              <button @click="fillProfile('0933-555-666', '123456', 'W025')" type="button"
-                class="w-full text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-blue-500/40 transition flex items-center justify-between">
-                <div>
-                  <div class="flex items-center gap-1.5 font-bold text-white text-xs">
-                    <span>🚜</span> 林志成 (資深機耕師)
-                  </div>
-                  <div class="text-[10px] text-slate-400 mt-0.5">80 馬力曳引機 ╳ 深耕整地輪作 (C組)</div>
-                </div>
-                <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono text-[10px]">Tier 3 專業代耕</span>
-              </button>
-
-              <!-- Worker 4: 張志明 (農業勞務工) -->
-              <button @click="fillProfile('0912-345-678', '123456', 'W030', 'labor')" type="button"
-                class="w-full text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-green-500/40 transition flex items-center justify-between">
-                <div>
-                  <div class="flex items-center gap-1.5 font-bold text-white text-xs">
-                    <span>🧑‍🌾</span> 張志明 (農業勞務工)
-                  </div>
-                  <div class="text-[10px] text-slate-400 mt-0.5">屏東枋山芒果採收 ╳ 合作社在籍農業勞務員</div>
-                </div>
-                <span class="px-2 py-0.5 rounded bg-green-500/20 text-green-300 font-mono text-[10px]">農業勞務員</span>
+                <span class="px-2 py-0.5 rounded font-mono text-[10px]" :class="'bg-' + p.tagColor + '-500/20 text-' + p.tagColor + '-300'">{{ p.tag }}</span>
               </button>
             </div>
           </div>
@@ -379,15 +357,17 @@
 
     createApp({
       setup() {
-        const API_BASE = window.location.origin.startsWith('http')
+        const API_BASE = window.AgriAuth ? window.AgriAuth.API_BASE : (window.location.origin.startsWith('http')
           ? `${window.location.origin}/api`
-          : 'http://localhost:3000/api';
+          : 'http://localhost:3000/api');
+        const isDemo = window.AgriAuth ? window.AgriAuth.MODE !== 'production' : true;
+        const demoCfg = (window.AGRI_DEMO_ACCOUNTS && window.AGRI_DEMO_ACCOUNTS.workerLocal) || null;
 
         const activeTrack = ref('labor');
 
         const form = reactive({
-          identifier: '0975-123-456',
-          password: '123456'
+          identifier: '',
+          password: ''
         });
         const loading = ref(false);
         const errorMsg = ref('');
@@ -412,18 +392,24 @@
           }
         };
 
+        const findDemoProfile = (track) => demoCfg && demoCfg.profiles.find(p => p.track === track);
+
         const setTrack = (track) => {
           activeTrack.value = track;
+          if (!isDemo || !demoCfg) return;
           if (track === 'labor') {
-            fillProfile('0975-123-456', '123456', 'W030', 'labor');
+            const p = findDemoProfile('labor');
+            if (p) fillProfile(p.identifier, p.password, p.workerId, 'labor');
           } else if (track === 'machinery') {
-            fillProfile('0988-333-444', '123456', 'W012', 'machinery');
+            const p = findDemoProfile('machinery');
+            if (p) fillProfile(p.identifier, p.password, p.workerId, 'machinery');
           } else {
-            fillProfile('0918-668-999', '123456', 'W026', 'foreman');
+            const p = findDemoProfile('foreman');
+            if (p) fillProfile(p.identifier, p.password, p.workerId, 'foreman');
           }
         };
 
-        // 自動從 URL 參數或快取識別身分
+        // 自動從 URL 參數或快取識別身分（僅 demo 模式預先帶入示範身分）
         const urlParams = new URLSearchParams(window.location.search);
         const reqRole = urlParams.get('role') || sessionStorage.getItem('localRole');
         if (reqRole === 'foreman') {
@@ -448,12 +434,15 @@
                 password: form.password
               })
             });
-            const data = await res.json();
+            const data = await res.json().catch(() => null);
 
-            if (data.success) {
+            if (res.ok && data && data.success) {
               successMsg.value = `歡迎回來，${data.user.name}！`;
-              sessionStorage.setItem('agri_user', JSON.stringify(data.user));
-              sessionStorage.setItem('agri_token', data.token);
+              if (window.AgriAuth) window.AgriAuth.setSession(data.token, data.user);
+              else {
+                sessionStorage.setItem('agri_user', JSON.stringify(data.user));
+                sessionStorage.setItem('agri_token', data.token);
+              }
 
               if (window.AgriNativeBridge) {
                 if (typeof window.AgriNativeBridge.showToast === 'function') {
@@ -466,11 +455,56 @@
 
               localModal.data = data.user;
               localModal.show = true;
+            } else if (isDemo) {
+              // demo 模式：後端離線或舊版後端不支援時，沿用示範資料 fallback
+              const matched = demoCfg && demoCfg.profiles.find(p => p.identifier === form.identifier);
+              const finalUser = matched ? {
+                id: matched.workerId,
+                name: matched.name,
+                role: matched.track === 'labor' ? 'worker_local' : 'worker_local',
+                subRole: matched.track,
+                roleDesc: matched.tag,
+                demo: true
+              } : {
+                id: 'W030',
+                name: form.identifier ? `本地農工 (${form.identifier})` : '示範本地農工',
+                role: 'worker_local',
+                subRole: activeTrack.value,
+                demo: true
+              };
+              const token = 'demo-local-token-2026';
+              successMsg.value = `歡迎回來，${finalUser.name}！`;
+              window.AgriAuth ? window.AgriAuth.setSession(token, finalUser) : sessionStorage.setItem('agri_user', JSON.stringify(finalUser));
+              localModal.data = finalUser;
+              localModal.show = true;
             } else {
-              errorMsg.value = data.error || '帳號或密碼錯誤';
+              errorMsg.value = (data && data.error) || '帳號或密碼錯誤';
             }
           } catch (e) {
-            errorMsg.value = '無法連線伺服器，請檢查網路或後端狀態。';
+            if (isDemo) {
+              const matched = demoCfg && demoCfg.profiles.find(p => p.identifier === form.identifier);
+              const finalUser = matched ? {
+                id: matched.workerId,
+                name: matched.name,
+                role: 'worker_local',
+                subRole: matched.track,
+                roleDesc: matched.tag,
+                demo: true
+              } : {
+                id: 'W030',
+                name: form.identifier ? `本地農工 (${form.identifier})` : '示範本地農工',
+                role: 'worker_local',
+                subRole: activeTrack.value,
+                demo: true
+              };
+              const token = 'demo-local-token-2026';
+              successMsg.value = `歡迎回來，${finalUser.name}！（離線示範模式）`;
+              window.AgriAuth ? window.AgriAuth.setSession(token, finalUser) : sessionStorage.setItem('agri_user', JSON.stringify(finalUser));
+              localModal.data = finalUser;
+              localModal.show = true;
+            } else {
+              errorMsg.value = '無法連線伺服器，請檢查網路或後端狀態。';
+            }
           } finally {
             loading.value = false;
           }
@@ -487,6 +521,8 @@
           successMsg,
           localModal,
           activeTrack,
+          isDemo,
+          demoCfg,
           setTrack,
           fillProfile,
           handleLogin,

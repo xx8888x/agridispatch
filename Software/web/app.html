@@ -4,10 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>智農派工 AgriDispatch - 四大使用者角色智慧調度平台</title>
+  <!-- 執行模式設定（demo / production，每份副本各自一份） -->
+  <script src="js/app-config.js"></script>
+  <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode !== 'production') {
+      document.write('<script src="js/demo-accounts.js"><\/script>');
+    }
+  </script>
   <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
   <!-- Chart.js CDN for Tech Admin Analytics -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="js/vendor/chart.umd.min.js"></script>
+  <script>
+    if (typeof Chart === 'undefined') {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"><\/script>');
+    }
+  </script>
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
   <script>
@@ -31,6 +50,11 @@
   </script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- 舊版頁面提示：功能已由 admin.html 及五大角色頁面取代 -->
+  <div class="bg-amber-500 text-slate-950 text-xs sm:text-sm font-bold text-center py-2 px-4">
+    ⚠️ 舊版頁面，請改用 <a href="admin.html" class="underline">admin.html</a> 管理後台與各角色專屬頁面
+  </div>
 
   <!-- Top Navigation Header -->
   <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
@@ -782,7 +806,7 @@
         <button onclick="quickLogin('farmer')" class="w-full p-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-emerald-500/40 text-left flex items-center justify-between transition">
           <div>
             <strong class="text-white block text-sm">👨‍🌾 農場主 / 契作商版本</strong>
-            <span class="text-xs text-slate-400">帳號: farmer / 密碼: 123456</span>
+            <span id="hint-farmer" class="text-xs text-slate-400"></span>
           </div>
           <span class="text-xs px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 font-bold">登入 ➔</span>
         </button>
@@ -790,7 +814,7 @@
         <button onclick="quickLogin('worker_foreign')" class="w-full p-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-purple-500/40 text-left flex items-center justify-between transition">
           <div>
             <strong class="text-white block text-sm">👷 外籍移工版本 (三語任務卡)</strong>
-            <span class="text-xs text-slate-400">帳號: worker_foreign / 密碼: 123456</span>
+            <span id="hint-worker-foreign" class="text-xs text-slate-400"></span>
           </div>
           <span class="text-xs px-2 py-1 rounded bg-purple-500/20 text-purple-400 font-bold">登入 ➔</span>
         </button>
@@ -798,7 +822,7 @@
         <button onclick="quickLogin('worker_local')" class="w-full p-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-blue-500/40 text-left flex items-center justify-between transition">
           <div>
             <strong class="text-white block text-sm">🚜 本地勞工版本 (機耕/無人機)</strong>
-            <span class="text-xs text-slate-400">帳號: worker_local / 密碼: 123456</span>
+            <span id="hint-worker-local" class="text-xs text-slate-400"></span>
           </div>
           <span class="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-400 font-bold">登入 ➔</span>
         </button>
@@ -806,7 +830,7 @@
         <button onclick="quickLogin('admin_tech')" class="w-full p-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-amber-500/40 text-left flex items-center justify-between transition">
           <div>
             <strong class="text-white block text-sm">🛰️ 科技公司後台版本 (調度戰情室)</strong>
-            <span class="text-xs text-slate-400">帳號: admin_tech / 密碼: admin888</span>
+            <span id="hint-admin-tech" class="text-xs text-slate-400"></span>
           </div>
           <span class="text-xs px-2 py-1 rounded bg-amber-500/20 text-amber-400 font-bold">登入 ➔</span>
         </button>
@@ -814,7 +838,7 @@
         <button onclick="quickLogin('showcase')" class="w-full p-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/50 text-left flex items-center justify-between transition">
           <div>
             <strong class="text-amber-300 block text-sm">🌟 對外展示宣傳版本 (路演展示)</strong>
-            <span class="text-xs text-slate-400">免密碼・全景商業模式 Pitch 展示</span>
+            <span class="text-xs text-slate-400">全景商業模式 Pitch 展示</span>
           </div>
           <span class="text-xs px-2 py-1 rounded bg-amber-500/30 text-amber-300 font-bold">開啟 ➔</span>
         </button>

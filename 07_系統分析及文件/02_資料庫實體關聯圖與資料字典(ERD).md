@@ -1,290 +1,338 @@
 # 智農派工 (AgriDispatch) - 資料庫實體關聯圖與資料字典 (ERD)
 
-> **文件編號**：AD-DB-202609-V2  
-> **系統名稱**：智農派工（AgriDispatch）——資料庫架構規格書  
-> **文件版本**：v2.0.0（北部產區樞紐 ╳ 三層混合模型 ╳ 專車物流精算版）  
-> **發布日期**：2026-09-20  
-> **資料庫形式**：檔案持久化結構 (JSON/SQLite 相容結構)  
+> **文件版本**：v3.0.0（2026-09-23，依 `Software/backend/src/main/java/com/agridispatch/entity/*.java` 實際 JPA 實體改寫）
+> **資料庫**：H2 檔案資料庫（`Software/backend/data/agridispatch_db`），Hibernate `ddl-auto: update` 自動建表
+> **Visio 圖檔**：同資料夾的 `.vdx` / `.vsdx` 為 v2.0 舊版，**以本文件的 Mermaid 圖為準**
+
+> 本系統**不使用** JPA 關聯註解（`@ManyToOne` 等），實體之間以字串欄位做邏輯關聯，資料庫層**沒有外鍵約束**。下圖的關聯線表示程式中的邏輯關聯與檢查位置。
 
 ---
 
-## 壹、 資料庫實體關聯圖 (Mermaid ER Diagram)
+## 壹、 實體關聯圖 (Mermaid ER Diagram)
 
 ```mermaid
 erDiagram
-    CROPS ||--o{ ORDERS : "defines pricing & hours for"
-    FARMERS ||--o{ ORDERS : "places"
-    DISPATCH_TEAMS ||--o{ ORDERS : "fulfills"
-    DISPATCH_TEAMS ||--|{ WORKERS : "consists of"
-    WORKERS ||--o{ CLOCK_INS : "submits"
-    WORKERS ||--o{ SUBSIDY_CLAIMS : "receives"
-    TALENTS |o--o| WORKERS : "converts to"
-    WEATHER_STATES ||--o{ DISPATCH_TEAMS : "triggers reroute for"
-    ORDERS ||--|| FINANCIAL_LEDGER : "generates revenue for"
-    FARMERS ||--o| LINE_USERS : "binds"
-    WORKERS ||--o| LINE_USERS : "binds"
-    LINE_USERS ||--o{ LINE_MESSAGES : "receives"
-
-    CROPS {
-        string id PK "作物代號 (taoyuan_veg, scallion, hsinchu_tea, mango...)"
-        string name "作物名稱與產區"
-        int baseHoursPerFen "每分地基準工時"
-        int workersPerFen "每分地建議配置人數"
-        int rate "每工時標準牌價 (NT$)"
-        string season "盛產產季週期"
-        string taskDescription "標準田間作業SOP"
-        string indoorAlternative "雨天室內冷鏈替代作業"
+    users {
+        string username PK
+        string password "PBKDF2 雜湊・不輸出"
+        string name
+        string role "admin_tech / farmer / worker_foreign / worker_local"
+        string refId "對應 workers.id 或農場主編號"
+        string roleDesc
+    }
+    workers {
+        string id PK
+        string name
+        string chineseName
+        string nationality
+        string teamId
+        boolean isLeader
+        string tier "tier1_foreign / tier2_local_flex / tier3_turnkey"
+        int baseSalary
+        int agriBonus
+        int transportAllowance
+        string arcNumber "敏感・輸出遮罩"
+        string passportNumber "敏感・輸出遮罩"
+        string permitExpiry
+        string insuranceStatus
+        string currentTask
+        string dispatchStatus "dispatched_field / hedged_indoor / standby"
+        string phone
+        string passwordHash "不輸出"
+    }
+    dispatch_teams {
+        string id PK
+        string name
+        int workerCount
+        string leader
+        string leaderPhone
+        string vehicle
+        string driver
+        string normalLocation
+        string normalTask
+        string hedgeLocation
+        string hedgeTask
+        string status "active_field / hedged_indoor"
+    }
+    crops {
+        string id PK
+        string name
+        int baseHoursPerFen
+        int workersPerFen
+        int rate
+        string season
+        string taskDescription
+        string indoorAlternative
+    }
+    orders {
+        string id PK
+        string farmerId "→ users.refId（農場主）"
+        string farmerName
+        string phone
+        string farmLocation
+        string cropId "→ crops.id"
+        string cropName
+        double area
+        string plan "early_bird / hourly_flex / turnkey"
+        string dispatchCategory
+        string transportZone "core_35km / cross_region"
+        int transportSurcharge
+        int totalHours
+        int suggestedWorkers
+        int unitRate
+        int standardAmount
+        int finalAmount
+        int depositAmount
+        boolean depositPaid
+        string status "pending / confirmed / in_progress / completed / cancelled"
+        string assignedTeamId "→ dispatch_teams.id"
+        string foremanName
+        string foremanPhone
+        string foremanNotes
+        string createdAt
+    }
+    payment_transactions {
+        string id PK "綠界 MerchantTradeNo（≤20 碼）"
+        string orderId "→ orders.id"
+        int amount
+        string provider "mock / ecpay"
+        string paymentMethod
+        string status "PENDING / PAID / FAILED"
+        string payerName
+        string gatewayTradeNo
+        string authCode
+        string invoiceNo
+        datetime createdAt
+        datetime paidAt
+    }
+    clock_ins {
+        long id PK "自動遞增"
+        string workerId "→ workers.id"
+        date workDate
+        datetime clockInTime
+        datetime clockOutTime "null＝尚未下班"
+        string location
+        double gpsAccuracyMeters
+        string status "working / completed / absent / hedged"
+        double actualHours
+        double normalHours
+        double overtimeHours
+        string foremanSignature
+        datetime createdAt
+    }
+    talents {
+        string id PK
+        string name
+        string category
+        string categoryName
+        string phone "僅 admin 可讀"
+        string experience
+        boolean pdpaConsent "個資告知同意"
+        string registeredAt
+    }
+    weather_states {
+        string id PK
+        string scenarioId
+        string scenarioName
+        string isRainMode "Y / N"
+        string currentWeather
+        string alertLevel "normal / info / warning / danger"
+        string message
+        int securedRevenue
+        int dailyCapacityHrs
+        text regionalJson
+        datetime updatedAt
+    }
+    brochures {
+        string id PK
+        string title
+        string crop
+        string region
+        int originalPrice
+        int discountPrice
+        int depositRate
+        int depositAmount
+        text featuresJson
+        text comparisonJson
+        text testimonialQuote "須標示「預期效益示意」"
+        string status "active / draft"
     }
 
-    FARMERS {
-        string id PK "小農/契作商編號"
-        string name "農場名稱或負責人姓名"
-        string phone "聯絡電話 / LINE ID"
-        string address "農場/溫室/果棚地址"
-        string taxId "統一編號 / 身分證字號"
-        string farmType "產銷班 / 契作農企業 / 獨立小農"
-    }
-
-    ORDERS {
-        string id PK "訂單編號 (ORD-YYYY-XXX)"
-        string farmerId FK "小農編號"
-        string cropId FK "作物代號"
-        string assignedTeamId FK "指派調度工班代號"
-        float area "耕作作業面積 (分地)"
-        string plan "商業方案 (early_bird, hourly_flex, turnkey)"
-        string planName "方案中文名稱"
-        string transportZone "接送區域 (core_35km, cross_region)"
-        int transportSurcharge "專車跨區加成費 (NT$)"
-        int totalHours "需求總工時"
-        int suggestedWorkers "建議派遣人數"
-        int unitRate "工時單價"
-        int standardAmount "原價牌價總額"
-        int finalAmount "折讓與加成後應付總額"
-        int depositAmount "早鳥20%鎖約定金"
-        boolean depositPaid "定金是否已支付"
-        string status "訂單狀態 (pending, confirmed, in_progress, completed)"
-        datetime createdAt "訂單建立時間"
-    }
-
-    DISPATCH_TEAMS {
-        string id PK "工班編號 (team_a, team_b...)"
-        string name "工班名稱"
-        int workerCount "在籍農工人數"
-        string leader "帶隊組長姓名"
-        string leaderPhone "組長聯絡電話"
-        string vehicle "專屬接送車輛名稱與車號"
-        string driver "專車司機姓名與電話"
-        string normalLocation "晴天天候田間作業場域"
-        string normalTask "晴天天候田間主要工單"
-        string hedgeLocation "暴雨冷鏈避險場域"
-        string hedgeTask "暴雨室內冷鏈工單"
-        string status "出勤狀態 (active_field, hedged_indoor)"
-    }
-
-    WORKERS {
-        string id PK "移工編號 (W001, W002...)"
-        string teamId FK "所屬工班編號"
-        string tier "三層勞工等級 (tier1_foreign, tier2_local_flex, tier3_turnkey)"
-        string name "外籍姓名 (越南/印尼/泰國/本國)"
-        string chineseName "中文通稱"
-        string nationality "國籍 (越南, 印尼, 泰國, 本國)"
-        boolean isLeader "是否擔任組長"
-        int baseSalary "外展保障基本底薪 (NT$)"
-        int agriBonus "中央農業部就業獎勵 (最高 8,800/月)"
-        int transportAllowance "高溫與專車交通津貼 (NT$ 1,200/月)"
-    }
-
-    CLOCK_INS {
-        string id PK "打卡流水號 (CLK-timestamp)"
-        string workerId FK "農工編號"
-        float latitude "GPS 緯度"
-        float longitude "GPS 經度"
-        string locationName "打卡場域名稱"
-        datetime clockInTime "打卡時間戳"
-        string status "打卡狀態 (success, abnormal)"
-    }
-
-    TALENTS {
-        string id PK "人才登記編號 (TAL-XXX)"
-        string name "姓名"
-        string category "身分類別 (transfer_worker, local_flex, drone_pilot)"
-        string categoryName "類別中文名稱"
-        string phone "聯絡電話 / LINE ID"
-        string experience "農作經驗與專長機具"
-        boolean pdpaConsent "個資法第19條授權同意"
-        datetime registeredAt "登錄時間"
-    }
-
-    WEATHER_STATES {
-        string id PK "天候狀態代碼"
-        boolean isRainMode "是否處於暴雨避險模式"
-        string currentWeather "即時氣溫與降雨狀態"
-        string location "監控產區 (桃園八德 / 宜蘭三星 / 新竹產區)"
-        string alertLevel "警戒層級 (normal, rain_alert)"
-        string message "系統廣播通報訊息"
-        int securedRevenue "避險保全營收 (NT$ 62,500)"
-        int dailyCapacityHours "每日調度滿載工時 (160h)"
-    }
-
-    FINANCIAL_LEDGER {
-        string id PK "帳目編號"
-        string orderId FK "關聯訂單編號"
-        int totalGmv "總交易額 (GMV 累計達 9,257,000 元)"
-        int techTakeRate "科技公司技術代管費 (18% 淨收 2,077,200 元)"
-        int coopPassThrough "合作社平移營運成本 (82% 平移 7,179,800 元)"
-        int totalAgriSubsidy "農業部就業與交通獎勵款 (8,800 + 1,200)"
-        int youthLoanBalance "青創貸款專案結餘款 (1,000,000 元)"
-        datetime settlementDate "結算日期"
-    }
-
-    LINE_USERS {
-        string id PK "綁定代號"
-        string lineUserId UK "LINE 官方 User ID (U1001_...)"
-        string username "系統使用者帳號"
-        string displayName "LINE 顯示名稱"
-        string role "使用者角色 (farmer, worker_foreign, worker_local, admin_tech)"
-        string lang "語言偏好 (zh, vi, id)"
-        boolean isBound "是否已綁定"
-        datetime boundAt "綁定時間"
-    }
-
-    LINE_MESSAGES {
-        string id PK "訊息編號 (LMSG-timestamp)"
-        string lineUserId FK "接收者 LINE ID"
-        string sender "發送來源 (SYSTEM_BROADCAST, USER...)"
-        string targetRole "目標身分 (all, farmer, worker_foreign...)"
-        string messageType "推播類型 (weather_alert, daily_task, early_bird...)"
-        string content "訊息內容或 Flex altText"
-        datetime timestamp "發送時間"
-    }
+    users ||..o| workers : "refId（工人帳號）"
+    users ||..o{ orders : "refId = farmerId（農場主）"
+    crops ||..o{ orders : "cropId"
+    dispatch_teams ||..o{ orders : "assignedTeamId"
+    dispatch_teams ||..o{ workers : "teamId"
+    orders ||..o{ payment_transactions : "orderId"
+    workers ||..o{ clock_ins : "workerId"
 ```
 
 ---
 
 ## 貳、 資料字典 (Data Dictionary)
 
-### 2.1 作物基準表 (`crops`)
-- **說明**：存放北部與中南部各主要農作物作業係數、工時需求與牌價標準。
+欄位型別為 Java 型別（H2 由 Hibernate 對應）。**敏感**＝個資或憑證，輸出時遮罩或不輸出。
 
-| 欄位名稱 (Column) | 資料型別 (Type) | 鍵值約束 (Key) | 允許為空 (Null) | 欄位說明與商業意義 | 範例值 (Example) |
-| :--- | :--- | :---: | :---: | :--- | :--- |
-| `id` | `VARCHAR(32)` | **PK** | 否 | 作物唯一識別代碼 | `"taoyuan_veg"` |
-| `name` | `VARCHAR(100)`| - | 否 | 作物全稱及主要產區 | `"桃園溫室有機蔬菜 (八德/大溪)"` |
-| `baseHoursPerFen` | `INTEGER` | - | 否 | 每分地標準標準作業工時 | `20` |
-| `workersPerFen` | `INTEGER` | - | 否 | 每分地建議標準派遣人數 | `3` |
-| `rate` | `INTEGER` | - | 否 | 每工時牌價費率 (NT$) | `290` |
-| `season` | `VARCHAR(50)` | - | 否 | 盛產作業產季週期 | `"全年365天溫室採收"` |
-| `taskDescription` | `TEXT` | - | 否 | 外銷級田間作業標準 SOP | `"採收、精緻挑菜、秤重包裝"` |
-| `indoorAlternative`| `TEXT` | - | 否 | 暴雨室內冷鏈集貨備援場 | `"八德蔬果預冷冷鏈包裝中心"` |
+### 2.1 使用者帳號 `users`
+| 欄位 | 型別 | 說明 | 敏感 |
+| :--- | :--- | :--- | :---: |
+| `username` (PK) | String | 登入帳號 | |
+| `password` | String | PBKDF2 雜湊（格式 `pbkdf2$<iter>$<salt>$<hash>`）；啟動時自動把舊明碼升級 | ✅ 不輸出 |
+| `name` | String | 顯示名稱 | |
+| `role` | String | `admin_tech` / `farmer` / `worker_foreign` / `worker_local` | |
+| `refId` | String | 對應工人編號（`workers.id`）或農場主編號（如 `F001`） | |
+| `roleDesc` | String | 角色說明 | |
+
+### 2.2 農工 `workers`
+| 欄位 | 型別 | 說明 | 敏感 |
+| :--- | :--- | :--- | :---: |
+| `id` (PK) | String | 工號（如 `W001`） | |
+| `name` / `chineseName` | String | 姓名 / 中文名 | |
+| `nationality` | String | 國籍 | |
+| `teamId` | String | 所屬工班 → `dispatch_teams.id` | |
+| `isLeader` | boolean | 是否為組長 | |
+| `tier` | String | `tier1_foreign`（外展移工）/ `tier2_local_flex`（本土部分工時）/ `tier3_turnkey`（機耕統包） | |
+| `baseSalary` | int | 底薪（種子資料依 2026 最低工資 29,500） | |
+| `agriBonus` | int | 就業獎勵（8,800【待確認：適用對象】） | |
+| `transportAllowance` | int | 交通津貼 | |
+| `arcNumber` | String | 居留證號；本國工為 null | ✅ 遮罩 |
+| `passportNumber` | String | 護照號碼 | ✅ 遮罩 |
+| `permitExpiry` | String | 聘僱許可效期 | |
+| `insuranceStatus` | String | 納保狀態 | |
+| `currentTask` | String | 目前派遣作業 | |
+| `dispatchStatus` | String | `dispatched_field` / `hedged_indoor` / `standby` | |
+| `phone` | String | 電話 | |
+| `passwordHash` | String | 工人登入密碼雜湊 | ✅ 不輸出 |
+
+> 遮罩規則：前 2 碼 + `****` + 末 2 碼（例 `AD****51`）。只有 admin 呼叫 `GET /api/workers/{id}` 時回傳完整值。
+
+### 2.3 工班 `dispatch_teams`
+| 欄位 | 型別 | 說明 |
+| :--- | :--- | :--- |
+| `id` (PK) | String | 工班代號（如 `team_a`） |
+| `name` | String | 工班名稱 |
+| `workerCount` | int | 人數 |
+| `leader` / `leaderPhone` | String | 帶班師傅與電話 |
+| `vehicle` / `driver` | String | 專車與司機 |
+| `normalLocation` / `normalTask` | String | 晴天作業地點與內容 |
+| `hedgeLocation` / `hedgeTask` | String | 天候避險轉派地點與內容 |
+| `status` | String | `active_field`（田間）/ `hedged_indoor`（已轉派室內） |
+
+### 2.4 作物基準 `crops`
+| 欄位 | 型別 | 說明 |
+| :--- | :--- | :--- |
+| `id` (PK) | String | 作物代號（如 `mango`、`taoyuan_veg`；共 16 種） |
+| `name` | String | 作物與產區 |
+| `baseHoursPerFen` | int | 每分地基準工時（試算總工時 = 面積 × 此值） |
+| `workersPerFen` | int | 每分地建議人數 |
+| `rate` | int | 每工時牌價（元） |
+| `season` | String | 產季 |
+| `taskDescription` | String | 作業內容 |
+| `indoorAlternative` | String | 天候避險時的室內替代作業 |
+
+> 鳳梨、蓮霧、高山茶、文旦、水稻、高接梨 6 種為 2026-09-23 補入以對應農場主預約表單，工時與費率為示範參考值，正式營運前需依產區校正。
+
+### 2.5 派工訂單 `orders`
+| 欄位 | 型別 | 說明 |
+| :--- | :--- | :--- |
+| `id` (PK) | String | 訂單編號，由後端產生（不接受前端指定） |
+| `farmerId` | String | 下單農場主 → `users.refId`；用於擁有者權限檢查 |
+| `farmerName` / `phone` / `farmLocation` | String | 農場主與田區資料 |
+| `cropId` / `cropName` | String | → `crops.id`；不存在時回 400 |
+| `area` | double | 面積（分地），須 > 0 |
+| `plan` / `planName` | String | `early_bird`（9 折、20% 定金）/ `hourly_flex`（310 元/hr、無定金）/ `turnkey`（95 折、30% 定金） |
+| `dispatchCategory` / `categoryName` | String | `harvest_grading` / `tillage_planting` / `pruning_bagging` / `drone_pest_control` / `cold_chain_pack` / `typhoon_emergency` |
+| `transportZone` | String | `core_35km`（不加價）/ `cross_region`（+1,200 元） |
+| `transportSurcharge` | int | 交通加價 |
+| `totalHours` / `suggestedWorkers` / `unitRate` | int | 由後端試算 |
+| `standardAmount` / `finalAmount` / `depositAmount` | int | 原價 / 折扣後總額 / 定金；由後端計算，客戶端不可直接修改 |
+| `depositPaid` | boolean | 定金是否已付；只能經金流流程設為 true |
+| `status` | String | 訂單狀態（見第參章） |
+| `assignedTeamId` | String | → `dispatch_teams.id` |
+| `foremanName` / `foremanPhone` / `foremanNotes` | String | 現場小工頭與交辦事項 |
+| `createdAt` | String | 建立時間 |
+
+### 2.6 金流交易 `payment_transactions`
+| 欄位 | 型別 | 說明 |
+| :--- | :--- | :--- |
+| `id` (PK) | String(20) | 交易序號，格式 `AG` + `yyMMddHHmmss` + 6 碼隨機英數；同時作為綠界 `MerchantTradeNo` |
+| `orderId` | String(40) | → `orders.id`（必填） |
+| `amount` | int | 金額（依訂單定金，必填） |
+| `provider` | String(16) | `mock` / `ecpay` |
+| `paymentMethod` | String(32) | `credit_card` / `line_pay`（尚未串接）/ `atm_virtual` |
+| `status` | String(16) | `PENDING` / `PAID` / `FAILED`（`PAID`、`FAILED` 為終態） |
+| `payerName` | String | 付款人 |
+| `gatewayTradeNo` | String(40) | 綠界交易編號 |
+| `authCode` / `invoiceNo` | String(20) | 授權碼 / 發票號碼 |
+| `createdAt` / `paidAt` | LocalDateTime | 建立 / 付款時間 |
+
+### 2.7 出勤打卡 `clock_ins`（實體 `Attendance`）
+| 欄位 | 型別 | 說明 |
+| :--- | :--- | :--- |
+| `id` (PK) | Long | 自動遞增 |
+| `worker_id` | String(20) | → `workers.id`（必填） |
+| `work_date` | LocalDate | 上班日（必填） |
+| `clock_in_time` | LocalDateTime | 上班時間（必填） |
+| `clockOutTime` | LocalDateTime | 下班時間；null 表示尚未下班 |
+| `location` | String(200) | 打卡地點 |
+| `gpsAccuracyMeters` | Double | GPS 精度（0~100,000） |
+| `status` | String(20) | `working` / `completed` / `absent` / `hedged` |
+| `actualHours` / `normalHours` / `overtimeHours` | Double | 實際工時（0.1 小時）/ 正常工時（上限 8）/ 加班工時 |
+| `foremanSignature` | String(50) | 帶班簽核 |
+| `createdAt` | LocalDateTime | 建立時間（不可更新） |
+
+### 2.8 人才庫 `talents`
+| 欄位 | 型別 | 說明 | 敏感 |
+| :--- | :--- | :--- | :---: |
+| `id` (PK) | String | 登錄編號 | |
+| `name` | String | 姓名 | ✅ |
+| `category` / `categoryName` | String | 人才類別 | |
+| `phone` | String | 電話（僅 admin 可讀取人才庫） | ✅ |
+| `experience` | String | 經歷 | |
+| `pdpaConsent` | boolean | 個資蒐集告知同意（公開登錄時須為 true） | |
+| `registeredAt` | String | 登錄時間 | |
+
+### 2.9 天候狀態 `weather_states`
+| 欄位 | 型別 | 說明 |
+| :--- | :--- | :--- |
+| `id` (PK) | String(64) | 狀態紀錄編號 |
+| `scenario_id` / `scenarioName` | String | 天候情境 |
+| `is_rain_mode` | String(1) | `Y` / `N` |
+| `current_weather` | String(100) | 目前天候描述 |
+| `alert_level` | String(50) | `normal` / `info` / `warning` / `danger` |
+| `message` | String(500) | 調度說明 |
+| `securedRevenue` / `dailyCapacityHrs` | Integer | 避險後保全營收 / 日產能工時（展示用） |
+| `regionalJson` | TEXT | 各產區天候 JSON |
+| `updatedAt` | LocalDateTime | 更新時間；後端啟動時讀回最新一筆 |
+
+### 2.10 產品文宣 `brochures`
+主要欄位：`id` (PK)、`title`、`subtitle`、`category`、`crop`、`region`、`targetAudience`、`badge`、`icon`、`themeColor`、`coverImage`（TEXT）、`originalPrice`、`discountPrice`、`depositRate`、`depositAmount`、`hours`、`workers`、`days`、`description`（TEXT）、`featuresJson`（TEXT）、`comparisonJson`（TEXT）、`testimonialName`、`testimonialTitle`、`testimonialQuote`（TEXT）、`phone`、`serviceOffice`、`status`（`active` / `draft`）、`createdAt`。
+
+> 服務尚未營運，`testimonialQuote` 一律標示「預期效益示意，非實際客戶見證」。4 大標準 DM（固定 ID）可由 `POST /api/brochures/seed` 重置為目前範本。
 
 ---
 
-### 2.2 派工訂單表 (`orders`)
-- **說明**：記錄小農／契作商提交之預約訂單、三層方案折扣、專車加成、定金與履約狀態。
+## 參、 商業完整性規則（程式實作）
 
-| 欄位名稱 (Column) | 資料型別 (Type) | 鍵值約束 (Key) | 允許為空 (Null) | 欄位說明與商業意義 | 範例值 (Example) |
-| :--- | :--- | :---: | :---: | :--- | :--- |
-| `id` | `VARCHAR(32)` | **PK** | 否 | 訂單流水號 | `"ORD-2026-001"` |
-| `farmerName` | `VARCHAR(100)`| - | 否 | 小農姓名或產銷班名稱 | `"陳建龍 (阿龍班長)"` |
-| `phone` | `VARCHAR(30)` | - | 否 | 聯絡手機 / LINE ID | `"0912-345-678"` |
-| `farmLocation` | `VARCHAR(255)`| - | 否 | 田區作業地號或導航座標 | `"桃園市八德區興豐路有機蔬菜專區"` |
-| `cropId` | `VARCHAR(32)` | **FK** | 否 | 關聯作物代碼 (`crops.id`) | `"taoyuan_veg"` |
-| `cropName` | `VARCHAR(100)`| - | 否 | 作物名稱快照 | `"桃園溫室有機蔬菜 (八德)"` |
-| `area` | `FLOAT` | - | 否 | 耕作面積（分地） | `5.0` |
-| `plan` | `VARCHAR(30)` | - | 否 | 商業方案 (`early_bird`/`hourly_flex`/`turnkey`) | `"early_bird"` |
-| `planName` | `VARCHAR(100)`| - | 否 | 方案名稱快照 | `"產季早鳥工時包 (9折保證出工)"` |
-| `transportZone` | `VARCHAR(30)` | - | 否 | 接送區域 (`core_35km`/`cross_region`) | `"core_35km"` |
-| `transportSurcharge`| `INTEGER` | - | 否 | 專車跨區加成費用 (NT$) | `0` |
-| `totalHours` | `INTEGER` | - | 否 | 系統試算總需求工時 | `100` |
-| `suggestedWorkers` | `INTEGER` | - | 否 | 建議派遣人數配置 | `3` |
-| `unitRate` | `INTEGER` | - | 否 | 工時單價 | `290` |
-| `standardAmount` | `INTEGER` | - | 否 | 原牌價金額 (NT$) | `29000` |
-| `finalAmount` | `INTEGER` | - | 否 | 折扣與加成後應收總額 (NT$) | `26100` |
-| `depositAmount` | `INTEGER` | - | 否 | 早鳥 20% 定金金額 | `5220` |
-| `depositPaid` | `BOOLEAN` | - | 否 | 20% 定金是否已繳納 | `true` |
-| `status` | `VARCHAR(30)` | - | 否 | 訂單狀態 (`confirmed`/`in_progress`/`completed`) | `"confirmed"` |
-| `assignedTeamId` | `VARCHAR(32)` | **FK** | 是 | 指派調度工班 (`dispatch_teams.id`) | `"team_a"` |
-| `createdAt` | `DATETIME` | - | 否 | 訂單建立時間 | `"2026-09-20T08:30:00Z"` |
+1. **訂單狀態機**（`OrderService.TRANSITIONS`）：`pending → confirmed → in_progress → completed`；`pending` / `confirmed` / `in_progress` 可轉 `cancelled`；`completed`、`cancelled` 為終態。需定金的新訂單從 `pending` 開始，免定金方案直接 `confirmed`。
+2. **定金付款**：金額由後端依訂單計算；已付款訂單再次付款回傳既有結果（冪等）；已取消或已完工訂單拒絕付款；定金為 0 的方案不建立交易。付款成功時 `depositPaid=true`，若原為 `pending` 則轉 `confirmed`。
+3. **綠界通知**：先驗證 CheckMacValue 與金額才入帳；`RtnCode≠1` 標記 `FAILED`；重複通知冪等回 `1|OK`。
+4. **打卡**：同一工人同時最多一筆未下班紀錄（重複上班打卡回 409）；下班打卡取最近一筆未下班紀錄，可跨日。
+5. **編號產生**：訂單、農工、人才等 ID 由後端產生且不覆寫既有資料（不再使用 `count()+1`）。
+6. **種子資料**：`SeedService` 依 ID 補缺，只新增不存在的資料、不覆蓋既有內容；本國工 `arcNumber` 為 null。
+7. **權限**：農場主只能讀寫自己的訂單（`farmerId = token.ref`）；工人只能存取自己的出勤與薪資；詳見規格書第肆、捌章。
 
 ---
 
-### 2.3 調度工班與專車表 (`dispatch_teams`)
-- **說明**：管理 4 個調度工班、2 台 9 人座專車與晴雨場域切換路由。
+## 肆、 與舊 Oracle 設計（`Software/database/01_agridispatch_oracle_schema.sql`）的差異
 
-| 欄位名稱 (Column) | 資料型別 (Type) | 鍵值約束 (Key) | 允許為空 (Null) | 欄位說明與商業意義 | 範例值 (Example) |
-| :--- | :--- | :---: | :---: | :--- | :--- |
-| `id` | `VARCHAR(32)` | **PK** | 否 | 工班代碼 | `"team_a"` |
-| `name` | `VARCHAR(50)` | - | 否 | 工班名稱 | `"工班 A 組 (桃園溫室蔬菜組)"` |
-| `workerCount` | `INTEGER` | - | 否 | 工班所屬移工人數 | `5` |
-| `leader` | `VARCHAR(50)` | - | 否 | 帶隊組長姓名 | `"阮文雄 (Nguyễn Văn Hùng)"` |
-| `leaderPhone` | `VARCHAR(30)` | - | 否 | 組長聯絡手機 | `"0988-111-222"` |
-| `vehicle` | `VARCHAR(100)`| - | 否 | 專車名稱與車牌號碼 | `"智農 1 號專車 (RBF-8899)"` |
-| `driver` | `VARCHAR(50)` | - | 否 | 專車司機姓名與手機 | `"張大哥 (0912-111-333)"` |
-| `normalLocation` | `VARCHAR(255)`| - | 否 | 晴天天候田間作業地點 | `"🌾 八德有機蔬菜專銷班 溫室第 3 區"` |
-| `normalTask` | `VARCHAR(255)`| - | 否 | 晴天天候田間作業項目 | `"有機葉菜採收、修葉分級、包裝"` |
-| `hedgeLocation` | `VARCHAR(255)`| - | 否 | 暴雨避險室內冷鏈集貨場 | `"🏢 八德蔬果預冷冷鏈包裝中心 (室內B棟)"` |
-| `hedgeTask` | `VARCHAR(255)`| - | 否 | 暴雨避險室內作業項目 | `"蔬果預冷降溫、自動光波秤重、外銷包裝"` |
-| `status` | `VARCHAR(30)` | - | 否 | 出勤狀態 (`active_field`/`hedged_indoor`) | `"active_field"` |
+現行系統以 **H2 + JPA 實體**為準，`Software/database/` 的 Oracle schema 與種子 SQL 為早期設計，**與程式不一致**：
 
----
+| 類別 | 內容 |
+| :--- | :--- |
+| Oracle 有、程式沒有的表 | `farmers`（農場主改由 `users` + `orders.farmerId` 表示）、`financial_ledger`（雙軌分帳帳本）、`line_users`、`line_messages` |
+| 程式有、Oracle 沒有的表 | `users`、`brochures`、`payment_transactions` |
+| 兩邊都有但結構不同 | `clock_ins`：Oracle 為 VARCHAR2 主鍵加經緯度欄位，程式為自動遞增主鍵加工時欄位；`orders`：Oracle 有 `farmer_id NOT NULL` 外鍵，程式另有派工類別、小工頭、交通區等欄位，`created_at` 在 Oracle 為 TIMESTAMP、程式為字串；`workers`：Oracle 缺 tier、證件、電話等欄位；`crops.base_hours_per_fen`：Oracle 為 NUMBER(6,1)、程式為 int |
+| 布林欄位 | Oracle 以 `CHAR(1)` 表示，程式為 boolean，改用 Oracle 時需轉換器 |
 
-### 2.4 在籍外展移工與三層人力表 (`workers`)
-- **說明**：農業部核准特許在籍之 20 位外展移工與儲備本土人力基本資料。
-
-| 欄位名稱 (Column) | 資料型別 (Type) | 鍵值約束 (Key) | 允許為空 (Null) | 欄位說明與商業意義 | 範例值 (Example) |
-| :--- | :--- | :---: | :---: | :--- | :--- |
-| `id` | `VARCHAR(32)` | **PK** | 否 | 人員編號 | `"W001"` |
-| `teamId` | `VARCHAR(32)` | **FK** | 否 | 所屬工班代碼 (`dispatch_teams.id`) | `"team_a"` |
-| `tier` | `VARCHAR(32)` | - | 否 | 勞工分層 (`tier1_foreign`/`tier2_local_flex`/`tier3_turnkey`) | `"tier1_foreign"` |
-| `name` | `VARCHAR(100)`| - | 否 | 原籍國全名 | `"Nguyễn Văn Hùng"` |
-| `chineseName` | `VARCHAR(50)` | - | 否 | 中文通稱 | `"阮文雄"` |
-| `nationality` | `VARCHAR(50)` | - | 否 | 國籍 (`越南`/`印尼`/`泰國`/`本國`) | `"越南"` |
-| `isLeader` | `BOOLEAN` | - | 否 | 是否擔任工班幹部 | `true` |
-| `baseSalary` | `INTEGER` | - | 否 | 外展保障法定月薪 (NT$) | `28590` |
-| `agriBonus` | `INTEGER` | - | 否 | 農業部外展就業獎勵 (NT$) | `8800` |
-| `transportAllowance`| `INTEGER`| - | 否 | 專車交通津貼 (NT$) | `1200` |
-
----
-
-### 2.5 LINE 使用者綁定表 (`line_users`)
-- **說明**：儲存農場主、移工、機耕師與後台人員之 LINE 帳號綁定資訊、多語偏好與推播授權狀態。
-
-| 欄位名稱 (Column) | 資料型別 (Type) | 鍵值約束 (Key) | 允許為空 (Null) | 欄位說明與商業意義 | 範例值 (Example) |
-| :--- | :--- | :---: | :---: | :--- | :--- |
-| `id` | `VARCHAR(32)` | **PK** | 否 | 內部綁定紀錄代號 | `"LU-001"` |
-| `lineUserId` | `VARCHAR(64)` | **UK** | 否 | LINE 平台唯一識別碼 | `"U1001_FARMER"` |
-| `username` | `VARCHAR(32)` | **FK** | 否 | 智農派工系統使用者帳號 | `"farmer"` |
-| `displayName` | `VARCHAR(100)`| - | 否 | LINE 暱稱快照 | `"陳建龍 (阿龍班長)"` |
-| `role` | `VARCHAR(32)` | - | 否 | 系統角色 (`farmer`/`worker_foreign`/`worker_local`/`admin_tech`) | `"farmer"` |
-| `lang` | `VARCHAR(10)` | - | 否 | LINE 介面偏好語言 (`zh`/`vi`/`id`) | `"zh"` |
-| `isBound` | `BOOLEAN` | - | 否 | 是否已完成綁定驗證 | `true` |
-| `boundAt` | `DATETIME` | - | 否 | 首次綁定成功時間戳 | `"2026-09-20T10:00:00Z"` |
-
----
-
-### 2.6 LINE 訊息推播歷程表 (`line_messages`)
-- **說明**：記錄由系統後台或 Webhook 觸發之所有 LINE 訊息、Flex Message 與推播狀態日誌。
-
-| 欄位名稱 (Column) | 資料型別 (Type) | 鍵值約束 (Key) | 允許為空 (Null) | 欄位說明與商業意義 | 範例值 (Example) |
-| :--- | :--- | :---: | :---: | :--- | :--- |
-| `id` | `VARCHAR(64)` | **PK** | 否 | 訊息流水號 | `"LMSG-1726826610000"` |
-| `lineUserId` | `VARCHAR(64)` | **FK** | 是 | 接收者 LINE ID (廣播時可為空) | `"U1001_FARMER"` |
-| `sender` | `VARCHAR(64)` | - | 否 | 訊息來源 (`SYSTEM_BROADCAST`/`USER`/`ADMIN`) | `"SYSTEM_BROADCAST"` |
-| `targetRole` | `VARCHAR(32)` | - | 否 | 目標身分範圍 (`all`/`farmer`/`worker_foreign`) | `"all"` |
-| `messageType` | `VARCHAR(32)` | - | 否 | 推播類型 (`weather_alert`/`daily_task`/`early_bird`) | `"weather_alert"` |
-| `content` | `TEXT` | - | 否 | 訊息內文或 Flex Message 替代文字 (altText) | `"🌧️ 突發暴雨避險快訊 - 全體轉移室內冷鏈"` |
-| `timestamp` | `DATETIME` | - | 否 | 訊息發送時間戳 | `"2026-09-20T10:03:30Z"` |
-
----
-
-## 參、 商業完整性規則與關聯性約束
-
-1. **三層混合調度優先級約束**：
-   - 訂單產生時，系統優先指派 Tier 1 核心外展移工以填滿早鳥保底工時；遇產季高峰溢出時，自動啟動 Tier 2 本土兼職人力（隨叫隨派）；遇大面積整地或代噴作業，直接媒合 Tier 3 統包飛手或機耕師。
-2. **交通費精算與跨區加成約束**：
-   - 若訂單之 `farmLocation` 位於北部核心 35km 範圍外（如宜蘭三星、新竹尖石五峰山區），系統自動設定 `transportZone = "cross_region"` 並加收 `transportSurcharge = 1200`。
-3. **天候避險狀態聯動**：
-   - 當 `weather_states.isRainMode` 切換為 `true` 時，系統自動將全體田間工班轉派至 `hedgeLocation`（如八德蔬果預冷冷鏈包裝中心），保全營收並維持 100% 出勤率。
-4. **雙軌財務與青創貸款閉環**：
-   - 訂單總額（GMV）中 18% 分流為科技公司技術代管費（Year 1 估計 NT$ 2,077,200），82% 平移合作社人事法定成本。
-   - 青年創業貸款 NT$ 1,000,000 元作為前期周轉資金，由營運現金流支應，償債備付率高達 41.8 倍。
+**建議**：正式上線若改用 Oracle 或其他資料庫，以 JPA 實體為準重新產生 schema，並導入 migration 工具（建議 Flyway）管理結構變更；`ddl-auto: update` 只會新增欄位，不會刪除或改名。

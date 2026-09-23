@@ -93,13 +93,28 @@ public class WebAppInterface {
 
     @JavascriptInterface
     public String getFcmToken() {
-        return sharedPrefs.getString("fcm_token", "MOCK_FCM_TOKEN_" + Build.ID);
+        if (!activity.isTrustedPage()) {
+            return ""; // 非受信任頁面 (非內建 asset / 非白名單正式網域) 不回傳敏感資料
+        }
+        try {
+            return sharedPrefs.getString("fcm_token", "MOCK_FCM_TOKEN_" + Build.ID);
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     @JavascriptInterface
     public void getFcmTokenAsync(final String callbackFunctionName) {
-        String token = getFcmToken();
         JSONObject result = new JSONObject();
+        if (!activity.isTrustedPage()) {
+            try {
+                result.put("success", false);
+                result.put("error", "Untrusted page");
+            } catch (JSONException ignored) {}
+            executeJsCallback(callbackFunctionName, result.toString());
+            return;
+        }
+        String token = getFcmToken();
         try {
             result.put("success", true);
             result.put("token", token);
@@ -109,6 +124,15 @@ public class WebAppInterface {
 
     @JavascriptInterface
     public void requestGpsLocation(final String callbackFunctionName) {
+        if (!activity.isTrustedPage()) {
+            JSONObject result = new JSONObject();
+            try {
+                result.put("success", false);
+                result.put("error", "Untrusted page");
+            } catch (JSONException ignored) {}
+            executeJsCallback(callbackFunctionName, result.toString());
+            return;
+        }
         activity.checkLocationPermission(hasPermission -> {
             if (hasPermission) {
                 try {
@@ -167,11 +191,17 @@ public class WebAppInterface {
 
     @JavascriptInterface
     public void saveOfflineData(String key, String value) {
+        if (!activity.isTrustedPage()) {
+            return; // 非受信任頁面不可寫入本機快取，避免被惡意頁面用來污染快取資料
+        }
         sharedPrefs.edit().putString(key, value).apply();
     }
 
     @JavascriptInterface
     public String getOfflineData(String key) {
+        if (!activity.isTrustedPage()) {
+            return ""; // 非受信任頁面不回傳先前快取的資料 (可能含派工/薪資等業務資料)
+        }
         return sharedPrefs.getString(key, "");
     }
 

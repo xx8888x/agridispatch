@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    智農派工 (AgriDispatch) - 網路安全設定 (Network Security Configuration)
+
+    取代先前 AndroidManifest.xml 中全域的 android:usesCleartextTraffic="true"。
+    僅開放下列「開發用」位址可使用明文 HTTP (10.0.2.2 為 Android 模擬器存取宿主機 localhost 的位址)，
+    其餘所有網域 (含正式後端 API 網域) 一律強制要求 HTTPS。
+
+    ⚠️ 正式上線注意事項：
+    後端 API 與 WebView 載入的正式網域 (見 strings.xml 的 allowed_web_domain) 必須使用 HTTPS，
+    請勿在正式環境的網域上另外加入 cleartextTrafficPermitted="true" 的例外。
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+
+    <!-- 預設 (其餘所有網域)：禁止明文流量，僅允許 HTTPS -->
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

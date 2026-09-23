@@ -28,14 +28,16 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
             @Param("year") int year,
             @Param("month") int month);
 
-    /** 查詢指定農工今日是否已打上班卡（且尚未打下班卡） */
-    Optional<Attendance> findByWorkerIdAndWorkDateAndClockOutTimeIsNull(
-            String workerId, LocalDate workDate);
+    /** 查詢指定農工「最近一筆」尚未下班的紀錄（可跨日；即使有多筆也不會丟例外） */
+    Optional<Attendance> findFirstByWorkerIdAndClockOutTimeIsNullOrderByClockInTimeDesc(String workerId);
+
+    /** 查詢指定農工所有尚未下班的紀錄 */
+    List<Attendance> findByWorkerIdAndClockOutTimeIsNull(String workerId);
 
     /** 查詢指定農工今日所有打卡記錄 */
     List<Attendance> findByWorkerIdAndWorkDate(String workerId, LocalDate workDate);
 
-    /** 查詢指定工班（teamId 需透過 Worker JOIN）的今日出勤人數 */
+    /** 查詢指定日期的出勤人次 */
     @Query("SELECT COUNT(a) FROM Attendance a WHERE a.workDate = :date AND a.status IN ('working','completed')")
     long countPresentWorkersByDate(@Param("date") LocalDate date);
 

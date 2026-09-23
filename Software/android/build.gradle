@@ -4,7 +4,10 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.2.2'
+        // AGP 8.6+ 為支援 compileSdk/targetSdk 35 的最低建議版本
+        classpath 'com.android.tools.build:gradle:8.6.1'
+        // Firebase/FCM 設定外掛；實際是否套用由 app/build.gradle 依 google-services.json 是否存在來決定
+        classpath 'com.google.gms:google-services:4.4.2'
     }
 }
 

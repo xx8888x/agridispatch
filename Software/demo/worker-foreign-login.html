@@ -488,16 +488,24 @@
 
     createApp({
       setup() {
-        const API_BASE = window.location.origin.startsWith('http')
+        const API_BASE = window.AgriAuth ? window.AgriAuth.API_BASE : (window.location.origin.startsWith('http')
           ? `${window.location.origin}/api`
-          : 'http://localhost:3000/api';
+          : 'http://localhost:3000/api');
+        const isDemo = window.AgriAuth ? window.AgriAuth.MODE !== 'production' : true;
+        const demoCfg = (window.AGRI_DEMO_ACCOUNTS && window.AGRI_DEMO_ACCOUNTS.workerForeign) || null;
 
         const lang = ref('vi'); // Default to Vietnamese for foreign workers
         const t = computed(() => translations[lang.value] || translations.zh);
+        const pwdPlaceholderText = computed(() => {
+          if (isDemo && demoCfg && demoCfg.pwdHintByLang) {
+            return demoCfg.pwdHintByLang[lang.value] || demoCfg.pwdHintByLang.zh;
+          }
+          return t.value.pwdPlaceholder;
+        });
 
         const form = reactive({
-          identifier: 'AD88123451',
-          password: '123456'
+          identifier: isDemo && demoCfg ? demoCfg.defaultIdentifier : '',
+          password: isDemo && demoCfg ? demoCfg.defaultPassword : ''
         });
         const loading = ref(false);
         const errorMsg = ref('');
@@ -529,7 +537,31 @@
           successMsg.value = '';
           loading.value = true;
 
-          // Demo 版外展移工資料庫（支援免密通行）
+          if (!isDemo) {
+            // production 模式：一律呼叫真實登入 API，失敗顯示錯誤、不做任何離線 fallback
+            try {
+              const res = await fetch(`${API_BASE}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier: form.identifier, password: form.password })
+              });
+              const data = await res.json().catch(() => null);
+              if (res.ok && data && data.success && data.user) {
+                window.AgriAuth.setSession(data.token, data.user);
+                workerModal.data = data.user;
+                workerModal.show = true;
+              } else {
+                errorMsg.value = (data && data.error) || '帳號或密碼錯誤';
+              }
+            } catch (e) {
+              errorMsg.value = '無法連線到伺服器，請稍後再試';
+            } finally {
+              loading.value = false;
+            }
+            return;
+          }
+
+          // Demo 版外展移工資料庫（示範資料，僅 demo 模式使用）
           const mockWorkerMap = {
             'AD88123451': { id: 'W001', name: '阮文雄 (Nguyễn Văn Hùng)', role: 'WORKER_FOREIGN', arcNumber: 'AD88123451', passportNumber: 'P8921822', teamId: 'A組 (宜蘭蔬菜班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '青蔥採收分級 ╳ 留蒂 0.5cm', baseSalary: 28590, agriBonus: 8800, transportAllowance: 1200 },
             'AD77234561': { id: 'W006', name: 'Budi Santoso', role: 'WORKER_FOREIGN', arcNumber: 'AD77234561', passportNumber: 'B1123490', teamId: 'B組 (屏東芒果班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '芒果套袋採收 ╳ 留蒂 0.5cm', baseSalary: 28590, agriBonus: 8800, transportAllowance: 1200 },
@@ -566,8 +598,8 @@
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                identifier: form.identifier || 'AD88123451',
-                password: form.password || '123456'
+                identifier: form.identifier || (demoCfg && demoCfg.defaultIdentifier) || 'AD88123451',
+                password: form.password || (demoCfg && demoCfg.defaultPassword) || ''
               }),
               signal: controller.signal
             });
@@ -583,9 +615,9 @@
             // Demo 離線容錯
           }
 
-          successMsg.value = `Xin chào / 歡迎，${finalUser.name}！Demo 免密通行通過`;
+          successMsg.value = `Xin chào / 歡迎，${finalUser.name}！`;
           sessionStorage.setItem('agri_user', JSON.stringify(finalUser));
-          sessionStorage.setItem('agri_token', finalUser.token || 'demo-foreign-token-2026');
+          window.AgriAuth.setSession(finalUser.token || 'demo-foreign-token-2026', finalUser);
 
           if (window.AgriNativeBridge) {
             if (typeof window.AgriNativeBridge.showToast === 'function') {
@@ -604,6 +636,9 @@
         return {
           lang,
           t,
+          isDemo,
+          demoCfg,
+          pwdPlaceholderText,
           setLang,
           form,
           loading,

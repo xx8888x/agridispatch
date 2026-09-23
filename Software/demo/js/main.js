@@ -249,16 +249,16 @@ async function initTechCharts() {
   if (typeof Chart === 'undefined') return;
 
   try {
-    // 圖表 1: 雙軌營收利潤分流圓餅圖 (Year 1 GMV 925.7 萬：科技公司 18% + 交通加成 vs 合作社 82%)
+    // 圖表 1: 雙軌營收利潤分流圓餅圖 (第一年 GMV 813.1 萬：科技公司 18% vs 合作社 82%，依 F2 v2.1 財務定版)
     const ctx1 = document.getElementById('chart-revenue-split')?.getContext('2d');
     if (ctx1) {
       if (chartInstances.chart1) chartInstances.chart1.destroy();
       chartInstances.chart1 = new Chart(ctx1, {
         type: 'doughnut',
         data: {
-          labels: ['科技公司技術代管費 18% + 專車加成 (NT$ 2,077,200)', '合作社移工法定成本平移 82% (NT$ 7,179,800)'],
+          labels: ['科技公司技術代管費 18% (NT$ 1,463,580)', '合作社移工法定成本平移 82% (NT$ 6,667,420)'],
           datasets: [{
-            data: [2077200, 7179800],
+            data: [1463580, 6667420],
             backgroundColor: ['#10B981', '#3B82F6'],
             borderWidth: 0
           }]

@@ -1579,7 +1579,7 @@
               <div>
                 <div class="flex items-center justify-between mb-1">
                   <span class="text-slate-300 font-semibold">📦 蔬果清洗分級包裝 (採後冷鏈)</span>
-                  <span class="font-mono text-cyan-400 font-bold">10% (NT$ 925,700)</span>
+                  <span class="font-mono text-cyan-400 font-bold">10% (NT$ 813,100)</span>
                 </div>
                 <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
                   <div class="h-full bg-cyan-500 rounded-full" style="width: 10%"></div>
@@ -3833,9 +3833,9 @@
 
         // Revenue Computations & CSV Export for Tab 3
         const totalGMV = computed(() => {
-          if (!orders.value || orders.value.length === 0) return 9257000;
+          if (!orders.value || orders.value.length === 0) return 8131000;
           const sum = orders.value.reduce((acc, o) => acc + (o.totalPrice || 0), 0);
-          return sum > 0 ? sum : 9257000;
+          return sum > 0 ? sum : 8131000;
         });
 
         const techShare = computed(() => Math.round(totalGMV.value * 0.18));

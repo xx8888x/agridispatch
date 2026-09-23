@@ -51,10 +51,11 @@ public class BrochureService {
         brochureRepository.deleteById(id);
     }
 
+    /**
+     * 重置 4 大標準文宣 DM：依固定 ID 覆寫為目前範本內容（管理後台「重置 4 大標準 DM」）。
+     * 只覆寫這 4 筆，使用者自訂的其他 DM 不受影響。首次啟動的種子資料由 SeedService 負責。
+     */
     public void seedDefaultBrochures() {
-        if (brochureRepository.count() > 0) {
-            return;
-        }
 
         // DM 1: 枋山愛文芒果產季早鳥保證出工
         Brochure dm1 = new Brochure(

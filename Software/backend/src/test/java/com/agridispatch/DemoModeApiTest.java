@@ -216,6 +216,26 @@ class DemoModeApiTest extends ApiTestSupport {
     // ------------------------------------------------------------------ 種子補缺 / 天候讀回
 
     @Test
+    void brochureResetRestoresStandardDmsAndKeepsCustomOnes() throws Exception {
+        String token = json(call("POST", "/api/auth/demo-login", null, Map.of("role", "admin_tech"))).get("token").asText();
+        // 先確保 4 大標準 DM 存在，再竄改其中一筆、另建一筆自訂 DM
+        assertEquals(200, call("POST", "/api/brochures/seed", token, null).getResponse().getStatus());
+        JsonNode standard = json(call("GET", "/api/brochures/dm-mango-2026", null, null)).get("data");
+        String originalTitle = standard.get("title").asText();
+        ((com.fasterxml.jackson.databind.node.ObjectNode) standard).put("title", "被改過的標題");
+        assertEquals(200, call("PUT", "/api/brochures/dm-mango-2026", token, standard.toString()).getResponse().getStatus());
+        assertEquals(201, call("POST", "/api/brochures", token,
+                Map.of("id", "dm-custom-test", "title", "自訂 DM", "status", "draft")).getResponse().getStatus());
+
+        assertEquals(200, call("POST", "/api/brochures/seed", token, null).getResponse().getStatus());
+
+        assertEquals(originalTitle, json(call("GET", "/api/brochures/dm-mango-2026", null, null)).get("data").get("title").asText(),
+                "重置應覆寫標準 DM");
+        assertEquals(200, call("GET", "/api/brochures/dm-custom-test", null, null).getResponse().getStatus(),
+                "重置不可刪除自訂 DM");
+    }
+
+    @Test
     void seedFillsMissingIdsWithoutOverwriting() {
         Worker w001 = workerRepository.findById("W001").orElseThrow();
         w001.setCurrentTask("自訂任務（不可被種子覆蓋）");

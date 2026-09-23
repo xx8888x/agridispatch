@@ -167,12 +167,12 @@
             <p class="text-xs text-slate-400 mt-1">{{ t.loginSubtitle }}</p>
           </div>
 
-          <!-- Demo Mode Notice -->
-          <div class="mb-5 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between gap-3">
+          <!-- Demo Mode Notice（僅 demo 模式顯示） -->
+          <div v-if="isDemo && demoCfg" class="mb-5 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between gap-3">
             <div class="flex items-center gap-2">
               <span class="text-base shrink-0">⚡</span>
               <div>
-                <div class="font-bold text-white">Demo 展示模式：已開通免密通行</div>
+                <div class="font-bold text-white">{{ demoCfg.bannerNotice }}</div>
                 <div class="text-[11px] text-slate-400">免控管帳密，任意輸入或點擊均可實測（正式帳密由後端控管）</div>
               </div>
             </div>

@@ -309,13 +309,15 @@
 
     createApp({
       setup() {
-        const API_BASE = window.location.origin.startsWith('http')
+        const API_BASE = window.AgriAuth ? window.AgriAuth.API_BASE : (window.location.origin.startsWith('http')
           ? `${window.location.origin}/api`
-          : 'http://localhost:3000/api';
+          : 'http://localhost:3000/api');
+        const isDemo = window.AgriAuth ? window.AgriAuth.MODE !== 'production' : true;
+        const demoCfg = (window.AGRI_DEMO_ACCOUNTS && window.AGRI_DEMO_ACCOUNTS.farmer) || null;
 
         const form = reactive({
-          identifier: 'farmer',
-          password: '123456'
+          identifier: isDemo && demoCfg ? demoCfg.defaultIdentifier : '',
+          password: isDemo && demoCfg ? demoCfg.defaultPassword : ''
         });
         const rememberMe = ref(true);
         const loading = ref(false);
@@ -335,6 +337,31 @@
           errorMsg.value = '';
           successMsg.value = '';
           loading.value = true;
+
+          if (!isDemo) {
+            // production 模式：一律呼叫真實登入 API，失敗顯示錯誤、不做任何離線 fallback
+            try {
+              const res = await fetch(`${API_BASE}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier: form.identifier, password: form.password })
+              });
+              const data = await res.json().catch(() => null);
+              if (res.ok && data && data.success && data.user) {
+                window.AgriAuth.setSession(data.token, data.user);
+                sessionStorage.setItem('farmerUser', JSON.stringify(data.user));
+                successMsg.value = `歡迎回來，${data.user.name}！正在為您開啟農場主工作台...`;
+                setTimeout(() => { window.location.href = 'farmer.html'; }, 500);
+              } else {
+                errorMsg.value = (data && data.error) || '帳號或密碼錯誤';
+              }
+            } catch (e) {
+              errorMsg.value = '無法連線到伺服器，請稍後再試';
+            } finally {
+              loading.value = false;
+            }
+            return;
+          }
 
           // Demo 版免控管帳密，一律通行實測
           const isYilan = form.identifier && (form.identifier.includes('yilan') || form.identifier.includes('春發'));
@@ -411,6 +438,8 @@
           loading,
           errorMsg,
           successMsg,
+          isDemo,
+          demoCfg,
           fillProfile,
           handleLogin,
           alertHelp

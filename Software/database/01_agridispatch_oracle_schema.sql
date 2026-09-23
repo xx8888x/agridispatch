@@ -1,0 +1,451 @@
+-- ====================================================================
+-- 智農派工 (AgriDispatch) - Oracle Database 完整建庫與初始資料腳本
+-- 適用版本：Oracle Database 19c / 21c / 23c / 23ai Free / XE
+-- 字元集建議：AL32UTF8
+-- ====================================================================
+
+-- 【步驟 0】建立專案專用使用者與權限 (需以 SYSDBA 或 SYSTEM 執行，若已在專屬 Schema 下可略過)
+/*
+CREATE USER c##agridispatch IDENTIFIED BY "AgriDispatch2026#"
+DEFAULT TABLESPACE users
+TEMPORARY TABLESPACE temp
+QUOTA UNLIMITED ON users;
+
+GRANT CONNECT, RESOURCE, CREATE VIEW, CREATE SEQUENCE, CREATE SYNONYM TO c##agridispatch;
+ALTER SESSION SET CURRENT_SCHEMA = c##agridispatch;
+*/
+
+-- 清理舊有資料表 (若存在)
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE line_messages CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE line_users CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE financial_ledger CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE clock_ins CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE workers CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE orders CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE dispatch_teams CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE farmers CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE crops CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE talents CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE weather_states CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+-- ====================================================================
+-- 1. 作物基準表 (CROPS)
+-- ====================================================================
+CREATE TABLE crops (
+    id                 VARCHAR2(32)   NOT NULL,
+    name               VARCHAR2(100)  NOT NULL,
+    base_hours_per_fen NUMBER(6,1)    DEFAULT 20 NOT NULL,
+    workers_per_fen    NUMBER(4)      DEFAULT 3 NOT NULL,
+    rate               NUMBER(8)      DEFAULT 300 NOT NULL,
+    season             VARCHAR2(50)   NOT NULL,
+    task_description   VARCHAR2(1000) NOT NULL,
+    indoor_alternative VARCHAR2(1000) NOT NULL,
+    created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT pk_crops PRIMARY KEY (id)
+);
+
+COMMENT ON TABLE crops IS '作物基準表：存放各農作物分地工時、費率與避險作業SOP';
+COMMENT ON COLUMN crops.id IS '作物唯一識別碼 (如 mango, onion, pepper...)';
+COMMENT ON COLUMN crops.name IS '作物全稱與主要產區';
+COMMENT ON COLUMN crops.base_hours_per_fen IS '每分地基準作業工時';
+COMMENT ON COLUMN crops.workers_per_fen IS '每分地建議派遣人數';
+COMMENT ON COLUMN crops.rate IS '每工時標準牌價 (新台幣)';
+COMMENT ON COLUMN crops.season IS '盛產作業產季週期';
+COMMENT ON COLUMN crops.task_description IS '田間外銷級採收作業標準SOP';
+COMMENT ON COLUMN crops.indoor_alternative IS '突發暴雨室內冷鏈集貨備援作業';
+
+-- ====================================================================
+-- 2. 小農/契作商表 (FARMERS)
+-- ====================================================================
+CREATE TABLE farmers (
+    id                 VARCHAR2(32)   NOT NULL,
+    name               VARCHAR2(100)  NOT NULL,
+    phone              VARCHAR2(30)   NOT NULL,
+    address            VARCHAR2(255)  NOT NULL,
+    tax_id             VARCHAR2(20),
+    farm_type          VARCHAR2(50)   DEFAULT '產銷班' NOT NULL,
+    created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT pk_farmers PRIMARY KEY (id)
+);
+
+COMMENT ON TABLE farmers IS '小農與契作農企業表：發包單位主檔';
+COMMENT ON COLUMN farmers.id IS '小農/產銷班編號 (如 F001)';
+COMMENT ON COLUMN farmers.name IS '農場名稱或負責人姓名';
+COMMENT ON COLUMN farmers.phone IS '聯絡手機 / LINE 綁定號碼';
+COMMENT ON COLUMN farmers.address IS '農場/溫室田區地址';
+COMMENT ON COLUMN farmers.tax_id IS '統一編號 (供合作社開立合規發票扣抵營業稅)';
+COMMENT ON COLUMN farmers.farm_type IS '農場型態 (產銷班 / 契作農企業 / 獨立小農)';
+
+-- ====================================================================
+-- 3. 調度工班與專車表 (DISPATCH_TEAMS)
+-- ====================================================================
+CREATE TABLE dispatch_teams (
+    id                 VARCHAR2(32)   NOT NULL,
+    name               VARCHAR2(50)   NOT NULL,
+    worker_count       NUMBER(4)      DEFAULT 0 NOT NULL,
+    leader             VARCHAR2(50)   NOT NULL,
+    leader_phone       VARCHAR2(30)   NOT NULL,
+    vehicle            VARCHAR2(100)  NOT NULL,
+    driver             VARCHAR2(50)   NOT NULL,
+    normal_location    VARCHAR2(255)  NOT NULL,
+    normal_task        VARCHAR2(255)  NOT NULL,
+    hedge_location     VARCHAR2(255)  NOT NULL,
+    hedge_task         VARCHAR2(255)  NOT NULL,
+    status             VARCHAR2(30)   DEFAULT 'active_field' NOT NULL,
+    CONSTRAINT pk_dispatch_teams PRIMARY KEY (id),
+    CONSTRAINT chk_team_status CHECK (status IN ('active_field', 'hedged_indoor', 'standby'))
+);
+
+COMMENT ON TABLE dispatch_teams IS '調度工班與專車表：管理4大工班與接送專車路網';
+COMMENT ON COLUMN dispatch_teams.id IS '工班代號 (如 team_a, team_b...)';
+COMMENT ON COLUMN dispatch_teams.name IS '工班名稱';
+COMMENT ON COLUMN dispatch_teams.worker_count IS '在籍農工人數';
+COMMENT ON COLUMN dispatch_teams.leader IS '帶隊組長姓名';
+COMMENT ON COLUMN dispatch_teams.vehicle IS '專屬接送專車車號 (如 智農 1 號車 RBF-8899)';
+COMMENT ON COLUMN dispatch_teams.normal_location IS '晴天天候田間出勤場域';
+COMMENT ON COLUMN dispatch_teams.hedge_location IS '暴雨天候室內冷鏈避險場域';
+COMMENT ON COLUMN dispatch_teams.status IS '出勤狀態 (active_field:田間出勤, hedged_indoor:冷鏈避險, standby:待命)';
+
+-- ====================================================================
+-- 4. 派工訂單表 (ORDERS)
+-- ====================================================================
+CREATE TABLE orders (
+    id                 VARCHAR2(32)   NOT NULL,
+    farmer_id          VARCHAR2(32)   NOT NULL,
+    farmer_name        VARCHAR2(100)  NOT NULL,
+    phone              VARCHAR2(30)   NOT NULL,
+    farm_location      VARCHAR2(255)  NOT NULL,
+    crop_id            VARCHAR2(32)   NOT NULL,
+    crop_name          VARCHAR2(100)  NOT NULL,
+    area               NUMBER(6,2)    NOT NULL,
+    plan               VARCHAR2(30)   DEFAULT 'early_bird' NOT NULL,
+    plan_name          VARCHAR2(100)  NOT NULL,
+    total_hours        NUMBER(6)      NOT NULL,
+    suggested_workers  NUMBER(4)      NOT NULL,
+    unit_rate          NUMBER(8)      NOT NULL,
+    standard_amount    NUMBER(10)     NOT NULL,
+    final_amount       NUMBER(10)     NOT NULL,
+    deposit_amount     NUMBER(10)     DEFAULT 0 NOT NULL,
+    deposit_paid       CHAR(1)        DEFAULT 'Y' NOT NULL,
+    status             VARCHAR2(30)   DEFAULT 'confirmed' NOT NULL,
+    assigned_team_id   VARCHAR2(32),
+    created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT pk_orders PRIMARY KEY (id),
+    CONSTRAINT fk_orders_crop FOREIGN KEY (crop_id) REFERENCES crops(id),
+    CONSTRAINT fk_orders_farmer FOREIGN KEY (farmer_id) REFERENCES farmers(id),
+    CONSTRAINT fk_orders_team FOREIGN KEY (assigned_team_id) REFERENCES dispatch_teams(id),
+    CONSTRAINT chk_orders_deposit_paid CHECK (deposit_paid IN ('Y', 'N'))
+);
+
+COMMENT ON TABLE orders IS '派工訂單表：早鳥工時包預約與出工履約紀錄';
+COMMENT ON COLUMN orders.id IS '訂單流水號 (如 ORD-2026-001)';
+COMMENT ON COLUMN orders.plan IS '商業方案 (early_bird:早鳥9折, hourly_flex:彈性點工, turnkey:成果統包)';
+COMMENT ON COLUMN orders.final_amount IS '折讓後應付總額';
+COMMENT ON COLUMN orders.deposit_amount IS '早鳥 20% 鎖約定金';
+COMMENT ON COLUMN orders.deposit_paid IS '定金是否已繳納 (Y/N)';
+
+-- ====================================================================
+-- 5. 在籍外展移工表 (WORKERS)
+-- ====================================================================
+CREATE TABLE workers (
+    id                  VARCHAR2(32)  NOT NULL,
+    team_id             VARCHAR2(32)  NOT NULL,
+    name                VARCHAR2(100) NOT NULL,
+    chinese_name        VARCHAR2(50)  NOT NULL,
+    nationality         VARCHAR2(50)  NOT NULL,
+    is_leader           CHAR(1)       DEFAULT 'N' NOT NULL,
+    base_salary         NUMBER(8)     DEFAULT 28590 NOT NULL,
+    agri_bonus          NUMBER(8)     DEFAULT 8800 NOT NULL,
+    transport_allowance NUMBER(8)     DEFAULT 2400 NOT NULL,
+    created_at          TIMESTAMP     DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT pk_workers PRIMARY KEY (id),
+    CONSTRAINT fk_workers_team FOREIGN KEY (team_id) REFERENCES dispatch_teams(id),
+    CONSTRAINT chk_workers_leader CHECK (is_leader IN ('Y', 'N'))
+);
+
+COMMENT ON TABLE workers IS '在籍外展農工表：農業部特許在籍之 20 位外展移工與本國師級人才';
+COMMENT ON COLUMN workers.id IS '移工編號 (如 W001)';
+COMMENT ON COLUMN workers.nationality IS '國籍 (越南, 印尼, 泰國, 本國)';
+COMMENT ON COLUMN workers.base_salary IS '外展保障基本法定底薪 (NT$ 28,590)';
+COMMENT ON COLUMN workers.agri_bonus IS '中央農業部外展就業獎勵 (最高 NT$ 8,800/月)';
+COMMENT ON COLUMN workers.transport_allowance IS '高溫與專車交通津貼 (NT$ 2,400/月)';
+
+-- ====================================================================
+-- 6. GPS 現場數位打卡表 (CLOCK_INS)
+-- ====================================================================
+CREATE TABLE clock_ins (
+    id                 VARCHAR2(64)   NOT NULL,
+    worker_id          VARCHAR2(32)   NOT NULL,
+    latitude           NUMBER(10,6)   NOT NULL,
+    longitude          NUMBER(10,6)   NOT NULL,
+    location_name      VARCHAR2(255)  NOT NULL,
+    clock_in_time      TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
+    status             VARCHAR2(20)   DEFAULT 'success' NOT NULL,
+    CONSTRAINT pk_clock_ins PRIMARY KEY (id),
+    CONSTRAINT fk_clock_ins_worker FOREIGN KEY (worker_id) REFERENCES workers(id)
+);
+
+COMMENT ON TABLE clock_ins IS 'GPS 現場數位打卡紀錄表：專車抵達田區或冷鏈場打卡';
+
+-- ====================================================================
+-- 7. 自願登錄人才庫表 (TALENTS)
+-- ====================================================================
+CREATE TABLE talents (
+    id                 VARCHAR2(32)   NOT NULL,
+    name               VARCHAR2(100)  NOT NULL,
+    category           VARCHAR2(50)   NOT NULL,
+    category_name      VARCHAR2(100)  NOT NULL,
+    phone              VARCHAR2(30)   NOT NULL,
+    experience         VARCHAR2(1000) NOT NULL,
+    pdpa_consent       CHAR(1)        DEFAULT 'Y' NOT NULL,
+    registered_at      TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT pk_talents PRIMARY KEY (id),
+    CONSTRAINT chk_talents_pdpa CHECK (pdpa_consent IN ('Y', 'N'))
+);
+
+COMMENT ON TABLE talents IS '自願登錄人才庫表：合規個資法第19條，杜絕網路爬蟲獵人頭違法爭議';
+
+-- ====================================================================
+-- 8. 天候避險狀態表 (WEATHER_STATES)
+-- ====================================================================
+CREATE TABLE weather_states (
+    id                 VARCHAR2(32)   NOT NULL,
+    scenario_id        VARCHAR2(32)   DEFAULT 'cloudy' NOT NULL,
+    scenario_name      VARCHAR2(64)   DEFAULT '舒適多雲時晴' NOT NULL,
+    is_rain_mode       CHAR(1)        DEFAULT 'N' NOT NULL,
+    current_weather    VARCHAR2(100)  NOT NULL,
+    alert_level        VARCHAR2(50)   DEFAULT 'normal' NOT NULL,
+    message            VARCHAR2(500)  NOT NULL,
+    secured_revenue    NUMBER(10)     DEFAULT 62500 NOT NULL,
+    daily_capacity_hrs NUMBER(6)      DEFAULT 160 NOT NULL,
+    regional_json      CLOB,
+    updated_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT pk_weather_states PRIMARY KEY (id),
+    CONSTRAINT chk_rain_mode CHECK (is_rain_mode IN ('Y', 'N'))
+);
+
+COMMENT ON TABLE weather_states IS '天候避險狀態表：微氣候大腦狀態與全區通報紀錄';
+
+-- ====================================================================
+-- 9. 雙軌利潤分流帳本 (FINANCIAL_LEDGER)
+-- ====================================================================
+CREATE TABLE financial_ledger (
+    id                 VARCHAR2(32)   NOT NULL,
+    order_id           VARCHAR2(32)   NOT NULL,
+    total_gmv          NUMBER(12)     NOT NULL,
+    tech_take_rate     NUMBER(12)     NOT NULL,
+    coop_pass_through  NUMBER(12)     NOT NULL,
+    total_agri_subsidy NUMBER(10)     DEFAULT 0 NOT NULL,
+    settlement_date    TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT pk_financial_ledger PRIMARY KEY (id),
+    CONSTRAINT fk_ledger_order FOREIGN KEY (order_id) REFERENCES orders(id)
+);
+
+COMMENT ON TABLE financial_ledger IS '雙軌利潤分流帳本：科技公司18%技術費與合作社82%人事成本清算';
+
+-- ====================================================================
+-- 10. LINE 使用者綁定表 (LINE_USERS)
+-- ====================================================================
+CREATE TABLE line_users (
+    id                 VARCHAR2(32)   NOT NULL,
+    line_user_id       VARCHAR2(64)   NOT NULL,
+    username           VARCHAR2(32)   NOT NULL,
+    display_name       VARCHAR2(100)  NOT NULL,
+    role               VARCHAR2(32)   NOT NULL,
+    lang               VARCHAR2(10)   DEFAULT 'zh' NOT NULL,
+    is_bound           CHAR(1)        DEFAULT 'Y' NOT NULL,
+    bound_at           TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT pk_line_users PRIMARY KEY (id),
+    CONSTRAINT uk_line_user_id UNIQUE (line_user_id),
+    CONSTRAINT chk_line_is_bound CHECK (is_bound IN ('Y', 'N'))
+);
+
+COMMENT ON TABLE line_users IS 'LINE 使用者綁定表：記錄 LINE 官方帳號與系統帳號對應及多語系設定';
+
+-- ====================================================================
+-- 11. LINE 推播歷程表 (LINE_MESSAGES)
+-- ====================================================================
+CREATE TABLE line_messages (
+    id                 VARCHAR2(64)   NOT NULL,
+    line_user_id       VARCHAR2(64),
+    sender             VARCHAR2(64)   DEFAULT 'SYSTEM_BROADCAST' NOT NULL,
+    target_role        VARCHAR2(32)   DEFAULT 'all' NOT NULL,
+    message_type       VARCHAR2(32)   NOT NULL,
+    content            VARCHAR2(2000) NOT NULL,
+    created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT pk_line_messages PRIMARY KEY (id)
+);
+
+COMMENT ON TABLE line_messages IS 'LINE 訊息與推播歷程表：記錄 Flex Message 廣播與即時警報';
+
+-- ====================================================================
+-- 【初始種子資料 (SEED DATA)】
+-- ====================================================================
+
+-- 1. 作物基準
+INSERT INTO crops VALUES ('mango', '愛文芒果 (屏東枋山/台南玉井)', 28, 4, 300, '4月 ~ 7月',
+    '外銷級採收 (留蒂 0.5cm 護果粉)、疏果、防菌套袋',
+    '屏南冷鏈預冷分級場 (清洗、重量自動分級、外銷裝箱)', SYSTIMESTAMP);
+
+INSERT INTO crops VALUES ('onion', '洋蔥 (屏東恆春/高樹)', 32, 4, 290, '1月 ~ 4月',
+    '拔蔥、剪根剪葉、田間裝袋 (每袋 20kg)、搬運上埂',
+    '恆春恆農洋蔥低溫冷藏通風庫 (分級篩選、冷藏排板)', SYSTIMESTAMP);
+
+INSERT INTO crops VALUES ('pepper', '設施彩椒/小黃瓜 (彰化/雲林)', 20, 3, 310, '全年設施溫室',
+    '整枝修芽、溫室精準分批採摘、防蟲網維護',
+    '雲林西螺蔬果集貨冷藏中心 (生鮮小包裝、貼標封口)', SYSTIMESTAMP);
+
+INSERT INTO crops VALUES ('scallion', '三星青蔥 (宜蘭三星)', 24, 3, 300, '6月 ~ 10月',
+    '洗蔥、拔蔥、分級束捆、冷藏保鮮預備',
+    '三星地區農會洗蔥預冷處理場 (水洗機操作、蔥管套袋)', SYSTIMESTAMP);
+
+INSERT INTO crops VALUES ('pomelo', '文旦柚 (台南麻豆/花蓮鶴岡)', 36, 5, 320, '8月 ~ 9月',
+    '白露產季搶收、全區動員、果樹修剪',
+    '麻豆文旦產銷集貨場 (甜度光波檢測、辭水儲存箱包裝)', SYSTIMESTAMP);
+
+-- 2. 小農
+INSERT INTO farmers VALUES ('F001', '陳建龍 (阿龍班長)', '0912-345-678', '屏東縣枋山鄉加祿段 32 號', '88776655', '產銷班', SYSTIMESTAMP);
+INSERT INTO farmers VALUES ('F002', '高樹金牌洋蔥合作社', '0922-333-444', '屏東縣高樹鄉南華路 108 號', '77665544', '契作農企業', SYSTIMESTAMP);
+
+-- 3. 調度工班
+INSERT INTO dispatch_teams VALUES ('team_a', '工班 A 組', 5, '阮文雄 (Nguyễn Văn Hùng)', '0988-111-222',
+    '智農 1 號車 (RBF-8899)', '張大哥 (0912-111-333)',
+    '🌾 高樹洋蔥專區 (第 3 田區)', '洋蔥採收、剪葉裝袋 (每袋 20kg)',
+    '🏢 屏南蔬果冷鏈預冷集貨場 (B棟 分級包裝線)', '洋蔥低溫乾燥分級、電腦秤重篩選網袋包裝', 'active_field');
+
+INSERT INTO dispatch_teams VALUES ('team_b', '工班 B 組', 6, '阿迪 (Agus Santoso)', '0988-222-333',
+    '智農 2 號車 (RBF-6688)', '李大哥 (0912-222-444)',
+    '🌾 枋山愛文芒果 (山坡地外銷供果園)', '套袋疏果、防菌果袋封口、留蒂 0.5cm 採收',
+    '🏢 枋寮生鮮冷鏈物流中心 (A棟 清洗預冷場)', '芒果清洗預冷、自動重量分級套網袋、出口外銷箱貼標封箱', 'active_field');
+
+INSERT INTO dispatch_teams VALUES ('team_c', '工班 C 組 (機耕隊)', 4, '陳建宏 (資深農機技師)', '0988-333-444',
+    '智農 3 號工程車 (大疆 T50 植保機)', '陳建宏',
+    '🌾 雲林設施甜椒園區', '無人機代噴 + 溫室整枝修剪',
+    '🏢 西螺農會智慧農業資材維護所', '無人機機隊拆解保養、噴嘴超音波清洗、調配資材準備', 'active_field');
+
+INSERT INTO dispatch_teams VALUES ('team_d', '工班 D 組 (冷鏈常態組)', 5, '范氏紅 (Phạm Thị Hồng)', '0988-444-555',
+    '智農專車固定專線', '王大哥 (0912-555-666)',
+    '🏢 屏南冷鏈預冷分級場 (室內 A 棟)', '蔬果預冷降溫、外銷精密秤重分級、冷鏈櫃裝櫃',
+    '🏢 屏南冷鏈預冷分級場 (室內 A 棟)', '蔬果預冷降溫、外銷精密秤重分級、冷鏈櫃裝櫃', 'hedged_indoor');
+
+-- 4. 派工訂單
+INSERT INTO orders VALUES ('ORD-2026-001', 'F001', '陳建龍 (阿龍班長)', '0912-345-678', '屏東縣枋山鄉加祿段 32 號',
+    'mango', '愛文芒果 (屏東枋山)', 6.0, 'early_bird', '產季早鳥工時包 (9折保證出工)',
+    168, 4, 300, 50400, 45360, 9072, 'Y', 'confirmed', 'team_b', SYSTIMESTAMP);
+
+-- 5. 在籍移工 (20位)
+INSERT INTO workers VALUES ('W001', 'team_a', 'Nguyễn Văn Hùng', '阮文雄', '越南', 'Y', 28590, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers VALUES ('W002', 'team_a', 'Trần Văn Bình', '陳文平', '越南', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers VALUES ('W003', 'team_a', 'Lê Thị Mai', '黎氏梅', '越南', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers VALUES ('W004', 'team_a', 'Phạm Văn Đức', '范文德', '越南', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers VALUES ('W005', 'team_a', 'Hoàng Minh Tuấn', '黃明俊', '越南', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+
+INSERT INTO workers VALUES ('W006', 'team_b', 'Agus Santoso', '阿迪', '印尼', 'Y', 28590, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers VALUES ('W007', 'team_b', 'Budi Setiawan', '布迪', '印尼', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers VALUES ('W008', 'team_b', 'Dewi Lestari', '蒂薇', '印尼', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers VALUES ('W009', 'team_b', 'Eko Prasetyo', '艾科', '印尼', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers VALUES ('W010', 'team_b', 'Fajar Hidayat', '法賈', '印尼', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers VALUES ('W011', 'team_b', 'Gita Pratama', '吉塔', '印尼', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+
+INSERT INTO workers VALUES ('W012', 'team_c', '陳建宏', '陳建宏 (機耕師)', '本國', 'Y', 42000, 8800, 3000, SYSTIMESTAMP);
+INSERT INTO workers VALUES ('W013', 'team_c', '林志強', '林志強 (無人機手)', '本國', 'N', 42000, 8800, 3000, SYSTIMESTAMP);
+INSERT INTO workers VALUES ('W014', 'team_c', 'Đặng Văn Lâm', '鄧文林', '越南', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers VALUES ('W015', 'team_c', 'Hadi Wijaya', '哈迪', '印尼', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+
+INSERT INTO workers VALUES ('W016', 'team_d', 'Phạm Thị Hồng', '范氏紅', '越南', 'Y', 28590, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers VALUES ('W017', 'team_d', 'Vũ Thị Hương', '武氏香', '越南', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers VALUES ('W018', 'team_d', 'Siti Rahma', '西蒂', '印尼', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers VALUES ('W019', 'team_d', 'Nurul Aini', '努魯', '印尼', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers VALUES ('W020', 'team_d', 'Somchai Prasert', '宋猜', '泰國', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+
+-- 6. 人才庫
+INSERT INTO talents VALUES ('TAL-001', '陳文義', 'local_driver', '本國大型農機/曳引機駕駛員', '0933-222-111',
+    '具備 80 馬力曳引機 5 年耕作經驗、水稻插秧整地熟練', 'Y', SYSTIMESTAMP);
+
+-- 7. 天候避險大腦狀態
+INSERT INTO weather_states VALUES ('WS-001', 'sunny', '全台晴朗炎熱', 'N', '晴朗 29°C', 'normal',
+    '全區田間出勤中・外展農工出勤率 100% (20/20 人在崗)', 62500, 160, NULL, SYSTIMESTAMP);
+
+-- 8. 雙軌財務帳本
+INSERT INTO financial_ledger VALUES ('LED-001', 'ORD-2026-001', 45360, 8165, 37195, 8800, SYSTIMESTAMP);
+
+-- 9. LINE 使用者綁定
+INSERT INTO line_users VALUES ('LU-001', 'U1001_FARMER', 'farmer', '陳建龍 (阿龍班長)', 'farmer', 'zh', 'Y', SYSTIMESTAMP);
+INSERT INTO line_users VALUES ('LU-002', 'U2001_WORKER_VN', 'worker_foreign', 'Nguyễn Văn Hùng', 'worker_foreign', 'vi', 'Y', SYSTIMESTAMP);
+INSERT INTO line_users VALUES ('LU-003', 'U3001_WORKER_TW', 'worker_local', '陳建宏 (機耕師)', 'worker_local', 'zh', 'Y', SYSTIMESTAMP);
+INSERT INTO line_users VALUES ('LU-004', 'U4001_ADMIN', 'admin_tech', '智農調度總監', 'admin_tech', 'zh', 'Y', SYSTIMESTAMP);
+
+-- 10. LINE 推播歷程
+INSERT INTO line_messages VALUES ('LMSG-1726826610001', 'U1001_FARMER', 'SYSTEM_BROADCAST', 'farmer', 'early_bird',
+    '📋 智農派工 - 枋山愛文芒果派工確認單 (早鳥9折保證出工)', SYSTIMESTAMP);
+INSERT INTO line_messages VALUES ('LMSG-1726826610002', 'U2001_WORKER_VN', 'SYSTEM_BROADCAST', 'worker_foreign', 'daily_task',
+    '📋 Thẻ Nhiệm Vụ Hôm Nay - 06:30 Tập hợp lên xe 1 (张大哥)', SYSTIMESTAMP);
+
+COMMIT;
+
+-- ====================================================================
+-- 驗證查詢 (Verification Query)
+-- ====================================================================
+SELECT 'crops' AS table_name, COUNT(*) AS row_count FROM crops
+UNION ALL
+SELECT 'farmers', COUNT(*) FROM farmers
+UNION ALL
+SELECT 'dispatch_teams', COUNT(*) FROM dispatch_teams
+UNION ALL
+SELECT 'orders', COUNT(*) FROM orders
+UNION ALL
+SELECT 'workers', COUNT(*) FROM workers
+UNION ALL
+SELECT 'talents', COUNT(*) FROM talents
+UNION ALL
+SELECT 'weather_states', COUNT(*) FROM weather_states
+UNION ALL
+SELECT 'financial_ledger', COUNT(*) FROM financial_ledger
+UNION ALL
+SELECT 'line_users', COUNT(*) FROM line_users
+UNION ALL
+SELECT 'line_messages', COUNT(*) FROM line_messages;

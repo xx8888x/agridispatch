@@ -1,0 +1,93 @@
+{
+  "type": "bubble",
+  "size": "mega",
+  "header": {
+    "type": "box",
+    "layout": "vertical",
+    "backgroundColor": "#1F2937",
+    "paddingAll": "20px",
+    "contents": [
+      {
+        "type": "text",
+        "text": "本國專業機耕領航員",
+        "color": "#9CA3AF",
+        "size": "xs",
+        "weight": "bold"
+      },
+      {
+        "type": "text",
+        "text": "大疆 T50 植保機雙證照代噴",
+        "color": "#10B981",
+        "size": "lg",
+        "weight": "bold"
+      },
+      {
+        "type": "text",
+        "text": "機耕師: 陳建宏 (#W012) ｜ 工班 C 組",
+        "color": "#E5E7EB",
+        "size": "xs"
+      }
+    ]
+  },
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "spacing": "sm",
+    "paddingAll": "20px",
+    "contents": [
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "作業排程", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "今日 06:00 ~ 11:30 (清晨微風時段)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "作業地點", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "雲林設施彩椒產銷專區 (第 5 號溫室外區)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "設備檢核", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "噴嘴超音波清洗完畢、50米避障雷達校準完成", "color": "#059669", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "實領所得", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "底薪 $42,000 + 分地統包分紅 $12,500 = $54,500", "color": "#DC2626", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "type": "box",
+    "layout": "vertical",
+    "paddingAll": "16px",
+    "contents": [
+      {
+        "type": "button",
+        "style": "primary",
+        "color": "#1F2937",
+        "action": {
+          "type": "uri",
+          "label": "🚜 檢視農機履歷與保養卡",
+          "uri": "https://agridispatch.tw/web/app.html#worker_local"
+        }
+      }
+    ]
+  }
+}

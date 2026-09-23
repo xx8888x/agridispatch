@@ -1,0 +1,124 @@
+{
+  "type": "bubble",
+  "size": "mega",
+  "header": {
+    "type": "box",
+    "layout": "vertical",
+    "backgroundColor": "#047857",
+    "paddingAll": "20px",
+    "contents": [
+      {
+        "type": "text",
+        "text": "智農派工・履約派遣單",
+        "color": "#A7F3D0",
+        "size": "xs",
+        "weight": "bold"
+      },
+      {
+        "type": "text",
+        "text": "枋山愛文芒果 (6.0 分地)",
+        "color": "#FFFFFF",
+        "size": "xl",
+        "weight": "bold"
+      },
+      {
+        "type": "text",
+        "text": "單號: ORD-2026-001 ｜ 早鳥保證出工",
+        "color": "#D1FAE5",
+        "size": "xs"
+      }
+    ]
+  },
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "spacing": "md",
+    "paddingAll": "20px",
+    "contents": [
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "作業日期", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "2026/05/20 (明日 07:00 出工)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "指派工班", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "工班 B 組 (6人，領班: 阿迪)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "接送專車", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "智農 2 號車 (司機: 李大哥 0912-222-444)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "作業手路", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "留蒂 0.5cm 護果粉外銷級採收", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "合約保證", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "SLA 遲到免單、放鳥雙倍賠償", "color": "#059669", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "應付金額", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "NT$ 45,360 (早鳥9折 / 定金已收 20%)", "color": "#DC2626", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "type": "box",
+    "layout": "vertical",
+    "spacing": "sm",
+    "paddingAll": "16px",
+    "contents": [
+      {
+        "type": "button",
+        "style": "primary",
+        "color": "#059669",
+        "height": "sm",
+        "action": {
+          "type": "uri",
+          "label": "📍 查看工班 GPS 即時位置",
+          "uri": "https://agridispatch.tw/track/ORD-2026-001"
+        }
+      },
+      {
+        "type": "button",
+        "style": "primary",
+        "color": "#3B82F6",
+        "height": "sm",
+        "action": {
+          "type": "uri",
+          "label": "📞 聯絡調度專車司機",
+          "uri": "tel:0912222444"
+        }
+      }
+    ]
+  }
+}

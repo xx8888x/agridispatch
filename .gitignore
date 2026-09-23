@@ -1,0 +1,31 @@
+# 建置產物
+Software/backend/maven/
+Software/backend/target/
+Software/backend/bin/
+Software/backend/src/com/**/*.class
+Software/Line Bot/bin/
+*.class
+Software/android/.gradle/
+Software/android/build/
+Software/android/app/build/
+Software/android/local.properties
+node_modules/
+
+# 執行期資料
+Software/backend/data/*.mv.db
+Software/backend/data/*.trace.db
+*.log
+
+# 機密（只提交 .example 範本）
+Software/Line Bot/.env
+Software/Line Bot/config.properties
+Software/android/app/google-services.json
+Software/android/keystore.properties
+*.jks
+*.keystore
+
+# 系統 / 暫存
+*.tmp
+~$*
+Thumbs.db
+desktop.ini

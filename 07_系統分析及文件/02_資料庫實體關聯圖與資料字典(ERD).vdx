@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VisioDocument xmlns="http://schemas.microsoft.com/visio/2003/core" xml:space="preserve">
+    <DocumentProperties>
+        <Title>智農派工 (AgriDispatch) - 資料庫實體關聯圖 (ERD)</Title>
+        <Subject>農業外展調度 ╳ 雙軌智慧派遣系統資料庫架構</Subject>
+        <Creator>AgriDispatch Architecture Team</Creator>
+    </DocumentProperties>
+    <Pages>
+        <Page ID="0" Name="AgriDispatch_ERD">
+            <PageSheet>
+                <PageProps>
+                    <PageWidth>14.0</PageWidth>
+                    <PageHeight>11.0</PageHeight>
+                    <PageScale>1.0</PageScale>
+                    <DrawingScale>1.0</DrawingScale>
+                </PageProps>
+            </PageSheet>
+            <Shapes>
+                
+        <Shape ID="1" Type="Shape" LineStyle="1" FillStyle="1" TextStyle="1">
+            <XForm>
+                <PinX>1.5</PinX>
+                <PinY>9.0</PinY>
+                <Width>2.6</Width>
+                <Height>2.2</Height>
+                <LocPinX>1.3</LocPinX>
+                <LocPinY>1.1</LocPinY>
+            </XForm>
+            <Fill>
+                <FillForegnd>#E6F4EA</FillForegnd>
+                <FillBkgnd>#FFFFFF</FillBkgnd>
+                <FillPattern>1</FillPattern>
+            </Fill>
+            <Line>
+                <LineColor>#059669</LineColor>
+                <LineWeight>0.02</LineWeight>
+                <Rounding>0.08</Rounding>
+            </Line>
+            <Text>【CROPS (作物基準表)】&#xA;* id: VARCHAR(32) [PK]&#xA;name: VARCHAR(100)&#xA;baseHoursPerFen: INT&#xA;workersPerFen: INT&#xA;rate: INT&#xA;season: VARCHAR(50)&#xA;taskDescription: TEXT&#xA;indoorAlternative: TEXT</Text>
+        </Shape>
+        
+        <Shape ID="2" Type="Shape" LineStyle="1" FillStyle="1" TextStyle="1">
+            <XForm>
+                <PinX>5.0</PinX>
+                <PinY>9.0</PinY>
+                <Width>2.6</Width>
+                <Height>1.8</Height>
+                <LocPinX>1.3</LocPinX>
+                <LocPinY>0.9</LocPinY>
+            </XForm>
+            <Fill>
+                <FillForegnd>#E6F4EA</FillForegnd>
+                <FillBkgnd>#FFFFFF</FillBkgnd>
+                <FillPattern>1</FillPattern>
+            </Fill>
+            <Line>
+                <LineColor>#059669</LineColor>
+                <LineWeight>0.02</LineWeight>
+                <Rounding>0.08</Rounding>
+            </Line>
+            <Text>【FARMERS (小農/契作商表)】&#xA;* id: VARCHAR(32) [PK]&#xA;name: VARCHAR(100)&#xA;phone: VARCHAR(30)&#xA;address: VARCHAR(255)&#xA;taxId: VARCHAR(20)&#xA;farmType: VARCHAR(50)</Text>
+        </Shape>
+        
+        <Shape ID="3" Type="Shape" LineStyle="1" FillStyle="1" TextStyle="1">
+            <XForm>
+                <PinX>3.2</PinX>
+                <PinY>6.0</PinY>
+                <Width>2.8</Width>
+                <Height>2.6</Height>
+                <LocPinX>1.4</LocPinX>
+                <LocPinY>1.3</LocPinY>
+            </XForm>
+            <Fill>
+                <FillForegnd>#FEF7E0</FillForegnd>
+                <FillBkgnd>#FFFFFF</FillBkgnd>
+                <FillPattern>1</FillPattern>
+            </Fill>
+            <Line>
+                <LineColor>#059669</LineColor>
+                <LineWeight>0.02</LineWeight>
+                <Rounding>0.08</Rounding>
+            </Line>
+            <Text>【ORDERS (派工訂單與早鳥包)】&#xA;* id: VARCHAR(32) [PK]&#xA;# farmerId: VARCHAR [FK]&#xA;# cropId: VARCHAR [FK]&#xA;# assignedTeamId: VARCHAR [FK]&#xA;area: FLOAT&#xA;plan: VARCHAR(30)&#xA;totalHours: INT&#xA;suggestedWorkers: INT&#xA;unitRate: INT&#xA;finalAmount: INT&#xA;depositAmount: INT&#xA;status: VARCHAR(30)</Text>
+        </Shape>
+        
+        <Shape ID="4" Type="Shape" LineStyle="1" FillStyle="1" TextStyle="1">
+            <XForm>
+                <PinX>7.0</PinX>
+                <PinY>6.0</PinY>
+                <Width>2.8</Width>
+                <Height>2.4</Height>
+                <LocPinX>1.4</LocPinX>
+                <LocPinY>1.2</LocPinY>
+            </XForm>
+            <Fill>
+                <FillForegnd>#E8F0FE</FillForegnd>
+                <FillBkgnd>#FFFFFF</FillBkgnd>
+                <FillPattern>1</FillPattern>
+            </Fill>
+            <Line>
+                <LineColor>#059669</LineColor>
+                <LineWeight>0.02</LineWeight>
+                <Rounding>0.08</Rounding>
+            </Line>
+            <Text>【DISPATCH_TEAMS (工班與專車)】&#xA;* id: VARCHAR(32) [PK]&#xA;name: VARCHAR(50)&#xA;workerCount: INT&#xA;leader: VARCHAR(50)&#xA;vehicle: VARCHAR(100)&#xA;driver: VARCHAR(50)&#xA;normalLocation: VARCHAR&#xA;hedgeLocation: VARCHAR&#xA;status: VARCHAR(30)</Text>
+        </Shape>
+        
+        <Shape ID="5" Type="Shape" LineStyle="1" FillStyle="1" TextStyle="1">
+            <XForm>
+                <PinX>7.0</PinX>
+                <PinY>2.5</PinY>
+                <Width>2.8</Width>
+                <Height>2.2</Height>
+                <LocPinX>1.4</LocPinX>
+                <LocPinY>1.1</LocPinY>
+            </XForm>
+            <Fill>
+                <FillForegnd>#F3E8FD</FillForegnd>
+                <FillBkgnd>#FFFFFF</FillBkgnd>
+                <FillPattern>1</FillPattern>
+            </Fill>
+            <Line>
+                <LineColor>#059669</LineColor>
+                <LineWeight>0.02</LineWeight>
+                <Rounding>0.08</Rounding>
+            </Line>
+            <Text>【WORKERS (在籍外展農工)】&#xA;* id: VARCHAR(32) [PK]&#xA;# teamId: VARCHAR [FK]&#xA;name: VARCHAR(100)&#xA;chineseName: VARCHAR(50)&#xA;nationality: VARCHAR(30)&#xA;isLeader: BOOL&#xA;baseSalary: INT (28590)&#xA;agriBonus: INT (8800)&#xA;transportAllowance: INT</Text>
+        </Shape>
+        
+        <Shape ID="6" Type="Shape" LineStyle="1" FillStyle="1" TextStyle="1">
+            <XForm>
+                <PinX>10.5</PinX>
+                <PinY>2.5</PinY>
+                <Width>2.6</Width>
+                <Height>1.8</Height>
+                <LocPinX>1.3</LocPinX>
+                <LocPinY>0.9</LocPinY>
+            </XForm>
+            <Fill>
+                <FillForegnd>#E6F4EA</FillForegnd>
+                <FillBkgnd>#FFFFFF</FillBkgnd>
+                <FillPattern>1</FillPattern>
+            </Fill>
+            <Line>
+                <LineColor>#059669</LineColor>
+                <LineWeight>0.02</LineWeight>
+                <Rounding>0.08</Rounding>
+            </Line>
+            <Text>【CLOCK_INS (GPS現場打卡)】&#xA;* id: VARCHAR(64) [PK]&#xA;# workerId: VARCHAR [FK]&#xA;latitude: FLOAT&#xA;longitude: FLOAT&#xA;locationName: VARCHAR&#xA;clockInTime: DATETIME&#xA;status: VARCHAR(20)</Text>
+        </Shape>
+        
+        <Shape ID="7" Type="Shape" LineStyle="1" FillStyle="1" TextStyle="1">
+            <XForm>
+                <PinX>10.5</PinX>
+                <PinY>6.0</PinY>
+                <Width>2.6</Width>
+                <Height>2.0</Height>
+                <LocPinX>1.3</LocPinX>
+                <LocPinY>1.0</LocPinY>
+            </XForm>
+            <Fill>
+                <FillForegnd>#E6F4EA</FillForegnd>
+                <FillBkgnd>#FFFFFF</FillBkgnd>
+                <FillPattern>1</FillPattern>
+            </Fill>
+            <Line>
+                <LineColor>#059669</LineColor>
+                <LineWeight>0.02</LineWeight>
+                <Rounding>0.08</Rounding>
+            </Line>
+            <Text>【TALENTS (自願登錄人才庫)】&#xA;* id: VARCHAR(32) [PK]&#xA;name: VARCHAR(100)&#xA;category: VARCHAR(50)&#xA;phone: VARCHAR(30)&#xA;experience: TEXT&#xA;pdpaConsent: BOOL (個資19條)&#xA;registeredAt: DATETIME</Text>
+        </Shape>
+        
+        <Shape ID="8" Type="Shape" LineStyle="1" FillStyle="1" TextStyle="1">
+            <XForm>
+                <PinX>10.5</PinX>
+                <PinY>9.0</PinY>
+                <Width>2.8</Width>
+                <Height>1.8</Height>
+                <LocPinX>1.4</LocPinX>
+                <LocPinY>0.9</LocPinY>
+            </XForm>
+            <Fill>
+                <FillForegnd>#E8F0FE</FillForegnd>
+                <FillBkgnd>#FFFFFF</FillBkgnd>
+                <FillPattern>1</FillPattern>
+            </Fill>
+            <Line>
+                <LineColor>#059669</LineColor>
+                <LineWeight>0.02</LineWeight>
+                <Rounding>0.08</Rounding>
+            </Line>
+            <Text>【WEATHER_STATES (天候避險狀態)】&#xA;* id: VARCHAR(32) [PK]&#xA;isRainMode: BOOL&#xA;currentWeather: VARCHAR&#xA;alertLevel: VARCHAR&#xA;securedRevenue: INT (62500)&#xA;dailyCapacityHours: INT</Text>
+        </Shape>
+        
+        <Shape ID="9" Type="Shape" LineStyle="1" FillStyle="1" TextStyle="1">
+            <XForm>
+                <PinX>1.5</PinX>
+                <PinY>2.5</PinY>
+                <Width>2.8</Width>
+                <Height>2.0</Height>
+                <LocPinX>1.4</LocPinX>
+                <LocPinY>1.0</LocPinY>
+            </XForm>
+            <Fill>
+                <FillForegnd>#FEF7E0</FillForegnd>
+                <FillBkgnd>#FFFFFF</FillBkgnd>
+                <FillPattern>1</FillPattern>
+            </Fill>
+            <Line>
+                <LineColor>#059669</LineColor>
+                <LineWeight>0.02</LineWeight>
+                <Rounding>0.08</Rounding>
+            </Line>
+            <Text>【FINANCIAL_LEDGER (利潤分流帳本)】&#xA;* id: VARCHAR(32) [PK]&#xA;# orderId: VARCHAR [FK]&#xA;totalGmv: INT&#xA;techTakeRate: INT (18%)&#xA;coopPassThrough: INT (82%)&#xA;totalAgriSubsidy: INT (8800/人)&#xA;settlementDate: DATETIME</Text>
+        </Shape>
+        
+                    <Shape ID="10" Type="Shape" LineStyle="1" FillStyle="1" TextStyle="1">
+            <XForm>
+                <PinX>4.8</PinX>
+                <PinY>2.5</PinY>
+                <Width>2.8</Width>
+                <Height>2.2</Height>
+                <LocPinX>1.4</LocPinX>
+                <LocPinY>1.1</LocPinY>
+            </XForm>
+            <Fill>
+                <FillForegnd>#E6F4EA</FillForegnd>
+                <FillBkgnd>#FFFFFF</FillBkgnd>
+                <FillPattern>1</FillPattern>
+            </Fill>
+            <Line>
+                <LineColor>#06C755</LineColor>
+                <LineWeight>0.025</LineWeight>
+                <Rounding>0.08</Rounding>
+            </Line>
+            <Text>【LINE_USERS (LINE使用者綁定表)】&#xA;* id: VARCHAR(32) [PK]&#xA;lineUserId: VARCHAR(64) [UK]&#xA;username: VARCHAR(32)&#xA;displayName: VARCHAR(100)&#xA;role: VARCHAR(32)&#xA;lang: VARCHAR(10) (zh/vi/id)&#xA;isBound: BOOL&#xA;boundAt: DATETIME</Text>
+        </Shape>
+        
+        <Shape ID="11" Type="Shape" LineStyle="1" FillStyle="1" TextStyle="1">
+            <XForm>
+                <PinX>1.5</PinX>
+                <PinY>5.8</PinY>
+                <Width>2.8</Width>
+                <Height>2.2</Height>
+                <LocPinX>1.4</LocPinX>
+                <LocPinY>1.1</LocPinY>
+            </XForm>
+            <Fill>
+                <FillForegnd>#E8F0FE</FillForegnd>
+                <FillBkgnd>#FFFFFF</FillBkgnd>
+                <FillPattern>1</FillPattern>
+            </Fill>
+            <Line>
+                <LineColor>#06C755</LineColor>
+                <LineWeight>0.025</LineWeight>
+                <Rounding>0.08</Rounding>
+            </Line>
+            <Text>【LINE_MESSAGES (LINE推播歷程表)】&#xA;* id: VARCHAR(64) [PK]&#xA;# lineUserId: VARCHAR(64) [FK]&#xA;sender: VARCHAR(64)&#xA;targetRole: VARCHAR(32)&#xA;messageType: VARCHAR(32)&#xA;content: TEXT&#xA;timestamp: DATETIME</Text>
+        </Shape>
+        
+    </Shapes>
+        </Page>
+    </Pages>
+</VisioDocument>

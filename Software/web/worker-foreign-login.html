@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>外籍特許農工專屬登入 - Cổng Đăng Nhập Lao Động Nước Ngoài - AgriDispatch</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Vue 3: Local Vendor First with CDN Fallback -->
+  <script src="js/vendor/vue.global.prod.js"></script>
+  <script>
+    if (typeof Vue === 'undefined') {
+      document.write('<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"><\/script>');
+    }
+  </script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [v-cloak] { display: none; }
+  </style>
+  <script>
+    // Failsafe: Remove v-cloak if Vue takes more than 1.5s to prevent blank screen
+    setTimeout(function() {
+      var appEl = document.getElementById('app');
+      if (appEl && appEl.hasAttribute('v-cloak')) {
+        console.warn('Vue mounting timed out or offline, removing v-cloak failsafe');
+        appEl.removeAttribute('v-cloak');
+      }
+    }, 1500);
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-amber-500 selection:text-white">
+
+  <div id="app" v-cloak class="flex flex-col min-h-screen">
+    <!-- Header with Language Selector -->
+    <header class="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur-md sticky top-0 z-30">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <a href="login.html" class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-amber-500/20">
+            <span class="text-xl">👷</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-base sm:text-lg tracking-tight text-white">智農派工</span>
+              <span class="text-[11px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">Tier 1 外展移工門戶</span>
+            </div>
+            <p class="text-[10px] text-slate-400">Portal Lao Động Nước Ngoài ╳ Foreign Worker Portal</p>
+          </div>
+        </a>
+
+        <!-- Multilingual Switcher -->
+        <div class="flex items-center gap-1 sm:gap-2">
+          <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+            <button @click="setLang('vi')" :class="lang === 'vi' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2 py-1 rounded-lg transition flex items-center gap-1">
+              <span>🇻🇳</span> <span class="hidden sm:inline">Việt</span>
+            </button>
+            <button @click="setLang('id')" :class="lang === 'id' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2 py-1 rounded-lg transition flex items-center gap-1">
+              <span>🇮🇩</span> <span class="hidden sm:inline">Indo</span>
+            </button>
+            <button @click="setLang('th')" :class="lang === 'th' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2 py-1 rounded-lg transition flex items-center gap-1">
+              <span>🇹🇭</span> <span class="hidden sm:inline">ไทย</span>
+            </button>
+            <button @click="setLang('en')" :class="lang === 'en' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2 py-1 rounded-lg transition flex items-center gap-1">
+              <span>🇵🇭</span> <span class="hidden sm:inline">EN/PH</span>
+            </button>
+            <button @click="setLang('zh')" :class="lang === 'zh' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2 py-1 rounded-lg transition flex items-center gap-1">
+              <span>🇹🇼</span> <span class="hidden sm:inline">中文</span>
+            </button>
+          </div>
+          <a href="login.html" class="text-xs text-slate-400 hover:text-white px-2 py-1 hidden md:inline">↩ {{ t.switchRole }}</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div class="max-w-4xl w-full grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+
+        <!-- Left Column: Rights & Welfare Notice (5 cols) -->
+        <div class="md:col-span-5 space-y-5">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold">
+            <span>🛡️</span> {{ t.legalTag }}
+          </div>
+
+          <h1 class="text-2xl sm:text-3xl font-black text-white leading-snug">
+            {{ t.heroTitle1 }}<br>
+            <span class="text-amber-400">{{ t.heroTitle2 }}</span>
+          </h1>
+
+          <p class="text-xs text-slate-400 leading-relaxed">
+            {{ t.heroDesc }}
+          </p>
+
+          <!-- Wage & Subsidy Guarantee Banner -->
+          <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-900 to-amber-950/30 border border-amber-500/40 space-y-2">
+            <div class="text-[11px] font-bold text-amber-300 flex items-center gap-1.5">
+              <span>💰</span> {{ t.wageTitle }}
+            </div>
+            <div class="flex items-baseline gap-2">
+              <span class="text-2xl font-black text-white font-mono">NT$ 38,590</span>
+              <span class="text-xs text-slate-400">/ {{ t.perMonth }}</span>
+            </div>
+            <div class="text-[11px] text-slate-300 border-t border-slate-800/80 pt-2 flex flex-col gap-1">
+              <div>• {{ t.wageBase }}: <span class="font-mono text-white font-bold">$28,590</span></div>
+              <div>• {{ t.wageBonus }}: <span class="font-mono text-amber-400 font-bold">+$8,800</span></div>
+              <div>• {{ t.wageAllowance }}: <span class="font-mono text-emerald-400 font-bold">+$1,200</span></div>
+            </div>
+          </div>
+
+          <!-- 1955 Hotline & Bilingual Support -->
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <a href="tel:1955" class="p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-amber-500/50 flex flex-col justify-between transition">
+              <span class="text-slate-400 text-[10px]">📞 {{ t.hotlineLabel }}</span>
+              <span class="text-base font-black text-amber-400 font-mono mt-1">1955</span>
+              <span class="text-[10px] text-slate-500">{{ t.hotlineNote }}</span>
+            </a>
+            <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+              <span class="text-slate-400 text-[10px]">🏥 {{ t.insuranceLabel }}</span>
+              <span class="text-sm font-bold text-emerald-400 mt-1">100% {{ t.insured }}</span>
+              <span class="text-[10px] text-slate-500">{{ t.insuranceNote }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Foreign Worker Login Card (7 cols) -->
+        <div class="md:col-span-7 bg-slate-900/90 rounded-3xl border border-amber-500/40 p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-44 h-44 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div class="mb-6">
+            <div class="flex items-center justify-between">
+              <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+                <span>👷</span> {{ t.loginTitle }}
+              </h2>
+              <span class="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">Tier 1</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">{{ t.loginSubtitle }}</p>
+          </div>
+
+          <!-- Demo Mode Notice -->
+          <div class="mb-5 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <span class="text-base shrink-0">⚡</span>
+              <div>
+                <div class="font-bold text-white">Demo 展示模式：已開通免密通行</div>
+                <div class="text-[11px] text-slate-400">免控管帳密，任意輸入或點擊均可實測（正式帳密由後端控管）</div>
+              </div>
+            </div>
+            <a href="worker-foreign.html" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shrink-0 whitespace-nowrap shadow transition">
+              直通工作台 ➔
+            </a>
+          </div>
+
+          <!-- Alert / Messages -->
+          <div v-if="errorMsg" class="mb-4 p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2">
+            <span>⚠️</span> {{ errorMsg }}
+          </div>
+
+          <div v-if="successMsg" class="mb-4 p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2">
+            <span>✅</span> {{ successMsg }}
+          </div>
+
+          <!-- Login Form -->
+          <form @submit.prevent="handleLogin" class="space-y-4 text-xs">
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1.5">
+                {{ t.idLabel }}
+                <span class="text-slate-400 font-normal">({{ t.idPlaceholderHint }})</span>
+              </label>
+              <div class="relative">
+                <input v-model="form.identifier" type="text" :placeholder="t.idPlaceholder"
+                  class="w-full px-4 py-3.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition text-sm font-mono">
+                <span class="absolute right-3.5 top-3.5 text-slate-500">🪪</span>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1.5">{{ t.pwdLabel }}</label>
+              <div class="relative">
+                <input v-model="form.password" type="password" :placeholder="t.pwdPlaceholder"
+                  class="w-full px-4 py-3.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition text-sm font-mono">
+                <span class="absolute right-3.5 top-3.5 text-slate-500">🔒</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs pt-1">
+              <span class="text-slate-400 text-[11px]">💡 {{ t.pwdDefaultHint }}: <span class="font-mono text-amber-400 font-bold">123456</span></span>
+              <a href="tel:1955" class="text-amber-400 text-[11px] hover:underline">{{ t.helpForgot }}</a>
+            </div>
+
+            <button type="submit" :disabled="loading"
+              class="w-full py-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm shadow-xl shadow-amber-500/20 transition flex items-center justify-center gap-2 disabled:opacity-50 mt-2">
+              <span v-if="loading" class="animate-spin">🌀</span>
+              <span>{{ loading ? t.loggingIn : t.btnSubmit }}</span>
+            </button>
+          </form>
+
+          <!-- Quick Fill Demo Foreign Workers -->
+          <div class="mt-6 pt-5 border-t border-slate-800">
+            <div class="text-[11px] font-bold text-slate-400 mb-2.5 flex items-center justify-between">
+              <span>⚡ {{ t.quickDemoTitle }}</span>
+              <span class="text-[10px] text-slate-500">Click to fill</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <!-- Worker 1: 阮文雄 -->
+              <button @click="fillProfile('AD88123451', '123456', 'W001')" type="button"
+                class="text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 transition">
+                <div class="flex items-center gap-1 font-bold text-white text-[11px]">
+                  <span>🇻🇳</span> 阮文雄 (A組長)
+                </div>
+                <div class="text-[10px] text-slate-400 font-mono mt-0.5">ARC: AD88123451</div>
+              </button>
+
+              <!-- Worker 2: Budi Santoso -->
+              <button @click="fillProfile('AD77234561', '123456', 'W006')" type="button"
+                class="text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 transition">
+                <div class="flex items-center gap-1 font-bold text-white text-[11px]">
+                  <span>🇮🇩</span> Budi (B組長)
+                </div>
+                <div class="text-[10px] text-slate-400 font-mono mt-0.5">ARC: AD77234561</div>
+              </button>
+
+              <!-- Worker 3: Somchai Prasert -->
+              <button @click="fillProfile('AD66345671', '123456', 'W020')" type="button"
+                class="text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 transition">
+                <div class="flex items-center gap-1 font-bold text-white text-[11px]">
+                  <span>🇹🇭</span> Somchai (D組)
+                </div>
+                <div class="text-[10px] text-slate-400 font-mono mt-0.5">ARC: AD66345671</div>
+              </button>
+
+              <!-- Worker 4: Maria Santos -->
+              <button @click="fillProfile('AD55456781', '123456', 'W023')" type="button"
+                class="text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 transition">
+                <div class="flex items-center gap-1 font-bold text-white text-[11px]">
+                  <span>🇵🇭</span> Maria (B組)
+                </div>
+                <div class="text-[10px] text-slate-400 font-mono mt-0.5">ARC: AD55456781</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bottom Switch -->
+          <div class="mt-5 text-center text-xs text-slate-500">
+            <a href="farmer-login.html" class="text-emerald-400 hover:underline mx-2">我是農場主</a>
+            •
+            <a href="worker-local-login.html" class="text-blue-400 hover:underline mx-2">我是本國機耕師</a>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Post-Login Worker Dashboard Modal -->
+    <div v-if="workerModal.show" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-slate-900 border border-amber-500/50 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl text-xs">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">👷</span>
+            <div>
+              <h3 class="font-extrabold text-base text-white">{{ workerModal.data.name }}</h3>
+              <p class="text-[11px] text-amber-400 font-mono">{{ workerModal.data.roleDesc }}</p>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold">
+            已成功登入
+          </span>
+        </div>
+
+        <div v-if="workerModal.data.workerProfile" class="space-y-3">
+          <!-- Dispatch Status & Task -->
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">目前派遣狀態</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold text-[11px]">
+                {{ workerModal.data.workerProfile.dispatchStatus === 'hedged_indoor' ? '🏢 室內冷鏈避險' : '🟢 田間作業出勤' }}
+              </span>
+            </div>
+            <div>
+              <div class="text-slate-400 text-[10px]">今日作業內容 (Hôm nay / Hari ini):</div>
+              <div class="text-white font-bold text-sm mt-0.5">{{ workerModal.data.workerProfile.currentTask }}</div>
+            </div>
+          </div>
+
+          <!-- Grid details -->
+          <div class="grid grid-cols-2 gap-2 text-[11px]">
+            <div class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
+              <div class="text-slate-500">居留證號 (ARC)</div>
+              <div class="font-mono font-bold text-amber-300 mt-0.5">{{ workerModal.data.workerProfile.arcNumber }}</div>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
+              <div class="text-slate-500">護照號碼 (Passport)</div>
+              <div class="font-mono font-bold text-slate-300 mt-0.5">{{ workerModal.data.workerProfile.passportNumber }}</div>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
+              <div class="text-slate-500">所屬工班 (Đội / Tim)</div>
+              <div class="font-bold text-white mt-0.5">{{ workerModal.data.workerProfile.teamId }}</div>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
+              <div class="text-slate-500">法定納保狀態</div>
+              <div class="font-bold text-emerald-400 mt-0.5">{{ workerModal.data.workerProfile.insuranceStatus }}</div>
+            </div>
+          </div>
+
+          <!-- Salary Summary -->
+          <div class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
+            <div>
+              <div class="text-[10px] text-amber-300 font-semibold">本月薪資保障總額</div>
+              <div class="text-slate-400 text-[10px]">底薪 + 獎勵金 + 津貼</div>
+            </div>
+            <div class="text-lg font-black text-white font-mono">
+              NT$ {{ ((workerModal.data.workerProfile.baseSalary || 28590) + (workerModal.data.workerProfile.agriBonus || 8800) + (workerModal.data.workerProfile.transportAllowance || 1200)).toLocaleString() }}
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+          <button @click="workerModal.show = false" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition">
+            關閉
+          </button>
+          <a href="worker-foreign.html" class="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold shadow transition">
+            進入外展移工工作台 ➔
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 py-5 text-center text-xs text-slate-500">
+      智農派工 AgriDispatch © 2026 農業部特許外展合作社 ╳ 外展移工工作服務網
+    </footer>
+  </div>
+
+  <script>
+    const { createApp, ref, reactive, computed } = Vue;
+
+    // Multilingual Dictionary
+    const translations = {
+      vi: {
+        switchRole: 'Đổi vai trò',
+        legalTag: 'Hợp tác xã nông nghiệp đặc quyền của Bộ Nông nghiệp Đài Loan',
+        heroTitle1: 'Quyền lợi & Nhiệm vụ',
+        heroTitle2: 'Lao Động Nước Ngoài',
+        heroDesc: 'Hệ thống tra cứu lịch làm việc, địa điểm thu hoạch, thông báo tránh mưa trong kho lạnh và minh bạch tiền lương.',
+        wageTitle: 'Bảo đảm lương tháng & Tiền thưởng Bộ Nông nghiệp',
+        perMonth: 'tháng',
+        wageBase: 'Lương cơ bản',
+        wageBonus: 'Thưởng nông nghiệp',
+        wageAllowance: 'Phụ cấp đi lại',
+        hotlineLabel: 'Đường dây trợ giúp',
+        hotlineNote: 'Miễn phí 24/7 tiếng Việt',
+        insuranceLabel: 'Bảo hiểm lao động',
+        insured: 'Hợp quy',
+        insuranceNote: 'BHYT & Tai nạn LĐ',
+        loginTitle: 'Đăng Nhập Lao Động',
+        loginSubtitle: 'Nhập số thẻ cư trú (ARC), số hộ chiếu hoặc mã công nhân',
+        idLabel: 'Số Thẻ Cư Trú (ARC) / Hộ Chiếu / Mã Công Nhân',
+        idPlaceholder: 'Ví dụ: AD88123451 hoặc C1234561',
+        idPlaceholderHint: 'ARC / Passport',
+        pwdLabel: 'Mật Khẩu',
+        pwdPlaceholder: 'Nhập mật khẩu (Mặc định 123456)',
+        pwdDefaultHint: 'Mật khẩu mặc định',
+        helpForgot: 'Quên mật khẩu? Gọi 1955',
+        btnSubmit: 'Đăng Nhập Ngay ➔',
+        loggingIn: 'Đang xác thực...',
+        quickDemoTitle: 'Tài khoản mẫu thử nghiệm:'
+      },
+      id: {
+        switchRole: 'Ganti Peran',
+        legalTag: 'Koperasi Pertanian Berlisensi Kementerian Pertanian Taiwan',
+        heroTitle1: 'Hak & Tugas Kerja',
+        heroTitle2: 'Pekerja Migran Asing',
+        heroDesc: 'Sistem cek jadwal kerja harian, lokasi panen, pemberitahuan kerja dalam ruangan saat hujan, dan transparansi gaji.',
+        wageTitle: 'Jaminan Gaji Bulanan & Bonus Kementerian',
+        perMonth: 'bulan',
+        wageBase: 'Gaji Pokok',
+        wageBonus: 'Bonus Pertanian',
+        wageAllowance: 'Tunjangan Transport',
+        hotlineLabel: 'Saluran Bantuan',
+        hotlineNote: 'Bebas pulsa 24/7 Bahasa Indo',
+        insuranceLabel: 'Asuransi Kerja',
+        insured: 'Terdaftar',
+        insuranceNote: 'Kesehatan & Kecelakaan',
+        loginTitle: 'Masuk Pekerja Migran',
+        loginSubtitle: 'Masukkan nomor ARC, nomor paspor, atau ID pekerja',
+        idLabel: 'Nomor ARC / Paspor / ID Pekerja',
+        idPlaceholder: 'Contoh: AD77234561 atau X8812301',
+        idPlaceholderHint: 'ARC / Paspor',
+        pwdLabel: 'Kata Sandi',
+        pwdPlaceholder: 'Masukkan kata sandi (Default 123456)',
+        pwdDefaultHint: 'Kata sandi default',
+        helpForgot: 'Lupa sandi? Hubungi 1955',
+        btnSubmit: 'Masuk Sekarang ➔',
+        loggingIn: 'Memverifikasi...',
+        quickDemoTitle: 'Akun demonstrasi cepat:'
+      },
+      th: {
+        switchRole: 'เปลี่ยนบทบาท',
+        legalTag: 'สหกรณ์การเกษตรที่ได้รับอนุญาตจากกระทรวงเกษตรไต้หวัน',
+        heroTitle1: 'สิทธิประโยชน์และงาน',
+        heroTitle2: 'แรงงานต่างชาติ',
+        heroDesc: 'ระบบตรวจสอบตารางงานประจำวัน สถานที่เก็บเกี่ยว การแจ้งเตือนหลบฝนในห้องเย็น และความโปร่งใสของเงินเดือน',
+        wageTitle: 'รับประกันเงินเดือนรายเดือน & เงินโบนัส',
+        perMonth: 'เดือน',
+        wageBase: 'เงินเดือนพื้นฐาน',
+        wageBonus: 'เงินรางวัลเกษตร',
+        wageAllowance: 'เบี้ยเลี้ยงเดินทาง',
+        hotlineLabel: 'สายด่วนช่วยเหลือ',
+        hotlineNote: 'ฟรี 24 ชม. ภาษาไทย',
+        insuranceLabel: 'ประกันแรงงาน',
+        insured: 'ครบถ้วน',
+        insuranceNote: 'สุขภาพ & อุบัติเหตุ',
+        loginTitle: 'เข้าสู่ระบบแรงงานต่างชาติ',
+        loginSubtitle: 'กรอกหมายเลข ARC หนังสือเดินทาง หรือรหัสคนงาน',
+        idLabel: 'หมายเลข ARC / หนังสือเดินทาง / รหัสคนงาน',
+        idPlaceholder: 'เช่น: AD66345671 หรือ T5512301',
+        idPlaceholderHint: 'ARC / Passport',
+        pwdLabel: 'รหัสผ่าน',
+        pwdPlaceholder: 'กรอกรหัสผ่าน (ค่าเริ่มต้น 123456)',
+        pwdDefaultHint: 'รหัสผ่านเริ่มต้น',
+        helpForgot: 'ลืมรหัสผ่าน? โทร 1955',
+        btnSubmit: 'เข้าสู่ระบบทันที ➔',
+        loggingIn: 'กำลังตรวจสอบ...',
+        quickDemoTitle: 'บัญชีทดลองใช้งาน:'
+      },
+      en: {
+        switchRole: 'Switch Role',
+        legalTag: 'Licensed Agricultural Cooperative - Ministry of Agriculture',
+        heroTitle1: 'Work Tasks & Rights',
+        heroTitle2: 'Foreign Migrant Workers',
+        heroDesc: 'Daily dispatch task viewer, harvesting locations, indoor cold-chain rain switch notification, and transparent wage breakdown.',
+        wageTitle: 'Monthly Guaranteed Wage & Government Bonus',
+        perMonth: 'mo',
+        wageBase: 'Base Salary',
+        wageBonus: 'Agri Bonus',
+        wageAllowance: 'Transport Subsidy',
+        hotlineLabel: 'Helpline',
+        hotlineNote: '24/7 Toll-free English/Tagalog',
+        insuranceLabel: 'Insurance Status',
+        insured: '100% Compliant',
+        insuranceNote: 'Health & Injury Covered',
+        loginTitle: 'Worker Login',
+        loginSubtitle: 'Enter your ARC number, Passport number, or Worker ID',
+        idLabel: 'ARC Number / Passport / Worker ID',
+        idPlaceholder: 'e.g. AD55456781 or P4412301',
+        idPlaceholderHint: 'ARC / Passport',
+        pwdLabel: 'Password',
+        pwdPlaceholder: 'Enter password (Default 123456)',
+        pwdDefaultHint: 'Default password',
+        helpForgot: 'Forgot password? Dial 1955',
+        btnSubmit: 'Login to Portal ➔',
+        loggingIn: 'Authenticating...',
+        quickDemoTitle: 'Quick demo profiles:'
+      },
+      zh: {
+        switchRole: '切換身分',
+        legalTag: '農業部特許外展合作社 ╳ 合法在籍移工專用',
+        heroTitle1: '派遣任務與權益保障',
+        heroTitle2: '外籍特許農工門戶',
+        heroDesc: '提供每日派工任務即時查詢、出勤集合地點、雨天室內冷鏈避險通知與透明薪資獎勵金明細。',
+        wageTitle: '法定薪資與農業部就業獎勵保障',
+        perMonth: '月',
+        wageBase: '法定基本底薪',
+        wageBonus: '農業部就業獎勵',
+        wageAllowance: '交通偏遠津貼',
+        hotlineLabel: '外勞諮詢專線',
+        hotlineNote: '1955 雙語免付費',
+        insuranceLabel: '勞健職災納保',
+        insured: '100% 合規',
+        insuranceNote: '全員附法定保險',
+        loginTitle: '外展移工登入',
+        loginSubtitle: '請輸入居留證號 (ARC)、護照號碼或工號',
+        idLabel: '居留證號 (ARC) / 護照號碼 / 農工工號',
+        idPlaceholder: '例如 AD88123451 或 C1234561',
+        idPlaceholderHint: '居留證 / 護照',
+        pwdLabel: '登入密碼',
+        pwdPlaceholder: '請輸入密碼 (預設 123456)',
+        pwdDefaultHint: '預設密碼',
+        helpForgot: '忘記密碼？請撥打 1955',
+        btnSubmit: '登入移工工作台 ➔',
+        loggingIn: '驗證登入中...',
+        quickDemoTitle: '快速體驗示範身分：'
+      }
+    };
+
+    createApp({
+      setup() {
+        const API_BASE = window.location.origin.startsWith('http')
+          ? `${window.location.origin}/api`
+          : 'http://localhost:3000/api';
+
+        const lang = ref('vi'); // Default to Vietnamese for foreign workers
+        const t = computed(() => translations[lang.value] || translations.zh);
+
+        const form = reactive({
+          identifier: 'AD88123451',
+          password: '123456'
+        });
+        const loading = ref(false);
+        const errorMsg = ref('');
+        const successMsg = ref('');
+
+        const workerModal = reactive({
+          show: false,
+          data: {}
+        });
+
+        const setLang = (newLang) => {
+          lang.value = newLang;
+          if (window.AgriNativeBridge && typeof window.AgriNativeBridge.vibrate === 'function') {
+            window.AgriNativeBridge.vibrate(30);
+          }
+        };
+
+        const fillProfile = (identifier, password, workerId) => {
+          form.identifier = identifier;
+          form.password = password;
+          errorMsg.value = '';
+          if (window.AgriNativeBridge && typeof window.AgriNativeBridge.vibrate === 'function') {
+            window.AgriNativeBridge.vibrate(50);
+          }
+        };
+
+        const handleLogin = async () => {
+          errorMsg.value = '';
+          successMsg.value = '';
+          loading.value = true;
+
+          // Demo 版外展移工資料庫（支援免密通行）
+          const mockWorkerMap = {
+            'AD88123451': { id: 'W001', name: '阮文雄 (Nguyễn Văn Hùng)', role: 'WORKER_FOREIGN', arcNumber: 'AD88123451', passportNumber: 'P8921822', teamId: 'A組 (宜蘭蔬菜班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '青蔥採收分級 ╳ 留蒂 0.5cm', baseSalary: 28590, agriBonus: 8800, transportAllowance: 1200 },
+            'AD77234561': { id: 'W006', name: 'Budi Santoso', role: 'WORKER_FOREIGN', arcNumber: 'AD77234561', passportNumber: 'B1123490', teamId: 'B組 (屏東芒果班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '芒果套袋採收 ╳ 留蒂 0.5cm', baseSalary: 28590, agriBonus: 8800, transportAllowance: 1200 },
+            'AD66345671': { id: 'W020', name: 'Somchai Prasert', role: 'WORKER_FOREIGN', arcNumber: 'AD66345671', passportNumber: 'T5512301', teamId: 'D組 (元長落花生班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '落花生採收倒株曝曬', baseSalary: 28590, agriBonus: 8800, transportAllowance: 1200 },
+            'AD55456781': { id: 'W023', name: 'Maria Santos', role: 'WORKER_FOREIGN', arcNumber: 'AD55456781', passportNumber: 'P4412301', teamId: 'B組 (屏東芒果班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '包裝分級裝箱 ╳ 冷鏈預冷', baseSalary: 28590, agriBonus: 8800, transportAllowance: 1200 }
+          };
+
+          const matchedWorker = mockWorkerMap[form.identifier] || {
+            id: 'W001',
+            name: form.identifier ? `特許農工 (${form.identifier})` : '阮文雄 (Nguyễn Văn Hùng)',
+            role: 'WORKER_FOREIGN',
+            arcNumber: form.identifier || 'AD88123451',
+            passportNumber: 'P8921822',
+            teamId: 'A組 (特許外展專隊)',
+            insuranceStatus: '已投保 (勞健職災)',
+            dispatchStatus: 'dispatched_field',
+            currentTask: '田間採收派遣 ╳ 現場作業',
+            baseSalary: 28590,
+            agriBonus: 8800,
+            transportAllowance: 1200
+          };
+
+          let finalUser = {
+            ...matchedWorker,
+            workerProfile: matchedWorker,
+            token: 'demo-foreign-token-2026'
+          };
+
+          // 嘗試後端驗證（若後端運作則同步資料；若離線或帳密不符亦不阻擋 Demo 體驗）
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 600);
+            const res = await fetch(`${API_BASE}/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                identifier: form.identifier || 'AD88123451',
+                password: form.password || '123456'
+              }),
+              signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.success && data.user) {
+                finalUser = data.user;
+                if (!finalUser.workerProfile) finalUser.workerProfile = matchedWorker;
+              }
+            }
+          } catch (e) {
+            // Demo 離線容錯
+          }
+
+          successMsg.value = `Xin chào / 歡迎，${finalUser.name}！Demo 免密通行通過`;
+          sessionStorage.setItem('agri_user', JSON.stringify(finalUser));
+          sessionStorage.setItem('agri_token', finalUser.token || 'demo-foreign-token-2026');
+
+          if (window.AgriNativeBridge) {
+            if (typeof window.AgriNativeBridge.showToast === 'function') {
+              window.AgriNativeBridge.showToast(`歡迎回來，${finalUser.name}！`);
+            }
+            if (typeof window.AgriNativeBridge.vibrate === 'function') {
+              window.AgriNativeBridge.vibrate(80);
+            }
+          }
+
+          workerModal.data = finalUser;
+          workerModal.show = true;
+          loading.value = false;
+        };
+
+        return {
+          lang,
+          t,
+          setLang,
+          form,
+          loading,
+          errorMsg,
+          successMsg,
+          workerModal,
+          fillProfile,
+          handleLogin
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

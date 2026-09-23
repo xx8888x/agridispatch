@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AgriDispatch</string>
+    <string name="slogan">Điều phái lao động nông nghiệp hợp pháp</string>
+    <string name="role_worker">Thẻ nhiệm vụ lao động</string>
+    <string name="role_farmer">Đặt công nông trại</string>
+    <string name="role_dispatch">Trung tâm điều phái</string>
+    <string name="role_talent">Hồ sơ ứng tuyển hợp pháp</string>
+    <string name="btn_gps_clockin">📍 Điểm danh GPS tại hiện trường</string>
+    <string name="clockin_success">Điểm danh thành công! Đã ghi nhận tọa độ GPS.</string>
+    <string name="weather_alert_title">Kích hoạt phòng tránh thời tiết</string>
+    <string name="weather_alert_msg">Mưa lớn! Chuyển ngay đến kho lạnh đóng gói Bình Nam!</string>
+</resources>

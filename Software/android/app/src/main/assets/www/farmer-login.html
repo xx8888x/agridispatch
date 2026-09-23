@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>農場主專屬登入 - 智農派工 AgriDispatch</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Vue 3: Local Vendor First with CDN Fallback -->
+  <script src="js/vendor/vue.global.prod.js"></script>
+  <script>
+    if (typeof Vue === 'undefined') {
+      document.write('<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"><\/script>');
+    }
+  </script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [v-cloak] { display: none; }
+  </style>
+  <script>
+    // Failsafe: Remove v-cloak if Vue takes more than 1.5s to prevent blank screen
+    setTimeout(function() {
+      var appEl = document.getElementById('app');
+      if (appEl && appEl.hasAttribute('v-cloak')) {
+        console.warn('Vue mounting timed out or offline, removing v-cloak failsafe');
+        appEl.removeAttribute('v-cloak');
+      }
+    }, 1500);
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <div id="app" v-cloak class="flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-30">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <a href="login.html" class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-brand-600/30">
+            <span class="text-xl">🌾</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-lg tracking-tight text-white">智農派工</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold">農場主 / 班長專屬門戶</span>
+            </div>
+            <p class="text-[11px] text-slate-400">早鳥工時 ╳ 契作智慧試算 ╳ 產曆搶工預約</p>
+          </div>
+        </a>
+
+        <div class="flex items-center gap-3 text-xs">
+          <a href="index.html#booking" class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1">
+            <span>📝</span> 免登入線上預約
+          </a>
+          <a href="login.html" class="text-slate-400 hover:text-emerald-400 transition flex items-center gap-1">
+            <span>↩</span> 切換身分
+          </a>
+          <a href="index.html" class="text-slate-400 hover:text-white transition hidden sm:inline">回首頁</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div class="max-w-4xl w-full grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+        
+        <!-- Left Side: Value Propositions & Farm Perks (5 cols) -->
+        <div class="md:col-span-5 space-y-6">
+          <div>
+            <span class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
+              🌾 農場業主與產銷班長專享
+            </span>
+            <h1 class="text-2xl sm:text-3xl font-black text-white mt-3 leading-snug">
+              產季用工不中斷<br>
+              <span class="text-emerald-400">早鳥鎖約享 9 折</span>
+            </h1>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+              合作社提供合法特許在籍農工與專業機耕師。預付 20% 定金即可保證產季充足人力，天候不佳自動啟動室內冷鏈避險，免負擔停工損失。
+            </p>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-start gap-3">
+              <span class="text-xl">⚡</span>
+              <div>
+                <div class="font-bold text-white">智慧工時試算引擎</div>
+                <div class="text-slate-400 text-[11px] mt-0.5">輸入耕作作物與分地面積，立即精算所需人數、天數與總額。</div>
+              </div>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-start gap-3">
+              <span class="text-xl">📅</span>
+              <div>
+                <div class="font-bold text-white">全台產曆收穫雷達</div>
+                <div class="text-slate-400 text-[11px] mt-0.5">即時掌握各地作物採收倒數，一鍵提前預約搶工班。</div>
+              </div>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-start gap-3">
+              <span class="text-xl">🛡️</span>
+              <div>
+                <div class="font-bold text-white">100% 法定保障與履歷</div>
+                <div class="text-slate-400 text-[11px] mt-0.5">特許合法在籍外展農工，全員具備勞健保與職災保險。</div>
+              </div>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-start gap-3">
+              <span class="text-xl">👷‍♂️</span>
+              <div>
+                <div class="font-bold text-white">自訂現場派工小工頭</div>
+                <div class="text-slate-400 text-[11px] mt-0.5">農場主可填寫現場指派之工頭或班長，外展工班到場精準對接無縫出工。</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 6 Dispatch Categories Section -->
+          <div class="p-4 rounded-2xl bg-slate-900/90 border border-emerald-500/30 space-y-2.5">
+            <div class="text-[11px] font-bold text-emerald-300 flex items-center justify-between">
+              <span class="flex items-center gap-1.5"><span>🚜</span> 六大標準農事派工類別</span>
+              <span class="text-[10px] text-slate-400 font-mono">6 Categories</span>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5 text-[11px]">
+              <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center gap-1.5">
+                <span>🥬</span>
+                <div>
+                  <div class="font-bold text-white">採收外銷分級</div>
+                  <div class="text-[10px] text-slate-400">工班 A/B 熟手採摘</div>
+                </div>
+              </div>
+              <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center gap-1.5">
+                <span>🌱</span>
+                <div>
+                  <div class="font-bold text-white">整地作畦定植</div>
+                  <div class="text-[10px] text-slate-400">曳引機深耕/插秧</div>
+                </div>
+              </div>
+              <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center gap-1.5">
+                <span>✂️</span>
+                <div>
+                  <div class="font-bold text-white">修枝疏果套袋</div>
+                  <div class="text-[10px] text-slate-400">防蟲套袋/立架引蔓</div>
+                </div>
+              </div>
+              <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center gap-1.5">
+                <span>🛸</span>
+                <div>
+                  <div class="font-bold text-white">科技植保施肥</div>
+                  <div class="text-[10px] text-slate-400">無人機精準代噴</div>
+                </div>
+              </div>
+              <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center gap-1.5">
+                <span>❄️</span>
+                <div>
+                  <div class="font-bold text-white">冷鏈截切包裝</div>
+                  <div class="text-[10px] text-slate-400">預冷/外銷封箱</div>
+                </div>
+              </div>
+              <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center gap-1.5">
+                <span>🚨</span>
+                <div>
+                  <div class="font-bold text-white">防颱緊急搶收</div>
+                  <div class="text-[10px] text-slate-400">24H 跨區緊急救火</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side: Login Card (7 cols) -->
+        <div class="md:col-span-7 bg-slate-900/90 rounded-3xl border border-emerald-500/30 p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div class="mb-6">
+            <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+              <span>🌾</span> 農場主登入
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">請輸入您的農場主帳號、手機號碼或農民登記代號</p>
+          </div>
+
+          <!-- Demo Mode Notice -->
+          <div class="mb-5 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <span class="text-base shrink-0">⚡</span>
+              <div>
+                <div class="font-bold text-white">Demo 展示模式：已開通免密通行</div>
+                <div class="text-[11px] text-slate-400">免控管帳密，任意輸入或直接點擊按鈕均可進入實測</div>
+              </div>
+            </div>
+            <a href="farmer.html" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shrink-0 whitespace-nowrap shadow transition">
+              直通工作台 ➔
+            </a>
+          </div>
+
+          <!-- Alert / Toast -->
+          <div v-if="errorMsg" class="mb-4 p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2">
+            <span>⚠️</span> {{ errorMsg }}
+          </div>
+
+          <div v-if="successMsg" class="mb-4 p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2">
+            <span>✅</span> {{ successMsg }}
+          </div>
+
+          <!-- Form -->
+          <form @submit.prevent="handleLogin" class="space-y-4 text-xs">
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1.5">農場主帳號 / 手機號碼 / 農民代號</label>
+              <div class="relative">
+                <input v-model="form.identifier" type="text" placeholder="如 farmer 或 0912-345-678 (Demo免密)"
+                  class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition text-sm">
+                <span class="absolute right-3.5 top-3.5 text-slate-500">🧑‍🌾</span>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-slate-300 font-semibold">登入密碼</label>
+                <a href="#" @click.prevent="alertHelp" class="text-[11px] text-emerald-400 hover:underline">忘記密碼？</a>
+              </div>
+              <div class="relative">
+                <input v-model="form.password" type="password" placeholder="請輸入密碼 (預設 123456 / Demo免密)"
+                  class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition text-sm">
+                <span class="absolute right-3.5 top-3.5 text-slate-500">🔒</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs pt-1">
+              <label class="flex items-center gap-2 text-slate-400 cursor-pointer">
+                <input type="checkbox" v-model="rememberMe" class="rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-0">
+                <span>記住我的農場資訊</span>
+              </label>
+              <span class="text-slate-500 text-[11px]">展示密碼：123456 (免驗證)</span>
+            </div>
+
+            <button type="submit" :disabled="loading"
+              class="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-sm shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2 disabled:opacity-50">
+              <span v-if="loading" class="animate-spin">🌀</span>
+              <span>{{ loading ? '快速通行中...' : '登入農場主工作台 ➔' }}</span>
+            </button>
+          </form>
+
+          <!-- Quick Fill Demo Profiles -->
+          <div class="mt-6 pt-5 border-t border-slate-800">
+            <div class="text-[11px] font-bold text-slate-400 mb-2 flex items-center gap-1">
+              <span>⚡</span> 快速體驗示範帳號（點擊直接填入）：
+            </div>
+            <div class="space-y-2">
+              <button @click="fillProfile('farmer', '123456')" type="button"
+                class="w-full text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800/80 border border-slate-800 hover:border-emerald-500/40 transition flex items-center justify-between text-xs">
+                <div>
+                  <span class="font-bold text-emerald-300">陳建龍 (阿龍班長)</span>
+                  <span class="text-slate-400 text-[11px] ml-1.5">桃園八德有機蔬菜班</span>
+                </div>
+                <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-mono">契作 5.0 分地</span>
+              </button>
+
+              <button @click="fillProfile('farmer_yilan', '123456')" type="button"
+                class="w-full text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800/80 border border-slate-800 hover:border-emerald-500/40 transition flex items-center justify-between text-xs">
+                <div>
+                  <span class="font-bold text-teal-300">李春發 (春發伯)</span>
+                  <span class="text-slate-400 text-[11px] ml-1.5">宜蘭三星青蔥專班</span>
+                </div>
+                <span class="px-2 py-0.5 rounded bg-teal-500/20 text-teal-400 text-[10px] font-mono">契作 8.2 分地</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bottom Help & Switch -->
+          <div class="mt-5 text-center text-xs text-slate-500">
+            不是農場主？
+            <a href="worker-foreign-login.html" class="text-amber-400 hover:underline mx-1">我是外籍移工</a>
+            或
+            <a href="worker-local-login.html" class="text-blue-400 hover:underline ml-1">我是本國機耕師</a>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 py-5 text-center text-xs text-slate-500">
+      智農派工 AgriDispatch © 2026 農業部特許外展合作社 ╳ 農場主智慧派工平台
+    </footer>
+  </div>
+
+  <script>
+    const { createApp, ref, reactive } = Vue;
+
+    createApp({
+      setup() {
+        const API_BASE = window.location.origin.startsWith('http')
+          ? `${window.location.origin}/api`
+          : 'http://localhost:3000/api';
+
+        const form = reactive({
+          identifier: 'farmer',
+          password: '123456'
+        });
+        const rememberMe = ref(true);
+        const loading = ref(false);
+        const errorMsg = ref('');
+        const successMsg = ref('');
+
+        const fillProfile = (identifier, password) => {
+          form.identifier = identifier;
+          form.password = password;
+          errorMsg.value = '';
+          if (window.AgriNativeBridge && typeof window.AgriNativeBridge.vibrate === 'function') {
+            window.AgriNativeBridge.vibrate(50);
+          }
+        };
+
+        const handleLogin = async () => {
+          errorMsg.value = '';
+          successMsg.value = '';
+          loading.value = true;
+
+          // Demo 版免控管帳密，一律通行實測
+          const isYilan = form.identifier && (form.identifier.includes('yilan') || form.identifier.includes('春發'));
+          const defaultUser = isYilan ? {
+            id: 'FARMER-002',
+            name: '李春發 (春發伯)',
+            role: 'FARMER',
+            phone: '0921-888-999',
+            farmName: '宜蘭三星青蔥專班',
+            farmArea: '8.2 分地',
+            token: 'demo-farmer-token-2026'
+          } : {
+            id: 'FARMER-001',
+            name: (form.identifier && form.identifier !== 'farmer') ? form.identifier : '陳建龍 (阿龍班長)',
+            role: 'FARMER',
+            phone: '0912-345-678',
+            farmName: '桃園八德有機蔬菜班',
+            farmArea: '5.0 分地',
+            token: 'demo-farmer-token-2026'
+          };
+
+          let finalUser = defaultUser;
+
+          // 嘗試後端驗證（若後端運作則同步資料；若離線或帳密不符亦不阻擋 Demo 體驗）
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 600);
+            const res = await fetch(`${API_BASE}/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                identifier: form.identifier || 'farmer',
+                password: form.password || '123456'
+              }),
+              signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.success && data.user) {
+                finalUser = data.user;
+              }
+            }
+          } catch (e) {
+            // Demo 離線靜默容錯，不報錯
+          }
+
+          successMsg.value = `歡迎回來，${finalUser.name}！正在為您開啟農場主工作台...`;
+          sessionStorage.setItem('agri_user', JSON.stringify(finalUser));
+          sessionStorage.setItem('farmerUser', JSON.stringify(finalUser));
+          sessionStorage.setItem('agri_token', finalUser.token || 'demo-farmer-token-2026');
+
+          if (window.AgriNativeBridge) {
+            if (typeof window.AgriNativeBridge.showToast === 'function') {
+              window.AgriNativeBridge.showToast(`歡迎回來，${finalUser.name}！`);
+            }
+            if (typeof window.AgriNativeBridge.vibrate === 'function') {
+              window.AgriNativeBridge.vibrate(80);
+            }
+          }
+
+          setTimeout(() => {
+            window.location.href = 'farmer.html';
+          }, 600);
+        };
+
+        const alertHelp = () => {
+          alert('如忘記密碼或欲開通契作農場主帳號，請撥打合作社專線：(03) 388-1234 或聯絡LINE官方客服。');
+        };
+
+        return {
+          form,
+          rememberMe,
+          loading,
+          errorMsg,
+          successMsg,
+          fillProfile,
+          handleLogin,
+          alertHelp
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+{
+  "type": "bubble",
+  "size": "mega",
+  "header": {
+    "type": "box",
+    "layout": "vertical",
+    "backgroundColor": "#D97706",
+    "paddingAll": "20px",
+    "contents": [
+      {
+        "type": "text",
+        "text": "⚡ 產季防搶工首選",
+        "color": "#FEF3C7",
+        "size": "xs",
+        "weight": "bold"
+      },
+      {
+        "type": "text",
+        "text": "產季早鳥保證工時包",
+        "color": "#FFFFFF",
+        "size": "xl",
+        "weight": "bold"
+      },
+      {
+        "type": "text",
+        "text": "預付 20% 定金 ｜ 享 9 折 ｜ SLA 保證出工",
+        "color": "#FDE68A",
+        "size": "xs"
+      }
+    ]
+  },
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "spacing": "sm",
+    "paddingAll": "20px",
+    "contents": [
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "合約承諾", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "遲到免單、放鳥雙倍賠償", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "合法保障", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "合法特許合作社雇主、全額勞健保、合法發票", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "適用作物", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "芒果、洋蔥、設施彩椒、三星青蔥、茶葉", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "專車接送", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "智農 1~4 號冷氣專車定點接駁", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "type": "box",
+    "layout": "vertical",
+    "paddingAll": "16px",
+    "contents": [
+      {
+        "type": "button",
+        "style": "primary",
+        "color": "#D97706",
+        "action": {
+          "type": "uri",
+          "label": "⚡ 線上試算與早鳥預約",
+          "uri": "https://agridispatch.tw/web/app.html#farmer"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,2571 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>全台農會連絡資訊 ╳ 產季作物週曆 ╳ 可視化地圖 - 智農派工 AgriDispatch</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Leaflet CSS & JS for Interactive Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              900: '#064e3b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #10b981; }
+
+    /* Custom Leaflet Dark Popup */
+    .leaflet-popup-content-wrapper {
+      background: #0f172a !important;
+      color: #f8fafc !important;
+      border: 1px solid #334155 !important;
+      border-radius: 1rem !important;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+      padding: 0 !important;
+    }
+    .leaflet-popup-content {
+      margin: 0 !important;
+      line-height: 1.5 !important;
+    }
+    .leaflet-popup-tip {
+      background: #0f172a !important;
+      border: 1px solid #334155 !important;
+    }
+    .leaflet-container {
+      font-family: inherit !important;
+      background: #090d16 !important;
+    }
+    .badge-pulse {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .75; transform: scale(1.05); }
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Top Navigation Header -->
+  <nav class="sticky top-0 z-50 bg-slate-950/95 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3 shrink-0">
+        <a href="index.html" class="flex items-center gap-2 group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-brand-600/30 group-hover:scale-105 transition shrink-0">
+            <span class="text-xl">🌱</span>
+          </div>
+          <div class="whitespace-nowrap">
+            <div class="flex items-center gap-2">
+              <span class="text-lg font-black tracking-tight text-white group-hover:text-emerald-400 transition">智農派工</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 font-bold">全台農會產地地圖</span>
+            </div>
+            <p class="hidden sm:block text-[10px] text-slate-400">連絡資訊 ╳ 產期週份 ╳ 從北到南 ╳ 依月份排序</p>
+          </div>
+        </a>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0 whitespace-nowrap">
+        <button onclick="exportToCSV()" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition flex items-center gap-1.5 shadow-sm shrink-0 whitespace-nowrap">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">匯出</span> CSV
+        </button>
+        <button onclick="copyContactList()" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">複製名冊</span>
+        </button>
+        <a href="index.html" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <span>🏠</span> 首頁
+        </a>
+        <a href="farmer.html" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-md shadow-emerald-600/30 transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          <span>進入派工預約</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Container: Controller + Split Map/List -->
+  <main class="flex-1 flex flex-col max-w-7xl w-full mx-auto p-4 sm:p-6 gap-4">
+
+    <!-- Header Control Bar: Sorting + Timeline + Filter -->
+    <header class="bg-slate-900/80 backdrop-blur-sm border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
+      
+      <!-- Top Row: Search + Sort Switch + Stat Badges -->
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        
+        <!-- Search Input -->
+        <div class="relative flex-1 max-w-md">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input 
+            type="text" 
+            id="searchInput" 
+            oninput="handleSearch(this.value)" 
+            placeholder="搜尋作物（如芒果、茶、草莓）、農會名稱或縣市..." 
+            class="w-full pl-10 pr-4 py-2 bg-slate-950/80 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+          >
+          <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">
+            ✕
+          </button>
+        </div>
+
+        <!-- Sorting Mode Switch (從北到南 vs 依月份週份) -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-xs font-semibold text-slate-400">排序模式：</span>
+          <div class="inline-flex p-1 bg-slate-950 rounded-xl border border-slate-800">
+            <button 
+              id="sortNorthSouthBtn" 
+              onclick="setSortMode('north-south')" 
+              class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-emerald-600 text-white shadow"
+            >
+              <i data-lucide="compass" class="w-3.5 h-3.5"></i>
+              從北到南排序
+            </button>
+            <button 
+              id="sortMonthBtn" 
+              onclick="setSortMode('month')" 
+              class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200"
+            >
+              <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+              依月份週份排序
+            </button>
+          </div>
+
+          <!-- Peak Harvest Only Toggle -->
+          <button 
+            id="peakOnlyBtn" 
+            onclick="togglePeakOnly()" 
+            class="px-3 py-1.5 rounded-xl border border-slate-700 text-slate-400 hover:border-amber-500/50 hover:text-amber-400 text-xs font-bold transition flex items-center gap-1.5"
+          >
+            <span>🔥</span>
+            <span>僅看盛產期</span>
+          </button>
+        </div>
+
+        <!-- Counter Badge -->
+        <div class="flex items-center gap-2 text-xs">
+          <span class="text-slate-400">符合條件農會：</span>
+          <span id="matchCountBadge" class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold border border-emerald-500/30">
+            載入中...
+          </span>
+        </div>
+      </div>
+
+      <!-- Timeline Bar: 12 Months + Week Selector -->
+      <div class="pt-2 border-t border-slate-800/80 space-y-2">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-1.5 text-xs font-bold text-slate-300">
+            <i data-lucide="calendar-range" class="w-4 h-4 text-emerald-400"></i>
+            <span>產出月份篩選 (詳細到週)：</span>
+            <span id="currentFilterLabel" class="text-emerald-400 font-black ml-1">載入中...</span>
+            <button type="button" onclick="resetToCurrentWeek()" class="ml-2 px-2.5 py-0.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold transition flex items-center gap-1 cursor-pointer" title="切換回當前月份與週數">
+              <span>⚡</span> 貼合當前時序
+            </button>
+            <button type="button" onclick="resetToAllYear()" class="px-2 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 text-[10px] font-medium transition cursor-pointer" title="查看全年 12 個月">
+              查看全年
+            </button>
+          </div>
+
+          <!-- Week Micro-Filter -->
+          <div class="flex items-center gap-1 text-xs">
+            <span class="text-slate-400 mr-1">週份：</span>
+            <button onclick="setWeekFilter('all')" class="week-btn px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium text-[11px]" data-week="all">全月</button>
+            <button onclick="setWeekFilter(1)" class="week-btn px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium text-[11px]" data-week="1">第 1 週</button>
+            <button onclick="setWeekFilter(2)" class="week-btn px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium text-[11px]" data-week="2">第 2 週</button>
+            <button onclick="setWeekFilter(3)" class="week-btn px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium text-[11px]" data-week="3">第 3 週</button>
+            <button onclick="setWeekFilter(4)" class="week-btn px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium text-[11px]" data-week="4">第 4 週</button>
+          </div>
+        </div>
+
+        <!-- 12 Month Pills -->
+        <div class="grid grid-cols-6 sm:grid-cols-12 gap-1.5 text-center">
+          <button onclick="setMonthFilter(0)" class="month-btn py-1.5 px-2 rounded-xl text-xs font-semibold transition border bg-slate-950/70 text-slate-300 border-slate-800 hover:border-slate-700" data-month="0">
+            全部
+          </button>
+          <button onclick="setMonthFilter(1)" class="month-btn py-1.5 px-2 rounded-xl text-xs font-semibold transition border bg-slate-950/70 text-slate-300 border-slate-800 hover:border-slate-700" data-month="1">
+            1月
+          </button>
+          <button onclick="setMonthFilter(2)" class="month-btn py-1.5 px-2 rounded-xl text-xs font-semibold transition border bg-slate-950/70 text-slate-300 border-slate-800 hover:border-slate-700" data-month="2">
+            2月
+          </button>
+          <button onclick="setMonthFilter(3)" class="month-btn py-1.5 px-2 rounded-xl text-xs font-semibold transition border bg-slate-950/70 text-slate-300 border-slate-800 hover:border-slate-700" data-month="3">
+            3月
+          </button>
+          <button onclick="setMonthFilter(4)" class="month-btn py-1.5 px-2 rounded-xl text-xs font-semibold transition border bg-slate-950/70 text-slate-300 border-slate-800 hover:border-slate-700" data-month="4">
+            4月
+          </button>
+          <button onclick="setMonthFilter(5)" class="month-btn py-1.5 px-2 rounded-xl text-xs font-semibold transition border bg-slate-950/70 text-slate-300 border-slate-800 hover:border-slate-700" data-month="5">
+            5月
+          </button>
+          <button onclick="setMonthFilter(6)" class="month-btn py-1.5 px-2 rounded-xl text-xs font-semibold transition border bg-slate-950/70 text-slate-300 border-slate-800 hover:border-slate-700" data-month="6">
+            6月
+          </button>
+          <button onclick="setMonthFilter(7)" class="month-btn py-1.5 px-2 rounded-xl text-xs font-semibold transition border bg-slate-950/70 text-slate-300 border-slate-800 hover:border-slate-700" data-month="7">
+            7月
+          </button>
+          <button onclick="setMonthFilter(8)" class="month-btn py-1.5 px-2 rounded-xl text-xs font-semibold transition border bg-slate-950/70 text-slate-300 border-slate-800 hover:border-slate-700" data-month="8">
+            8月
+          </button>
+          <button onclick="setMonthFilter(9)" class="month-btn py-1.5 px-2 rounded-xl text-xs font-semibold transition border bg-slate-950/70 text-slate-300 border-slate-800 hover:border-slate-700" data-month="9">
+            9月
+          </button>
+          <button onclick="setMonthFilter(10)" class="month-btn py-1.5 px-2 rounded-xl text-xs font-semibold transition border bg-slate-950/70 text-slate-300 border-slate-800 hover:border-slate-700" data-month="10">
+            10月
+          </button>
+          <button onclick="setMonthFilter(11)" class="month-btn py-1.5 px-2 rounded-xl text-xs font-semibold transition border bg-slate-950/70 text-slate-300 border-slate-800 hover:border-slate-700" data-month="11">
+            11月
+          </button>
+          <button onclick="setMonthFilter(12)" class="month-btn py-1.5 px-2 rounded-xl text-xs font-semibold transition border bg-slate-950/70 text-slate-300 border-slate-800 hover:border-slate-700" data-month="12">
+            12月
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Category Chips + Region Filter -->
+      <div class="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-800/80 text-xs">
+        
+        <!-- Region Pills (北中南東島) -->
+        <div class="flex items-center gap-1 flex-wrap">
+          <span class="text-slate-400 mr-1 font-semibold">分區：</span>
+          <button onclick="setRegionFilter('all')" class="region-btn px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold" data-region="all">全台</button>
+          <button onclick="setRegionFilter('north')" class="region-btn px-2.5 py-1 rounded-lg bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800" data-region="north">北部</button>
+          <button onclick="setRegionFilter('central')" class="region-btn px-2.5 py-1 rounded-lg bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800" data-region="central">中部</button>
+          <button onclick="setRegionFilter('south')" class="region-btn px-2.5 py-1 rounded-lg bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800" data-region="south">南部</button>
+          <button onclick="setRegionFilter('east')" class="region-btn px-2.5 py-1 rounded-lg bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800" data-region="east">東部</button>
+          <button onclick="setRegionFilter('island')" class="region-btn px-2.5 py-1 rounded-lg bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800" data-region="island">離島</button>
+        </div>
+
+        <!-- Crop Shortcut Chips -->
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <span class="text-slate-400 font-semibold">熱門作物：</span>
+          <button onclick="filterByCropTag('芒果')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-amber-500/20 hover:text-amber-300 text-slate-300 border border-slate-700 transition">🥭 芒果</button>
+          <button onclick="filterByCropTag('草莓')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-rose-500/20 hover:text-rose-300 text-slate-300 border border-slate-700 transition">🍓 草莓</button>
+          <button onclick="filterByCropTag('茶')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-emerald-500/20 hover:text-emerald-300 text-slate-300 border border-slate-700 transition">🍵 名茶</button>
+          <button onclick="filterByCropTag('蔥')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-teal-500/20 hover:text-teal-300 text-slate-300 border border-slate-700 transition">🌱 青蔥</button>
+          <button onclick="filterByCropTag('水蜜桃')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-pink-500/20 hover:text-pink-300 text-slate-300 border border-slate-700 transition">🍑 水蜜桃</button>
+          <button onclick="filterByCropTag('葡萄')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-purple-500/20 hover:text-purple-300 text-slate-300 border border-slate-700 transition">🍇 葡萄</button>
+          <button onclick="filterByCropTag('鳳梨')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-yellow-500/20 hover:text-yellow-300 text-slate-300 border border-slate-700 transition">🍍 鳳梨</button>
+          <button onclick="filterByCropTag('釋迦')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-green-500/20 hover:text-green-300 text-slate-300 border border-slate-700 transition">🍈 釋迦</button>
+          <button onclick="filterByCropTag('米')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-orange-500/20 hover:text-orange-300 text-slate-300 border border-slate-700 transition">🌾 優質米</button>
+        </div>
+      </div>
+
+    </header>
+
+    <!-- Main Body: Split View (Map on Left/Top, Detailed List on Right/Bottom) -->
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-[600px]">
+      
+      <!-- Left Panel: Interactive Taiwan Map (7 Cols on desktop) -->
+      <div class="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col relative min-h-[450px] lg:min-h-[650px]">
+        
+        <!-- Map Header Overlay -->
+        <div class="absolute top-3 left-3 z-[400] bg-slate-950/90 backdrop-blur-md border border-slate-800 px-3 py-2 rounded-xl shadow-lg flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 badge-pulse"></span>
+          <span class="text-xs font-bold text-slate-200">台灣農業產地可視化地圖</span>
+          <span id="mapActiveCount" class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono">64 處產區</span>
+        </div>
+
+        <!-- Map Controls Overlay -->
+        <div class="absolute top-3 right-3 z-[400] flex flex-col gap-1.5">
+          <button onclick="resetMapView()" title="重置地圖全覽" class="p-2 bg-slate-950/90 hover:bg-slate-800 backdrop-blur-md border border-slate-800 text-slate-300 rounded-xl shadow-lg transition">
+            <i data-lucide="maximize-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Leaflet Map Container -->
+        <div id="taiwanMap" class="w-full h-full flex-1"></div>
+
+        <!-- Map Footer Legend -->
+        <div class="p-2.5 bg-slate-950/90 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between flex-wrap gap-2 px-4">
+          <div class="flex items-center gap-3">
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> 當前產季中</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-slate-600 inline-block"></span> 休耕/非當前週</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> 盛產高峰</span>
+          </div>
+          <span class="text-slate-500">點擊地圖地標可檢視完整連絡資訊與派工需求</span>
+        </div>
+      </div>
+
+      <!-- Right Panel: Farmers' Association Cards List (5 Cols on desktop) -->
+      <div class="lg:col-span-5 flex flex-col bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl max-h-[800px]">
+        
+        <!-- List Header -->
+        <div class="p-4 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i data-lucide="list-ordered" class="w-4 h-4 text-emerald-400"></i>
+            <h2 id="listTitle" class="text-sm font-bold text-white">農會產銷資訊名冊</h2>
+          </div>
+          <span id="listSubInfo" class="text-xs text-slate-400 font-medium">從北到南排列</span>
+        </div>
+
+        <!-- Scrollable Cards Container -->
+        <div id="farmersListContainer" class="flex-1 overflow-y-auto p-3 space-y-3 divide-y divide-slate-800/40">
+          <!-- Dynamically populated via JS -->
+        </div>
+
+        <!-- List Footer / Summary -->
+        <div class="p-3 bg-slate-950/80 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between">
+          <span>支援點擊電話撥號、LINE諮詢與導航</span>
+          <button onclick="scrollToTopList()" class="text-emerald-400 hover:underline flex items-center gap-1">
+            <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
+            回頂端
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Notice & Agricultural Labor Dispatch Value Banner -->
+    <section class="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/20 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">智農派工 ╳ 全台農會對接價值</span>
+          <h3 class="text-sm font-bold text-white">產季不放鳥・合約雙倍賠償・全額合法營業稅抵扣</h3>
+        </div>
+        <p class="text-xs text-slate-400">
+          全台農會推廣部與產銷班長皆為「智農派工」早鳥保證出工方案之核心對接夥伴。掌握每週產季轉換，實現跨縣市農務移工無縫循環調度。
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="brochure.html" target="_blank" class="px-4 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 transition">
+          📖 產季早鳥文宣 DM
+        </a>
+        <a href="line.html" class="px-4 py-2 rounded-xl bg-[#06C755] hover:bg-[#05b04c] text-white text-xs font-black shadow-lg shadow-emerald-600/30 transition flex items-center gap-1.5">
+          <span>💬</span> LINE 官方對接
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal / Drawer for Farmers' Association Full Details -->
+  <div id="detailModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl p-6 relative">
+      <button onclick="closeModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition">
+        ✕
+      </button>
+      <div id="modalContent">
+        <!-- Injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Data & Application Logic -->
+  <script>
+    // ==========================================
+    // 1. 全台 64 處重點農會完整資料庫
+    // 從北到南地理排序 (基隆 -> 雙北 -> 桃竹苗 -> 中彰投 -> 雲嘉南 -> 高屏 -> 宜花東 -> 離島)
+    // 產期詳細到月與週 (1~12月，第1~4週)
+    // ==========================================
+    const farmersData = [
+      // --- 北部地區 (North) ---
+      {
+        id: "kl_fa",
+        region: "north",
+        regionName: "北部",
+        county: "基隆市",
+        district: "七堵區",
+        name: "基隆市農會",
+        lat: 25.0934,
+        lng: 121.7135,
+        address: "基隆市七堵區明德一路149號",
+        phone: "(02) 2456-4243",
+        line: "@kl_fa",
+        lineUrl: "https://line.me/R/ti/p/@kl_fa",
+        crops: ["基隆山藥 (台農67號)", "綠竹筍", "樹梅"],
+        cropCategory: ["根莖", "蔬菜", "水果"],
+        // 產期詳細到週 (月: 1~12, 週: 1~4)
+        seasons: [
+          { crop: "基隆山藥", startMonth: 10, startWeek: 3, endMonth: 12, endWeek: 4, peakMonth: 11, peakWeek: 2, desc: "10月第3週~12月第4週 (盛產：11月中)" },
+          { crop: "綠竹筍", startMonth: 6, startWeek: 2, endMonth: 8, endWeek: 4, peakMonth: 7, peakWeek: 2, desc: "6月第2週~8月第4週 (盛產：7月)" },
+          { crop: "樹梅", startMonth: 5, startWeek: 2, endMonth: 6, endWeek: 1, peakMonth: 5, peakWeek: 3, desc: "5月第2週~6月第1週" }
+        ],
+        tasks: "深層挖採山藥、去泥清洗、修根分級、綠竹筍清晨掘收",
+        notes: "北部山區多雨濕潤，需注意山藥防斷裂專業採掘技術。"
+      },
+      {
+        id: "beitou_fa",
+        region: "north",
+        regionName: "北部",
+        county: "台北市",
+        district: "北投區",
+        name: "台北市北投區農會",
+        lat: 25.1322,
+        lng: 121.4988,
+        address: "台北市北投區光明路246號",
+        phone: "(02) 2892-4185",
+        line: "@beitou_fa",
+        lineUrl: "https://line.me/R/ti/p/@beitou_fa",
+        crops: ["大屯火山桶柑", "綠竹筍", "蓬萊米"],
+        cropCategory: ["水果", "蔬菜", "稻米"],
+        seasons: [
+          { crop: "大屯火山桶柑", startMonth: 12, startWeek: 3, endMonth: 2, endWeek: 4, peakMonth: 1, peakWeek: 3, desc: "12月第3週~2月第4週 (盛產：1月春節前)" },
+          { crop: "綠竹筍", startMonth: 6, startWeek: 1, endMonth: 8, endWeek: 4, peakMonth: 7, peakWeek: 1, desc: "6月第1週~8月第4週" }
+        ],
+        tasks: "陡坡柑橘採收、套袋剪枝、綠竹筍清晨深掘採收",
+        notes: "火山地質土壤甘甜，柑橘梯田坡度陡峭，採收需防滑裝備。"
+      },
+      {
+        id: "shilin_fa",
+        region: "north",
+        regionName: "北部",
+        county: "台北市",
+        district: "士林區",
+        name: "台北市士林區農會",
+        lat: 25.0911,
+        lng: 121.5262,
+        address: "台北市士林區文林路342號",
+        phone: "(02) 2882-8959",
+        line: "@shilin_fa",
+        lineUrl: "https://line.me/R/ti/p/@shilin_fa",
+        crops: ["陽明山山藥", "綠竹筍", "平等里草莓"],
+        cropCategory: ["根莖", "蔬菜", "水果"],
+        seasons: [
+          { crop: "陽明山山藥", startMonth: 10, startWeek: 2, endMonth: 1, endWeek: 2, peakMonth: 11, peakWeek: 3, desc: "10月第2週~1月第2週 (盛產：11月)" },
+          { crop: "綠竹筍", startMonth: 6, startWeek: 2, endMonth: 9, endWeek: 1, peakMonth: 7, peakWeek: 2, desc: "6月第2週~9月第1週" },
+          { crop: "平等里草莓", startMonth: 12, startWeek: 3, endMonth: 3, endWeek: 4, peakMonth: 2, peakWeek: 1, desc: "12月第3週~3月第4週" }
+        ],
+        tasks: "山藥PVC管採掘、生鮮分級、高冷草莓採收排盒",
+        notes: "陽明山高冷蔬菜與草莓，假日觀光客多，平日農務集中。"
+      },
+      {
+        id: "muzha_fa",
+        region: "north",
+        regionName: "北部",
+        county: "台北市",
+        district: "文山區",
+        name: "台北市木柵區農會",
+        lat: 24.9886,
+        lng: 121.5684,
+        address: "台北市文山區木柵路三段77號",
+        phone: "(02) 2939-8021",
+        line: "@muzha_fa",
+        lineUrl: "https://line.me/R/ti/p/@muzha_fa",
+        crops: ["木柵正欉鐵觀音茶", "木柵綠竹筍"],
+        cropCategory: ["名茶", "蔬菜"],
+        seasons: [
+          { crop: "木柵鐵觀音(春茶)", startMonth: 4, startWeek: 3, endMonth: 5, endWeek: 3, peakMonth: 5, peakWeek: 1, desc: "4月第3週~5月第3週 (盛產：5月上旬)" },
+          { crop: "木柵鐵觀音(冬茶)", startMonth: 10, startWeek: 3, endMonth: 11, endWeek: 3, peakMonth: 11, peakWeek: 1, desc: "10月第3週~11月第3週" },
+          { crop: "木柵綠竹筍", startMonth: 6, startWeek: 1, endMonth: 8, endWeek: 3, peakMonth: 6, peakWeek: 4, desc: "6月第1週~8月第3週" }
+        ],
+        tasks: "階梯茶園手採一心二葉、室內布球揉捻、綠竹筍破曉採掘",
+        notes: "正欉鐵觀音需重複烘焙揉捻，採茶工老齡化嚴重。"
+      },
+      {
+        id: "nangang_fa",
+        region: "north",
+        regionName: "北部",
+        county: "台北市",
+        district: "南港區",
+        name: "台北市南港區農會",
+        lat: 25.0397,
+        lng: 121.6212,
+        address: "台北市南港區舊莊街一段212巷3號",
+        phone: "(02) 2783-6121",
+        line: "@nangang_fa",
+        lineUrl: "https://line.me/R/ti/p/@nangang_fa",
+        crops: ["南港包種茶", "桂花", "綠竹筍"],
+        cropCategory: ["名茶", "特作", "蔬菜"],
+        seasons: [
+          { crop: "南港包種茶", startMonth: 4, startWeek: 2, endMonth: 5, endWeek: 2, peakMonth: 4, peakWeek: 4, desc: "4月第2週~5月第2週" },
+          { crop: "桂花", startMonth: 10, startWeek: 1, endMonth: 12, endWeek: 2, peakMonth: 11, peakWeek: 2, desc: "10月第1週~12月第2週" },
+          { crop: "綠竹筍", startMonth: 6, startWeek: 1, endMonth: 8, endWeek: 4, peakMonth: 7, peakWeek: 1, desc: "6月第1週~8月第4週" }
+        ],
+        tasks: "手採包種茶芽、桂花手工採收、鮮筍清晨出土掘收",
+        notes: "台灣包種茶發源地，茶園分布於舊莊大坑山區。"
+      },
+      {
+        id: "neihu_fa",
+        region: "north",
+        regionName: "北部",
+        county: "台北市",
+        district: "內湖區",
+        name: "台北市內湖區農會",
+        lat: 25.0838,
+        lng: 121.5898,
+        address: "台北市內湖區內湖路二段334號",
+        phone: "(02) 2790-0138",
+        line: "@neihu_fa",
+        lineUrl: "https://line.me/R/ti/p/@neihu_fa",
+        crops: ["白石湖草莓 (香水、白草莓)", "火龍果", "綠竹筍"],
+        cropCategory: ["水果", "蔬菜"],
+        seasons: [
+          { crop: "白石湖草莓", startMonth: 12, startWeek: 2, endMonth: 4, endWeek: 3, peakMonth: 1, peakWeek: 4, desc: "12月第2週~4月第3週 (盛產：1~2月)" },
+          { crop: "綠竹筍", startMonth: 6, startWeek: 1, endMonth: 8, endWeek: 4, peakMonth: 7, peakWeek: 1, desc: "6月第1週~8月第4週" }
+        ],
+        tasks: "高架溫室草莓採摘、疏花疏果、老葉整理、精緻排盒",
+        notes: "大台北近郊高價草莓產區，溫室立體化栽培。"
+      },
+      {
+        id: "pinglin_fa",
+        region: "north",
+        regionName: "北部",
+        county: "新北市",
+        district: "坪林區",
+        name: "新北市坪林區農會",
+        lat: 24.9375,
+        lng: 121.7118,
+        address: "新北市坪林區坪林街101號",
+        phone: "(02) 2665-7251",
+        line: "@pinglin_fa",
+        lineUrl: "https://line.me/R/ti/p/@pinglin_fa",
+        crops: ["文山包種茶", "蜜香紅茶", "茶籽油"],
+        cropCategory: ["名茶", "特作"],
+        seasons: [
+          { crop: "文山包種茶(春茶)", startMonth: 4, startWeek: 1, endMonth: 5, endWeek: 2, peakMonth: 4, peakWeek: 3, desc: "4月第1週~5月第2週 (盛產：4月中下旬)" },
+          { crop: "蜜香紅茶", startMonth: 6, startWeek: 3, endMonth: 8, endWeek: 4, peakMonth: 7, peakWeek: 2, desc: "6月第3週~8月第4週" },
+          { crop: "文山包種茶(冬茶)", startMonth: 10, startWeek: 2, endMonth: 11, endWeek: 3, peakMonth: 10, peakWeek: 4, desc: "10月第2週~11月第3週" }
+        ],
+        tasks: "手採一心二葉茶菁（極度缺工）、浪茶萎凋、茶園除草剪枝",
+        notes: "採茶阿嬤平均72歲，春茶與冬茶旺季日薪可達3500元。"
+      },
+      {
+        id: "sanxia_fa",
+        region: "north",
+        regionName: "北部",
+        county: "新北市",
+        district: "三峽區",
+        name: "新北市三峽區農會",
+        lat: 24.9348,
+        lng: 121.3718,
+        address: "新北市三峽區民生街37號",
+        phone: "(02) 8674-1766",
+        line: "@sanxia_fa",
+        lineUrl: "https://line.me/R/ti/p/@sanxia_fa",
+        crops: ["三峽碧螺春綠茶", "蜜香紅茶", "三峽梨仔筍", "柑橘"],
+        cropCategory: ["名茶", "蔬菜", "水果"],
+        seasons: [
+          { crop: "碧螺春(春茶)", startMonth: 3, startWeek: 3, endMonth: 5, endWeek: 2, peakMonth: 4, peakWeek: 1, desc: "3月第3週~5月第2週 (盛產：3月下旬~4月)" },
+          { crop: "蜜香紅茶", startMonth: 6, startWeek: 2, endMonth: 8, endWeek: 3, peakMonth: 7, peakWeek: 1, desc: "6月第2週~8月第3週" },
+          { crop: "梨仔筍", startMonth: 6, startWeek: 1, endMonth: 8, endWeek: 4, peakMonth: 7, peakWeek: 2, desc: "6月第1週~8月第4週" }
+        ],
+        tasks: "嫩芽一心一葉精細採摘、綠竹筍掘收洗淨、柑橘採收搬運",
+        notes: "全台唯一青心柑仔品種手採綠茶，外銷歐日高端茶品。"
+      },
+      {
+        id: "bali_fa",
+        region: "north",
+        regionName: "北部",
+        county: "新北市",
+        district: "八里區",
+        name: "新北市八里區農會",
+        lat: 25.1472,
+        lng: 121.3986,
+        address: "新北市八里區訊塘路1號",
+        phone: "(02) 2610-2996",
+        line: "@bali_fa",
+        lineUrl: "https://line.me/R/ti/p/@bali_fa",
+        crops: ["八里黃金筍 (綠竹筍)", "八里文旦柚", "紅柚"],
+        cropCategory: ["蔬菜", "水果"],
+        seasons: [
+          { crop: "八里綠竹筍", startMonth: 6, startWeek: 1, endMonth: 8, endWeek: 4, peakMonth: 6, peakWeek: 4, desc: "6月第1週~8月第4週 (盛產：6月下旬~7月)" },
+          { crop: "八里文旦柚", startMonth: 8, startWeek: 4, endMonth: 9, endWeek: 4, peakMonth: 9, peakWeek: 1, desc: "8月第4週~9月第4週 (盛產：白露前後)" }
+        ],
+        tasks: "文旦大採收搶收裝籃、黃金筍清晨破曉深掘、選別套袋",
+        notes: "觀音山火山灰土壤種植，文旦汁多甜度高，白露前極缺工。"
+      },
+      {
+        id: "tamsui_fa",
+        region: "north",
+        regionName: "北部",
+        county: "新北市",
+        district: "淡水區",
+        name: "新北市淡水區農會",
+        lat: 25.1755,
+        lng: 121.4437,
+        address: "新北市淡水區中山路1號",
+        phone: "(02) 2620-2290",
+        line: "@tamsui_fa",
+        lineUrl: "https://line.me/R/ti/p/@tamsui_fa",
+        crops: ["淡水南瓜 (栗子南瓜、東昇南瓜)", "白蘿蔔"],
+        cropCategory: ["瓜果", "根莖"],
+        seasons: [
+          { crop: "淡水南瓜", startMonth: 5, startWeek: 3, endMonth: 7, endWeek: 2, peakMonth: 6, peakWeek: 2, desc: "5月第3週~7月第2週 (盛產：6月)" },
+          { crop: "冬蘿蔔", startMonth: 12, startWeek: 1, endMonth: 2, endWeek: 3, peakMonth: 1, peakWeek: 2, desc: "12月第1週~2月第3週" }
+        ],
+        tasks: "棚架南瓜剪果採收、蔬果套網、重量分級、裝箱搬運",
+        notes: "大屯山麓梯田南瓜隧道，品質達日系外銷標準。"
+      },
+      {
+        id: "sanzhi_fa",
+        region: "north",
+        regionName: "北部",
+        county: "新北市",
+        district: "三芝區",
+        name: "新北市三芝區農會",
+        lat: 25.2575,
+        lng: 121.5005,
+        address: "新北市三芝區中山路一段6號",
+        phone: "(02) 2636-3111",
+        line: "@sanzhi_fa",
+        lineUrl: "https://line.me/R/ti/p/@sanzhi_fa",
+        crops: ["三芝茭白筍 (美人腿)", "甘藷 (台農57號)", "櫻花酥"],
+        cropCategory: ["蔬菜", "根莖"],
+        seasons: [
+          { crop: "三芝茭白筍", startMonth: 9, startWeek: 3, endMonth: 11, endWeek: 2, peakMonth: 10, peakWeek: 2, desc: "9月第3週~11月第2週 (盛產：10月)" },
+          { crop: "甘藷", startMonth: 8, startWeek: 2, endMonth: 10, endWeek: 3, peakMonth: 9, peakWeek: 2, desc: "8月第2週~10月第3週" }
+        ],
+        tasks: "著青蛙裝水田採割茭白筍、剝殼修整、浸水清洗、分級裝袋",
+        notes: "三芝赤殼茭白筍一年一收，筍肉白皙脆嫩，水田作業需防水青蛙裝。"
+      },
+      {
+        id: "jinshan_fa",
+        region: "north",
+        regionName: "北部",
+        county: "新北市",
+        district: "金山區",
+        name: "新北市金山地區農會",
+        lat: 25.2215,
+        lng: 121.6384,
+        address: "新北市金山區美田里中山路202號",
+        phone: "(02) 2498-1100",
+        line: "@jinshan_fa",
+        lineUrl: "https://line.me/R/ti/p/@jinshan_fa",
+        crops: ["金山紅心甘藷 (台農66號)", "跳石芋頭"],
+        cropCategory: ["根莖"],
+        seasons: [
+          { crop: "金山紅心甘藷", startMonth: 8, startWeek: 1, endMonth: 10, endWeek: 4, peakMonth: 8, peakWeek: 4, desc: "8月第1週~10月第4週 (盛產：8月下旬~9月)" },
+          { crop: "跳石芋頭", startMonth: 9, startWeek: 1, endMonth: 11, endWeek: 3, peakMonth: 10, peakWeek: 2, desc: "9月第1週~11月第3週" }
+        ],
+        tasks: "機械起壟、田間人工撿薯、清土剪鬚根、分級裝袋 20kg",
+        notes: "火山地質紅土種植，胡蘿蔔素含量高，田間需工體力活大。"
+      },
+      {
+        id: "bade_fa",
+        region: "north",
+        regionName: "北部",
+        county: "桃園市",
+        district: "八德區",
+        name: "桃園市八德區農會",
+        lat: 24.9351,
+        lng: 121.2842,
+        address: "桃園市八德區興豐路827號",
+        phone: "(03) 368-2111",
+        line: "@bade_fa",
+        lineUrl: "https://line.me/R/ti/p/@bade_fa",
+        crops: ["溫室有機葉菜 (小白菜、青江菜、空心菜)", "八德米"],
+        cropCategory: ["蔬菜", "稻米"],
+        seasons: [
+          { crop: "溫室有機葉菜", startMonth: 1, startWeek: 1, endMonth: 12, endWeek: 4, peakMonth: 5, peakWeek: 1, desc: "全年無休 (1~12月，每週循環採收 8~10 期)" },
+          { crop: "八德好米(一期)", startMonth: 6, startWeek: 3, endMonth: 7, endWeek: 3, peakMonth: 7, peakWeek: 1, desc: "6月第3週~7月第3週" },
+          { crop: "八德好米(二期)", startMonth: 10, startWeek: 4, endMonth: 11, endWeek: 4, peakMonth: 11, peakWeek: 2, desc: "10月第4週~11月第4週" }
+        ],
+        tasks: "溫室割菜、老葉剔除、生鮮小包裝 250g、預冷冷鏈裝箱",
+        notes: "北台灣有機蔬菜最大供應基地，供應營養午餐與超市，全年天天缺工！"
+      },
+      {
+        id: "daxi_fa",
+        region: "north",
+        regionName: "北部",
+        county: "桃園市",
+        district: "大溪區",
+        name: "桃園市大溪區農會",
+        lat: 24.8812,
+        lng: 121.2868,
+        address: "桃園市大溪區康莊路三段651號",
+        phone: "(03) 387-1122",
+        line: "@daxi_fa",
+        lineUrl: "https://line.me/R/ti/p/@daxi_fa",
+        crops: ["中新里韭菜花", "綠竹筍", "有機苦瓜"],
+        cropCategory: ["蔬菜", "瓜果"],
+        seasons: [
+          { crop: "中新里韭菜花", startMonth: 8, startWeek: 2, endMonth: 10, endWeek: 1, peakMonth: 9, peakWeek: 2, desc: "8月第2週~10月第1週 (盛產：9月雪)" },
+          { crop: "綠竹筍", startMonth: 6, startWeek: 1, endMonth: 8, endWeek: 4, peakMonth: 7, peakWeek: 2, desc: "6月第1週~8月第4週" },
+          { crop: "韭菜(葉)", startMonth: 1, startWeek: 1, endMonth: 12, endWeek: 4, peakMonth: 3, peakWeek: 1, desc: "全年無休" }
+        ],
+        tasks: "彎腰割韭菜、水池清洗除爛葉、分捆束紮、綠竹筍破土採挖",
+        notes: "大漢溪沖積平原土壤肥沃，九月雪韭菜花季吸引大批遊客。"
+      },
+      {
+        id: "fuxing_fa",
+        region: "north",
+        regionName: "北部",
+        county: "桃園市",
+        district: "復興區",
+        name: "桃園市復興區農會",
+        lat: 24.8219,
+        lng: 121.3533,
+        address: "桃園市復興區中正路246號",
+        phone: "(03) 382-2218",
+        line: "@fuxing_fa",
+        lineUrl: "https://line.me/R/ti/p/@fuxing_fa",
+        crops: ["拉拉山水蜜桃", "高山甜柿", "高山烏龍茶"],
+        cropCategory: ["水果", "名茶"],
+        seasons: [
+          { crop: "拉拉山水蜜桃", startMonth: 6, startWeek: 3, endMonth: 8, endWeek: 2, peakMonth: 7, peakWeek: 2, desc: "6月第3週~8月第2週 (盛產：7月)" },
+          { crop: "高山甜柿", startMonth: 10, startWeek: 2, endMonth: 11, endWeek: 4, peakMonth: 11, peakWeek: 1, desc: "10月第2週~11月第4週" },
+          { crop: "高山茶(春茶)", startMonth: 5, startWeek: 2, endMonth: 6, endWeek: 2, peakMonth: 5, peakWeek: 4, desc: "5月第2週~6月第2週" }
+        ],
+        tasks: "高陡坡水蜜桃人工輕柔採摘、防碰傷海綿套網、分級裝盒、甜柿套袋",
+        notes: "高海拔地形陡峭，水蜜桃皮薄汁多極易擦傷，搬運需小心翼翼。"
+      },
+      {
+        id: "xinwu_fa",
+        region: "north",
+        regionName: "北部",
+        county: "桃園市",
+        district: "新屋區",
+        name: "桃園市新屋區農會",
+        lat: 24.9723,
+        lng: 121.1065,
+        address: "桃園市新屋區中華路242號",
+        phone: "(03) 477-2124",
+        line: "@xinwu_fa",
+        lineUrl: "https://line.me/R/ti/p/@xinwu_fa",
+        crops: ["新屋香米 (台農71號益全香米)", "有機蔬菜", "新屋西瓜"],
+        cropCategory: ["稻米", "蔬菜", "瓜果"],
+        seasons: [
+          { crop: "水稻(一期)", startMonth: 6, startWeek: 3, endMonth: 7, endWeek: 3, peakMonth: 7, peakWeek: 1, desc: "6月第3週~7月第3週" },
+          { crop: "新屋西瓜", startMonth: 5, startWeek: 4, endMonth: 7, endWeek: 2, peakMonth: 6, peakWeek: 2, desc: "5月第4週~7月第2週" },
+          { crop: "水稻(二期)", startMonth: 10, startWeek: 4, endMonth: 11, endWeek: 4, peakMonth: 11, peakWeek: 2, desc: "10月第4週~11月第4週" }
+        ],
+        tasks: "割稻機隨車接穀、烘乾廠大型搬運、西瓜田間採收接力裝車",
+        notes: "全台知名魚米之鄉，現代化低溫冷藏米倉，契作產銷大宗。"
+      },
+      {
+        id: "xinpu_fa",
+        region: "north",
+        regionName: "北部",
+        county: "新竹縣",
+        district: "新埔鎮",
+        name: "新竹縣新埔鎮農會",
+        lat: 24.8286,
+        lng: 121.0728,
+        address: "新竹縣新埔鎮楊新路一段322號",
+        phone: "(03) 588-2002",
+        line: "@xinpu_fa",
+        lineUrl: "https://line.me/R/ti/p/@xinpu_fa",
+        crops: ["新埔柿餅 (石柿、牛心柿)", "水梨 (豐水梨、蜜雪梨)", "柑橘"],
+        cropCategory: ["特作", "水果"],
+        seasons: [
+          { crop: "新埔水梨", startMonth: 7, startWeek: 1, endMonth: 8, endWeek: 4, peakMonth: 7, peakWeek: 3, desc: "7月第1週~8月第4週" },
+          { crop: "柿餅曬製", startMonth: 9, startWeek: 3, endMonth: 12, endWeek: 3, peakMonth: 10, peakWeek: 3, desc: "9月第3週~12月第3週 (盛產：九降風吹起 10~11月)" },
+          { crop: "茂谷柑/椪柑", startMonth: 12, startWeek: 1, endMonth: 2, endWeek: 2, peakMonth: 1, peakWeek: 2, desc: "12月第1週~2月第2週" }
+        ],
+        tasks: "高接梨採收套袋、柿子採收削皮、棚架日曬捏壓整型、柑橘採收",
+        notes: "九降風乾燥氣候得天獨厚，柿餅手工捏壓塑形需大量熟練女工。"
+      },
+      {
+        id: "beipu_fa",
+        region: "north",
+        regionName: "北部",
+        county: "新竹縣",
+        district: "北埔鄉",
+        name: "新竹縣北埔鄉農會",
+        lat: 24.7005,
+        lng: 121.0573,
+        address: "新竹縣北埔鄉北埔街94號",
+        phone: "(03) 580-2201",
+        line: "@beipu_fa",
+        lineUrl: "https://line.me/R/ti/p/@beipu_fa",
+        crops: ["東方美人茶 (膨風茶)", "石柿餅"],
+        cropCategory: ["名茶", "特作"],
+        seasons: [
+          { crop: "東方美人茶(芒種)", startMonth: 6, startWeek: 1, endMonth: 7, endWeek: 2, peakMonth: 6, peakWeek: 3, desc: "6月第1週~7月第2週 (盛產：6月中旬芒種前後)" },
+          { crop: "石柿餅", startMonth: 10, startWeek: 1, endMonth: 11, endWeek: 4, peakMonth: 10, peakWeek: 4, desc: "10月第1週~11月第4週" }
+        ],
+        tasks: "小綠葉蟬叮咬一心二葉細緻手採、室內浪茶萎凋、柿子去皮日曬",
+        notes: "東方美人茶講究著涎程度，無法機械採收，全賴熟練採茶工手摘。"
+      },
+      {
+        id: "guanxi_fa",
+        region: "north",
+        regionName: "北部",
+        county: "新竹縣",
+        district: "關西鎮",
+        name: "新竹縣關西鎮農會",
+        lat: 24.7938,
+        lng: 121.1738,
+        address: "新竹縣關西鎮北山里10鄰高橋坑6號",
+        phone: "(03) 587-2010",
+        line: "@guanxi_fa",
+        lineUrl: "https://line.me/R/ti/p/@guanxi_fa",
+        crops: ["關西仙草", "客家鹹菜 (芥菜)", "番茄", "柑橘"],
+        cropCategory: ["特作", "蔬菜", "水果"],
+        seasons: [
+          { crop: "關西仙草收割", startMonth: 10, startWeek: 4, endMonth: 12, endWeek: 2, peakMonth: 11, peakWeek: 2, desc: "10月第4週~12月第2週 (盛產：11月)" },
+          { crop: "芥菜(鹹菜醃製)", startMonth: 12, startWeek: 2, endMonth: 2, endWeek: 1, peakMonth: 1, peakWeek: 1, desc: "12月第2週~2月第1週" },
+          { crop: "柑橘", startMonth: 11, startWeek: 2, endMonth: 1, endWeek: 3, peakMonth: 12, peakWeek: 3, desc: "11月第2週~1月第3週" }
+        ],
+        tasks: "仙草田間割株曬草束捆、芥菜踩鹽醃漬入甕、柑橘採收搬運",
+        notes: "全台八成仙草產自關西，收割後需趁晴日曬乾貯藏陳化。"
+      },
+
+      // --- 中部地區 (Central) ---
+      {
+        id: "dahu_fa",
+        region: "central",
+        regionName: "中部",
+        county: "苗栗縣",
+        district: "大湖鄉",
+        name: "苗栗縣大湖地區農會",
+        lat: 24.4239,
+        lng: 120.8652,
+        address: "苗栗縣大湖鄉富興村八寮灣2-4號",
+        phone: "(037) 993-232",
+        line: "@dahu_fa",
+        lineUrl: "https://line.me/R/ti/p/@dahu_fa",
+        crops: ["大湖草莓 (香水、豐香、美姬)", "尊爵李", "紅肉李"],
+        cropCategory: ["水果"],
+        seasons: [
+          { crop: "大湖草莓(一期花)", startMonth: 12, startWeek: 1, endMonth: 1, endWeek: 2, peakMonth: 12, peakWeek: 3, desc: "12月第1週~1月第2週" },
+          { crop: "大湖草莓(二期盛花)", startMonth: 1, startWeek: 3, endMonth: 2, endWeek: 4, peakMonth: 2, peakWeek: 1, desc: "1月第3週~2月第4週 (春節盛期)" },
+          { crop: "大湖草莓(三期/四期)", startMonth: 3, startWeek: 1, endMonth: 4, endWeek: 3, peakMonth: 3, peakWeek: 3, desc: "3月第1週~4月第3週" },
+          { crop: "紅肉李/桃李", startMonth: 5, startWeek: 2, endMonth: 6, endWeek: 3, peakMonth: 5, peakWeek: 4, desc: "5月第2週~6月第3週" }
+        ],
+        tasks: "高架/畦面草莓採摘、剔除爛果、分級精緻排盒、桃李採收",
+        notes: "台灣草莓之都，四期花期長達半年，春節寒假連假人手極度吃緊。"
+      },
+      {
+        id: "zhuolan_fa",
+        region: "central",
+        regionName: "中部",
+        county: "苗栗縣",
+        district: "卓蘭鎮",
+        name: "苗栗縣卓蘭鎮農會",
+        lat: 24.3108,
+        lng: 120.8256,
+        address: "苗栗縣卓蘭鎮新厝里中正路105-1號",
+        phone: "(037) 583-601",
+        line: "@zhuolan_fa",
+        lineUrl: "https://line.me/R/ti/p/@zhuolan_fa",
+        crops: ["卓蘭四大天王：高接梨", "巨峰葡萄", "楊桃", "椪柑/茂谷柑"],
+        cropCategory: ["水果"],
+        seasons: [
+          { crop: "高接梨(新興/豐水)", startMonth: 7, startWeek: 1, endMonth: 9, endWeek: 3, peakMonth: 7, peakWeek: 4, desc: "7月第1週~9月第3週 (盛產：7月下旬~8月)" },
+          { crop: "巨峰葡萄(夏果)", startMonth: 7, startWeek: 2, endMonth: 8, endWeek: 3, peakMonth: 7, peakWeek: 4, desc: "7月第2週~8月第3週" },
+          { crop: "巨峰葡萄(冬果)", startMonth: 12, startWeek: 1, endMonth: 1, endWeek: 3, peakMonth: 12, peakWeek: 3, desc: "12月第1週~1月第3週" },
+          { crop: "椪柑/茂谷柑", startMonth: 11, startWeek: 4, endMonth: 1, endWeek: 4, peakMonth: 12, peakWeek: 4, desc: "11月第4週~1月第4週" }
+        ],
+        tasks: "高接梨套袋剪果、疏果防落粒、葡萄整串剪收排箱、柑橘採摘",
+        notes: "大安溪畔水果王國，水果四季輪替接力採收，長年穩定缺工。"
+      },
+      {
+        id: "gongguan_fa",
+        region: "central",
+        regionName: "中部",
+        county: "苗栗縣",
+        district: "公館鄉",
+        name: "苗栗縣公館鄉農會",
+        lat: 24.5028,
+        lng: 120.8239,
+        address: "苗栗縣公館鄉館中村大同路266號",
+        phone: "(037) 225-211",
+        line: "@gongguan_fa",
+        lineUrl: "https://line.me/R/ti/p/@gongguan_fa",
+        crops: ["公館紅棗 (全台唯一專區)", "福菜/梅干菜", "公館檳榔心芋"],
+        cropCategory: ["特作", "蔬菜", "根莖"],
+        seasons: [
+          { crop: "公館紅棗(鮮果)", startMonth: 7, startWeek: 2, endMonth: 8, endWeek: 3, peakMonth: 7, peakWeek: 4, desc: "7月第2週~8月第3週 (盛產：7月下旬)" },
+          { crop: "公館芋頭", startMonth: 11, startWeek: 1, endMonth: 1, endWeek: 2, peakMonth: 12, peakWeek: 1, desc: "11月第1週~1月第2週" },
+          { crop: "芥菜(福菜醃製)", startMonth: 12, startWeek: 3, endMonth: 2, endWeek: 2, peakMonth: 1, peakWeek: 2, desc: "12月第3週~2月第2週" }
+        ],
+        tasks: "帶刺紅棗樹採摘鮮果、日曬烘乾翻動、芋頭起拔削根去泥",
+        notes: "全台唯一紅棗生產專區，鮮果產期僅一個月，需快速搶收。"
+      },
+      {
+        id: "dongshi_fa",
+        region: "central",
+        regionName: "中部",
+        county: "台中市",
+        district: "東勢區",
+        name: "台中市東勢區農會",
+        lat: 24.2583,
+        lng: 120.8285,
+        address: "台中市東勢區東聖里豐勢路445號",
+        phone: "(04) 2587-2151",
+        line: "@dongshi_fa",
+        lineUrl: "https://line.me/R/ti/p/@dongshi_fa",
+        crops: ["寄接梨 (新興梨、豐水梨)", "東勢甜柿", "茂谷柑"],
+        cropCategory: ["水果"],
+        seasons: [
+          { crop: "寄接梨", startMonth: 6, startWeek: 4, endMonth: 8, endWeek: 4, peakMonth: 7, peakWeek: 3, desc: "6月第4週~8月第4週 (盛產：7月)" },
+          { crop: "東勢甜柿", startMonth: 10, startWeek: 2, endMonth: 12, endWeek: 2, peakMonth: 11, peakWeek: 1, desc: "10月第2週~12月第2週 (盛產：11月)" },
+          { crop: "茂谷柑", startMonth: 1, startWeek: 2, endMonth: 3, endWeek: 1, peakMonth: 2, peakWeek: 1, desc: "1月第2週~3月第1週" }
+        ],
+        tasks: "果樹剪枝接穗、高接梨採收套袋、甜柿採收、自動光波甜度分級",
+        notes: "台灣高接梨技術發源地，大型冷鏈自動化分級集貨場。"
+      },
+      {
+        id: "heping_fa",
+        region: "central",
+        regionName: "中部",
+        county: "台中市",
+        district: "和平區",
+        name: "台中市和平區農會",
+        lat: 24.1633,
+        lng: 120.8872,
+        address: "台中市和平區南勢里東關路三段133號",
+        phone: "(04) 2594-1501",
+        line: "@heping_fa",
+        lineUrl: "https://line.me/R/ti/p/@heping_fa",
+        crops: ["梨山水蜜桃", "梨山高山茶", "蜜蘋果", "雪梨"],
+        cropCategory: ["水果", "名茶"],
+        seasons: [
+          { crop: "梨山茶(春茶)", startMonth: 5, startWeek: 3, endMonth: 6, endWeek: 2, peakMonth: 5, peakWeek: 4, desc: "5月第3週~6月第2週" },
+          { crop: "梨山水蜜桃", startMonth: 7, startWeek: 2, endMonth: 8, endWeek: 3, peakMonth: 7, peakWeek: 4, desc: "7月第2週~8月第3週 (盛產：7月下旬)" },
+          { crop: "梨山蜜蘋果", startMonth: 10, startWeek: 3, endMonth: 11, endWeek: 4, peakMonth: 11, peakWeek: 2, desc: "10月第3週~11月第4週" },
+          { crop: "梨山雪梨", startMonth: 11, startWeek: 4, endMonth: 1, endWeek: 2, peakMonth: 12, peakWeek: 3, desc: "11月第4週~1月第2週" }
+        ],
+        tasks: "高海拔陡坡手採茶菁、水蜜桃精細摘取套海綿、蜜蘋果採收裝箱",
+        notes: "海拔2000公尺高冷蔬果，晝夜溫差大糖度極高，山區交通與工班需專車。"
+      },
+      {
+        id: "xinshe_fa",
+        region: "central",
+        regionName: "中部",
+        county: "台中市",
+        district: "新社區",
+        name: "台中市新社區農會",
+        lat: 24.2341,
+        lng: 120.8122,
+        address: "台中市新社區新社里新興街102號",
+        phone: "(04) 2581-1504",
+        line: "@xinshe_fa",
+        lineUrl: "https://line.me/R/ti/p/@xinshe_fa",
+        crops: ["新社香菇 (全台最大產地)", "巨峰葡萄", "新社枇杷"],
+        cropCategory: ["特作", "水果"],
+        seasons: [
+          { crop: "新社枇杷", startMonth: 2, startWeek: 3, endMonth: 4, endWeek: 3, peakMonth: 3, peakWeek: 3, desc: "2月第3週~4月第3週 (盛產：3月)" },
+          { crop: "巨峰葡萄(夏果)", startMonth: 7, startWeek: 1, endMonth: 8, endWeek: 2, peakMonth: 7, peakWeek: 3, desc: "7月第1週~8月第2週" },
+          { crop: "乾/鮮香菇", startMonth: 1, startWeek: 1, endMonth: 12, endWeek: 4, peakMonth: 11, peakWeek: 1, desc: "全年無休 (採收高峰：10月~4月)" }
+        ],
+        tasks: "菇寮太空包採菇、剪除菇腳、柴燒烘乾、枇杷套袋採收",
+        notes: "全台過半香菇產自新社，溫控菇寮天天產出，採菇剪柄需穩定人力。"
+      },
+      {
+        id: "dacun_fa",
+        region: "central",
+        regionName: "中部",
+        county: "彰化縣",
+        district: "大村鄉",
+        name: "彰化縣大村鄉農會",
+        lat: 23.9942,
+        lng: 120.5401,
+        address: "彰化縣大村鄉大村村中正西路69號",
+        phone: "(04) 852-6111",
+        line: "@dacun_fa",
+        lineUrl: "https://line.me/R/ti/p/@dacun_fa",
+        crops: ["大村巨峰葡萄 (葡萄故鄉)", "大村黑金剛蓮霧"],
+        cropCategory: ["水果"],
+        seasons: [
+          { crop: "溫室早春葡萄", startMonth: 5, startWeek: 1, endMonth: 6, endWeek: 4, peakMonth: 5, peakWeek: 3, desc: "5月第1週~6月第4週" },
+          { crop: "露天夏果葡萄", startMonth: 6, startWeek: 3, endMonth: 8, endWeek: 2, peakMonth: 7, peakWeek: 1, desc: "6月第3週~8月第2週 (盛產：6月下旬~7月)" },
+          { crop: "冬果葡萄", startMonth: 11, startWeek: 4, endMonth: 1, endWeek: 3, peakMonth: 12, peakWeek: 3, desc: "11月第4週~1月第3週" }
+        ],
+        tasks: "疏果修剪、套袋、整串剪收、防落粒精細排盒",
+        notes: "葡萄故鄉，溫室與露天雙重栽培，一年二收至三收。"
+      },
+      {
+        id: "shetou_fa",
+        region: "central",
+        regionName: "中部",
+        county: "彰化縣",
+        district: "社頭鄉",
+        name: "彰化縣社頭鄉農會",
+        lat: 23.8967,
+        lng: 120.5847,
+        address: "彰化縣社頭鄉社斗路一段366號",
+        phone: "(04) 873-1101",
+        line: "@shetou_fa",
+        lineUrl: "https://line.me/R/ti/p/@shetou_fa",
+        crops: ["社頭芭樂 (珍珠芭樂、帝王芭樂、紅心芭樂)"],
+        cropCategory: ["水果"],
+        seasons: [
+          { crop: "珍珠芭樂(全年)", startMonth: 1, startWeek: 1, endMonth: 12, endWeek: 4, peakMonth: 10, peakWeek: 3, desc: "全年產出 (秋冬脆甜盛產：9月第3週~翌年3月第2週)" }
+        ],
+        tasks: "幼果保麗龍+塑膠雙層套袋、整枝疏果、採收剪果裝籃",
+        notes: "濁水溪黑土沖積，芭樂口感清脆香甜，四季皆需套袋與採收。"
+      },
+      {
+        id: "tianwei_fa",
+        region: "central",
+        regionName: "中部",
+        county: "彰化縣",
+        district: "田尾鄉",
+        name: "彰化縣田尾鄉農會",
+        lat: 23.8913,
+        lng: 120.5265,
+        address: "彰化縣田尾鄉公所路56號",
+        phone: "(04) 883-0111",
+        line: "@tianwei_fa",
+        lineUrl: "https://line.me/R/ti/p/@tianwei_fa",
+        crops: ["公路花園切花 (菊花、非洲菊、康乃馨)", "景觀苗木"],
+        cropCategory: ["特作"],
+        seasons: [
+          { crop: "切花花卉(全年)", startMonth: 1, startWeek: 1, endMonth: 12, endWeek: 4, peakMonth: 1, peakWeek: 4, desc: "全年產出 (春節大檔：1月第2週~2月第2週；母親節：4月第3週~5月第2週)" }
+        ],
+        tasks: "切花採收、冷藏預冷、保水套套袋、苗木移植修剪",
+        notes: "台灣花鄉，電照菊花海著名，節慶大檔採收包裝需求激增。"
+      },
+      {
+        id: "xihu_fa",
+        region: "central",
+        regionName: "中部",
+        county: "彰化縣",
+        district: "溪湖鎮",
+        name: "彰化縣溪湖鎮農會",
+        lat: 23.9611,
+        lng: 120.4812,
+        address: "彰化縣溪湖鎮西寮里太平路二段199號",
+        phone: "(04) 885-2111",
+        line: "@xihu_fa",
+        lineUrl: "https://line.me/R/ti/p/@xihu_fa",
+        crops: ["溪湖溫室巨峰葡萄", "溫室韭菜花", "花椰菜", "高麗菜"],
+        cropCategory: ["水果", "蔬菜"],
+        seasons: [
+          { crop: "溫室巨峰葡萄", startMonth: 5, startWeek: 3, endMonth: 7, endWeek: 4, peakMonth: 6, peakWeek: 3, desc: "5月第3週~7月第4週" },
+          { crop: "韭菜/韭菜花", startMonth: 1, startWeek: 1, endMonth: 12, endWeek: 4, peakMonth: 8, peakWeek: 2, desc: "全年無休" },
+          { crop: "冬季甘藍/花椰菜", startMonth: 11, startWeek: 2, endMonth: 3, endWeek: 3, peakMonth: 1, peakWeek: 2, desc: "11月第2週~3月第3週" }
+        ],
+        tasks: "溫室葡萄採收剪果、花椰菜割菜剔葉、裝箱搬運",
+        notes: "全台重要蔬菜批發果菜市場，溫室果菜技術先進。"
+      },
+      {
+        id: "lugu_fa",
+        region: "central",
+        regionName: "中部",
+        county: "南投縣",
+        district: "鹿谷鄉",
+        name: "南投縣鹿谷鄉農會",
+        lat: 23.7483,
+        lng: 120.7512,
+        address: "南投縣鹿谷鄉鹿彰路276號",
+        phone: "(049) 275-3111",
+        line: "@lugu_fa",
+        lineUrl: "https://line.me/R/ti/p/@lugu_fa",
+        crops: ["凍頂烏龍茶", "鹿谷冬筍 (孟宗竹筍)"],
+        cropCategory: ["名茶", "蔬菜"],
+        seasons: [
+          { crop: "凍頂烏龍(春茶)", startMonth: 4, startWeek: 2, endMonth: 5, endWeek: 3, peakMonth: 4, peakWeek: 4, desc: "4月第2週~5月第3週 (盛產：4月下旬)" },
+          { crop: "凍頂烏龍(冬茶)", startMonth: 10, startWeek: 3, endMonth: 11, endWeek: 4, peakMonth: 11, peakWeek: 1, desc: "10月第3週~11月第4週" },
+          { crop: "冬筍(孟宗竹筍)", startMonth: 12, startWeek: 1, endMonth: 2, endWeek: 3, peakMonth: 1, peakWeek: 3, desc: "12月第1週~2月第3週 (春節前高價)" }
+        ],
+        tasks: "手採一心二葉茶菁搶收、製茶浪茶焙火、深山覆土探掘冬筍",
+        notes: "台灣烏龍茶指標產地，評鑑賽春冬兩季盛大舉行，茶工需求極強。"
+      },
+      {
+        id: "xinyi_fa",
+        region: "central",
+        regionName: "中部",
+        county: "南投縣",
+        district: "信義鄉",
+        name: "南投縣信義鄉農會",
+        lat: 23.6932,
+        lng: 120.8547,
+        address: "南投縣信義鄉明德村新開巷11號 (梅子夢工廠)",
+        phone: "(049) 279-1559",
+        line: "@xinyi_fa",
+        lineUrl: "https://line.me/R/ti/p/@xinyi_fa",
+        crops: ["信義青梅 (手採脆梅、竿採黃梅)", "巨峰葡萄", "高山敏豆", "甜柿"],
+        cropCategory: ["水果", "蔬菜"],
+        seasons: [
+          { crop: "青梅(手採脆梅)", startMonth: 3, startWeek: 4, endMonth: 4, endWeek: 2, peakMonth: 4, peakWeek: 1, desc: "3月第4週~4月第2週" },
+          { crop: "黃梅(竿採釀梅)", startMonth: 4, startWeek: 3, endMonth: 5, endWeek: 2, peakMonth: 4, peakWeek: 4, desc: "4月第3週~5月第2週" },
+          { crop: "巨峰葡萄(夏/冬)", startMonth: 7, startWeek: 2, endMonth: 1, endWeek: 3, peakMonth: 8, peakWeek: 1, desc: "7月第2週~8月第4週, 12月第1週~1月第3週" },
+          { crop: "甜柿", startMonth: 10, startWeek: 2, endMonth: 11, endWeek: 4, peakMonth: 11, peakWeek: 1, desc: "10月第2週~11月第4週" }
+        ],
+        tasks: "高山竿打青梅、地面鋪網收梅、手採脆梅、葡萄剪收",
+        notes: "玉山山麓梅子故鄉，青梅加工釀酒與梅精全台知名。"
+      },
+      {
+        id: "puli_fa",
+        region: "central",
+        regionName: "中部",
+        county: "南投縣",
+        district: "埔里鎮",
+        name: "南投縣埔里鎮農會",
+        lat: 23.9665,
+        lng: 120.9678,
+        address: "南投縣埔里鎮清新里西寧路1號",
+        phone: "(049) 299-1111",
+        line: "@puli_fa",
+        lineUrl: "https://line.me/R/ti/p/@puli_fa",
+        crops: ["埔里茭白筍 (美人腿)", "百香果 (大坪頂全台8成)", "香菇"],
+        cropCategory: ["蔬菜", "水果", "特作"],
+        seasons: [
+          { crop: "茭白筍(早春夜照)", startMonth: 4, startWeek: 3, endMonth: 6, endWeek: 4, peakMonth: 5, peakWeek: 3, desc: "4月第3週~6月第4週" },
+          { crop: "茭白筍(秋期)", startMonth: 8, startWeek: 3, endMonth: 10, endWeek: 4, peakMonth: 9, peakWeek: 3, desc: "8月第3週~10月第4週" },
+          { crop: "大坪頂百香果", startMonth: 7, startWeek: 1, endMonth: 12, endWeek: 2, peakMonth: 8, peakWeek: 4, desc: "7月第1週~12月第2週 (盛產：8~10月)" }
+        ],
+        tasks: "茭白筍水田採割、人工剝殼修整、百香果落網拾取分級",
+        notes: "大坪頂百香果架網受粉吊網防撞，採收需防曬防蚊人力。"
+      },
+      {
+        id: "yuchi_fa",
+        region: "central",
+        regionName: "中部",
+        county: "南投縣",
+        district: "魚池鄉",
+        name: "南投縣魚池鄉農會",
+        lat: 23.8962,
+        lng: 120.9351,
+        address: "南投縣魚池鄉魚池街442號",
+        phone: "(049) 289-5501",
+        line: "@yuchi_fa",
+        lineUrl: "https://line.me/R/ti/p/@yuchi_fa",
+        crops: ["日月潭紅茶 (台茶18號紅玉、阿薩姆)", "香菇"],
+        cropCategory: ["名茶", "特作"],
+        seasons: [
+          { crop: "日月潭紅茶(春)", startMonth: 4, startWeek: 2, endMonth: 5, endWeek: 4, peakMonth: 5, peakWeek: 2, desc: "4月第2週~5月第4週" },
+          { crop: "日月潭紅茶(夏秋頂級)", startMonth: 6, startWeek: 3, endMonth: 9, endWeek: 3, peakMonth: 7, peakWeek: 3, desc: "6月第3週~9月第3週 (盛產：夏茶香氣濃郁)" }
+        ],
+        tasks: "手採嫩芽紅茶菁、室內萎凋揉捻、解塊發酵、烘焙包裝",
+        notes: "台灣頂級紅茶重鎮，台茶18號具天然肉桂與薄荷香，極受外銷歡迎。"
+      },
+
+      // --- 南部地區 (South) ---
+      {
+        id: "xiluo_fa",
+        region: "south",
+        regionName: "南部",
+        county: "雲林縣",
+        district: "西螺鎮",
+        name: "雲林縣西螺鎮農會",
+        lat: 23.7992,
+        lng: 120.4612,
+        address: "雲林縣西螺鎮光復西路101號",
+        phone: "(05) 586-3621",
+        line: "@xiluo_fa",
+        lineUrl: "https://line.me/R/ti/p/@xiluo_fa",
+        crops: ["西螺獻納米", "短期葉菜類蔬菜 (全台最大產地)", "黑豆"],
+        cropCategory: ["稻米", "蔬菜", "特作"],
+        seasons: [
+          { crop: "短期葉菜類", startMonth: 1, startWeek: 1, endMonth: 12, endWeek: 4, peakMonth: 3, peakWeek: 2, desc: "全年無休 (1~12月，循環採收)" },
+          { crop: "一期水稻", startMonth: 6, startWeek: 2, endMonth: 7, endWeek: 3, peakMonth: 6, peakWeek: 4, desc: "6月第2週~7月第3週" },
+          { crop: "黑豆", startMonth: 11, startWeek: 2, endMonth: 12, endWeek: 3, peakMonth: 11, peakWeek: 4, desc: "11月第2週~12月第3週" }
+        ],
+        tasks: "田間割菜、截切修整、大宗蔬果集貨場上架搬運、洗菜冷鏈",
+        notes: "全台灣蔬菜物流心臟，全台三分之一葉菜源自西螺，天天缺人手。"
+      },
+      {
+        id: "gukeng_fa",
+        region: "south",
+        regionName: "南部",
+        county: "雲林縣",
+        district: "古坑鄉",
+        name: "雲林縣古坑鄉農會",
+        lat: 23.6441,
+        lng: 120.5623,
+        address: "雲林縣古坑鄉中山路135號",
+        phone: "(05) 582-1004",
+        line: "@gukeng_fa",
+        lineUrl: "https://line.me/R/ti/p/@gukeng_fa",
+        crops: ["古坑台灣咖啡 (阿拉比卡)", "古坑柳丁", "麻竹筍"],
+        cropCategory: ["特作", "水果", "蔬菜"],
+        seasons: [
+          { crop: "台灣咖啡豆", startMonth: 10, startWeek: 3, endMonth: 1, endWeek: 4, peakMonth: 11, peakWeek: 4, desc: "10月第3週~1月第4週 (盛產：11~12月)" },
+          { crop: "古坑柳丁", startMonth: 11, startWeek: 2, endMonth: 1, endWeek: 3, peakMonth: 12, peakWeek: 2, desc: "11月第2週~1月第3週" },
+          { crop: "麻竹筍", startMonth: 6, startWeek: 1, endMonth: 9, endWeek: 4, peakMonth: 7, peakWeek: 3, desc: "6月第1週~9月第4週" }
+        ],
+        tasks: "紅熟咖啡漿果手工單顆手摘、水洗去皮、柳丁剪果裝箱、割筍",
+        notes: "台灣咖啡原鄉，紅熟咖啡豆必須純手工挑採，無法機械化。"
+      },
+      {
+        id: "erlun_fa",
+        region: "south",
+        regionName: "南部",
+        county: "雲林縣",
+        district: "二崙鄉",
+        name: "雲林縣二崙鄉農會",
+        lat: 23.7712,
+        lng: 120.4132,
+        address: "雲林縣二崙鄉中山路一段168號",
+        phone: "(05) 598-2511",
+        line: "@erlun_fa",
+        lineUrl: "https://line.me/R/ti/p/@erlun_fa",
+        crops: ["二崙西瓜", "美濃瓜 (香瓜)", "網紋洋香瓜"],
+        cropCategory: ["瓜果"],
+        seasons: [
+          { crop: "二崙西瓜", startMonth: 4, startWeek: 3, endMonth: 6, endWeek: 3, peakMonth: 5, peakWeek: 2, desc: "4月第3週~6月第3週 (盛產：5月)" },
+          { crop: "香瓜/美濃瓜", startMonth: 5, startWeek: 1, endMonth: 7, endWeek: 2, peakMonth: 6, peakWeek: 1, desc: "5月第1週~7月第2週" },
+          { crop: "秋作洋香瓜", startMonth: 10, startWeek: 2, endMonth: 12, endWeek: 1, peakMonth: 11, peakWeek: 1, desc: "10月第2週~12月第1週" }
+        ],
+        tasks: "西瓜田間採剪、人工接力丟瓜上卡車 (極耗體力需工)、香瓜套袋",
+        notes: "濁水溪沙洲西瓜沙甜多汁，搬運西瓜需強健體力工班。"
+      },
+      {
+        id: "shuilin_fa",
+        region: "south",
+        regionName: "南部",
+        county: "雲林縣",
+        district: "水林鄉",
+        name: "雲林縣水林鄉農會",
+        lat: 23.5715,
+        lng: 120.2462,
+        address: "雲林縣水林鄉水林路262號",
+        phone: "(05) 785-2201",
+        line: "@shuilin_fa",
+        lineUrl: "https://line.me/R/ti/p/@shuilin_fa",
+        crops: ["水林黃金甘藷 (台農57號全台第一)", "水林大蒜"],
+        cropCategory: ["根莖", "蔬菜"],
+        seasons: [
+          { crop: "台農57號甘藷", startMonth: 12, startWeek: 2, endMonth: 4, endWeek: 4, peakMonth: 2, peakWeek: 2, desc: "12月第2週~4月第4週 (盛產：1~3月)" },
+          { crop: "大蒜採收", startMonth: 3, startWeek: 2, endMonth: 4, endWeek: 3, peakMonth: 3, peakWeek: 4, desc: "3月第2週~4月第3週" }
+        ],
+        tasks: "機械翻土出薯、田間人工撿薯剪鬚根、大蒜拔蒜剪根編辮日曬",
+        notes: "番薯原鄉，產量佔全台五分之一，秋冬季大批甘藷採收工。"
+      },
+      {
+        id: "meishan_fa",
+        region: "south",
+        regionName: "南部",
+        county: "嘉義縣",
+        district: "梅山鄉",
+        name: "嘉義縣梅山鄉農會",
+        lat: 23.5828,
+        lng: 120.5562,
+        address: "嘉義縣梅山鄉中山路127號",
+        phone: "(05) 262-2121",
+        line: "@meishan_fa",
+        lineUrl: "https://line.me/R/ti/p/@meishan_fa",
+        crops: ["阿里山高山茶 (樟樹湖、瑞里烏龍)", "高山愛玉子", "梅子"],
+        cropCategory: ["名茶", "特作", "水果"],
+        seasons: [
+          { crop: "阿里山春茶", startMonth: 4, startWeek: 2, endMonth: 5, endWeek: 3, peakMonth: 4, peakWeek: 4, desc: "4月第2週~5月第3週 (盛產：4月下旬)" },
+          { crop: "阿里山冬茶", startMonth: 10, startWeek: 2, endMonth: 11, endWeek: 3, peakMonth: 10, peakWeek: 4, desc: "10月第2週~11月第3週 (盛產：10月下旬)" },
+          { crop: "高山愛玉子", startMonth: 9, startWeek: 2, endMonth: 11, endWeek: 3, peakMonth: 10, peakWeek: 2, desc: "9月第2週~11月第3週" }
+        ],
+        tasks: "高山陡坡茶園手採茶（缺工嚴重）、愛玉攀爬採摘削皮翻曬",
+        notes: "阿里山茶競賽規模全台最大，茶青搶採手採工供不應求。"
+      },
+      {
+        id: "zhuqi_fa",
+        region: "south",
+        regionName: "南部",
+        county: "嘉義縣",
+        district: "竹崎鄉",
+        name: "嘉義縣竹崎地區農會",
+        lat: 23.5235,
+        lng: 120.5511,
+        address: "嘉義縣竹崎鄉竹崎村中山路59號",
+        phone: "(05) 261-2111",
+        line: "@zhuqi_fa",
+        lineUrl: "https://line.me/R/ti/p/@zhuqi_fa",
+        crops: ["竹崎椪柑 (青皮椪柑)", "酪梨 (幸福果)", "甜柿"],
+        cropCategory: ["水果"],
+        seasons: [
+          { crop: "酪梨(早~晚生)", startMonth: 7, startWeek: 1, endMonth: 10, endWeek: 2, peakMonth: 8, peakWeek: 3, desc: "7月第1週~10月第2週" },
+          { crop: "青皮椪柑", startMonth: 10, startWeek: 3, endMonth: 12, endWeek: 3, peakMonth: 11, peakWeek: 2, desc: "10月第3週~12月第3週" },
+          { crop: "甜柿", startMonth: 9, startWeek: 4, endMonth: 11, endWeek: 3, peakMonth: 10, peakWeek: 3, desc: "9月第4週~11月第3週" }
+        ],
+        tasks: "椪柑剪果防刺傷、高枝酪梨採收剪柄、分級裝箱套袋",
+        notes: "青皮椪柑酸甜平衡，秋季採收期需大批剪果工。"
+      },
+      {
+        id: "xingang_fa",
+        region: "south",
+        regionName: "南部",
+        county: "嘉義縣",
+        district: "新港鄉",
+        name: "嘉義縣新港鄉農會",
+        lat: 23.5532,
+        lng: 120.3475,
+        address: "嘉義縣新港鄉宮前村中山路114號",
+        phone: "(05) 374-2111",
+        line: "@xingang_fa",
+        lineUrl: "https://line.me/R/ti/p/@xingang_fa",
+        crops: ["新港洋桔梗 (外銷日本主力)", "溫室空心菜", "甜椒"],
+        cropCategory: ["特作", "蔬菜"],
+        seasons: [
+          { crop: "洋桔梗花卉", startMonth: 11, startWeek: 2, endMonth: 4, endWeek: 3, peakMonth: 1, peakWeek: 3, desc: "11月第2週~4月第3週 (外銷高峰：12~3月)" },
+          { crop: "溫室空心菜", startMonth: 1, startWeek: 1, endMonth: 12, endWeek: 4, peakMonth: 6, peakWeek: 1, desc: "全年無休" }
+        ],
+        tasks: "洋桔梗精細剪花、保水插瓶、紙箱低溫冷藏外銷打包",
+        notes: "外銷日本佔全國七成，切花冷鏈包裝標準極高。"
+      },
+      {
+        id: "yujing_fa",
+        region: "south",
+        regionName: "南部",
+        county: "台南市",
+        district: "玉井區",
+        name: "台南市玉井區農會",
+        lat: 23.1235,
+        lng: 120.4611,
+        address: "台南市玉井區中正路139號",
+        phone: "(06) 574-1111",
+        line: "@yujing_fa",
+        lineUrl: "https://line.me/R/ti/p/@yujing_fa",
+        crops: ["芒果之鄉：愛文芒果", "金煌芒果", "凱特芒果"],
+        cropCategory: ["水果"],
+        seasons: [
+          { crop: "愛文芒果", startMonth: 5, startWeek: 3, endMonth: 7, endWeek: 4, peakMonth: 6, peakWeek: 4, desc: "5月第3週~7月第4週 (盛產高峰：6月中旬~7月中旬)" },
+          { crop: "金煌芒果", startMonth: 6, startWeek: 2, endMonth: 8, endWeek: 1, peakMonth: 7, peakWeek: 1, desc: "6月第2週~8月第1週" },
+          { crop: "凱特芒果(晚生)", startMonth: 8, startWeek: 2, endMonth: 9, endWeek: 4, peakMonth: 9, peakWeek: 1, desc: "8月第2週~9月第4週" }
+        ],
+        tasks: "愛文芒果留蒂 0.5cm 採收、防果粉磨損、套袋、蒸熱處理裝箱",
+        notes: "台灣芒果集散核心，全聯與外銷日韓樞紐，產季搶工極端激烈。"
+      },
+      {
+        id: "madou_fa",
+        region: "south",
+        regionName: "南部",
+        county: "台南市",
+        district: "麻豆區",
+        name: "台南市麻豆區農會",
+        lat: 23.1812,
+        lng: 120.2483,
+        address: "台南市麻豆區興國路58號",
+        phone: "(06) 572-2437",
+        line: "@madou_fa",
+        lineUrl: "https://line.me/R/ti/p/@madou_fa",
+        crops: ["麻豆文旦 (正宗老欉文旦)", "麻豆大白柚", "紅文旦"],
+        cropCategory: ["水果"],
+        seasons: [
+          { crop: "麻豆文旦", startMonth: 8, startWeek: 3, endMonth: 9, endWeek: 2, peakMonth: 8, peakWeek: 4, desc: "8月第3週~9月第2週 (盛產：白露前 10 天集中大採收)" },
+          { crop: "麻豆白柚/紅柚", startMonth: 10, startWeek: 3, endMonth: 11, endWeek: 3, peakMonth: 10, peakWeek: 4, desc: "10月第3週~11月第3週 (霜降前後)" }
+        ],
+        tasks: "文旦集中搶收（極短2週大量工人）、田間搬運裝簍、消水辭水分級",
+        notes: "全台文旦指標，白露前集中搶收，若遇颱風需全村動員。"
+      },
+      {
+        id: "guanmiao_fa",
+        region: "south",
+        regionName: "南部",
+        county: "台南市",
+        district: "關廟區",
+        name: "台南市關廟區農會",
+        lat: 22.9615,
+        lng: 120.3283,
+        address: "台南市關廟區山西里中正路998號",
+        phone: "(06) 595-1111",
+        line: "@guanmiao_fa",
+        lineUrl: "https://line.me/R/ti/p/@guanmiao_fa",
+        crops: ["關廟金鑽鳳梨 (台農17號)", "關廟綠竹筍", "關廟麵"],
+        cropCategory: ["水果", "蔬菜", "特作"],
+        seasons: [
+          { crop: "金鑽鳳梨", startMonth: 3, startWeek: 3, endMonth: 6, endWeek: 2, peakMonth: 4, peakWeek: 3, desc: "3月第3週~6月第2週 (盛產：4~5月)" },
+          { crop: "綠竹筍", startMonth: 5, startWeek: 1, endMonth: 8, endWeek: 4, peakMonth: 6, peakWeek: 3, desc: "5月第1週~8月第4週" }
+        ],
+        tasks: "厚手套全副武裝採割鳳梨、背簍運送、去冠芽/保留套網、分級包裝",
+        notes: "向陽山坡紅砂土，鳳梨果肉細嫩香甜，外銷日星主力。"
+      },
+      {
+        id: "baihe_fa",
+        region: "south",
+        regionName: "南部",
+        county: "台南市",
+        district: "白河區",
+        name: "台南市白河區農會",
+        lat: 23.3512,
+        lng: 120.4152,
+        address: "台南市白河區白河里三民路448號",
+        phone: "(06) 685-4111",
+        line: "@baihe_fa",
+        lineUrl: "https://line.me/R/ti/p/@baihe_fa",
+        crops: ["白河蓮子", "白河純蓮藕粉"],
+        cropCategory: ["蔬菜", "特作"],
+        seasons: [
+          { crop: "蓮子採收", startMonth: 5, startWeek: 4, endMonth: 8, endWeek: 3, peakMonth: 6, peakWeek: 3, desc: "5月第4週~8月第3週 (盛產：6~7月)" },
+          { crop: "蓮藕採掘與洗粉", startMonth: 10, startWeek: 2, endMonth: 12, endWeek: 3, peakMonth: 11, peakWeek: 2, desc: "10月第2週~12月第3週" }
+        ],
+        tasks: "頂烈日水田採蓮蓬、手工剝蓮子、手工去蓮心、挖土採藕清洗沈澱洗粉",
+        notes: "蓮鄉白河，手工剝蓮子去苦芯純屬精細手工，秋季採藕洗粉需重勞力。"
+      },
+      {
+        id: "shanhua_fa",
+        region: "south",
+        regionName: "南部",
+        county: "台南市",
+        district: "善化區",
+        name: "台南市善化區農會",
+        lat: 23.1325,
+        lng: 120.2941,
+        address: "台南市善化區中山路232號",
+        phone: "(06) 583-7249",
+        line: "@shanhua_fa",
+        lineUrl: "https://line.me/R/ti/p/@shanhua_fa",
+        crops: ["善化草莓 (南部最大產區)", "善化胡麻 (黑芝麻)"],
+        cropCategory: ["水果", "特作"],
+        seasons: [
+          { crop: "善化草莓", startMonth: 12, startWeek: 2, endMonth: 4, endWeek: 1, peakMonth: 1, peakWeek: 3, desc: "12月第2週~4月第1週 (盛產：1~2月)" },
+          { crop: "秋作胡麻(黑芝麻)", startMonth: 11, startWeek: 2, endMonth: 12, endWeek: 3, peakMonth: 11, peakWeek: 4, desc: "11月第2週~12月第3週" }
+        ],
+        tasks: "割胡麻株田間搭架立曬、人工拍打打落胡麻、草莓溫室採收",
+        notes: "南部黑芝麻生產大宗，天然壓榨胡麻油香濃，秋冬季節大採。"
+      },
+      {
+        id: "meinong_fa",
+        region: "south",
+        regionName: "南部",
+        county: "高雄市",
+        district: "美濃區",
+        name: "高雄市美濃區農會",
+        lat: 22.8986,
+        lng: 120.5412,
+        address: "高雄市美濃區美濃里中正路一段1號",
+        phone: "(07) 681-3311",
+        line: "@meinong_fa",
+        lineUrl: "https://line.me/R/ti/p/@meinong_fa",
+        crops: ["美濃白玉蘿蔔", "橙蜜香小番茄", "水蓮 (野蓮全台最大)", "美濃米"],
+        cropCategory: ["蔬菜", "水果", "稻米"],
+        seasons: [
+          { crop: "野蓮(水蓮)", startMonth: 1, startWeek: 1, endMonth: 12, endWeek: 4, peakMonth: 6, peakWeek: 1, desc: "全年無休 (1~12月，水塘採收)" },
+          { crop: "美濃白玉蘿蔔", startMonth: 11, startWeek: 2, endMonth: 12, endWeek: 4, peakMonth: 11, peakWeek: 4, desc: "11月第2週~12月第4週 (盛產：11月下旬)" },
+          { crop: "橙蜜香小番茄", startMonth: 12, startWeek: 2, endMonth: 4, endWeek: 2, peakMonth: 2, peakWeek: 1, desc: "12月第2週~4月第2週 (盛產：1~3月)" }
+        ],
+        tasks: "深水塘拔水蓮/洗泥修剪捆紮、小番茄溫室採收、白玉蘿蔔拔蘿蔔裝袋",
+        notes: "全台水蓮八成出自美濃，一年四季泡在水塘採收洗菜，極缺外展移工。"
+      },
+      {
+        id: "qishan_fa",
+        region: "south",
+        regionName: "南部",
+        county: "高雄市",
+        district: "旗山區",
+        name: "高雄市旗山區農會",
+        lat: 22.8872,
+        lng: 120.4823,
+        address: "高雄市旗山區平和街1號",
+        phone: "(07) 661-2515",
+        line: "@qishan_fa",
+        lineUrl: "https://line.me/R/ti/p/@qishan_fa",
+        crops: ["旗山北蕉 (香蕉王國)", "絲瓜", "紅火龍果"],
+        cropCategory: ["水果", "蔬菜"],
+        seasons: [
+          { crop: "旗山香蕉", startMonth: 1, startWeek: 1, endMonth: 12, endWeek: 4, peakMonth: 4, peakWeek: 2, desc: "全年產出 (春蕉最佳風味期：3月第2週~6月第4週)" },
+          { crop: "紅火龍果", startMonth: 6, startWeek: 1, endMonth: 11, endWeek: 2, peakMonth: 8, peakWeek: 2, desc: "6月第1週~11月第2週" }
+        ],
+        tasks: "香蕉高樹割芎、落蕉墊泡綿防撞、水池切把去膠、秤重裝箱",
+        notes: "台灣香蕉王國，春蕉口感香Q綿密，割芎落蕉需熟練技工。"
+      },
+      {
+        id: "dashu_fa",
+        region: "south",
+        regionName: "南部",
+        county: "高雄市",
+        district: "大樹區",
+        name: "高雄市大樹區農會",
+        lat: 22.6935,
+        lng: 120.4328,
+        address: "高雄市大樹區大樹里中興街26號",
+        phone: "(07) 651-2111",
+        line: "@dashu_fa",
+        lineUrl: "https://line.me/R/ti/p/@dashu_fa",
+        crops: ["大樹玉荷包荔枝 (全台最頂級)", "金鑽鳳梨"],
+        cropCategory: ["水果"],
+        seasons: [
+          { crop: "金鑽鳳梨", startMonth: 3, startWeek: 2, endMonth: 6, endWeek: 1, peakMonth: 4, peakWeek: 2, desc: "3月第2週~6月第1週" },
+          { crop: "玉荷包荔枝", startMonth: 5, startWeek: 3, endMonth: 6, endWeek: 2, peakMonth: 5, peakWeek: 4, desc: "5月第3週~6月第2週 (僅短短 3 週集中搶收大缺工！)" }
+        ],
+        tasks: "玉荷包極速搶收、手工剪粒脫粒、低溫冷水預冷保鮮、外銷裝箱",
+        notes: "玉荷包產期極端短促（僅3週），若延誤採收果肉變質，搶工極為嚴峻！"
+      },
+      {
+        id: "yanchao_fa",
+        region: "south",
+        regionName: "南部",
+        county: "高雄市",
+        district: "燕巢區",
+        name: "高雄市燕巢區農會",
+        lat: 22.7932,
+        lng: 120.3621,
+        address: "高雄市燕巢區中民路568號",
+        phone: "(07) 616-2211",
+        line: "@yanchao_fa",
+        lineUrl: "https://line.me/R/ti/p/@yanchao_fa",
+        crops: ["燕巢三寶：珍珠芭樂", "牛奶蜜棗", "西施柚"],
+        cropCategory: ["水果"],
+        seasons: [
+          { crop: "燕巢芭樂(全年)", startMonth: 1, startWeek: 1, endMonth: 12, endWeek: 4, peakMonth: 11, peakWeek: 2, desc: "全年無休 (秋冬果脆甜：9月第3週~翌年3月第2週)" },
+          { crop: "牛奶蜜棗", startMonth: 12, startWeek: 2, endMonth: 3, endWeek: 1, peakMonth: 1, peakWeek: 3, desc: "12月第2週~3月第1週 (盛產：1~2月春節前)" }
+        ],
+        tasks: "蜜棗採收、光波分級排盒、芭樂雙層套袋、整枝修剪",
+        notes: "泥火山土壤培育，蜜棗如青蘋果般脆甜，春節送禮外銷最大宗。"
+      },
+      {
+        id: "fangshan_fa",
+        region: "south",
+        regionName: "南部",
+        county: "屏東縣",
+        district: "枋山鄉",
+        name: "屏東縣枋山地區農會",
+        lat: 22.2612,
+        lng: 120.6542,
+        address: "屏東縣枋山鄉枋山村中正路34-1號",
+        phone: "(08) 876-1101",
+        line: "@fangshan_fa",
+        lineUrl: "https://line.me/R/ti/p/@fangshan_fa",
+        crops: ["枋山愛文芒果 (落山風日照早熟芒果)", "黑珍珠蓮霧", "洋蔥"],
+        cropCategory: ["水果", "蔬菜"],
+        seasons: [
+          { crop: "枋山愛文芒果", startMonth: 4, startWeek: 4, endMonth: 7, endWeek: 2, peakMonth: 5, peakWeek: 3, desc: "4月第4週~7月第2週 (盛產高峰：5月第2週~6月第4週)" },
+          { crop: "黑珍珠蓮霧", startMonth: 11, startWeek: 2, endMonth: 4, endWeek: 2, peakMonth: 1, peakWeek: 2, desc: "11月第2週~4月第2週" },
+          { crop: "枋山洋蔥", startMonth: 2, startWeek: 3, endMonth: 4, endWeek: 3, peakMonth: 3, peakWeek: 2, desc: "2月第3週~4月第3週" }
+        ],
+        tasks: "外銷級愛文芒果留蒂 0.5cm 採收、防果粉擦傷、白紙袋套袋、蓮霧套袋採收、拔洋蔥",
+        notes: "智農派工灘頭堡！落山風產區日照最充足，全台愛文芒果第一站搶收。"
+      },
+      {
+        id: "fangliao_fa",
+        region: "south",
+        regionName: "南部",
+        county: "屏東縣",
+        district: "枋寮鄉",
+        name: "屏東縣枋寮地區農會",
+        lat: 22.3654,
+        lng: 120.5941,
+        address: "屏東縣枋寮鄉德興路73號",
+        phone: "(08) 878-2121",
+        line: "@fangliao_fa",
+        lineUrl: "https://line.me/R/ti/p/@fangliao_fa",
+        crops: ["黑珍珠蓮霧", "枋寮愛文芒果", "魩仔魚"],
+        cropCategory: ["水果"],
+        seasons: [
+          { crop: "黑珍珠蓮霧", startMonth: 11, startWeek: 3, endMonth: 4, endWeek: 3, peakMonth: 1, peakWeek: 1, desc: "11月第3週~4月第3週 (盛產：12~2月)" },
+          { crop: "愛文芒果", startMonth: 5, startWeek: 1, endMonth: 7, endWeek: 2, peakMonth: 6, peakWeek: 1, desc: "5月第1週~7月第2週" }
+        ],
+        tasks: "蓮霧田間摘果防裂果、分級精美禮盒打包、芒果採收套袋",
+        notes: "黑珍珠蓮霧故鄉，沿海微鹹地下水灌溉，果色深紅脆甜多汁。"
+      },
+      {
+        id: "gaoshu_fa",
+        region: "south",
+        regionName: "南部",
+        county: "屏東縣",
+        district: "高樹鄉",
+        name: "屏東縣高樹鄉農會",
+        lat: 22.8252,
+        lng: 120.5982,
+        address: "屏東縣高樹鄉高樹村興中路185號",
+        phone: "(08) 796-2211",
+        line: "@gaoshu_fa",
+        lineUrl: "https://line.me/R/ti/p/@gaoshu_fa",
+        crops: ["高樹蜜棗 (全台評鑑常勝軍)", "金鑽鳳梨", "高樹芋頭"],
+        cropCategory: ["水果", "根莖"],
+        seasons: [
+          { crop: "蜜棗", startMonth: 12, startWeek: 1, endMonth: 2, endWeek: 4, peakMonth: 1, peakWeek: 3, desc: "12月第1週~2月第4週 (春節送禮極缺工)" },
+          { crop: "金鑽鳳梨", startMonth: 3, startWeek: 1, endMonth: 5, endWeek: 4, peakMonth: 4, peakWeek: 1, desc: "3月第1週~5月第4週" },
+          { crop: "高樹芋頭", startMonth: 4, startWeek: 3, endMonth: 8, endWeek: 2, peakMonth: 6, peakWeek: 2, desc: "4月第3週~8月第2週" }
+        ],
+        tasks: "蜜棗採收裝籃、防擦撞包裝、鳳梨戴厚手套採割、芋頭起拔削根",
+        notes: "水源水質保護區，蜜棗連年榮獲全國冠軍，春節採收需求大。"
+      },
+      {
+        id: "checheng_fa",
+        region: "south",
+        regionName: "南部",
+        county: "屏東縣",
+        district: "車城地區",
+        name: "屏東縣車城地區農會",
+        lat: 22.0725,
+        lng: 120.7118,
+        address: "屏東縣車城鄉福興村中山路18號",
+        phone: "(08) 882-1002",
+        line: "@checheng_fa",
+        lineUrl: "https://line.me/R/ti/p/@checheng_fa",
+        crops: ["車城洋蔥 (落山風洋蔥、黃金洋蔥)", "紅仁鴨蛋"],
+        cropCategory: ["蔬菜", "特作"],
+        seasons: [
+          { crop: "車城洋蔥採收", startMonth: 2, startWeek: 3, endMonth: 4, endWeek: 4, peakMonth: 3, peakWeek: 3, desc: "2月第3週~4月第4週 (盛產：3月)" }
+        ],
+        tasks: "洋蔥拔蔥、日光風乾曬蔥、剪根去葉、田間裝 20kg 大網袋搬運裝車",
+        notes: "落山風強勁使得洋蔥結球扎實水分少耐貯藏，重體力搬運需工。"
+      },
+
+      // --- 東部地區 (East) ---
+      {
+        id: "sanxing_fa",
+        region: "east",
+        regionName: "東部",
+        county: "宜蘭縣",
+        district: "三星鄉",
+        name: "宜蘭縣三星地區農會",
+        lat: 24.6675,
+        lng: 121.6512,
+        address: "宜蘭縣三星鄉三星路四段360號",
+        phone: "(03) 989-3170",
+        line: "@sanxing_fa",
+        lineUrl: "https://line.me/R/ti/p/@sanxing_fa",
+        crops: ["三星蔥 (全台第一名青蔥)", "上將梨", "三星蒜"],
+        cropCategory: ["蔬菜", "水果"],
+        seasons: [
+          { crop: "三星青蔥(全年)", startMonth: 1, startWeek: 1, endMonth: 12, endWeek: 4, peakMonth: 8, peakWeek: 2, desc: "全年無休 (拔蔥洗蔥天天缺工；夏秋搶收：7~10月)" },
+          { crop: "上將梨", startMonth: 6, startWeek: 3, endMonth: 8, endWeek: 2, peakMonth: 7, peakWeek: 2, desc: "6月第3週~8月第2週" },
+          { crop: "三星白蒜", startMonth: 12, startWeek: 2, endMonth: 2, endWeek: 3, peakMonth: 1, peakWeek: 3, desc: "12月第2週~2月第3週" }
+        ],
+        tasks: "泥濘田間拔蔥、洗蔥池專用水流清蔥洗泥、挑除黃葉、分級稱重捆紮",
+        notes: "蔥白長達15公分，小農天天抱怨腰痛找不到洗蔥工，雪隧50分鐘直達。"
+      },
+      {
+        id: "zhuangwei_fa",
+        region: "east",
+        regionName: "東部",
+        county: "宜蘭縣",
+        district: "壯圍鄉",
+        name: "宜蘭縣壯圍鄉農會",
+        lat: 24.7451,
+        lng: 121.7825,
+        address: "宜蘭縣壯圍鄉大福路二段335號",
+        phone: "(03) 938-5001",
+        line: "@zhuangwei_fa",
+        lineUrl: "https://line.me/R/ti/p/@zhuangwei_fa",
+        crops: ["壯圍新世紀哈密瓜", "溫室玉女番茄", "白蒜"],
+        cropCategory: ["瓜果", "水果", "蔬菜"],
+        seasons: [
+          { crop: "新世紀哈密瓜", startMonth: 5, startWeek: 4, endMonth: 7, endWeek: 2, peakMonth: 6, peakWeek: 3, desc: "5月第4週~7月第2週 (盛產：6月)" },
+          { crop: "溫室玉女番茄", startMonth: 12, startWeek: 1, endMonth: 4, endWeek: 3, peakMonth: 2, peakWeek: 2, desc: "12月第1週~4月第3週" }
+        ],
+        tasks: "哈密瓜藤下採摘、剪丁字果柄、套海綿網裝箱、溫室小番茄採摘",
+        notes: "蘭陽溪口沙地種植，哈密瓜香甜爽脆，夏季一株一果高單價。"
+      },
+      {
+        id: "jian_fa",
+        region: "east",
+        regionName: "東部",
+        county: "花蓮縣",
+        district: "吉安鄉",
+        name: "花蓮縣吉安鄉農會",
+        lat: 23.9632,
+        lng: 121.5721,
+        address: "花蓮縣吉安鄉吉安村吉安路二段90號",
+        phone: "(03) 852-1151",
+        line: "@jian_fa",
+        lineUrl: "https://line.me/R/ti/p/@jian_fa",
+        crops: ["吉安四寶：龍鬚菜", "吉安韭菜", "吉安芋頭", "芥藍菜"],
+        cropCategory: ["蔬菜", "根莖"],
+        seasons: [
+          { crop: "龍鬚菜(全年)", startMonth: 1, startWeek: 1, endMonth: 12, endWeek: 4, peakMonth: 6, peakWeek: 2, desc: "全年無休 (採收高峰：4月 ~ 10月)" },
+          { crop: "吉安芋頭", startMonth: 8, startWeek: 1, endMonth: 11, endWeek: 3, peakMonth: 9, peakWeek: 3, desc: "8月第1週~11月第3週" },
+          { crop: "吉安韭菜", startMonth: 1, startWeek: 1, endMonth: 12, endWeek: 4, peakMonth: 3, peakWeek: 1, desc: "全年無休" }
+        ],
+        tasks: "清晨採摘龍鬚菜嫩梢、分把捆紮保水、芋頭採掘洗淨切根",
+        notes: "奇萊山純淨泉水灌溉，龍鬚菜供應大台北六成市場，清晨採摘需工。"
+      },
+      {
+        id: "ruisui_fa",
+        region: "east",
+        regionName: "東部",
+        county: "花蓮縣",
+        district: "瑞穗鄉",
+        name: "花蓮縣瑞穗鄉農會",
+        lat: 23.4986,
+        lng: 121.3762,
+        address: "花蓮縣瑞穗鄉民生街1號",
+        phone: "(03) 887-2361",
+        line: "@ruisui_fa",
+        lineUrl: "https://line.me/R/ti/p/@ruisui_fa",
+        crops: ["鶴岡文旦", "蜜香紅茶", "舞鶴咖啡"],
+        cropCategory: ["水果", "名茶", "特作"],
+        seasons: [
+          { crop: "蜜香紅茶", startMonth: 5, startWeek: 2, endMonth: 9, endWeek: 3, peakMonth: 7, peakWeek: 2, desc: "5月第2週~9月第3週" },
+          { crop: "鶴岡文旦", startMonth: 8, startWeek: 3, endMonth: 9, endWeek: 3, peakMonth: 9, peakWeek: 1, desc: "8月第3週~9月第3週 (白露前後搶收)" }
+        ],
+        tasks: "文旦大採收搬運裝籃、小綠葉蟬叮咬蜜香紅茶嫩葉手採",
+        notes: "花東縱谷氣候宜人，鶴岡文旦面積廣達800公頃，白露前大搶工。"
+      },
+      {
+        id: "fuli_fa",
+        region: "east",
+        regionName: "東部",
+        county: "花蓮縣",
+        district: "富里鄉",
+        name: "花蓮縣富里鄉農會",
+        lat: 23.1782,
+        lng: 121.2532,
+        address: "花蓮縣富里鄉富里村中山路135號",
+        phone: "(03) 883-0111",
+        line: "@fuli_fa",
+        lineUrl: "https://line.me/R/ti/p/@fuli_fa",
+        crops: ["富麗米 (有機米、丑美人)", "六十石山金針花", "段木香菇"],
+        cropCategory: ["稻米", "特作"],
+        seasons: [
+          { crop: "六十石山金針花", startMonth: 8, startWeek: 1, endMonth: 9, endWeek: 4, peakMonth: 8, peakWeek: 3, desc: "8月第1週~9月第4週 (一日花搶採未開花蕾)" },
+          { crop: "富麗米(一期)", startMonth: 6, startWeek: 3, endMonth: 7, endWeek: 3, peakMonth: 7, peakWeek: 1, desc: "6月第3週~7月第3週" },
+          { crop: "富麗米(二期)", startMonth: 11, startWeek: 1, endMonth: 12, endWeek: 1, peakMonth: 11, peakWeek: 3, desc: "11月第1週~12月第1週" }
+        ],
+        tasks: "高山金針花手採未開花苞（搶一日花需極大工）、烘乾翻曬、割稻隨車",
+        notes: "金針花一旦開花便失去商品價值，每日黎明必須急速搶摘未開花苞。"
+      },
+      {
+        id: "taitung_fa",
+        region: "east",
+        regionName: "東部",
+        county: "台東縣",
+        district: "台東地區",
+        name: "台東縣台東地區農會",
+        lat: 22.7752,
+        lng: 121.1215,
+        address: "台東縣台東市更生北路276號",
+        phone: "(089) 229-211",
+        line: "@taitung_fa",
+        lineUrl: "https://line.me/R/ti/p/@taitung_fa",
+        crops: ["大目釋迦", "鳳梨釋迦 (外銷主力)"],
+        cropCategory: ["水果"],
+        seasons: [
+          { crop: "大目釋迦", startMonth: 7, startWeek: 3, endMonth: 10, endWeek: 2, peakMonth: 8, peakWeek: 4, desc: "7月第3週~10月第2週" },
+          { crop: "鳳梨釋迦", startMonth: 11, startWeek: 3, endMonth: 4, endWeek: 2, peakMonth: 1, peakWeek: 2, desc: "11月第3週~4月第2週 (外銷春節大旺季：12~2月)" }
+        ],
+        tasks: "人工授粉、幼果疏果套袋、釋迦剪果採收、精緻舒果網包裝裝箱",
+        notes: "全台釋迦最大集散地，鳳梨釋迦外銷星馬日韓，冬季包裝搶工。"
+      },
+      {
+        id: "chishang_fa",
+        region: "east",
+        regionName: "東部",
+        county: "台東縣",
+        district: "池上鄉",
+        name: "台東縣池上鄉農會",
+        lat: 23.1238,
+        lng: 121.2185,
+        address: "台東縣池上鄉鐵花路2號",
+        phone: "(089) 862-203",
+        line: "@chishang_fa",
+        lineUrl: "https://line.me/R/ti/p/@chishang_fa",
+        crops: ["池上米 (冠軍米、台稉9號、高雄139號)"],
+        cropCategory: ["稻米"],
+        seasons: [
+          { crop: "一期池上米", startMonth: 6, startWeek: 2, endMonth: 7, endWeek: 3, peakMonth: 6, peakWeek: 4, desc: "6月第2週~7月第3週 (盛產：6月下旬)" },
+          { crop: "二期池上米", startMonth: 10, startWeek: 4, endMonth: 11, endWeek: 4, peakMonth: 11, peakWeek: 2, desc: "10月第4週~11月第4週 (盛產：11月上旬)" }
+        ],
+        tasks: "割稻機隨車接穀、公糧烘乾倉儲作業、小包裝米產線包裝",
+        notes: "新武呂溪灌溉、縱谷日夜溫差大，全台稻米競賽三連冠產區。"
+      },
+      {
+        id: "taimali_fa",
+        region: "east",
+        regionName: "東部",
+        county: "台東縣",
+        district: "太麻里地區",
+        name: "台東縣太麻里地區農會",
+        lat: 22.6152,
+        lng: 120.9982,
+        address: "台東縣太麻里鄉泰和村曙光街2號",
+        phone: "(089) 781-531",
+        line: "@taimali_fa",
+        lineUrl: "https://line.me/R/ti/p/@taimali_fa",
+        crops: ["太麻里金針花", "洛神葵 (洛神花)", "釋迦"],
+        cropCategory: ["特作", "水果"],
+        seasons: [
+          { crop: "金針花", startMonth: 8, startWeek: 1, endMonth: 9, endWeek: 4, peakMonth: 8, peakWeek: 4, desc: "8月第1週~9月第4週" },
+          { crop: "洛神花採收", startMonth: 10, startWeek: 4, endMonth: 12, endWeek: 2, peakMonth: 11, peakWeek: 3, desc: "10月第4週~12月第2週 (盛產：11月)" },
+          { crop: "釋迦", startMonth: 8, startWeek: 2, endMonth: 3, endWeek: 4, peakMonth: 12, peakWeek: 1, desc: "8月第2週~3月第4週" }
+        ],
+        tasks: "太麻里金針山採花苞、洛神花人工採收、捅心去子加工",
+        notes: "紅寶石洛神花全台大本營，需人工用圓管捅出花萼中的種子。"
+      },
+
+      // --- 離島地區 (Offshore Islands) ---
+      {
+        id: "penghu_fa",
+        region: "island",
+        regionName: "離島",
+        county: "澎湖縣",
+        district: "馬公市",
+        name: "澎湖縣農會",
+        lat: 23.5682,
+        lng: 119.5821,
+        address: "澎湖縣馬公市水源路11號",
+        phone: "(06) 927-2161",
+        line: "@penghu_fa",
+        lineUrl: "https://line.me/R/ti/p/@penghu_fa",
+        crops: ["澎湖絲瓜 (稜角絲瓜)", "風茹草", "嘉寶瓜", "花生"],
+        cropCategory: ["瓜果", "特作"],
+        seasons: [
+          { crop: "稜角絲瓜", startMonth: 5, startWeek: 1, endMonth: 9, endWeek: 3, peakMonth: 7, peakWeek: 2, desc: "5月第1週~9月第3週 (盛產：6~8月)" },
+          { crop: "風茹草", startMonth: 6, startWeek: 1, endMonth: 10, endWeek: 2, peakMonth: 7, peakWeek: 4, desc: "6月第1週~10月第2週" }
+        ],
+        tasks: "絲瓜棚架採摘套袋、風茹草割株清洗曬乾、落花生拔取日曬",
+        notes: "澎湖玄武岩海風日照充足，十稜絲瓜脆甜不黑，特作需工防曬。"
+      },
+      {
+        id: "kinmen_fa",
+        region: "island",
+        regionName: "離島",
+        county: "金門縣",
+        district: "金城鎮",
+        name: "金門縣農會",
+        lat: 24.4325,
+        lng: 118.3182,
+        address: "金門縣金城鎮民生路43號",
+        phone: "(082) 327-324",
+        line: "@kinmen_fa",
+        lineUrl: "https://line.me/R/ti/p/@kinmen_fa",
+        crops: ["金門小麥", "金門高粱", "一條根"],
+        cropCategory: ["稻米", "特作"],
+        seasons: [
+          { crop: "金門小麥(黃金麥浪)", startMonth: 3, startWeek: 3, endMonth: 4, endWeek: 4, peakMonth: 4, peakWeek: 2, desc: "3月第3週~4月第4週 (盛產：4月)" },
+          { crop: "金門高粱(釀酒契作)", startMonth: 9, startWeek: 3, endMonth: 11, endWeek: 2, peakMonth: 10, peakWeek: 3, desc: "9月第3週~11月第2週" }
+        ],
+        tasks: "小麥/高粱大型收割機隨車接糧、日曬烘乾入庫、一條根深掘採收",
+        notes: "契作供應金門酒廠釀造金門高粱酒，春麥秋高粱兩季循環。"
+      },
+      {
+        id: "matsu_fa",
+        region: "island",
+        regionName: "離島",
+        county: "連江縣",
+        district: "南竿鄉",
+        name: "連江縣農會 (馬祖)",
+        lat: 26.1558,
+        lng: 119.9325,
+        address: "連江縣南竿鄉清水村100號",
+        phone: "(0836) 25176",
+        line: "@matsu_fa",
+        lineUrl: "https://line.me/R/ti/p/@matsu_fa",
+        crops: ["馬祖高山大白菜", "白蘿蔔", "金銀花"],
+        cropCategory: ["蔬菜", "根莖", "特作"],
+        seasons: [
+          { crop: "馬祖大白菜/蘿蔔", startMonth: 11, startWeek: 2, endMonth: 2, endWeek: 4, peakMonth: 1, peakWeek: 1, desc: "11月第2週~2月第4週 (冬季經霜打清脆甜美)" },
+          { crop: "金銀花", startMonth: 5, startWeek: 2, endMonth: 6, endWeek: 4, peakMonth: 5, peakWeek: 4, desc: "5月第2週~6月第4週" }
+        ],
+        tasks: "陡坡梯田割大白菜、白蘿蔔拔除洗泥、金銀花手工採摘",
+        notes: "海島氣候冬冷溫差大，經霜打的大白菜極具甜度，梯田人工需工。"
+      }
+    ];
+
+    // ==========================================
+    // 2. 狀態變數與控制器
+    // ==========================================
+    const _initNow = new Date();
+    const currentRealMonth = _initNow.getMonth() + 1; // 1~12 (當前月份，例如 9月)
+    const currentRealWeek = Math.min(4, Math.max(1, Math.floor((_initNow.getDate() - 1) / 7) + 1)); // 1~4 (當前週數，例如 第4週)
+
+    let currentSortMode = 'north-south'; // 'north-south' 或 'month'
+    let currentMonth = currentRealMonth; // 預設跟目前的月份符合
+    let currentWeek = currentRealWeek;   // 預設跟目前的週數符合
+    let currentRegion = 'all'; // 'all', 'north', 'central', 'south', 'east', 'island'
+    let searchQuery = '';
+    let isPeakOnly = false;
+    let selectedCropTag = '';
+
+    let map = null;
+    let markersLayer = null;
+    let markersMap = {};
+
+    // 區域中文對應
+    const regionNames = {
+      north: "北部",
+      central: "中部",
+      south: "南部",
+      east: "東部",
+      island: "離島"
+    };
+
+    // 區域色彩對應
+    const regionColors = {
+      north: "#38bdf8",   // Sky
+      central: "#34d399", // Emerald
+      south: "#f59e0b",   // Amber
+      east: "#a78bfa",    // Purple
+      island: "#fb7185"   // Rose
+    };
+
+    // ==========================================
+    // 3. 初始化地圖與資料
+    // ==========================================
+    document.addEventListener('DOMContentLoaded', () => {
+      initMap();
+      setMonthFilter(currentRealMonth, false);
+      setWeekFilter(currentRealWeek);
+      lucide.createIcons();
+    });
+
+    function initMap() {
+      // 建立 Leaflet 地圖，聚焦台灣中心 [23.8, 120.9]，縮放 7.5
+      map = L.map('taiwanMap', {
+        center: [23.8, 120.9],
+        zoom: 7.5,
+        minZoom: 6.5,
+        maxZoom: 14,
+        zoomControl: false
+      });
+
+      // 放置自訂縮放控制在右下
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+      // 使用現代暗色圖資 (CartoDB Dark Matter)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
+      }).addTo(map);
+
+      markersLayer = L.layerGroup().addTo(map);
+    }
+
+    function resetMapView() {
+      if (map) {
+        map.setView([23.8, 120.9], 7.5);
+      }
+    }
+
+    // ==========================================
+    // 4. 產期判斷邏輯（精確到週）
+    // ==========================================
+    function isSeasonActive(season, month, week, peakOnly) {
+      if (peakOnly) {
+        if (month === 0) return true;
+        if (season.peakMonth !== month) return false;
+        if (week !== 'all' && season.peakWeek !== parseInt(week)) return false;
+        return true;
+      }
+
+      if (month === 0) return true; // 全月篩選
+
+      const sM = season.startMonth;
+      const sW = season.startWeek;
+      const eM = season.endMonth;
+      const eW = season.endWeek;
+
+      let inMonthRange = false;
+      if (sM <= eM) {
+        inMonthRange = (month >= sM && month <= eM);
+      } else {
+        // 跨年產期 (例如 11月 ~ 3月)
+        inMonthRange = (month >= sM || month <= eM);
+      }
+
+      if (!inMonthRange) return false;
+
+      // 如果指定了具體週別
+      if (week !== 'all') {
+        const w = parseInt(week);
+        if (month === sM && w < sW) return false;
+        if (month === eM && w > eW) return false;
+      }
+
+      return true;
+    }
+
+    function isFarmerActiveInCurrentFilter(farmer) {
+      // 搜尋條件
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const matchCrops = farmer.crops.some(c => c.toLowerCase().includes(q));
+        const matchName = farmer.name.toLowerCase().includes(q);
+        const matchCounty = farmer.county.toLowerCase().includes(q) || farmer.district.toLowerCase().includes(q);
+        const matchAddress = farmer.address.toLowerCase().includes(q);
+        if (!matchCrops && !matchName && !matchCounty && !matchAddress) return false;
+      }
+
+      // 作物快篩
+      if (selectedCropTag) {
+        const matchTag = farmer.crops.some(c => c.includes(selectedCropTag));
+        if (!matchTag) return false;
+      }
+
+      // 分區篩選
+      if (currentRegion !== 'all' && farmer.region !== currentRegion) {
+        return false;
+      }
+
+      // 月份與週別篩選
+      if (currentMonth !== 0 || isPeakOnly) {
+        const hasActiveSeason = farmer.seasons.some(s => isSeasonActive(s, currentMonth, currentWeek, isPeakOnly));
+        if (!hasActiveSeason) return false;
+      }
+
+      return true;
+    }
+
+    // ==========================================
+    // 5. 排序演算法
+    // ==========================================
+    function getSortedFarmers(dataList) {
+      const list = [...dataList];
+
+      if (currentSortMode === 'north-south') {
+        // 從北到南：以緯度 lat 由大到小排序 (北邊緯度高，南邊緯度低)
+        return list.sort((a, b) => b.lat - a.lat);
+      } else if (currentSortMode === 'month') {
+        // 依月份排序：取得該農會最早開始採收的月份
+        return list.sort((a, b) => {
+          const aMinMonth = Math.min(...a.seasons.map(s => s.startMonth));
+          const bMinMonth = Math.min(...b.seasons.map(s => s.startMonth));
+          if (aMinMonth !== bMinMonth) return aMinMonth - bMinMonth;
+          // 若月份相同，再依照北到南
+          return b.lat - a.lat;
+        });
+      }
+      return list;
+    }
+
+    // ==========================================
+    // 6. 核心渲染 (地圖點位 + 右側卡片清單)
+    // ==========================================
+    function renderApp() {
+      // 篩選出符合條件的農會
+      const filteredFarmers = farmersData.filter(isFarmerActiveInCurrentFilter);
+      const sortedFarmers = getSortedFarmers(filteredFarmers);
+
+      // 更新計數與標題
+      const countEl = document.getElementById('matchCountBadge');
+      const mapCountEl = document.getElementById('mapActiveCount');
+      if (countEl) countEl.innerText = `${sortedFarmers.length} / ${farmersData.length} 處`;
+      if (mapCountEl) mapCountEl.innerText = `${sortedFarmers.length} 處產區`;
+
+      const listSubInfo = document.getElementById('listSubInfo');
+      if (listSubInfo) {
+        listSubInfo.innerText = currentSortMode === 'north-south' ? '從北到南排列' : '依產期月份排序';
+      }
+
+      // 渲染地圖點位
+      renderMapMarkers(sortedFarmers);
+
+      // 渲染右側卡片
+      renderCards(sortedFarmers);
+
+      // 更新 Lucide 圖標
+      lucide.createIcons();
+    }
+
+    function renderMapMarkers(farmers) {
+      if (!markersLayer) return;
+      markersLayer.clearLayers();
+      markersMap = {};
+
+      farmers.forEach(farmer => {
+        const isCurrentActive = currentMonth === 0 
+          ? true 
+          : farmer.seasons.some(s => isSeasonActive(s, currentMonth, currentWeek, isPeakOnly));
+
+        const color = isCurrentActive ? (regionColors[farmer.region] || '#10b981') : '#64748b';
+        const borderColor = isCurrentActive ? '#ffffff' : '#475569';
+        const radius = isCurrentActive ? 9 : 6;
+
+        // 建立客製化圓形標記
+        const marker = L.circleMarker([farmer.lat, farmer.lng], {
+          radius: radius,
+          fillColor: color,
+          color: borderColor,
+          weight: isCurrentActive ? 2.5 : 1,
+          opacity: 0.9,
+          fillOpacity: isCurrentActive ? 0.85 : 0.4
+        });
+
+        // 標記彈出泡泡 (Popup)
+        const popupContent = `
+          <div class="p-4 w-72 space-y-2.5 text-xs">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold" style="background:${color}25; color:${color}; border: 1px solid ${color}50;">
+                ${farmer.regionName}・${farmer.county}
+              </span>
+              <span class="text-slate-400 font-mono text-[11px]">${farmer.phone}</span>
+            </div>
+            
+            <h4 class="text-sm font-black text-white">${farmer.name}</h4>
+
+            <div>
+              <div class="text-[11px] text-slate-400 font-semibold mb-1">主要產出作物：</div>
+              <div class="flex flex-wrap gap-1">
+                ${farmer.crops.map(c => `<span class="px-1.5 py-0.5 rounded bg-slate-800 text-emerald-300 font-medium text-[11px]">${c}</span>`).join('')}
+              </div>
+            </div>
+
+            <div class="bg-slate-950 p-2 rounded-xl border border-slate-800/80 space-y-1 text-[11px]">
+              <div class="text-slate-400 font-semibold">產季週曆：</div>
+              ${farmer.seasons.map(s => `
+                <div class="flex items-center justify-between text-slate-300">
+                  <span>${s.crop}</span>
+                  <span class="text-amber-300 font-mono">${s.desc}</span>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="flex items-center gap-2 pt-1">
+              <button onclick="openModal('${farmer.id}')" class="flex-1 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-center transition">
+                檢視詳細資訊
+              </button>
+              <a href="tel:${farmer.phone.replace(/[^0-9]/g, '')}" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 transition" title="致電農會">
+                📞
+              </a>
+            </div>
+          </div>
+        `;
+
+        marker.bindPopup(popupContent);
+        marker.on('click', () => {
+          highlightCard(farmer.id);
+        });
+
+        markersLayer.addLayer(marker);
+        markersMap[farmer.id] = marker;
+      });
+    }
+
+    function renderCards(farmers) {
+      const container = document.getElementById('farmersListContainer');
+      if (!container) return;
+
+      if (farmers.length === 0) {
+        container.innerHTML = `
+          <div class="p-8 text-center space-y-3">
+            <span class="text-3xl">🔍</span>
+            <div class="text-sm font-bold text-slate-300">查無符合條件之農會</div>
+            <p class="text-xs text-slate-500">建議清除搜尋關鍵字，或切換至其他月份與分區。</p>
+            <button onclick="clearAllFilters()" class="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-bold transition">
+              重設所有條件
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = farmers.map((farmer, index) => {
+        const color = regionColors[farmer.region] || '#10b981';
+        return `
+          <div id="card-${farmer.id}" class="p-3.5 rounded-xl bg-slate-950/70 hover:bg-slate-800/80 border border-slate-800/80 hover:border-slate-700 transition group space-y-2.5">
+            
+            <!-- Card Header: Index + Region + Name + Action Buttons -->
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-mono flex items-center justify-center font-bold">
+                  ${index + 1}
+                </span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold" style="background:${color}20; color:${color}; border: 1px solid ${color}40;">
+                  ${farmer.regionName}・${farmer.county}
+                </span>
+                <h3 class="text-xs sm:text-sm font-bold text-white group-hover:text-emerald-300 transition">
+                  ${farmer.name}
+                </h3>
+              </div>
+
+              <!-- Top Action Icons -->
+              <div class="flex items-center gap-1.5">
+                <button onclick="focusOnMap('${farmer.id}')" title="在地圖上定位" class="p-1 rounded-lg bg-slate-900 hover:bg-slate-700 text-slate-400 hover:text-emerald-400 text-xs transition">
+                  <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="openModal('${farmer.id}')" title="完整詳細卡片" class="p-1 rounded-lg bg-slate-900 hover:bg-slate-700 text-slate-400 hover:text-white text-xs transition">
+                  <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Crops Tag Chips -->
+            <div class="flex flex-wrap gap-1 items-center">
+              <span class="text-[11px] text-slate-400 font-medium">特產：</span>
+              ${farmer.crops.map(c => `
+                <span class="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-emerald-300 text-[11px] font-medium">
+                  ${c}
+                </span>
+              `).join('')}
+            </div>
+
+            <!-- Harvest Calendar & Weeks (Gantt Style) -->
+            <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/60 space-y-1.5 text-[11px]">
+              <div class="flex items-center justify-between text-slate-400">
+                <span class="font-semibold flex items-center gap-1">
+                  <i data-lucide="calendar" class="w-3 h-3 text-emerald-400"></i>
+                  產出月份與詳細週份
+                </span>
+                <span class="text-[10px] text-amber-400/90 font-mono">盛產週特別標註</span>
+              </div>
+
+              ${farmer.seasons.map(s => `
+                <div class="flex items-center justify-between text-xs py-0.5 border-b border-slate-800/40 last:border-0">
+                  <span class="text-slate-200 font-medium">${s.crop}</span>
+                  <span class="text-amber-300 font-mono text-[11px] bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                    ${s.desc}
+                  </span>
+                </div>
+              `).join('')}
+            </div>
+
+            <!-- Contact Row: Phone + Address + Line -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px]">
+              <div class="flex items-center gap-3 text-slate-400">
+                <a href="tel:${farmer.phone.replace(/[^0-9]/g, '')}" class="flex items-center gap-1 hover:text-emerald-400 text-slate-300 transition font-mono font-medium">
+                  <span>📞</span>
+                  <span>${farmer.phone}</span>
+                </a>
+                <a href="${farmer.lineUrl}" target="_blank" class="flex items-center gap-1 text-[#06C755] hover:underline font-semibold">
+                  <span>💬</span>
+                  <span>LINE: ${farmer.line}</span>
+                </a>
+              </div>
+
+              <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(farmer.address)}" target="_blank" class="text-slate-400 hover:text-slate-200 flex items-center gap-1 text-[10px] truncate max-w-[180px]" title="${farmer.address}">
+                <i data-lucide="navigation" class="w-3 h-3 text-emerald-400"></i>
+                <span class="truncate">${farmer.address}</span>
+              </a>
+            </div>
+
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ==========================================
+    // 7. 互動事件處理
+    // ==========================================
+    function setSortMode(mode) {
+      currentSortMode = mode;
+      document.getElementById('sortNorthSouthBtn').className = mode === 'north-south'
+        ? "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-emerald-600 text-white shadow"
+        : "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200";
+
+      document.getElementById('sortMonthBtn').className = mode === 'month'
+        ? "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-emerald-600 text-white shadow"
+        : "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200";
+
+      renderApp();
+    }
+
+    function updateFilterLabel() {
+      const label = document.getElementById('currentFilterLabel');
+      if (!label) return;
+      const isCurrentTime = (currentMonth === currentRealMonth && currentWeek === currentRealWeek);
+      if (currentMonth === 0) {
+        label.innerHTML = `全年 12 個月 (${currentWeek === 'all' ? '全週' : `第 ${currentWeek} 週`})`;
+      } else {
+        const weekText = currentWeek === 'all' ? '全月' : `第 ${currentWeek} 週`;
+        if (isCurrentTime) {
+          label.innerHTML = `${currentMonth} 月 (${weekText}) <span class="ml-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold">🟢 當前時序即時產期</span>`;
+        } else {
+          label.innerHTML = `${currentMonth} 月 (${weekText})`;
+        }
+      }
+    }
+
+    function setMonthFilter(month, doRender = true) {
+      currentMonth = month;
+      
+      // 更新月份按鈕樣式
+      document.querySelectorAll('.month-btn').forEach(btn => {
+        const m = parseInt(btn.dataset.month);
+        if (m === month) {
+          btn.className = "month-btn py-1.5 px-2 rounded-xl text-xs font-black transition border bg-emerald-600 text-white border-emerald-500 shadow";
+        } else {
+          btn.className = "month-btn py-1.5 px-2 rounded-xl text-xs font-semibold transition border bg-slate-950/70 text-slate-300 border-slate-800 hover:border-slate-700";
+        }
+      });
+
+      updateFilterLabel();
+      if (doRender) renderApp();
+    }
+
+    function setWeekFilter(week, doRender = true) {
+      currentWeek = week;
+      document.querySelectorAll('.week-btn').forEach(btn => {
+        if (btn.dataset.week === String(week)) {
+          btn.className = "week-btn px-2 py-0.5 rounded-md bg-emerald-600 text-white font-bold text-[11px]";
+        } else {
+          btn.className = "week-btn px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium text-[11px]";
+        }
+      });
+
+      updateFilterLabel();
+      if (doRender) renderApp();
+    }
+
+    function resetToCurrentWeek() {
+      const _now = new Date();
+      const cM = _now.getMonth() + 1;
+      const cW = Math.min(4, Math.max(1, Math.floor((_now.getDate() - 1) / 7) + 1));
+      setMonthFilter(cM, false);
+      setWeekFilter(cW);
+    }
+
+    function resetToAllYear() {
+      setMonthFilter(0, false);
+      setWeekFilter('all');
+    }
+
+    function setRegionFilter(region) {
+      currentRegion = region;
+      document.querySelectorAll('.region-btn').forEach(btn => {
+        if (btn.dataset.region === region) {
+          btn.className = "region-btn px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold";
+        } else {
+          btn.className = "region-btn px-2.5 py-1 rounded-lg bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800";
+        }
+      });
+      renderApp();
+    }
+
+    function handleSearch(val) {
+      searchQuery = val.trim();
+      const clearBtn = document.getElementById('clearSearchBtn');
+      if (clearBtn) {
+        if (searchQuery) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+      }
+      renderApp();
+    }
+
+    function clearSearch() {
+      const input = document.getElementById('searchInput');
+      if (input) input.value = '';
+      searchQuery = '';
+      document.getElementById('clearSearchBtn').classList.add('hidden');
+      renderApp();
+    }
+
+    function filterByCropTag(tag) {
+      if (selectedCropTag === tag) {
+        selectedCropTag = ''; // 點第二次取消
+      } else {
+        selectedCropTag = tag;
+      }
+      renderApp();
+    }
+
+    function togglePeakOnly() {
+      isPeakOnly = !isPeakOnly;
+      const btn = document.getElementById('peakOnlyBtn');
+      if (btn) {
+        if (isPeakOnly) {
+          btn.className = "px-3 py-1.5 rounded-xl border border-amber-500 bg-amber-500/20 text-amber-300 text-xs font-bold transition flex items-center gap-1.5 shadow-sm";
+        } else {
+          btn.className = "px-3 py-1.5 rounded-xl border border-slate-700 text-slate-400 hover:border-amber-500/50 hover:text-amber-400 text-xs font-bold transition flex items-center gap-1.5";
+        }
+      }
+      renderApp();
+    }
+
+    function clearAllFilters() {
+      searchQuery = '';
+      selectedCropTag = '';
+      isPeakOnly = false;
+      const peakBtn = document.getElementById('peakOnlyBtn');
+      if (peakBtn) {
+        peakBtn.className = "px-3 py-1.5 rounded-xl border border-slate-700 text-slate-400 hover:border-amber-500/50 hover:text-amber-400 text-xs font-bold transition flex items-center gap-1.5";
+      }
+      
+      const input = document.getElementById('searchInput');
+      if (input) input.value = '';
+      const clearBtn = document.getElementById('clearSearchBtn');
+      if (clearBtn) clearBtn.classList.add('hidden');
+      
+      setMonthFilter(0, false);
+      setWeekFilter('all', false);
+      setRegionFilter('all');
+    }
+
+    // 地圖點位與卡片聯動
+    function focusOnMap(farmerId) {
+      const marker = markersMap[farmerId];
+      const farmer = farmersData.find(f => f.id === farmerId);
+      if (marker && map && farmer) {
+        map.flyTo([farmer.lat, farmer.lng], 12, { duration: 1.2 });
+        setTimeout(() => {
+          marker.openPopup();
+        }, 1200);
+      }
+      highlightCard(farmerId);
+    }
+
+    function highlightCard(farmerId) {
+      const card = document.getElementById(`card-${farmerId}`);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add('ring-2', 'ring-emerald-400', 'bg-slate-800');
+        setTimeout(() => {
+          card.classList.remove('ring-2', 'ring-emerald-400', 'bg-slate-800');
+        }, 2500);
+      }
+    }
+
+    function scrollToTopList() {
+      const container = document.getElementById('farmersListContainer');
+      if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ==========================================
+    // 8. 模態框 (Modal Drawer)
+    // ==========================================
+    function openModal(farmerId) {
+      const farmer = farmersData.find(f => f.id === farmerId);
+      if (!farmer) return;
+
+      const modal = document.getElementById('detailModal');
+      const content = document.getElementById('modalContent');
+      const color = regionColors[farmer.region] || '#10b981';
+
+      content.innerHTML = `
+        <div class="space-y-4">
+          <!-- Top Tag -->
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-1 rounded-full text-xs font-extrabold" style="background:${color}20; color:${color}; border: 1px solid ${color}40;">
+              ${farmer.regionName}・${farmer.county}・${farmer.district}
+            </span>
+            <span class="text-xs text-slate-400">緯度：${farmer.lat} / 經度：${farmer.lng}</span>
+          </div>
+
+          <!-- Name -->
+          <div>
+            <h2 class="text-2xl font-black text-white">${farmer.name}</h2>
+            <p class="text-xs text-slate-400 mt-0.5">全台農會產銷資訊與派工需求資料庫</p>
+          </div>
+
+          <!-- Key Contact Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs">
+            <div class="space-y-1">
+              <span class="text-slate-400 font-semibold">連絡電話 (代表號)：</span>
+              <div class="flex items-center gap-2">
+                <a href="tel:${farmer.phone.replace(/[^0-9]/g, '')}" class="text-emerald-400 font-bold font-mono text-sm hover:underline">
+                  ${farmer.phone}
+                </a>
+                <span class="text-[10px] text-slate-500">(點擊直接撥打)</span>
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <span class="text-slate-400 font-semibold">官方 LINE / 諮詢渠道：</span>
+              <div class="flex items-center gap-2">
+                <a href="${farmer.lineUrl}" target="_blank" class="text-[#06C755] font-black text-sm hover:underline flex items-center gap-1">
+                  <span>💬</span> ${farmer.line}
+                </a>
+                <span class="text-[10px] text-slate-500">(加為好友)</span>
+              </div>
+            </div>
+
+            <div class="sm:col-span-2 space-y-1 pt-1 border-t border-slate-900">
+              <span class="text-slate-400 font-semibold">機構通訊地址：</span>
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <span class="text-slate-200">${farmer.address}</span>
+                <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(farmer.address)}" target="_blank" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold text-[11px] transition flex items-center gap-1">
+                  🗺️ Google 地圖導航
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Crops & Seasons -->
+          <div class="space-y-2">
+            <h4 class="text-xs font-bold text-slate-300">代表性農作物與每週產曆：</h4>
+            <div class="space-y-2">
+              ${farmer.seasons.map(s => `
+                <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between flex-wrap gap-2 text-xs">
+                  <div>
+                    <span class="font-bold text-emerald-300 text-sm">${s.crop}</span>
+                    <p class="text-slate-400 text-[11px] mt-0.5">產期週別：${s.desc}</p>
+                  </div>
+                  <div class="text-right">
+                    <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold">
+                      盛產：${s.peakMonth}月 第${s.peakWeek}週
+                    </span>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Labor Dispatch Tasks -->
+          <div class="p-3.5 bg-emerald-950/20 border border-emerald-500/30 rounded-2xl space-y-1.5 text-xs">
+            <div class="flex items-center gap-1.5 font-bold text-emerald-300">
+              <span>🛠️</span>
+              <span>智農派工農務適配工種：</span>
+            </div>
+            <p class="text-slate-200 leading-relaxed">${farmer.tasks}</p>
+          </div>
+
+          <!-- Operational Notes -->
+          <div class="text-xs text-slate-400 bg-slate-950 p-3 rounded-xl border border-slate-800">
+            <span class="font-semibold text-slate-300">產地特性與開拓備忘：</span>
+            <p class="mt-1">${farmer.notes}</p>
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div class="flex items-center gap-3 pt-2">
+            <button onclick="focusOnMap('${farmer.id}'); closeModal();" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition flex items-center justify-center gap-1.5">
+              <span>📍</span> 在地圖上查看
+            </button>
+            <a href="tel:${farmer.phone.replace(/[^0-9]/g, '')}" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/30">
+              <span>📞</span> 立即致電對接
+            </a>
+          </div>
+        </div>
+      `;
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('detailModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    // ==========================================
+    // 9. 匯出 CSV 與複製名冊
+    // ==========================================
+    function exportToCSV() {
+      // 取得當前篩選與排序之清單
+      const filtered = farmersData.filter(isFarmerActiveInCurrentFilter);
+      const sorted = getSortedFarmers(filtered);
+
+      let csvContent = "\uFEFF農會名稱,地理分區,縣市,鄉鎮區,電話,官方LINE,連絡地址,主要作物,產出月份與詳細週份,盛產高峰期,派工工種\n";
+
+      sorted.forEach(f => {
+        const cropsStr = `"${f.crops.join('、')}"`;
+        const seasonsStr = `"${f.seasons.map(s => `${s.crop}: ${s.desc}`).join('；')}"`;
+        const peakStr = `"${f.seasons.map(s => `${s.crop}盛產於${s.peakMonth}月W${s.peakWeek}`).join('；')}"`;
+        const tasksStr = `"${f.tasks}"`;
+        const row = [
+          `"${f.name}"`,
+          `"${f.regionName}"`,
+          `"${f.county}"`,
+          `"${f.district}"`,
+          `"${f.phone}"`,
+          `"${f.line}"`,
+          `"${f.address}"`,
+          cropsStr,
+          seasonsStr,
+          peakStr,
+          tasksStr
+        ].join(',');
+        csvContent += row + "\n";
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `全台農會連絡資訊與作物產曆_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function copyContactList() {
+      const filtered = farmersData.filter(isFarmerActiveInCurrentFilter);
+      const sorted = getSortedFarmers(filtered);
+
+      let text = `【智農派工 AgriDispatch - 全台農會產地通訊錄】\n篩選條件：${document.getElementById('currentFilterLabel')?.innerText || '全部'} (共 ${sorted.length} 家)\n\n`;
+
+      sorted.forEach((f, idx) => {
+        text += `${idx + 1}. ${f.name} (${f.county})\n`;
+        text += `   電話：${f.phone} | LINE：${f.line}\n`;
+        text += `   地址：${f.address}\n`;
+        text += `   特產作物：${f.crops.join('、')}\n`;
+        text += `   產期週曆：${f.seasons.map(s => s.desc).join('；')}\n\n`;
+      });
+
+      navigator.clipboard.writeText(text).then(() => {
+        alert(`已成功複製 ${sorted.length} 家農會通訊錄至剪貼簿！`);
+      }).catch(err => {
+        console.error("複製失敗:", err);
+      });
+    }
+  </script>
+
+</body>
+</html>

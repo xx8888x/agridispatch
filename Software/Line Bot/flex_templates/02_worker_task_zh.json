@@ -1,0 +1,104 @@
+{
+  "type": "bubble",
+  "size": "mega",
+  "header": {
+    "type": "box",
+    "layout": "vertical",
+    "backgroundColor": "#047857",
+    "paddingAll": "20px",
+    "contents": [
+      {
+        "type": "text",
+        "text": "☀️ 正常出勤・專車接送",
+        "color": "#A7F3D0",
+        "size": "xs",
+        "weight": "bold"
+      },
+      {
+        "type": "text",
+        "text": "今日派工任務卡",
+        "color": "#FFFFFF",
+        "size": "xl",
+        "weight": "bold"
+      },
+      {
+        "type": "text",
+        "text": "工號: W001 阮文雄 (Nguyễn Văn Hùng)",
+        "color": "#E2E8F0",
+        "size": "xs"
+      }
+    ]
+  },
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "spacing": "md",
+    "paddingAll": "20px",
+    "contents": [
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "出勤時間", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "06:30 集合上車 / 07:00 ~ 16:00 作業", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "作業地點", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "🌾 枋山愛文芒果產銷專區 (第 2 田區)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "接送專車", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "智農 1 號車 (張大哥 / 0912-111-333)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "作業內容", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "芒果採收剪蒂、防碰撞分籃 (留蒂 0.5cm)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "手路標準", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "留蒂 0.5cm 護果粉 / 切口平整不刺傷鄰果", "color": "#059669", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "type": "box",
+    "layout": "vertical",
+    "spacing": "sm",
+    "paddingAll": "16px",
+    "contents": [
+      {
+        "type": "button",
+        "style": "primary",
+        "color": "#10B981",
+        "height": "sm",
+        "action": {
+          "type": "uri",
+          "label": "📍 GPS 抵達現場數位打卡",
+          "uri": "https://agridispatch.tw/clockin?w=W001"
+        }
+      }
+    ]
+  }
+}

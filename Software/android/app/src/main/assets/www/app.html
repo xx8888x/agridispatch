@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 AgriDispatch - 四大使用者角色智慧調度平台</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN for Tech Admin Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <!-- Logo & System Title -->
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="flex items-center gap-2 group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-brand-600/30">
+            <span class="text-xl">🌱</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-lg tracking-tight text-white group-hover:text-brand-400 transition">智農派工</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 font-semibold">AgriDispatch</span>
+            </div>
+            <p class="text-[11px] text-slate-400">四大使用者專屬版本 ╳ 雙軌智慧派遣</p>
+          </div>
+        </a>
+      </div>
+
+      <!-- Center Role Switcher (Five Distinct Portals) -->
+      <nav class="hidden lg:flex items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700/60 shadow-inner">
+        <button onclick="switchUserRole('farmer')" id="btn-portal-farmer" class="role-portal-btn px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs shadow transition flex items-center gap-1.5">
+          <span>👨‍🌾</span> 農場主版本
+        </button>
+        <button onclick="switchUserRole('worker_foreign')" id="btn-portal-foreign" class="role-portal-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium text-xs transition flex items-center gap-1.5">
+          <span>👷</span> 外籍移工版本
+        </button>
+        <button onclick="switchUserRole('worker_local')" id="btn-portal-local" class="role-portal-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium text-xs transition flex items-center gap-1.5">
+          <span>🚜</span> 本地勞工版本
+        </button>
+        <button onclick="switchUserRole('admin_tech')" id="btn-portal-admin" class="role-portal-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium text-xs transition flex items-center gap-1.5">
+          <span>🛰️</span> 科技公司後台
+        </button>
+        <button onclick="switchUserRole('showcase')" id="btn-portal-showcase" class="role-portal-btn px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 font-bold text-xs transition flex items-center gap-1.5">
+          <span>🌟</span> 對外展示宣傳
+        </button>
+        <a href="login.html" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs transition flex items-center gap-1.5">
+          <span>🔑</span> 身分登入
+        </a>
+        <a href="admin.html" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-indigo-600/30">
+          <span>💻</span> 管理後台 (Admin)
+        </a>
+        <a href="farmers_map.html" class="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/40 font-bold text-xs transition flex items-center gap-1.5">
+          <span>🗺️</span> 產地地圖
+        </a>
+        <a href="line.html" class="px-3 py-1.5 rounded-lg bg-[#06C755]/20 text-emerald-300 hover:bg-[#06C755]/30 border border-emerald-500/40 font-bold text-xs transition flex items-center gap-1.5">
+          <span>💬</span> LINE Bot 助理
+        </a>
+      </nav>
+
+      <!-- Right User Profile & Quick Login -->
+      <div class="flex items-center gap-3">
+        <div class="hidden sm:flex flex-col text-right">
+          <span id="current-user-name" class="text-xs font-bold text-emerald-400 flex items-center justify-end gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 live-pulse"></span> 陳建龍 (阿龍班長)
+          </span>
+          <span id="current-user-role" class="text-[11px] text-slate-400">農場主 / 枋山愛文芒果合作園</span>
+        </div>
+        <button onclick="openLoginModal()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1">
+          <span>🔑</span> 切換帳號
+        </button>
+        <a href="index.html" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 transition flex items-center gap-1">
+          <span>🏠</span> 回首頁
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile Sub-nav -->
+    <div class="lg:hidden flex items-center justify-around border-t border-slate-800 py-2 px-2 bg-slate-900/95 overflow-x-auto text-xs">
+      <button onclick="switchUserRole('farmer')" id="m-btn-farmer" class="m-role-btn px-2 py-1 text-emerald-400 font-bold border-b-2 border-emerald-400">農場主</button>
+      <button onclick="switchUserRole('worker_foreign')" id="m-btn-foreign" class="m-role-btn px-2 py-1 text-slate-400 font-medium">移工端</button>
+      <button onclick="switchUserRole('worker_local')" id="m-btn-local" class="m-role-btn px-2 py-1 text-slate-400 font-medium">本地工</button>
+      <button onclick="switchUserRole('admin_tech')" id="m-btn-admin" class="m-role-btn px-2 py-1 text-slate-400 font-medium">科技後台</button>
+      <button onclick="switchUserRole('showcase')" id="m-btn-showcase" class="m-role-btn px-2 py-1 text-amber-300 font-bold">✨展示版</button>
+      <a href="line.html" class="px-2 py-1 text-emerald-400 font-bold flex items-center gap-0.5"><span>💬</span>LINE</a>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+
+    <!-- ============================================================= -->
+    <!-- ROLE 1: 農場主使用版本 (FARM OWNER / FARMER PORTAL)            -->
+    <!-- ============================================================= -->
+    <section id="portal-farmer" class="space-y-8">
+      <!-- Title & Value Prop -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">農場主專屬</span>
+            <h1 class="text-2xl sm:text-3xl font-black text-white">智慧農務派工與早鳥預約系統</h1>
+          </div>
+          <p class="text-slate-400 text-sm mt-1">100% 合作社特許外展農工，簽約保證出工「遲到免單、放鳥雙倍賠償」，合法抵稅發票</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="px-4 py-2 rounded-xl bg-slate-800/80 border border-slate-700 text-right">
+            <span class="text-xs text-slate-400 block">今日在籍可用外展農工</span>
+            <span class="text-lg font-bold text-emerald-400">20 名在籍特許待命</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LINE Bot Integration Banner for Farmer -->
+      <div class="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/80 to-slate-900 border border-emerald-500/40 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-[#06C755] text-white flex items-center justify-center text-xl font-bold shadow flex-shrink-0">
+            💬
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm font-black text-white">LINE 官方派工助理已連線</h3>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-bold">已綁定：陳建龍 (阿龍班長)</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">派工出工確認、專車司機抵達通知、午後暴雨冷鏈避險快訊均自動推播至 LINE 官方帳號。</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <a href="line.html" class="px-4 py-2 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs shadow flex items-center gap-1.5 transition">
+            <span>📱</span> 開啟 LINE 體驗館
+          </a>
+        </div>
+      </div>
+
+      <!-- Two-Column Interactive Booking & Calculator -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Left: Calculator (7 cols) -->
+        <div class="lg:col-span-7 bg-slate-800/60 rounded-2xl p-6 border border-slate-700/70 shadow-xl space-y-6">
+          <h2 class="text-lg font-bold text-white flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> 步驟一：選擇作物與作業面積
+          </h2>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1.5">主要農作物類別</label>
+              <select id="calc-crop" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                <option value="mango" selected>愛文芒果 (屏東枋山/台南玉井) - 套袋/採收</option>
+                <option value="onion">洋蔥 (屏東高樹/恆春) - 採收裝袋</option>
+                <option value="pepper">設施甜椒/小黃瓜 (彰雲) - 修枝採收</option>
+                <option value="scallion">宜蘭三星蔥 - 拔蔥/洗蔥/分級</option>
+                <option value="pomelo">文旦柚 (麻豆/花蓮) - 產季搶收</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1.5">耕作作業面積（分地）</label>
+              <div class="relative">
+                <input id="calc-area" type="number" min="0.5" max="50" step="0.5" value="5" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                <span class="absolute right-3.5 top-2.5 text-xs text-slate-400">分地 (約 1,467 坪)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Service Scheme Radios -->
+          <div class="space-y-2">
+            <label class="block text-xs font-semibold text-slate-300">選擇派工商業方案</label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <label class="relative flex flex-col p-3.5 rounded-xl border-2 border-emerald-500/80 bg-emerald-950/20 cursor-pointer hover:bg-emerald-950/40 transition">
+                <input type="radio" name="calc-plan" value="early_bird" checked class="sr-only">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs font-black text-emerald-400">★ 推薦早鳥包</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950 font-bold">9 折</span>
+                </div>
+                <span class="text-sm font-bold text-white">產季早鳥工時包</span>
+                <span class="text-[11px] text-slate-400 mt-1">預付 20% 定金，享搶工期 100% 保證出工</span>
+              </label>
+
+              <label class="relative flex flex-col p-3.5 rounded-xl border border-slate-700 bg-slate-900/60 cursor-pointer hover:border-slate-600 transition">
+                <input type="radio" name="calc-plan" value="hourly" class="sr-only">
+                <span class="text-xs font-bold text-slate-400 mb-1">彈性隨叫隨派</span>
+                <span class="text-sm font-bold text-white">標準計時外展</span>
+                <span class="text-[11px] text-slate-400 mt-1">臨時計時需求，按標準牌價計費</span>
+              </label>
+
+              <label class="relative flex flex-col p-3.5 rounded-xl border border-slate-700 bg-slate-900/60 cursor-pointer hover:border-slate-600 transition">
+                <input type="radio" name="calc-plan" value="lump_sum" class="sr-only">
+                <span class="text-xs font-bold text-amber-400 mb-1">省心全包式</span>
+                <span class="text-sm font-bold text-white">成果驗收統包</span>
+                <span class="text-[11px] text-slate-400 mt-1">免在田間監工，驗收合格後一次結清</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Real-Time Calculation Result Card -->
+          <div class="p-5 rounded-xl bg-slate-900/90 border border-slate-700 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400">智慧派工試算摘要</span>
+              <span id="calc-out-savings" class="text-xs font-bold text-emerald-400">已省下 NT$ 4,200 (10% 優惠)</span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+              <div class="p-2.5 rounded-lg bg-slate-800/80">
+                <span class="text-[11px] text-slate-400 block">需求總工時</span>
+                <span id="calc-out-hours" class="text-base font-bold text-white">140 工時</span>
+              </div>
+              <div class="p-2.5 rounded-lg bg-slate-800/80">
+                <span class="text-[11px] text-slate-400 block">建議派遣配置</span>
+                <span id="calc-out-workers" class="text-xs font-bold text-emerald-400">4 位 (約 4.4 天)</span>
+              </div>
+              <div class="p-2.5 rounded-lg bg-slate-800/80">
+                <span class="text-[11px] text-slate-400 block">原價牌價</span>
+                <span id="calc-out-standard" class="text-xs line-through text-slate-400">NT$ 42,000</span>
+              </div>
+              <div class="p-2.5 rounded-lg bg-emerald-950/60 border border-emerald-500/40">
+                <span class="text-[11px] text-emerald-300 block font-semibold">應付總額</span>
+                <span id="calc-out-final" class="text-base font-black text-emerald-400">NT$ 37,800</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+              <span>所選方案：<strong id="calc-out-plan-desc" class="text-slate-200">產季早鳥工時包 (9折優惠)</strong></span>
+              <span>簽約定金：<strong id="calc-out-deposit" class="text-amber-400">NT$ 7,560 (20%)</strong></span>
+            </div>
+          </div>
+
+          <!-- Submit Action -->
+          <button onclick="handleFarmerBooking(event)" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-brand-600 hover:from-emerald-500 hover:to-brand-500 text-white font-black text-base shadow-lg shadow-emerald-600/30 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+            <span>🚀</span> 立即送出派工預約（保留早鳥保證出工配額）
+          </button>
+        </div>
+
+          <!-- My Orders / Invoice Status -->
+          <div class="p-5 rounded-2xl bg-slate-800/40 border border-slate-700/60 space-y-3">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">我的派工訂單與履約進度</span>
+            <div class="space-y-2.5 text-xs">
+              <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+                <div>
+                  <strong class="text-white block">ORD-2026-001 (愛文芒果 6分地)</strong>
+                  <span class="text-slate-400">工班 B 組 (6人)・早鳥 168 工時</span>
+                </div>
+                <span class="px-2.5 py-1 rounded text-[11px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">已收 20% 定金</span>
+              </div>
+              <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+                <div>
+                  <strong class="text-white block">發票號碼：AG-98765432</strong>
+                  <span class="text-slate-400">發票金額：NT$ 45,360 (含稅可扣抵)</span>
+                </div>
+                <button onclick="AgriDocs.downloadInvoice('ORD-2026-001', { invoiceNo: 'AG-98765432', amount: 45360, deposit: 9072, cropName: '屏東枋山愛文芒果產區 (6.0 分地)' })" class="px-2.5 py-1 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30 transition">下載 PDF</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 合規保障：最下方橫列 (Bottom Full-width Horizontal Row) -->
+      <div class="mt-8 p-6 rounded-2xl bg-gradient-to-r from-slate-850 via-slate-850 to-slate-900 border border-slate-750 shadow-xl space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-700/80">
+          <div class="flex items-center gap-3">
+            <span class="text-xs px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-bold">合規保障</span>
+            <h3 class="text-base sm:text-lg font-bold text-white">四大鋼鐵承諾與合法發票保障</h3>
+          </div>
+          <div class="flex items-center gap-3 text-xs text-slate-400">
+            <span>🛡️ SLA 履約保障率 99.5%</span>
+            <span class="hidden sm:inline text-slate-600">|</span>
+            <span>📜 100% 開立營業稅發票抵稅</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-slate-300">
+          <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70 space-y-1.5">
+            <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+              <span>✓</span> <span>保證準時出工</span>
+            </div>
+            <p class="text-slate-400 text-xs leading-relaxed">專車清晨 07:00 準時送達果園門口，遲到免單，放鳥雙倍賠償。</p>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70 space-y-1.5">
+            <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+              <span>✓</span> <span>外銷級留蒂採收</span>
+            </div>
+            <p class="text-slate-400 text-xs leading-relaxed">嚴格執行「留蒂 0.5cm 護果粉」，日韓外銷良率 ≥ 95%。</p>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70 space-y-1.5">
+            <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+              <span>✓</span> <span>天候避險零停工</span>
+            </div>
+            <p class="text-slate-400 text-xs leading-relaxed">暴雨泥濘專車自動轉派冷鏈預冷分級場，農主零底薪赤字。</p>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70 space-y-1.5">
+            <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+              <span>✓</span> <span>合規發票抵稅</span>
+            </div>
+            <p class="text-slate-400 text-xs leading-relaxed">合作社開立 100% 營業稅發票，全聯、好市多稽核無憂。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- ROLE 2: 外籍移工使用版本 (FOREIGN WORKER PORTAL)               -->
+    <!-- ============================================================= -->
+    <section id="portal-worker-foreign" class="space-y-6 hidden">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">外籍移工端</span>
+            <h1 class="text-2xl sm:text-3xl font-black text-white">外展移工每日智慧任務卡</h1>
+          </div>
+          <p class="text-slate-400 text-sm mt-1">支持越南語、印尼語與中文即時切換，薪資與農業部 8,800 就業獎勵清晰透明</p>
+        </div>
+
+        <!-- Language Switcher Bar -->
+        <div class="flex items-center gap-2 bg-slate-800 p-1.5 rounded-xl border border-slate-700">
+          <span class="text-xs text-slate-400 px-2">語言 / Ngôn ngữ / Bahasa:</span>
+          <button id="btn-lang-zh" onclick="updateWorkerLang('zh')" class="px-3 py-1 rounded-md text-xs font-bold bg-emerald-600 text-white shadow">繁體中文</button>
+          <button id="btn-lang-vi" onclick="updateWorkerLang('vi')" class="px-3 py-1 rounded-md text-xs font-medium bg-slate-200 text-slate-700 hover:bg-slate-300">Tiếng Việt</button>
+          <button id="btn-lang-id" onclick="updateWorkerLang('id')" class="px-3 py-1 rounded-md text-xs font-medium bg-slate-200 text-slate-700 hover:bg-slate-300">Bahasa Indonesia</button>
+        </div>
+      </div>
+
+      <!-- LINE Bot Multi-language Banner for Foreign Worker -->
+      <div class="max-w-md mx-auto p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/80 to-slate-900 border border-purple-500/40 flex items-center justify-between gap-3 shadow-lg">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-[#06C755] text-white flex items-center justify-center text-lg font-bold shadow flex-shrink-0">
+            💬
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <h4 class="text-xs font-black text-white">LINE Đã Kết Nối・Thẻ Nhiệm Vụ 3 Ngôn Ngữ</h4>
+            </div>
+            <p class="text-[11px] text-purple-200">W001 阮文雄 ｜ 可於 LINE 直接接收出工車號與 8,800 元獎勵</p>
+          </div>
+        </div>
+        <a href="line.html" class="px-3 py-1.5 rounded-lg bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs shadow flex-shrink-0 transition">
+          Mở LINE
+        </a>
+      </div>
+
+      <!-- Smartphone Layout Simulation -->
+      <div class="max-w-md mx-auto bg-slate-900 border-4 border-slate-700 rounded-[2.5rem] p-6 shadow-2xl shadow-emerald-950/40 space-y-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-brand-600 to-amber-400 flex items-center justify-center font-black text-slate-950 text-base shadow">
+              雄
+            </div>
+            <div>
+              <h3 class="font-extrabold text-base text-white">Nguyễn Văn Hùng (阮文雄)</h3>
+              <p class="text-xs text-emerald-400">智農特許外展農工 #001 (越南)</p>
+            </div>
+          </div>
+          <span id="w-badge" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            已派工・專車接送
+          </span>
+        </div>
+
+        <!-- Task Card Body -->
+        <div class="p-5 rounded-2xl bg-slate-800/90 border border-slate-700 space-y-4">
+          <div class="flex items-center justify-between">
+            <span id="w-card-title" class="text-xs font-bold uppercase tracking-wider text-slate-400">今日派工任務卡</span>
+            <span class="text-xs text-amber-400 font-semibold">2026-09-20</span>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <div>
+              <span id="w-shift-time" class="text-slate-400 block font-medium">出勤時間</span>
+              <strong id="w-time-val" class="text-white text-sm">06:30 集合上車 / 07:00 ~ 16:00 作業</strong>
+            </div>
+
+            <div>
+              <span id="w-van" class="text-slate-400 block font-medium">接送專車</span>
+              <p id="w-van-val" class="text-emerald-400 font-semibold">智農 1 號專車 (車號: RBF-8899 / 司機: 張大哥)</p>
+            </div>
+
+            <div>
+              <span id="w-location" class="text-slate-400 block font-medium">作業地點</span>
+              <p id="w-loc-val" class="text-white font-bold text-sm">高樹鄉金牌洋蔥產銷班 第 3 號試驗田</p>
+            </div>
+
+            <div>
+              <span id="w-task" class="text-slate-400 block font-medium">主要作業內容</span>
+              <p id="w-task-val" class="text-slate-200">洋蔥剪葉、田間裝袋、搬運堆疊至田埂 (每袋 20kg)</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] space-y-1">
+              <strong id="w-safety" class="block font-bold">⚠️ 農務安全注意事項：</strong>
+              <p id="w-safety-val">高溫防暑！每 45 分鐘強制至遮陽棚飲水 300cc，務必穿戴防穿刺防滑鞋。</p>
+            </div>
+          </div>
+
+          <!-- GPS Clock-In Button -->
+          <button id="w-btn-clockin" onclick="handleClockIn()" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-brand-600 hover:from-emerald-500 hover:to-brand-500 text-white font-bold text-sm shadow-md transition transform active:scale-95 flex items-center justify-center gap-2">
+            <span>📍</span> GPS 抵達現場數位打卡
+          </button>
+        </div>
+
+        <!-- Monthly Salary & Subsidy Transparency Box -->
+        <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/80 space-y-3">
+          <span id="w-salary-title" class="text-xs font-bold text-slate-400 block">本月累計所得與政府就業獎勵</span>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between text-slate-300">
+              <span id="w-base-pay">外展保障基本底薪</span>
+              <span>NT$ 28,590</span>
+            </div>
+            <div class="flex justify-between text-emerald-400 font-bold">
+              <span id="w-bonus-agri">農業部外展就業獎勵津貼 (第 3 個月)</span>
+              <span id="w-bonus-val">+ NT$ 8,800 (中央撥付已入帳)</span>
+            </div>
+            <div class="flex justify-between text-slate-300">
+              <span id="w-transport-sub">高溫與交通補助津貼</span>
+              <span>+ NT$ 2,400</span>
+            </div>
+            <div class="pt-2 border-t border-slate-700 flex justify-between font-black text-sm text-amber-400">
+              <span id="w-total-est">本月實領預估</span>
+              <span class="text-base">NT$ 39,790</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- ROLE 3: 本地勞工使用版本 (LOCAL WORKER PORTAL)                 -->
+    <!-- ============================================================= -->
+    <section id="portal-worker-local" class="space-y-6 hidden">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">本國技術農工端</span>
+            <h1 class="text-2xl sm:text-3xl font-black text-white">專業農機與代噴領航任務卡</h1>
+          </div>
+          <p class="text-slate-400 text-sm mt-1">本國大型曳引機駕駛、無人機雙證照飛手之專業高薪排班與成果統包分紅</p>
+        </div>
+      </div>
+
+      <div class="max-w-3xl mx-auto bg-slate-800/80 rounded-2xl p-6 sm:p-8 border border-slate-700 shadow-xl space-y-6">
+        <div class="flex items-center justify-between border-b border-slate-700 pb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center font-black text-white text-base shadow">
+              宏
+            </div>
+            <div>
+              <h3 class="font-extrabold text-base text-white">陳建宏 (資深機耕技師)</h3>
+              <p class="text-xs text-blue-400">工班 C 組帶隊長 ╳ 雙證照專業飛手</p>
+            </div>
+          </div>
+          <span class="px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+            🚜 機耕統包專案中
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-4 text-xs">
+            <div class="p-4 rounded-xl bg-slate-900 border border-slate-700 space-y-2">
+              <span class="text-slate-400 block font-semibold">今日出勤排班與指派設備</span>
+              <p class="text-white text-sm font-bold">06:00 ~ 15:30 (避開午後雷陣雨與高溫)</p>
+              <p class="text-blue-400">🚜 智農 3 號工程車 ╳ 大疆 T50 植保機 (雙RTK衛星導航)</p>
+              <p class="text-slate-300">📍 作業地點：雲林設施彩椒溫室專案區 (第 2 田區)</p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-slate-900 border border-slate-700 space-y-2">
+              <span class="text-slate-400 block font-semibold">今日農機維護檢核清單</span>
+              <label class="flex items-center gap-2 cursor-pointer text-slate-300">
+                <input type="checkbox" checked class="rounded border-slate-700 text-blue-600">
+                <span>無人機噴嘴超音波清洗與濾網檢驗</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer text-slate-300">
+                <input type="checkbox" checked class="rounded border-slate-700 text-blue-600">
+                <span>鋰電池循環充放電電壓平衡測試 (14S)</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer text-slate-300">
+                <input type="checkbox" class="rounded border-slate-700 text-blue-600">
+                <span>農田上空 50 公尺空域地圖校準與避障雷達檢測</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Salary & Pension -->
+          <div class="p-5 rounded-xl bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-700 space-y-3 text-xs">
+            <span class="text-slate-400 font-bold block">本國技術工本月薪酬明細</span>
+            <div class="space-y-2 text-slate-300">
+              <div class="flex justify-between">
+                <span>技術技師基本月薪</span>
+                <span class="text-white font-semibold">NT$ 42,000</span>
+              </div>
+              <div class="flex justify-between text-emerald-400 font-bold">
+                <span>分地成果統包分紅獎金</span>
+                <span>+ NT$ 12,500</span>
+              </div>
+              <div class="flex justify-between text-blue-400">
+                <span>勞退強制提繳 (6% 合作社負擔)</span>
+                <span>NT$ 2,520 (已提繳個人專戶)</span>
+              </div>
+              <div class="flex justify-between text-slate-400">
+                <span>職災保險 ＋ 500 萬高空意外險</span>
+                <span>100% 合作社投保</span>
+              </div>
+              <div class="pt-3 border-t border-slate-800 flex justify-between font-black text-sm text-amber-400">
+                <span>本月預估實領總額</span>
+                <span class="text-base">NT$ 54,500</span>
+              </div>
+            </div>
+
+            <button onclick="handleClockIn()" class="w-full mt-2 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow transition flex items-center justify-center gap-2">
+              <span>📍</span> 機耕出勤現場 GPS 打卡
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- ROLE 4: 科技公司後台人員版本 (TECH COMPANY ADMIN PORTAL)      -->
+    <!-- ============================================================= -->
+    <section id="portal-admin-tech" class="space-y-8 hidden">
+      <!-- Title & Weather Hedge Button -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">科技後台大腦</span>
+            <h1 class="text-2xl sm:text-3xl font-black text-white">智慧外展調度戰情中心</h1>
+          </div>
+          <p class="text-slate-400 text-sm mt-1">即時監控 20 位在籍移工、4 個工班專車動態、利潤分流圖表與天候暴雨避險</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="weather-toggle-btn" onclick="toggleWeatherMode()" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-md transition flex items-center gap-2">
+            <span>🌧️</span> 模擬午後突發暴雨（啟動冷鏈避險機制）
+          </button>
+        </div>
+      </div>
+
+      <!-- Weather Status Banner -->
+      <div id="weather-status-banner" class="p-4 rounded-xl bg-emerald-900/90 text-white border border-emerald-400/50 shadow-lg shadow-emerald-900/30 transition-all-300">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="text-3xl">☀️</span>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 text-xs font-bold bg-emerald-500 text-white rounded-full">天候優良 適合農作</span>
+                <span class="text-xs text-emerald-200">屏東高樹 晴朗 29°C</span>
+              </div>
+              <p class="font-bold text-lg mt-0.5">全區田間出勤中・外展農工出勤率 100% (20/20 人在崗)</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-xs text-emerald-200 block">今日調度總工時</span>
+            <span class="text-amber-400 font-black text-xl">160 工時 (已滿檔)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Interactive Charts (Data Visualization) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Chart 1: Revenue Take Rate Split -->
+        <div class="p-5 rounded-2xl bg-slate-800/80 border border-slate-700 shadow-xl space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+            <span class="text-xs font-bold text-white flex items-center gap-1.5">
+              <span>📊</span> 雙軌營收利潤分流結構
+            </span>
+            <span class="text-[11px] text-emerald-400 font-bold">18% Take Rate</span>
+          </div>
+          <div class="h-48 flex items-center justify-center">
+            <canvas id="chart-revenue-split"></canvas>
+          </div>
+          <p class="text-[11px] text-slate-400 text-center">
+            科技公司收取 18% 技術代管費（開立發票）；合作社收取 82% 移工法定平移成本。
+          </p>
+        </div>
+
+        <!-- Chart 2: Monthly GMV Growth Trend -->
+        <div class="p-5 rounded-2xl bg-slate-800/80 border border-slate-700 shadow-xl space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+            <span class="text-xs font-bold text-white flex items-center gap-1.5">
+              <span>📈</span> 產季 GMV 營收預估 (萬元)
+            </span>
+            <span class="text-[11px] text-amber-400 font-bold">5~6月 產季高峰</span>
+          </div>
+          <div class="h-48 flex items-center justify-center">
+            <canvas id="chart-monthly-gmv"></canvas>
+          </div>
+          <p class="text-[11px] text-slate-400 text-center">
+            早鳥工時包預售使 5~6 月芒果產季達 240 萬元營收峰值。
+          </p>
+        </div>
+
+        <!-- Chart 3: Weather Hedge Impact -->
+        <div class="p-5 rounded-2xl bg-slate-800/80 border border-slate-700 shadow-xl space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+            <span class="text-xs font-bold text-white flex items-center gap-1.5">
+              <span>🛡️</span> 突發降雨出勤避險成效 (%)
+            </span>
+            <span class="text-[11px] text-blue-400 font-bold">100% vs 0%</span>
+          </div>
+          <div class="h-48 flex items-center justify-center">
+            <canvas id="chart-weather-hedge"></canvas>
+          </div>
+          <p class="text-[11px] text-slate-400 text-center">
+            週三暴雨啟用冷鏈集貨場避險，成功保全 100% 出勤率與 $62,500 營收。
+          </p>
+        </div>
+      </div>
+
+      <!-- Live Dispatch Status Cards -->
+      <div class="space-y-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span> 即時工班任務與專車分佈 (4 個工班 / 20 名人員)
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="p-5 rounded-xl bg-slate-800/80 border border-slate-700 space-y-3">
+            <div class="flex items-center justify-between">
+              <strong class="text-white">工班 A 組 (5 人)・帶隊：阮文雄</strong>
+              <span class="status-badge px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">田間出勤中</span>
+            </div>
+            <div class="text-xs text-slate-300 space-y-1">
+              <p>📍 <span class="loc-text text-emerald-400">🌾 高樹洋蔥專區 (第 3 田區)</span></p>
+              <p>📋 <span class="task-text text-slate-300">洋蔥採收、剪葉裝袋 (每袋 20kg)</span></p>
+              <p>🚐 智農 1 號車 (司機：張大哥 / 06:40 抵達)</p>
+            </div>
+          </div>
+
+          <div class="p-5 rounded-xl bg-slate-800/80 border border-slate-700 space-y-3">
+            <div class="flex items-center justify-between">
+              <strong class="text-white">工班 B 組 (6 人)・帶隊：阿迪 (Agus)</strong>
+              <span class="status-badge px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">田間出勤中</span>
+            </div>
+            <div class="text-xs text-slate-300 space-y-1">
+              <p>📍 <span class="loc-text text-emerald-400">🌾 枋山愛文芒果 (山坡地果園)</span></p>
+              <p>📋 <span class="task-text text-slate-300">套袋疏果、留蒂 0.5cm 採收</span></p>
+              <p>🚐 智農 2 號車 (司機：李大哥 / 06:30 抵達)</p>
+            </div>
+          </div>
+
+          <div class="p-5 rounded-xl bg-slate-800/80 border border-slate-700 space-y-3">
+            <div class="flex items-center justify-between">
+              <strong class="text-white">工班 C 組 (4 人)・陳建宏機耕隊</strong>
+              <span class="status-badge px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">田間出勤中</span>
+            </div>
+            <div class="text-xs text-slate-300 space-y-1">
+              <p>📍 <span class="loc-text text-emerald-400">🌾 雲林設施甜椒園區</span></p>
+              <p>📋 <span class="task-text text-slate-300">無人機代噴 + 溫室整枝</span></p>
+              <p>🚐 智農 3 號工程車 (大疆 T50 植保機)</p>
+            </div>
+          </div>
+
+          <div class="p-5 rounded-xl bg-slate-800/80 border border-slate-700 space-y-3">
+            <div class="flex items-center justify-between">
+              <strong class="text-white">工班 D 組 (5 人)・范氏紅冷鏈組</strong>
+              <span class="status-badge px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">冷鏈常態駐點</span>
+            </div>
+            <div class="text-xs text-slate-300 space-y-1">
+              <p>📍 <span class="loc-text text-blue-400">🏢 屏南冷鏈預冷分級場 (室內A棟)</span></p>
+              <p>📋 <span class="task-text text-slate-300">蔬果預冷降溫、外銷精密秤重分級</span></p>
+              <p>🚐 智農專車固定專線 (宿舍直達集貨場)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- ROLE 5: 對外展示宣傳版本 (PUBLIC SHOWCASE & PITCH PORTAL)       -->
+    <!-- ============================================================= -->
+    <section id="portal-showcase" class="space-y-12 hidden">
+      <div class="text-center max-w-3xl mx-auto space-y-4">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold">
+          <span>✨</span> 商業路演 ╳ 產官學加速器 Pitch 專用全景展示
+        </div>
+        <h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight">
+          智農派工全景商業模式展示
+        </h1>
+        <p class="text-slate-400 text-sm sm:text-base leading-relaxed">
+          合法特許外展農工 ╳ 演算法調度大腦 ╳ 天候避險冷鏈轉運 ╳ 雙軌控制權護城河
+        </p>
+        <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <a href="showcase.html" target="_blank" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/30 transition flex items-center gap-2">
+            <span>🌐</span> 開啟獨立全螢幕宣傳頁面
+          </a>
+          <a href="brochure.html" target="_blank" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1.5">
+            <span>📄</span> 下載產季早鳥保證出工 DM
+          </a>
+        </div>
+      </div>
+
+      <!-- Key Trust Metrics -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="p-5 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-1">
+          <span class="text-xs text-slate-400">私聘黑工違法風險</span>
+          <div class="text-2xl font-black text-red-400">0 罰款</div>
+          <span class="text-[11px] text-slate-500">100% 合作社特許合法納保</span>
+        </div>
+        <div class="p-5 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-1">
+          <span class="text-xs text-slate-400">產季早鳥預購優惠</span>
+          <div class="text-2xl font-black text-amber-400">9 折優惠</div>
+          <span class="text-[11px] text-slate-500">遲到免單・放鳥雙倍賠償</span>
+        </div>
+        <div class="p-5 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-1">
+          <span class="text-xs text-slate-400">天候暴雨避險成效</span>
+          <div class="text-2xl font-black text-emerald-400">100% 出勤</div>
+          <span class="text-[11px] text-slate-500">改派冷鏈集貨場・保全營收</span>
+        </div>
+        <div class="p-5 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-1">
+          <span class="text-xs text-slate-400">中央就業獎勵津貼</span>
+          <div class="text-2xl font-black text-blue-400">+ 8,800/月</div>
+          <span class="text-[11px] text-slate-500">農業部農業人力團無償補貼</span>
+        </div>
+      </div>
+
+      <!-- Interactive 3-Minute Showcase Tour -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 hover:border-emerald-500/50 transition">
+          <div class="text-3xl">👨‍🌾</div>
+          <h3 class="text-lg font-bold text-white">農場主：10 秒智慧叫工與早鳥防放鳥</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            小農輸入分地自動換算工時與派遣人數，預付 20% 定金享產季保證出工，不再因地下工頭加價被搶工而造成果爛落果。
+          </p>
+          <button onclick="switchUserRole('farmer')" class="text-xs text-emerald-400 font-bold hover:underline flex items-center gap-1">
+            進入農場主試算體驗 ➔
+          </button>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 hover:border-blue-500/50 transition">
+          <div class="text-3xl">🌧️</div>
+          <h3 class="text-lg font-bold text-white">調度大腦：殺手級暴雨冷鏈避險機制</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            氣象警報觸發時專車於 15 分鐘內將工班接駁至「室內冷鏈預冷包裝線」，保全 NT$ 62,500 營收，出勤率維持 100%，消除底薪虧損。
+          </p>
+          <button onclick="switchUserRole('admin_tech')" class="text-xs text-blue-400 font-bold hover:underline flex items-center gap-1">
+            查看戰情大盤與避險演練 ➔
+          </button>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 hover:border-purple-500/50 transition">
+          <div class="text-3xl">👷</div>
+          <h3 class="text-lg font-bold text-white">移工與本國工：三語工單與高尊嚴收入</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            越南語、印尼語與繁中無縫切換，現場 GPS 數位打卡，底薪 + 農業部 8,800 元就業獎勵透明化，落實 ESG 永續人權價值。
+          </p>
+          <button onclick="switchUserRole('worker_foreign')" class="text-xs text-purple-400 font-bold hover:underline flex items-center gap-1">
+            體驗移工三語工單 ➔
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Login Modal -->
+  <div id="login-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-md w-full p-6 space-y-6 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <h3 class="text-lg font-black text-white flex items-center gap-2">
+          <span>🔑</span> 切換使用者登入版本
+        </h3>
+        <button onclick="closeLoginModal()" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
+      </div>
+
+      <div class="space-y-3">
+        <span class="text-xs text-slate-400 block font-semibold">點選以下身分即可一鍵快速登入：</span>
+        
+        <button onclick="quickLogin('farmer')" class="w-full p-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-emerald-500/40 text-left flex items-center justify-between transition">
+          <div>
+            <strong class="text-white block text-sm">👨‍🌾 農場主 / 契作商版本</strong>
+            <span class="text-xs text-slate-400">帳號: farmer / 密碼: 123456</span>
+          </div>
+          <span class="text-xs px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 font-bold">登入 ➔</span>
+        </button>
+
+        <button onclick="quickLogin('worker_foreign')" class="w-full p-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-purple-500/40 text-left flex items-center justify-between transition">
+          <div>
+            <strong class="text-white block text-sm">👷 外籍移工版本 (三語任務卡)</strong>
+            <span class="text-xs text-slate-400">帳號: worker_foreign / 密碼: 123456</span>
+          </div>
+          <span class="text-xs px-2 py-1 rounded bg-purple-500/20 text-purple-400 font-bold">登入 ➔</span>
+        </button>
+
+        <button onclick="quickLogin('worker_local')" class="w-full p-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-blue-500/40 text-left flex items-center justify-between transition">
+          <div>
+            <strong class="text-white block text-sm">🚜 本地勞工版本 (機耕/無人機)</strong>
+            <span class="text-xs text-slate-400">帳號: worker_local / 密碼: 123456</span>
+          </div>
+          <span class="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-400 font-bold">登入 ➔</span>
+        </button>
+
+        <button onclick="quickLogin('admin_tech')" class="w-full p-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-amber-500/40 text-left flex items-center justify-between transition">
+          <div>
+            <strong class="text-white block text-sm">🛰️ 科技公司後台版本 (調度戰情室)</strong>
+            <span class="text-xs text-slate-400">帳號: admin_tech / 密碼: admin888</span>
+          </div>
+          <span class="text-xs px-2 py-1 rounded bg-amber-500/20 text-amber-400 font-bold">登入 ➔</span>
+        </button>
+
+        <button onclick="quickLogin('showcase')" class="w-full p-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/50 text-left flex items-center justify-between transition">
+          <div>
+            <strong class="text-amber-300 block text-sm">🌟 對外展示宣傳版本 (路演展示)</strong>
+            <span class="text-xs text-slate-400">免密碼・全景商業模式 Pitch 展示</span>
+          </div>
+          <span class="text-xs px-2 py-1 rounded bg-amber-500/30 text-amber-300 font-bold">開啟 ➔</span>
+        </button>
+      </div>
+
+      <div class="pt-3 border-t border-slate-800 text-center text-xs text-slate-400 space-y-1.5">
+        <div class="text-[11px] text-slate-500">或前往三大專屬獨立登入門戶：</div>
+        <div class="flex items-center justify-center gap-2 flex-wrap text-xs">
+          <a href="farmer-login.html" class="text-emerald-400 hover:underline">🌾 農場主門戶</a>
+          <span class="text-slate-600">|</span>
+          <a href="worker-foreign-login.html" class="text-amber-400 hover:underline">👷 外展移工門戶</a>
+          <span class="text-slate-600">|</span>
+          <a href="worker-local-login.html" class="text-blue-400 hover:underline">🚜 本地機耕門戶</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 bg-slate-950 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <span>© 2026 智農派工 AgriDispatch. All rights reserved. 雙軌合規農事外展平台</span>
+      <span>技術代管：智農科技有限公司 ╳ 特許主體：有限責任智農農業勞務生產合作社</span>
+    </div>
+  </footer>
+
+  <!-- AgriDocs: Document & Payslip Downloader -->
+  <script src="js/agri-docs.js"></script>
+  <!-- Core App JS -->
+  <script src="js/main.js"></script>
+</body>
+</html>

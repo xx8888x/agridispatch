@@ -1,0 +1,59 @@
+{
+  "size": {
+    "width": 2500,
+    "height": 1686
+  },
+  "selected": true,
+  "name": "智農派工 六宮格快捷導覽選單",
+  "chatBarText": "🌱 點此開啟智農派工選單",
+  "areas": [
+    {
+      "bounds": { "x": 0, "y": 0, "width": 833, "height": 843 },
+      "action": {
+        "type": "message",
+        "label": "今日派工",
+        "text": "今日派工"
+      }
+    },
+    {
+      "bounds": { "x": 833, "y": 0, "width": 834, "height": 843 },
+      "action": {
+        "type": "message",
+        "label": "暴雨避險",
+        "text": "天候避險"
+      }
+    },
+    {
+      "bounds": { "x": 1667, "y": 0, "width": 833, "height": 843 },
+      "action": {
+        "type": "message",
+        "label": "早鳥工時包",
+        "text": "早鳥工時包"
+      }
+    },
+    {
+      "bounds": { "x": 0, "y": 843, "width": 833, "height": 843 },
+      "action": {
+        "type": "message",
+        "label": "切換語言",
+        "text": "切換語言"
+      }
+    },
+    {
+      "bounds": { "x": 833, "y": 843, "width": 834, "height": 843 },
+      "action": {
+        "type": "message",
+        "label": "機耕代噴",
+        "text": "機耕代噴"
+      }
+    },
+    {
+      "bounds": { "x": 1667, "y": 843, "width": 833, "height": 843 },
+      "action": {
+        "type": "message",
+        "label": "帳號綁定",
+        "text": "帳號綁定"
+      }
+    }
+  ]
+}

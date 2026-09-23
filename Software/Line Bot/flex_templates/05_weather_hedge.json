@@ -1,0 +1,89 @@
+{
+  "type": "bubble",
+  "size": "mega",
+  "header": {
+    "type": "box",
+    "layout": "vertical",
+    "backgroundColor": "#1E3A8A",
+    "paddingAll": "20px",
+    "contents": [
+      {
+        "type": "text",
+        "text": "⚡ 天候避險大腦啟動",
+        "color": "#93C5FD",
+        "size": "xs",
+        "weight": "bold"
+      },
+      {
+        "type": "text",
+        "text": "突發梅雨警報・專車安全轉移",
+        "color": "#FFFFFF",
+        "size": "lg",
+        "weight": "bold"
+      }
+    ]
+  },
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "spacing": "md",
+    "paddingAll": "20px",
+    "contents": [
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "目前天候", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "暴雨警戒 23°C (滯留鋒面進逼)", "color": "#EF4444", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "避險成效", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "出勤率 100% (20/20 人在崗) ｜ 零閒置虧損", "color": "#059669", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "轉移據點", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "🏢 屏南生鮮冷鏈分級包裝中心 (A/B棟)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "作業內容", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "芒果清洗預冷、自動秤重套網袋外銷封箱", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "type": "box",
+    "layout": "vertical",
+    "spacing": "sm",
+    "paddingAll": "16px",
+    "contents": [
+      {
+        "type": "button",
+        "style": "primary",
+        "color": "#1E3A8A",
+        "height": "sm",
+        "action": {
+          "type": "uri",
+          "label": "📊 查看避險調度即時戰情",
+          "uri": "https://agridispatch.tw/web/app.html#admin_tech"
+        }
+      }
+    ]
+  }
+}

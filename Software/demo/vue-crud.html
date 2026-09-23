@@ -1,0 +1,2271 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 AgriDispatch - Vue 3 + Spring Boot 智慧調度管理平台</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Vue 3: Local Vendor First with CDN Fallback -->
+  <script src="js/vendor/vue.global.prod.js"></script>
+  <script>
+    if (typeof Vue === 'undefined') {
+      document.write('<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"><\/script>');
+    }
+  </script>
+  <!-- Preloaded Demo Database -->
+  <script src="js/demo-data.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [v-cloak] { display: none; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+  <script>
+    // Failsafe: Remove v-cloak if Vue takes more than 1.5s to prevent blank screen
+    setTimeout(function() {
+      var appEl = document.getElementById('app');
+      if (appEl && appEl.hasAttribute('v-cloak')) {
+        console.warn('Vue mounting timed out or offline, removing v-cloak failsafe');
+        appEl.removeAttribute('v-cloak');
+      }
+    }, 1500);
+  </script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <div id="app" v-cloak class="flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <a href="index.html" class="flex items-center gap-2">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-brand-600/30">
+              <span class="text-xl">🌱</span>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-extrabold text-lg tracking-tight text-white">智農派工</span>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 font-semibold">Vue 3 + Spring Boot</span>
+              </div>
+              <p class="text-[11px] text-slate-400">Hibernate ORM ╳ RESTful CRUD ╳ 響應式調度管理</p>
+            </div>
+          </a>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="hidden md:flex items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700/60 shadow-inner text-xs">
+          <button @click="activeTab = 'workers'" :class="tabClass('workers')">
+            <span>👷</span> 農工人力 ({{ workers.length }})
+          </button>
+          <button @click="activeTab = 'orders'" :class="tabClass('orders')">
+            <span>📋</span> 派工訂單 ({{ orders.length }})
+          </button>
+          <button @click="activeTab = 'crops'" :class="tabClass('crops')">
+            <span>🌾</span> 作物基準 ({{ crops.length }})
+          </button>
+          <button @click="activeTab = 'dispatch'" :class="tabClass('dispatch')">
+            <span>🛰️</span> 工班與天候
+          </button>
+          <button @click="activeTab = 'talents'" :class="tabClass('talents')">
+            <span>🌟</span> 人才儲備 ({{ talents.length }})
+          </button>
+          <button @click="activeTab = 'calendar'" :class="tabClass('calendar')">
+            <span>📅</span> 全台產曆
+          </button>
+        </nav>
+
+        <!-- Right Quick Links & Status -->
+        <div class="flex items-center gap-2">
+          <!-- 全站 Demo 導覽選單 (Demo Jumper) -->
+          <div class="relative group shrink-0">
+            <button class="px-2.5 py-1.5 rounded-lg text-xs bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 transition flex items-center gap-1 font-medium whitespace-nowrap shrink-0" title="切換至其他 Demo 頁面">
+              <span>🌐</span> Demo 頁面 (16 頁) ▾
+            </button>
+            <div class="absolute right-0 mt-1 w-64 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-1.5 hidden group-hover:block z-50">
+              <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">三大前線角色專區</div>
+              <a href="farmer.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-emerald-300 transition">
+                <span>👨‍🌾</span> 農場主專屬工作台 (farmer.html)
+              </a>
+              <a href="worker-foreign.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-purple-300 transition">
+                <span>👷</span> 外展移工多語工作台 (worker-foreign.html)
+              </a>
+              <a href="worker-local.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-blue-300 transition">
+                <span>🚜</span> 本國領班與機耕 (worker-local.html)
+              </a>
+              <a href="worker-local.html?role=labor" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-green-300 transition">
+                <span>🧑‍🌾</span> 合作社農業勞務員 (worker-local.html)
+              </a>
+              <div class="border-t border-slate-800 my-1"></div>
+              <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">調度戰情與生態系統</div>
+              <a href="index.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-emerald-300 transition">
+                <span>🏠</span> 首頁形象官網 (index.html)
+              </a>
+              <a href="admin.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-indigo-300 transition">
+                <span>💻</span> 科技營運後台 (admin.html)
+              </a>
+              <a href="app.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-300 transition">
+                <span>📱</span> 四大角色整合戰情 (app.html)
+              </a>
+              <a href="farmers_map.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-emerald-300 transition">
+                <span>🗺️</span> 全台農會產地地圖 (farmers_map.html)
+              </a>
+              <a href="line.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-[#06C755] transition">
+                <span>💬</span> LINE Bot 助理體驗館 (line.html)
+              </a>
+              <a href="showcase.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-amber-300 transition">
+                <span>🎯</span> 投資人路演 Pitch (showcase.html)
+              </a>
+              <a href="brochure.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-amber-300 transition">
+                <span>📑</span> 產品文宣 DM 精選館 (brochure.html)
+              </a>
+              <div class="border-t border-slate-800 my-1"></div>
+              <a href="login.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-indigo-300 transition font-bold">
+                <span>🔑</span> 五大身分登入門戶 (login.html)
+              </a>
+            </div>
+          </div>
+          <!-- 產品文宣與展示 (後台專用) -->
+          <div class="relative group">
+            <button class="px-2.5 py-1.5 rounded-lg text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition flex items-center gap-1 font-medium" title="檢視對外宣傳資產與DM">
+              <span>📄</span> 產品文宣 ▾
+            </button>
+            <div class="absolute right-0 mt-1 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-1 hidden group-hover:block z-50">
+              <a href="brochure.html" target="_blank" class="flex items-center gap-2 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 hover:text-amber-300 transition">
+                <span>📑</span> 早鳥保證出工 DM
+              </a>
+              <a href="showcase.html" target="_blank" class="flex items-center gap-2 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 hover:text-amber-300 transition">
+                <span>✨</span> 商業計畫簡報 (Pitch)
+              </a>
+            </div>
+          </div>
+          <a href="login.html" class="px-2.5 py-1.5 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center gap-1" title="切換農場主、外勞或本地勞工登入">
+            <span>👤</span> 登入門戶
+          </a>
+          <div class="w-2.5 h-2.5 rounded-full" :class="backendOnline ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'" :title="backendOnline ? '後端連線正常' : '後端離線或連線中'"></div>
+        </div>
+      </div>
+
+      <!-- Mobile Tab Bar -->
+      <div class="md:hidden flex items-center justify-around border-t border-slate-800 py-2 px-2 bg-slate-900/95 text-xs overflow-x-auto">
+        <button @click="activeTab = 'workers'" :class="mobileTabClass('workers')">農工管理</button>
+        <button @click="activeTab = 'orders'" :class="mobileTabClass('orders')">派工訂單</button>
+        <button @click="activeTab = 'crops'" :class="mobileTabClass('crops')">作物庫</button>
+        <button @click="activeTab = 'dispatch'" :class="mobileTabClass('dispatch')">工班調度</button>
+        <button @click="activeTab = 'talents'" :class="mobileTabClass('talents')">人才儲備</button>
+        <button @click="activeTab = 'calendar'" :class="mobileTabClass('calendar')">全台產曆</button>
+      </div>
+    </header>
+
+    <!-- Toast Notification Banner -->
+    <div v-if="toast.show" class="fixed top-20 right-4 z-50 transition-all duration-300 transform translate-y-0 max-w-md">
+      <div :class="toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'" class="px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-white/20">
+        <span class="text-lg">{{ toast.type === 'success' ? '✅' : '⚠️' }}</span>
+        <div class="text-xs font-medium">{{ toast.message }}</div>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+      <!-- ============================================================= -->
+      <!-- ============================================================= -->
+      <!-- TAB 1: WORKERS CRUD (外展農工與派遣名冊) -->
+      <!-- ============================================================= -->
+      <section v-if="activeTab === 'workers'" class="space-y-6">
+        <!-- Summary Stats Banner -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
+          <div class="p-3 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex flex-col justify-between">
+            <span class="text-slate-400 font-medium">總在籍人員</span>
+            <div class="flex items-baseline gap-1 mt-1">
+              <span class="text-2xl font-black text-white font-mono">{{ workers.length }}</span>
+              <span class="text-slate-400">人</span>
+            </div>
+            <span class="text-[10px] text-emerald-400 mt-1">100% 合作社合法在冊</span>
+          </div>
+
+          <div class="p-3 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex flex-col justify-between">
+            <span class="text-slate-400 font-medium">特許外展移工 (Tier 1)</span>
+            <div class="flex items-baseline gap-1 mt-1">
+              <span class="text-2xl font-black text-emerald-400 font-mono">
+                {{ workers.filter(w => w.tier === 'tier1_foreign').length }}
+              </span>
+              <span class="text-slate-400">人</span>
+            </div>
+            <span class="text-[10px] text-slate-400 mt-1">越 9・印 8・泰 2・菲 1</span>
+          </div>
+
+          <div class="p-3 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex flex-col justify-between">
+            <span class="text-slate-400 font-medium">本地兼職/機耕師 (Tier 2/3)</span>
+            <div class="flex items-baseline gap-1 mt-1">
+              <span class="text-2xl font-black text-purple-400 font-mono">
+                {{ workers.filter(w => w.tier !== 'tier1_foreign').length }}
+              </span>
+              <span class="text-slate-400">人</span>
+            </div>
+            <span class="text-[10px] text-purple-300 mt-1">本國曳引機/植保機手</span>
+          </div>
+
+          <div class="p-3 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex flex-col justify-between">
+            <span class="text-slate-400 font-medium">農業部就業獎勵金</span>
+            <div class="flex items-baseline gap-1 mt-1">
+              <span class="text-xl font-black text-amber-400 font-mono">+$8,800</span>
+              <span class="text-slate-400">/人月</span>
+            </div>
+            <span class="text-[10px] text-amber-300 mt-1">每月請領 NT$ {{ (workers.length * 8800).toLocaleString() }}</span>
+          </div>
+
+          <div class="p-3 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex flex-col justify-between col-span-2 sm:col-span-1">
+            <span class="text-slate-400 font-medium">勞健保與職災納保</span>
+            <div class="flex items-baseline gap-1 mt-1">
+              <span class="text-2xl font-black text-blue-400 font-mono">100%</span>
+              <span class="text-slate-400">合規</span>
+            </div>
+            <span class="text-[10px] text-blue-300 mt-1">🛡️ 全員附法定保險名冊</span>
+          </div>
+        </div>
+
+        <!-- Control Bar -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <span>👷</span> 外展農工與派遣名冊 (Foreign & Local Worker Dispatch Roster)
+              <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono">已篩選 {{ filteredWorkers.length }} 位</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">完整收錄農業部特許在籍移工、居留證號 (ARC)、護照、派遣狀態與工班即時動態</p>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button @click="exportWorkerCSV()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/40 font-bold text-xs shadow transition flex items-center gap-1.5" title="匯出勞動部與主管機關查驗名冊">
+              <span>📄</span> 匯出送審名冊 (CSV)
+            </button>
+            <button @click="openWorkerModal()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition flex items-center gap-1.5">
+              <span>➕</span> 登錄新移工/農工
+            </button>
+            <button @click="fetchWorkers()" class="p-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition" title="重新整理">
+              <span>🔄</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Nationality & Role Filter Chips -->
+        <div class="flex items-center gap-1.5 flex-wrap text-xs">
+          <button @click="workerNationalityFilter = ''" :class="workerNationalityFilter === '' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition">
+            全部人員 ({{ workers.length }})
+          </button>
+          <button @click="workerNationalityFilter = '越南'" :class="workerNationalityFilter === '越南' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
+            <span>🇻🇳</span> 越南籍 ({{ workers.filter(w => w.nationality === '越南').length }})
+          </button>
+          <button @click="workerNationalityFilter = '印尼'" :class="workerNationalityFilter === '印尼' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
+            <span>🇮🇩</span> 印尼籍 ({{ workers.filter(w => w.nationality === '印尼').length }})
+          </button>
+          <button @click="workerNationalityFilter = '泰國'" :class="workerNationalityFilter === '泰國' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
+            <span>🇹🇭</span> 泰國籍 ({{ workers.filter(w => w.nationality === '泰國').length }})
+          </button>
+          <button @click="workerNationalityFilter = '菲律賓'" :class="workerNationalityFilter === '菲律賓' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
+            <span>🇵🇭</span> 菲律賓籍 ({{ workers.filter(w => w.nationality === '菲律賓').length }})
+          </button>
+          <button @click="workerNationalityFilter = '本國'" :class="workerNationalityFilter === '本國' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
+            <span>🇹🇼</span> 本國籍 ({{ workers.filter(w => w.nationality === '本國').length }})
+          </button>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-800/40 p-3 rounded-xl border border-slate-700/40 text-xs">
+          <div>
+            <label class="block text-slate-400 mb-1">搜尋姓名 / 居留證號 / 護照 / 編號</label>
+            <input v-model="workerSearch" type="text" placeholder="輸入姓名、ARC、護照或工號..." class="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">所屬工班篩選</label>
+            <select v-model="workerTeamFilter" class="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+              <option value="">全部工班</option>
+              <option value="team_a">工班 A 組 (桃園溫室蔬菜組)</option>
+              <option value="team_b">工班 B 組 (跨區專線組)</option>
+              <option value="team_c">工班 C 組 (機耕無人機隊)</option>
+              <option value="team_d">工班 D 組 (冷鏈常態組)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">三層等級篩選</label>
+            <select v-model="workerTierFilter" class="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+              <option value="">全部等級</option>
+              <option value="tier1_foreign">【Tier 1】外籍特許外展農工</option>
+              <option value="tier2_local_flex">【Tier 2】本國彈性兼職農工</option>
+              <option value="tier3_turnkey">【Tier 3】本國專業機耕師/無人機手</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Workers Table -->
+        <div class="bg-slate-800/70 rounded-2xl border border-slate-700/60 overflow-hidden shadow-xl">
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-900/80 text-slate-400 uppercase border-b border-slate-700 font-semibold">
+                <tr>
+                  <th class="px-4 py-3">工號</th>
+                  <th class="px-4 py-3">中文通稱 / 外籍原名</th>
+                  <th class="px-4 py-3">國籍 / 護照號碼</th>
+                  <th class="px-4 py-3">居留證號 (ARC) / 效期</th>
+                  <th class="px-4 py-3">所屬工班 / 分類</th>
+                  <th class="px-4 py-3">目前派遣任務 / 狀態</th>
+                  <th class="px-4 py-3">薪資津貼明細</th>
+                  <th class="px-4 py-3">納保狀態</th>
+                  <th class="px-4 py-3 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-700/50">
+                <tr v-for="w in filteredWorkers" :key="w.id" class="hover:bg-slate-700/30 transition">
+                  <!-- ID -->
+                  <td class="px-4 py-3 font-mono font-bold text-emerald-400">{{ w.id }}</td>
+                  
+                  <!-- Names & Leader badge -->
+                  <td class="px-4 py-3">
+                    <div class="font-bold text-white flex items-center gap-1.5">
+                      {{ w.chineseName }}
+                      <span v-if="w.leader" class="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold">組長 ⭐</span>
+                    </div>
+                    <div class="text-[11px] text-slate-400 font-sans">{{ w.name }}</div>
+                    <div v-if="w.phone" class="text-[10px] text-slate-500 font-mono mt-0.5">📞 {{ w.phone }}</div>
+                  </td>
+
+                  <!-- Nationality & Passport -->
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-1 font-medium text-slate-200">
+                      <span>{{ flagFor(w.nationality) }}</span>
+                      <span>{{ w.nationality }}</span>
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-mono mt-0.5">
+                      護照: {{ w.passportNumber || '—' }}
+                    </div>
+                  </td>
+
+                  <!-- ARC & Expiry -->
+                  <td class="px-4 py-3 font-mono">
+                    <div class="text-emerald-300 font-bold text-[11px]">{{ w.arcNumber || '—' }}</div>
+                    <div class="text-[10px] text-slate-400 mt-0.5">效期: {{ w.permitExpiry || '常態在職' }}</div>
+                  </td>
+
+                  <!-- Team & Tier -->
+                  <td class="px-4 py-3">
+                    <div class="font-medium text-slate-300">{{ teamName(w.teamId) }}</div>
+                    <span :class="tierBadge(w.tier)" class="px-2 py-0.5 rounded-full text-[10px] font-semibold inline-block mt-1">
+                      {{ tierName(w.tier) }}
+                    </span>
+                  </td>
+
+                  <!-- Current Task & Dispatch Status -->
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-1.5">
+                      <span :class="w.dispatchStatus === 'hedged_indoor' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : (w.dispatchStatus === 'standby' ? 'bg-slate-700 text-slate-300 border-slate-600' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40')"
+                            class="px-2 py-0.5 rounded border text-[10px] font-bold">
+                        {{ w.dispatchStatus === 'hedged_indoor' ? '🏢 室內冷鏈' : (w.dispatchStatus === 'standby' ? '🟡 待命' : '🟢 田間作業') }}
+                      </span>
+                    </div>
+                    <div class="text-[11px] text-slate-300 mt-1 max-w-xs truncate" :title="w.currentTask">
+                      {{ w.currentTask || '依工班指派調度' }}
+                    </div>
+                  </td>
+
+                  <!-- Salary -->
+                  <td class="px-4 py-3 font-mono">
+                    <div class="text-white font-semibold">${{ (w.baseSalary || 28590).toLocaleString() }}</div>
+                    <div class="text-[10px] text-emerald-400">+獎勵 ${{ (w.agriBonus || 8800).toLocaleString() }} / 津貼 ${{ (w.transportAllowance || 1200).toLocaleString() }}</div>
+                  </td>
+
+                  <!-- Insurance -->
+                  <td class="px-4 py-3">
+                    <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-medium flex items-center gap-1 w-max">
+                      <span>🛡️</span> {{ w.insuranceStatus || '已納保' }}
+                    </span>
+                  </td>
+
+                  <!-- Actions -->
+                  <td class="px-4 py-3 text-right space-x-1 whitespace-nowrap">
+                    <button @click="openWorkerModal(w)" class="px-2.5 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition font-medium">
+                      編輯
+                    </button>
+                    <button @click="deleteWorker(w.id)" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 border border-rose-500/30 transition font-medium">
+                      刪除
+                    </button>
+                  </td>
+                </tr>
+
+                <tr v-if="filteredWorkers.length === 0">
+                  <td colspan="9" class="px-4 py-8 text-center text-slate-400">
+                    查無符合條件的農工或外展名冊資料
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================= -->
+      <!-- TAB 2: ORDERS CRUD (派工訂單管理) -->
+      <!-- ============================================================= -->
+      <section v-if="activeTab === 'orders'" class="space-y-6">
+        <!-- Control Bar -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <span>📋</span> 派工訂單與智慧試算
+              <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">共 {{ orders.length }} 筆訂單</span>
+            </h2>
+            <p class="text-xs text-slate-400">支援【早鳥 9 折鎖約】、【在地彈性時薪】與【專業成果代耕】三大商業模型</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button @click="showOrderCalc = !showOrderCalc" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition flex items-center gap-1.5">
+              <span>🧮</span> {{ showOrderCalc ? '收起試算器' : '開啟智慧試算下單' }}
+            </button>
+            <button @click="fetchOrders()" class="p-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition" title="重新整理">
+              <span>🔄</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Interactive Order Calculator (Collapsible) -->
+        <div v-if="showOrderCalc" class="bg-gradient-to-br from-slate-800 to-slate-850 p-5 rounded-2xl border border-emerald-500/40 shadow-2xl space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+            <div class="font-bold text-sm text-emerald-400 flex items-center gap-2">
+              <span>⚡</span> 產季工時智慧試算與快速下單系統
+            </div>
+            <span class="text-xs text-slate-400">即時連動 Spring Boot 試算引擎</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">1. 作業作物</label>
+              <select v-model="calcForm.cropId" @change="calculateOrderLive()" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+                <option v-for="c in crops" :key="c.id" :value="c.id">{{ c.name }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">2. 契作面積 (分地)</label>
+              <input v-model.number="calcForm.area" @input="calculateOrderLive()" type="number" step="0.5" min="0.5" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">3. 農事派工類別</label>
+              <select v-model="calcForm.dispatchCategory" @change="calculateOrderLive()" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-emerald-500/50 text-emerald-300 font-semibold focus:outline-none focus:border-emerald-500">
+                <option value="harvest_grading">🥬 【採收分級】田間採收與外銷分級</option>
+                <option value="tillage_planting">🌱 【整地種植】曳引機深耕與定植</option>
+                <option value="pruning_bagging">✂️ 【田間管理】修枝疏果與引蔓套袋</option>
+                <option value="drone_pest_control">🛸 【科技植保】無人機精準噴藥施肥</option>
+                <option value="cold_chain_pack">❄️ 【冷鏈包裝】室內預冷與生鮮截切</option>
+                <option value="typhoon_emergency">🚨 【緊急救火】防颱搶收 24H 馳援</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">4. 商業派遣方案</label>
+              <select v-model="calcForm.plan" @change="calculateOrderLive()" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+                <option value="early_bird">【Tier 1】產季早鳥工時包 (9折・20%定金)</option>
+                <option value="hourly_flex">【Tier 2】在地彈性兼職包 (隨叫隨派・時薪$310)</option>
+                <option value="turnkey">【Tier 3】專業成果代耕 (無人機/機耕驗收)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">5. 接送路網距離</label>
+              <select v-model="calcForm.zone" @change="calculateOrderLive()" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+                <option value="core_35km">核心樞紐 35km (免加成)</option>
+                <option value="cross_region">跨區調度專線 (+NT$ 1,200/趟)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Calculation Preview Box -->
+          <div v-if="calcResult" class="bg-slate-900/80 p-4 rounded-xl border border-slate-700/60 grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
+            <div>
+              <div class="text-slate-400">派工類別 / 建議工班</div>
+              <div class="text-xs font-bold text-emerald-300 mt-1 flex flex-col gap-0.5">
+                <span>{{ calcResult.categoryName }}</span>
+                <span class="text-slate-400 font-normal">👉 {{ calcResult.suggestedTeamName }}</span>
+              </div>
+            </div>
+            <div>
+              <div class="text-slate-400">需求工時 / 建議人數</div>
+              <div class="text-base font-bold text-white mt-1">{{ calcResult.totalHours }} 小時 <span class="text-emerald-400 text-xs">({{ calcResult.suggestedWorkers }} 人 / {{ calcResult.estDays }} 天)</span></div>
+            </div>
+            <div>
+              <div class="text-slate-400">標準牌價總額</div>
+              <div class="text-base font-bold text-slate-300 line-through mt-1">${{ calcResult.standardTotal.toLocaleString() }}</div>
+            </div>
+            <div>
+              <div class="text-slate-400">應付總額 (含折讓/加成)</div>
+              <div class="text-lg font-extrabold text-emerald-400 mt-1">${{ calcResult.actualTotal.toLocaleString() }}</div>
+            </div>
+            <div>
+              <div class="text-slate-400">早鳥鎖約定金 (20%)</div>
+              <div class="text-base font-bold text-amber-300 mt-1">${{ calcResult.deposit.toLocaleString() }}</div>
+            </div>
+          </div>
+
+          <!-- Farmer Details & Place Order -->
+          <div class="space-y-3 pt-2 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="text-slate-400 block mb-1 text-[11px] font-medium">農場主 / 產銷班長姓名</label>
+                <input v-model="orderForm.farmerName" placeholder="如: 陳建龍 (阿龍班長)" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+              </div>
+              <div>
+                <label class="text-slate-400 block mb-1 text-[11px] font-medium">農場主聯絡電話</label>
+                <input v-model="orderForm.phone" placeholder="如: 0912-345-678" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+              </div>
+              <div>
+                <label class="text-slate-400 block mb-1 text-[11px] font-medium">作業農場地址 / 地號</label>
+                <input v-model="orderForm.farmLocation" placeholder="如: 桃園市八德區興豐路有機專區" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+              </div>
+            </div>
+
+            <!-- Field Sub-Foreman (現場派工小工頭 / 帶隊窗口) -->
+            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-amber-500/40 space-y-2.5 shadow-inner">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-base">👷‍♂️</span>
+                  <div>
+                    <span class="font-bold text-amber-300 text-xs">現場派工小工頭（現場對口／帶工領班）</span>
+                    <span class="text-[10px] text-slate-400 ml-1.5 hidden sm:inline">農場主可填寫現場指派之工頭或班長，引導外展移工進場作業</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button type="button" @click="syncForemanAsFarmer()" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-semibold transition flex items-center gap-1">
+                    <span>⚡</span> 同農場主本人帶隊
+                  </button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                <div>
+                  <label class="text-slate-400 block mb-1 text-[10px]">小工頭姓名 / 稱謂</label>
+                  <input v-model="orderForm.foremanName" placeholder="如: 廖國安 (三號棚領班) 或 同業主" class="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-amber-500 text-xs">
+                </div>
+                <div>
+                  <label class="text-slate-400 block mb-1 text-[10px]">小工頭電話 / LINE 聯絡</label>
+                  <input v-model="orderForm.foremanPhone" placeholder="如: 0932-111-222" class="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-amber-500 font-mono text-xs">
+                </div>
+                <div>
+                  <label class="text-slate-400 block mb-1 text-[10px]">現場交辦指示 / 報到須知</label>
+                  <input v-model="orderForm.foremanNotes" placeholder="如: 請先至 3 號棚工具室報到，由領班分派菜畦" class="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-amber-500 text-xs">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-1">
+            <button @click="submitOrder()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-xl shadow-emerald-600/30 transition flex items-center gap-2">
+              <span>🚀</span> 確認建立派工訂單
+            </button>
+          </div>
+        </div>
+
+        <!-- Order Category Filter Chips -->
+        <div class="flex items-center gap-1.5 flex-wrap text-xs">
+          <button @click="orderCategoryFilter = ''" :class="orderCategoryFilter === '' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition">
+            全部類別 ({{ orders.length }})
+          </button>
+          <button @click="orderCategoryFilter = 'harvest_grading'" :class="orderCategoryFilter === 'harvest_grading' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
+            <span>🥬</span> 採收分級 ({{ orders.filter(o => o.dispatchCategory === 'harvest_grading').length }})
+          </button>
+          <button @click="orderCategoryFilter = 'tillage_planting'" :class="orderCategoryFilter === 'tillage_planting' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
+            <span>🌱</span> 整地定植 ({{ orders.filter(o => o.dispatchCategory === 'tillage_planting').length }})
+          </button>
+          <button @click="orderCategoryFilter = 'pruning_bagging'" :class="orderCategoryFilter === 'pruning_bagging' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
+            <span>✂️</span> 修枝套袋 ({{ orders.filter(o => o.dispatchCategory === 'pruning_bagging').length }})
+          </button>
+          <button @click="orderCategoryFilter = 'drone_pest_control'" :class="orderCategoryFilter === 'drone_pest_control' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
+            <span>🛸</span> 科技植保 ({{ orders.filter(o => o.dispatchCategory === 'drone_pest_control').length }})
+          </button>
+          <button @click="orderCategoryFilter = 'cold_chain_pack'" :class="orderCategoryFilter === 'cold_chain_pack' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
+            <span>❄️</span> 冷鏈包裝 ({{ orders.filter(o => o.dispatchCategory === 'cold_chain_pack').length }})
+          </button>
+          <button @click="orderCategoryFilter = 'typhoon_emergency'" :class="orderCategoryFilter === 'typhoon_emergency' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
+            <span>🚨</span> 防颱搶收 ({{ orders.filter(o => o.dispatchCategory === 'typhoon_emergency').length }})
+          </button>
+        </div>
+
+        <!-- Orders Table -->
+        <div class="bg-slate-800/70 rounded-2xl border border-slate-700/60 overflow-hidden shadow-xl">
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-900/60 text-slate-400 uppercase border-b border-slate-700 font-semibold">
+                <tr>
+                  <th class="px-4 py-3">訂單編號</th>
+                  <th class="px-4 py-3">農場主 / 地點</th>
+                  <th class="px-4 py-3">作物 / 面積</th>
+                  <th class="px-4 py-3">派工類別</th>
+                  <th class="px-4 py-3">派遣方案 / 工時</th>
+                  <th class="px-4 py-3">總額 / 定金</th>
+                  <th class="px-4 py-3">指派工班</th>
+                  <th class="px-4 py-3">狀態</th>
+                  <th class="px-4 py-3 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-700/50">
+                <tr v-for="o in filteredOrders" :key="o.id" class="hover:bg-slate-700/30 transition">
+                  <td class="px-4 py-3 font-mono font-bold text-emerald-400">{{ o.id }}</td>
+                  <td class="px-4 py-3">
+                    <div class="font-bold text-white">{{ o.farmerName }}</div>
+                    <div class="text-[11px] text-slate-400 truncate max-w-xs">{{ o.farmLocation }}</div>
+                    <div class="text-[10px] text-slate-500">{{ o.phone }}</div>
+                    <div v-if="o.foremanName" class="mt-1 flex items-center gap-1 flex-wrap">
+                      <span class="px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[10px] font-medium inline-flex items-center gap-1">
+                        <span>👷‍♂️</span> 工頭: {{ o.foremanName }}
+                      </span>
+                      <span v-if="o.foremanPhone" class="text-slate-400 font-mono text-[10px]">({{ o.foremanPhone }})</span>
+                    </div>
+                    <div v-if="o.foremanNotes" class="text-[10px] text-slate-400 truncate max-w-xs mt-0.5" :title="o.foremanNotes">
+                      💬 {{ o.foremanNotes }}
+                    </div>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="font-semibold text-slate-200">{{ o.cropName }}</div>
+                    <div class="text-[11px] text-slate-400">{{ o.area }} 分地</div>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span :class="categoryBadge(o.dispatchCategory)" class="px-2 py-0.5 rounded border text-[10px] font-bold inline-block">
+                      {{ o.categoryName || '🥬 【採收分級】' }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="text-white font-medium">{{ o.planName }}</div>
+                    <div class="text-[11px] text-emerald-400 font-mono">{{ o.totalHours }} 小時 ({{ o.suggestedWorkers }} 人)</div>
+                  </td>
+                  <td class="px-4 py-3 font-mono">
+                    <div class="text-white font-bold">${{ o.finalAmount.toLocaleString() }}</div>
+                    <div class="text-[10px]" :class="o.depositPaid ? 'text-emerald-400' : 'text-amber-400'">
+                      定金: ${{ o.depositAmount.toLocaleString() }} ({{ o.depositPaid ? '已付' : '未付' }})
+                    </div>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="px-2 py-0.5 rounded bg-slate-700 text-slate-300 font-medium">
+                      {{ teamName(o.assignedTeamId) }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span :class="orderStatusBadge(o.status)" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold">
+                      {{ orderStatusName(o.status) }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-right space-x-1">
+                    <button @click="openOrderModal(o)" class="px-2.5 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition font-medium">
+                      改單
+                    </button>
+                    <button @click="deleteOrder(o.id)" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 border border-rose-500/30 transition font-medium">
+                      取消
+                    </button>
+                  </td>
+                </tr>
+                <tr v-if="filteredOrders.length === 0">
+                  <td colspan="9" class="px-4 py-8 text-center text-slate-400">
+                    查無符合此派工類別條件的訂單
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================= -->
+      <!-- TAB 3: CROPS CRUD (作物基準庫管理) -->
+      <!-- ============================================================= -->
+      <section v-if="activeTab === 'crops'" class="space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <span>🌾</span> 作物工時、牌價與避險基準庫
+              <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">共 {{ crops.length }} 種作物</span>
+            </h2>
+            <p class="text-xs text-slate-400">設定每分地基準工時、工時單價牌價與雨天室內冷鏈替代作業 SOP</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button @click="openCropModal()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition flex items-center gap-1.5">
+              <span>➕</span> 新增作物基準
+            </button>
+            <button @click="fetchCrops()" class="p-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition" title="重新整理">
+              <span>🔄</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-for="c in crops" :key="c.id" class="bg-slate-800/70 p-5 rounded-2xl border border-slate-700/60 shadow-lg flex flex-col justify-between hover:border-emerald-500/40 transition">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-emerald-400">{{ c.id }}</span>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 font-semibold">{{ c.season }}</span>
+              </div>
+              <h3 class="font-extrabold text-base text-white">{{ c.name }}</h3>
+
+              <div class="grid grid-cols-3 gap-2 bg-slate-900/60 p-3 rounded-xl border border-slate-700/40 text-center">
+                <div>
+                  <div class="text-[10px] text-slate-400">分地工時</div>
+                  <div class="font-mono font-bold text-white text-sm mt-0.5">{{ c.baseHoursPerFen }}h</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-slate-400">建議人數</div>
+                  <div class="font-mono font-bold text-white text-sm mt-0.5">{{ c.workersPerFen }}人</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-slate-400">工時牌價</div>
+                  <div class="font-mono font-bold text-emerald-400 text-sm mt-0.5">${{ c.rate }}/h</div>
+                </div>
+              </div>
+
+              <div class="text-xs space-y-1.5">
+                <div>
+                  <span class="text-slate-400 font-medium">田間作業：</span>
+                  <span class="text-slate-300">{{ c.taskDescription }}</span>
+                </div>
+                <div>
+                  <span class="text-amber-400 font-medium">雨天避險：</span>
+                  <span class="text-slate-300">{{ c.indoorAlternative }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-4 border-t border-slate-700/50 mt-4 text-xs">
+              <button @click="openCropModal(c)" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition font-medium">
+                編輯
+              </button>
+              <button @click="deleteCrop(c.id)" class="px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 border border-rose-500/30 transition font-medium">
+                刪除
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================= -->
+      <!-- TAB 4: DISPATCH & WEATHER (工班調度與天候避險) -->
+      <!-- ============================================================= -->
+      <section v-if="activeTab === 'dispatch'" class="space-y-6">
+        <!-- Weather Switcher Banner -->
+        <div :class="dispatch.isRainMode ? 'from-rose-950/60 via-slate-900 to-slate-900 border-rose-500/50' : 'from-emerald-950/60 via-slate-900 to-slate-900 border-emerald-500/50'" class="p-6 rounded-2xl bg-gradient-to-r border shadow-2xl transition-all duration-500">
+          <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">{{ dispatch.isRainMode ? '🌧️' : '☀️' }}</span>
+                <div>
+                  <h2 class="text-xl font-black text-white">智慧天候避險大腦 (Weather Risk Mitigation)</h2>
+                  <p class="text-xs font-mono" :class="dispatch.isRainMode ? 'text-rose-400' : 'text-emerald-400'">
+                    即時天候狀態：{{ dispatch.currentWeather }}
+                  </p>
+                </div>
+              </div>
+              <p class="text-xs text-slate-300 mt-2 max-w-2xl">{{ dispatch.weatherMessage }}</p>
+            </div>
+
+            <button @click="toggleWeather()" :class="dispatch.isRainMode ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-600/30' : 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/30'" class="px-5 py-3 rounded-xl text-white font-extrabold text-xs shadow-xl transition flex items-center gap-2">
+              <span>⚡</span> {{ dispatch.isRainMode ? '恢復晴天田間作業模式' : '啟動暴雨冷鏈避險模式' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Dispatch Teams Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div v-for="t in dispatch.teams" :key="t.id" class="bg-slate-800/70 p-5 rounded-2xl border border-slate-700/60 shadow-lg space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-lg">🚜</span>
+                <h3 class="font-extrabold text-white text-sm">{{ t.name }}</h3>
+              </div>
+              <span :class="teamStatusBadge(t.status)" class="px-2.5 py-0.5 rounded-full text-xs font-bold">
+                {{ teamStatusName(t.status) }}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-xs bg-slate-900/60 p-3 rounded-xl border border-slate-700/40">
+              <div>
+                <span class="text-slate-400">編制人數：</span>
+                <span class="text-white font-bold font-mono">{{ t.workerCount }} 人</span>
+              </div>
+              <div>
+                <span class="text-slate-400">帶隊組長：</span>
+                <span class="text-emerald-400 font-semibold">{{ t.leader }}</span>
+              </div>
+              <div class="col-span-2">
+                <span class="text-slate-400">接送專車：</span>
+                <span class="text-slate-300 font-mono">{{ t.vehicle }} ({{ t.driver }})</span>
+              </div>
+            </div>
+
+            <!-- Current Active Location & Task -->
+            <div class="text-xs space-y-1.5 p-3 rounded-xl" :class="t.status === 'hedged_indoor' ? 'bg-amber-950/20 border border-amber-500/30' : 'bg-slate-850/60 border border-slate-700/30'">
+              <div class="font-bold flex items-center gap-1.5" :class="t.status === 'hedged_indoor' ? 'text-amber-400' : 'text-emerald-400'">
+                <span>{{ t.status === 'hedged_indoor' ? '🏢 室內冷鏈工單' : '🌾 田間出勤工單' }}</span>
+              </div>
+              <div class="text-slate-200 font-medium">{{ t.status === 'hedged_indoor' ? t.hedgeLocation : t.normalLocation }}</div>
+              <div class="text-slate-400 text-[11px]">{{ t.status === 'hedged_indoor' ? t.hedgeTask : t.normalTask }}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================= -->
+      <!-- TAB 5: TALENTS CRUD (人才儲備庫) -->
+      <!-- ============================================================= -->
+      <section v-if="activeTab === 'talents'" class="space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <span>🌟</span> 本地與外展農業儲備人才庫
+              <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">共 {{ talents.length }} 位</span>
+            </h2>
+            <p class="text-xs text-slate-400">登記本國機耕師、無人機代噴手、中途轉出移工與在地彈性工</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button @click="openTalentModal()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition flex items-center gap-1.5">
+              <span>➕</span> 登錄新人才
+            </button>
+            <button @click="fetchTalents()" class="p-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition" title="重新整理">
+              <span>🔄</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-for="tal in talents" :key="tal.id" class="bg-slate-800/70 p-5 rounded-2xl border border-slate-700/60 shadow-lg space-y-3 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-emerald-400">{{ tal.id }}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">個資已授權</span>
+              </div>
+              <h3 class="font-extrabold text-base text-white mt-1">{{ tal.name }}</h3>
+              <div class="text-xs font-medium text-amber-300 mt-0.5">{{ tal.categoryName }}</div>
+              <div class="text-xs text-slate-400 font-mono mt-1">📞 {{ tal.phone }}</div>
+              <p class="text-xs text-slate-300 bg-slate-900/60 p-3 rounded-xl border border-slate-700/40 mt-3">{{ tal.experience }}</p>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-3 border-t border-slate-700/50 text-xs">
+              <button @click="openTalentModal(tal)" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition font-medium">編輯</button>
+              <button @click="deleteTalent(tal.id)" class="px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 border border-rose-500/30 transition font-medium">刪除</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================= -->
+      <!-- TAB 6: CALENDAR (全台 52 週農作物產曆動態調度) -->
+      <!-- ============================================================= -->
+      <section v-if="activeTab === 'calendar'" class="space-y-6">
+        <!-- Control Bar with Year / Month & Auto-Cycle -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60">
+          <div>
+            <div class="flex items-center gap-3">
+              <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <span>📅</span> 全台 52 週農作物產曆動態調度大腦
+              </h2>
+              <!-- Year Selector -->
+              <div class="flex items-center bg-slate-900 rounded-xl px-2 py-1 border border-slate-700 text-xs font-mono">
+                <button @click="calendarYear--; fetchCalendar()" class="px-1.5 py-0.5 text-slate-400 hover:text-white transition">◀</button>
+                <span class="px-2 text-emerald-400 font-extrabold">{{ calendarYear }} 年</span>
+                <button @click="calendarYear++; fetchCalendar()" class="px-1.5 py-0.5 text-slate-400 hover:text-white transition">▶</button>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">跨縣市產曆接力賽：依年月份時序自動推算收穫日倒數，達成移工 95% 全年在工率！</p>
+          </div>
+          
+          <div class="flex items-center gap-2 flex-wrap">
+            <!-- Auto-Cycle Button -->
+            <button @click="toggleAutoCycle()" :class="isAutoCycling ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-slate-700 text-slate-300 border-slate-600'" class="px-3.5 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5">
+              <span :class="isAutoCycling ? 'animate-spin' : ''">🔄</span>
+              <span>{{ isAutoCycling ? '自動輪播中 (4秒)' : '開啟自動輪播' }}</span>
+            </button>
+            <a href="farmers_map.html" target="_blank" class="px-3.5 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 text-xs font-bold transition flex items-center gap-1.5">
+              <span>🗺️</span> 64 處農會地圖
+            </a>
+            <button @click="fetchCalendar()" class="p-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition" title="重新整理">
+              <span>🔄</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Month Navigation Pills -->
+        <div class="bg-slate-800/40 p-3 rounded-2xl border border-slate-700/50 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="text-slate-400 font-bold px-1">時序月份：</span>
+            <button v-for="m in 12" :key="m" @click="selectCalendarMonth(m)"
+                    :class="calendarMonth === m ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'"
+                    class="px-3 py-1.5 rounded-lg transition font-mono">
+              {{ m }}月
+            </button>
+          </div>
+          <div class="flex items-center gap-1">
+            <button @click="prevCalendarMonth()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">◀ 上月</button>
+            <button @click="nextCalendarMonth()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">下月 ▶</button>
+          </div>
+        </div>
+
+        <!-- UPCOMING HARVESTS SECTION (要到來的收穫日) -->
+        <div class="space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+                <span>🚨</span> 要到來的收穫日・全台搶工倒數雷達
+                <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-mono font-bold">
+                  基準：{{ calendarYear }} 年 {{ calendarMonth }} 月
+                </span>
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5">系統依據選定年月份，即時推算全台關鍵高經濟作物即將到來的收穫期、倒數天數、SOP與建議工班！</p>
+            </div>
+            <span class="text-xs text-slate-400 font-mono">共 {{ calendarHarvests.length }} 處關鍵收穫檔期</span>
+          </div>
+
+          <!-- Harvest Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div v-for="h in calendarHarvests" :key="h.id"
+                 :class="h.countdownDays <= 15 ? 'border-rose-500/60 shadow-lg shadow-rose-950/30 bg-slate-800/90' : 'border-slate-700/60 bg-slate-800/70'"
+                 class="p-5 rounded-2xl border shadow-lg space-y-3 flex flex-col justify-between hover:border-emerald-500/50 transition">
+              <div class="space-y-2">
+                <div class="flex items-center justify-between gap-1">
+                  <span :class="h.countdownDays <= 15 ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse' : (h.countdownDays <= 45 ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30')"
+                        class="text-[11px] px-2.5 py-0.5 rounded-full border font-bold font-mono">
+                    {{ h.statusLabel }} ({{ h.countdownDays }} 天)
+                  </span>
+                  <span class="text-[10px] text-slate-400 font-mono">{{ h.harvestDateStr || (h.harvestYear + '年' + h.month + '月' + h.day + '日') }}</span>
+                </div>
+
+                <h4 class="font-extrabold text-base text-white flex items-center gap-1.5">
+                  <span>🌾</span> {{ h.cropName }}
+                </h4>
+
+                <div class="text-xs space-y-1.5 bg-slate-900/60 p-3 rounded-xl border border-slate-700/40">
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-400">📍 產區：<span class="text-slate-200">{{ h.region }}</span></span>
+                    <span class="text-emerald-400 font-bold font-mono text-[11px]">{{ h.harvestWindow }}</span>
+                  </div>
+                  <div class="text-slate-300 text-[11px] leading-relaxed">{{ h.taskDescription }}</div>
+                </div>
+              </div>
+
+              <div class="space-y-2 pt-2 border-t border-slate-700/50">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-slate-400">建議工班：</span>
+                  <span class="text-emerald-300 font-semibold">{{ teamName(h.suggestedTeamId) }} (需 {{ h.neededWorkers }} 人)</span>
+                </div>
+                <button @click="quickOrderFromHarvest(h)" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-1.5">
+                  <span>⚡</span> 依此收穫日直接預約派工 (早鳥 9 折)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 Quarters Overview Cards -->
+        <div class="space-y-3 pt-4 border-t border-slate-800">
+          <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
+            <span>📊</span> 全年四季出工率與跨區調度策略
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div v-for="q in calendarQuarters" :key="q.quarter" class="bg-slate-800/70 p-5 rounded-2xl border border-slate-700/60 shadow-lg space-y-3 flex flex-col justify-between hover:border-emerald-500/40 transition">
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">{{ q.quarter }} ({{ q.months }})</span>
+                  <span class="font-mono text-xs text-emerald-400 font-extrabold">出工率 {{ q.utilizationRate }}</span>
+                </div>
+                <h3 class="font-extrabold text-sm text-white">{{ q.name }}</h3>
+                <p class="text-[11px] text-slate-300 bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/40">{{ q.climateContext }}</p>
+                <div class="text-xs space-y-1">
+                  <div class="text-slate-400 font-medium">主要產區：<span class="text-slate-200">{{ q.primaryRegions }}</span></div>
+                  <div class="text-emerald-400 font-medium text-[11px]">策略：{{ q.dispatchStrategy }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 12 Months Detail Cards Grid -->
+        <div class="space-y-3 pt-4 border-t border-slate-800">
+          <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
+            <span>🌾</span> 12 個月全台農事產曆總覽
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div v-for="m in calendarMonths" :key="m.month"
+                 :class="calendarMonth === m.month ? 'border-emerald-500 ring-1 ring-emerald-500/50 bg-slate-800/90' : 'border-slate-700/60 bg-slate-800/70'"
+                 class="p-5 rounded-2xl border shadow-lg space-y-3 flex flex-col justify-between hover:border-emerald-500/40 transition">
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <span :class="calendarMonth === m.month ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-700 text-slate-300'"
+                        class="text-xs px-2.5 py-1 rounded-lg font-mono">
+                    {{ m.monthLabel }}
+                  </span>
+                  <span class="text-[10px] px-2 py-0.5 rounded bg-slate-700 text-slate-300 font-mono font-semibold">{{ m.quarter }} 檔期</span>
+                </div>
+                <h4 class="font-bold text-sm text-white">{{ m.title }}</h4>
+                <div class="text-xs space-y-1 bg-slate-900/60 p-3 rounded-xl border border-slate-700/40">
+                  <div>
+                    <span class="text-slate-400">主要產區：</span>
+                    <span class="text-slate-300">{{ m.regions }}</span>
+                  </div>
+                  <div>
+                    <span class="text-amber-400 font-semibold">盛產作物：</span>
+                    <span class="text-slate-200 font-bold">{{ m.crops }}</span>
+                  </div>
+                  <div>
+                    <span class="text-emerald-400 font-semibold">建議工班：</span>
+                    <span class="text-slate-300">{{ m.suggestedTeam }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-2 border-t border-slate-700/50 flex justify-end">
+                <button @click="quickOrderFromCalendar(m)" class="w-full py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5">
+                  <span>⚡</span> 依此月份快速試算下單
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ============================================================= -->
+    <!-- MODALS (新增 / 編輯 彈窗) -->
+    <!-- ============================================================= -->
+
+    <!-- Worker Modal -->
+    <div v-if="workerModal.show" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-slate-850 rounded-2xl border border-slate-700 max-w-lg w-full p-6 space-y-4 shadow-2xl">
+        <h3 class="font-extrabold text-base text-white flex items-center gap-2">
+          <span>👷</span> {{ workerModal.isEdit ? '編輯農工資料' : '新增農工' }}
+        </h3>
+        <div class="grid grid-cols-2 gap-3 text-xs max-h-[70vh] overflow-y-auto custom-scrollbar pr-1">
+          <div>
+            <label class="text-slate-400 block mb-1">農工編號 (ID)</label>
+            <input v-model="workerModal.form.id" :disabled="workerModal.isEdit" placeholder="例如 W026" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white disabled:opacity-50">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">中文通稱</label>
+            <input v-model="workerModal.form.chineseName" placeholder="例如 阮文雄" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">原籍/外語姓名</label>
+            <input v-model="workerModal.form.name" placeholder="例如 Nguyễn Văn Hùng" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">國籍</label>
+            <select v-model="workerModal.form.nationality" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <option value="越南">越南 🇻🇳</option>
+              <option value="印尼">印尼 🇮🇩</option>
+              <option value="泰國">泰國 🇹🇭</option>
+              <option value="菲律賓">菲律賓 🇵🇭</option>
+              <option value="本國">本國 🇹🇼</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">居留證號 (ARC)</label>
+            <input v-model="workerModal.form.arcNumber" placeholder="例如 A801234567" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">護照號碼</label>
+            <input v-model="workerModal.form.passportNumber" placeholder="例如 C1234567" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">聘僱許可效期</label>
+            <input v-model="workerModal.form.permitExpiry" placeholder="例如 2027-12-31" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">聯絡電話</label>
+            <input v-model="workerModal.form.phone" placeholder="例如 0988-111-222" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">所屬工班</label>
+            <select v-model="workerModal.form.teamId" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <option value="team_a">工班 A 組 (桃園溫室組)</option>
+              <option value="team_b">工班 B 組 (跨區專線組)</option>
+              <option value="team_c">工班 C 組 (機耕無人機隊)</option>
+              <option value="team_d">工班 D 組 (冷鏈常態組)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">三層等級</label>
+            <select v-model="workerModal.form.tier" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <option value="tier1_foreign">【Tier 1】外籍特許外展農工</option>
+              <option value="tier2_local_flex">【Tier 2】本國彈性兼職農工</option>
+              <option value="tier3_turnkey">【Tier 3】本國專業機耕師</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">目前派遣狀態</label>
+            <select v-model="workerModal.form.dispatchStatus" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <option value="dispatched_field">🟢 田間作業 (dispatched_field)</option>
+              <option value="hedged_indoor">🏢 室內冷鏈避險 (hedged_indoor)</option>
+              <option value="standby">🟡 待命 (standby)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">納保狀態</label>
+            <input v-model="workerModal.form.insuranceStatus" placeholder="已納保 (勞/健/職災)" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+          <div class="col-span-2">
+            <label class="text-slate-400 block mb-1">目前派遣作業內容</label>
+            <input v-model="workerModal.form.currentTask" placeholder="例如 八德有機溫室葉菜採收與精細挑選" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">基本底薪 (NT$)</label>
+            <input v-model.number="workerModal.form.baseSalary" type="number" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">農業部就業獎勵 (NT$)</label>
+            <input v-model.number="workerModal.form.agriBonus" type="number" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">交通/偏遠津貼 (NT$)</label>
+            <input v-model.number="workerModal.form.transportAllowance" type="number" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+          <div class="flex items-center gap-2 pt-5">
+            <input v-model="workerModal.form.leader" type="checkbox" id="chk-leader" class="rounded bg-slate-900 border-slate-700 text-emerald-500">
+            <label for="chk-leader" class="text-slate-300 font-semibold cursor-pointer">擔任工班帶隊組長 (Leader)</label>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-700 text-xs">
+          <button @click="workerModal.show = false" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 transition">取消</button>
+          <button @click="saveWorker()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg transition">儲存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Crop Modal -->
+    <div v-if="cropModal.show" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-slate-850 rounded-2xl border border-slate-700 max-w-lg w-full p-6 space-y-4 shadow-2xl">
+        <h3 class="font-extrabold text-base text-white flex items-center gap-2">
+          <span>🌾</span> {{ cropModal.isEdit ? '編輯作物基準' : '新增作物基準' }}
+        </h3>
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div>
+            <label class="text-slate-400 block mb-1">作物代碼 (ID)</label>
+            <input v-model="cropModal.form.id" :disabled="cropModal.isEdit" placeholder="例如 taoyuan_veg" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white disabled:opacity-50">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">作物名稱與產區</label>
+            <input v-model="cropModal.form.name" placeholder="例如 桃園溫室有機蔬菜" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">每分地基準工時 (h)</label>
+            <input v-model.number="cropModal.form.baseHoursPerFen" type="number" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">每分地建議人數</label>
+            <input v-model.number="cropModal.form.workersPerFen" type="number" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">每工時標準牌價 (NT$)</label>
+            <input v-model.number="cropModal.form.rate" type="number" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">盛產產季週期</label>
+            <input v-model="cropModal.form.season" placeholder="例如 全年溫室 或 6月~10月" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+          <div class="col-span-2">
+            <label class="text-slate-400 block mb-1">標準田間作業SOP</label>
+            <input v-model="cropModal.form.taskDescription" placeholder="採收、精緻挑菜、田間分級" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+          <div class="col-span-2">
+            <label class="text-slate-400 block mb-1">雨天室內冷鏈替代作業</label>
+            <input v-model="cropModal.form.indoorAlternative" placeholder="八德蔬果預冷冷鏈包裝中心" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-700 text-xs">
+          <button @click="cropModal.show = false" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 transition">取消</button>
+          <button @click="saveCrop()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg transition">儲存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Edit Modal -->
+    <div v-if="orderModal.show" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-slate-850 rounded-2xl border border-slate-700 max-w-lg w-full p-6 space-y-4 shadow-2xl">
+        <h3 class="font-extrabold text-base text-white flex items-center gap-2">
+          <span>📋</span> 編輯訂單 ({{ orderModal.form.id }})
+        </h3>
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div>
+            <label class="text-slate-400 block mb-1">訂單狀態</label>
+            <select v-model="orderModal.form.status" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <option value="pending">待確認 (Pending)</option>
+              <option value="confirmed">已確認 (Confirmed)</option>
+              <option value="in_progress">進行中 (In Progress)</option>
+              <option value="completed">已完工 (Completed)</option>
+              <option value="cancelled">已取消 (Cancelled)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">指派調度工班</label>
+            <select v-model="orderModal.form.assignedTeamId" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <option value="team_a">工班 A 組 (桃園溫室組)</option>
+              <option value="team_b">工班 B 組 (跨區專線組)</option>
+              <option value="team_c">工班 C 組 (機耕無人機隊)</option>
+              <option value="team_d">工班 D 組 (冷鏈常態組)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">農場主姓名</label>
+            <input v-model="orderModal.form.farmerName" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">聯絡電話</label>
+            <input v-model="orderModal.form.phone" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+          <div class="col-span-2">
+            <label class="text-slate-400 block mb-1">作業場域地址</label>
+            <input v-model="orderModal.form.farmLocation" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">農事派工類別</label>
+            <select v-model="orderModal.form.dispatchCategory" @change="onOrderCategoryChange()" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <option value="harvest_grading">🥬 【採收分級】田間採收與外銷分級</option>
+              <option value="tillage_planting">🌱 【整地種植】曳引機深耕與定植</option>
+              <option value="pruning_bagging">✂️ 【田間管理】修枝疏果與引蔓套袋</option>
+              <option value="drone_pest_control">🛸 【科技植保】無人機精準噴藥施肥</option>
+              <option value="cold_chain_pack">❄️ 【冷鏈包裝】室內預冷與生鮮截切</option>
+              <option value="typhoon_emergency">🚨 【緊急救火】防颱搶收 24H 馳援</option>
+            </select>
+          </div>
+          <div class="col-span-2 p-3 rounded-xl bg-slate-900/90 border border-amber-500/40 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-amber-300 text-xs flex items-center gap-1">
+                <span>👷‍♂️</span> 現場派工小工頭（現場帶工窗口）
+              </span>
+              <button type="button" @click="syncModalForemanAsFarmer()" class="px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[10px] font-semibold transition">
+                ⚡ 同農場主本人帶隊
+              </button>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <label class="text-slate-400 block mb-1 text-[10px]">小工頭姓名</label>
+                <input v-model="orderModal.form.foremanName" placeholder="如: 廖國安 (三號棚領班)" class="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white">
+              </div>
+              <div>
+                <label class="text-slate-400 block mb-1 text-[10px]">小工頭電話 / LINE</label>
+                <input v-model="orderModal.form.foremanPhone" placeholder="如: 0932-111-222" class="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono">
+              </div>
+              <div class="col-span-2">
+                <label class="text-slate-400 block mb-1 text-[10px]">現場交辦指示 / 報到須知</label>
+                <input v-model="orderModal.form.foremanNotes" placeholder="如: 請先至 3 號棚工具室報到，由領班分派菜畦" class="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white">
+              </div>
+            </div>
+          </div>
+          <div class="col-span-2 flex items-center gap-2">
+            <input v-model="orderModal.form.depositPaid" type="checkbox" id="chk-deposit" class="rounded bg-slate-900 border-slate-700 text-emerald-500">
+            <label for="chk-deposit" class="text-slate-300 font-semibold">早鳥鎖約定金已確認入帳</label>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-700 text-xs">
+          <button @click="orderModal.show = false" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 transition">取消</button>
+          <button @click="saveOrder()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg transition">儲存變更</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Talent Modal -->
+    <div v-if="talentModal.show" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-slate-850 rounded-2xl border border-slate-700 max-w-lg w-full p-6 space-y-4 shadow-2xl">
+        <h3 class="font-extrabold text-base text-white flex items-center gap-2">
+          <span>🌟</span> {{ talentModal.isEdit ? '編輯人才資料' : '登錄新人才' }}
+        </h3>
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div>
+            <label class="text-slate-400 block mb-1">姓名</label>
+            <input v-model="talentModal.form.name" placeholder="例如 陳文義" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">聯絡電話 / LINE</label>
+            <input v-model="talentModal.form.phone" placeholder="例如 0933-222-111" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+          </div>
+          <div class="col-span-2">
+            <label class="text-slate-400 block mb-1">專長與身分類別</label>
+            <select v-model="talentModal.form.category" @change="onTalentCategoryChange()" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <option value="local_driver">本國大型農機/曳引機駕駛員 (Tier 3)</option>
+              <option value="drone_pilot">本國專業植保機/無人機手 (Tier 3)</option>
+              <option value="transfer_worker">合法期滿中途轉出外展移工 (Tier 1)</option>
+              <option value="local_flex">本國二度就業/彈性兼職農工 (Tier 2)</option>
+            </select>
+          </div>
+          <div class="col-span-2">
+            <label class="text-slate-400 block mb-1">耕作經驗與專長機具簡述</label>
+            <textarea v-model="talentModal.form.experience" rows="3" placeholder="例如: 具備 80 馬力曳引機 5 年耕作經驗..." class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white"></textarea>
+          </div>
+          <div class="col-span-2 flex items-center gap-2">
+            <input v-model="talentModal.form.pdpaConsent" type="checkbox" id="chk-pdpa" class="rounded bg-slate-900 border-slate-700 text-emerald-500">
+            <label for="chk-pdpa" class="text-slate-300 font-semibold">同意個資法第 19 條人才媒合利用授權</label>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-700 text-xs">
+          <button @click="talentModal.show = false" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 transition">取消</button>
+          <button @click="saveTalent()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg transition">儲存</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const { createApp, ref, reactive, computed, onMounted } = Vue;
+
+    createApp({
+      setup() {
+        const API_BASE = window.location.origin.startsWith('http')
+          ? `${window.location.origin}/api`
+          : 'http://localhost:3000/api';
+
+        const backendOnline = ref(true);
+        const activeTab = ref('workers');
+
+        const initialData = (typeof DEFAULT_ADMIN_DATA !== 'undefined') ? DEFAULT_ADMIN_DATA : null;
+
+        // Data Collections (Pre-populated from canonical database seeds)
+        const workers = ref(initialData ? JSON.parse(JSON.stringify(initialData.workers || [])) : []);
+        const orders = ref(initialData ? JSON.parse(JSON.stringify(initialData.orders || [])) : []);
+        const crops = ref(initialData ? JSON.parse(JSON.stringify(initialData.crops || [])) : []);
+        const talents = ref(initialData ? JSON.parse(JSON.stringify(initialData.talents || [])) : []);
+        const orderCategories = ref(initialData ? JSON.parse(JSON.stringify(initialData.orderCategories || [])) : []);
+        const dispatch = reactive({
+          isRainMode: false,
+          currentWeather: '晴朗 28°C',
+          weatherMessage: '全區田間出勤中・外展農工出勤率 100%',
+          teams: initialData ? JSON.parse(JSON.stringify(initialData.teams || [])) : []
+        });
+
+        // Filter / Search
+        const workerSearch = ref('');
+        const workerTeamFilter = ref('');
+        const workerTierFilter = ref('');
+        const workerNationalityFilter = ref('');
+
+        // Toast Feedback
+        const toast = reactive({ show: false, message: '', type: 'success' });
+        const showToast = (message, type = 'success') => {
+          toast.message = message;
+          toast.type = type;
+          toast.show = true;
+          setTimeout(() => { toast.show = false; }, 3500);
+        };
+
+        // Modals
+        const workerModal = reactive({ show: false, isEdit: false, form: {} });
+        const cropModal = reactive({ show: false, isEdit: false, form: {} });
+        const orderModal = reactive({ show: false, form: {} });
+        const talentModal = reactive({ show: false, isEdit: false, form: {} });
+
+        // Order Calculator & Categories
+        const showOrderCalc = ref(false);
+        const orderCategoryFilter = ref('');
+        const calcForm = reactive({
+          cropId: 'taoyuan_veg',
+          area: 5.0,
+          plan: 'early_bird',
+          zone: 'core_35km',
+          dispatchCategory: 'harvest_grading'
+        });
+        const calcResult = ref(null);
+        const orderForm = reactive({
+          farmerName: '陳建龍 (阿龍班長)',
+          phone: '0912-345-678',
+          farmLocation: '桃園市八德區興豐路有機蔬菜專區',
+          dispatchCategory: 'harvest_grading',
+          foremanName: '廖國安 (八德三號棚領班)',
+          foremanPhone: '0932-111-222',
+          foremanNotes: '進場請先至 3 號棚工具室報到，由廖領班分派菜畦'
+        });
+
+        // ==========================================
+        // API FETCHERS
+        // ==========================================
+        const fetchWorkers = async () => {
+          try {
+            const res = await fetch(`${API_BASE}/workers`);
+            const json = await res.json();
+            if (json.success && json.data && json.data.length > 0) {
+              workers.value = json.data;
+            }
+            backendOnline.value = true;
+          } catch (e) {
+            console.error(e);
+            backendOnline.value = false;
+          }
+        };
+
+        const fetchOrders = async () => {
+          try {
+            const res = await fetch(`${API_BASE}/orders`);
+            const json = await res.json();
+            if (json.success && json.data && json.data.length > 0) {
+              orders.value = json.data;
+            }
+          } catch (e) { console.error(e); }
+        };
+
+        const fetchOrderCategories = async () => {
+          try {
+            const res = await fetch(`${API_BASE}/orders/categories`);
+            const json = await res.json();
+            if (json.success && json.data && json.data.length > 0) {
+              orderCategories.value = json.data;
+            }
+          } catch (e) { console.error(e); }
+        };
+
+        const fetchCrops = async () => {
+          try {
+            const res = await fetch(`${API_BASE}/crops`);
+            const json = await res.json();
+            if (json.success && json.data && json.data.length > 0) {
+              crops.value = json.data;
+            }
+          } catch (e) { console.error(e); }
+        };
+
+        const fetchDispatch = async () => {
+          try {
+            const res = await fetch(`${API_BASE}/dispatch/overview`);
+            const json = await res.json();
+            if (json.success && json.data) {
+              dispatch.isRainMode = json.data.isRainMode;
+              dispatch.currentWeather = json.data.currentWeather;
+              dispatch.weatherMessage = json.data.weatherMessage;
+              if (json.data.teams && json.data.teams.length > 0) {
+                dispatch.teams = json.data.teams;
+              }
+            }
+          } catch (e) { console.error(e); }
+        };
+
+        const fetchTalents = async () => {
+          try {
+            const res = await fetch(`${API_BASE}/talents`);
+            const json = await res.json();
+            if (json.success && json.data && json.data.length > 0) {
+              talents.value = json.data;
+            }
+          } catch (e) { console.error(e); }
+        };
+
+        const calendarQuarters = ref(initialData ? JSON.parse(JSON.stringify(initialData.calendarQuarters || [])) : []);
+        const calendarMonths = ref(initialData ? JSON.parse(JSON.stringify(initialData.calendarMonths || [])) : []);
+        const calendarHarvests = ref(initialData ? JSON.parse(JSON.stringify(initialData.calendarHarvests || [])) : []);
+        const calendarYear = ref(new Date().getFullYear());
+        const calendarMonth = ref(new Date().getMonth() + 1);
+        const isAutoCycling = ref(false);
+        let autoCycleTimer = null;
+
+        const fetchCalendar = async () => {
+          try {
+            const res = await fetch(`${API_BASE}/calendar?year=${calendarYear.value}&month=${calendarMonth.value}`);
+            const json = await res.json();
+            if (json.success) {
+              if (json.quarters && json.quarters.length > 0) calendarQuarters.value = json.quarters;
+              if (json.months && json.months.length > 0) calendarMonths.value = json.months;
+              if (json.upcomingHarvests && json.upcomingHarvests.length > 0) calendarHarvests.value = json.upcomingHarvests;
+            }
+          } catch (e) { console.error(e); }
+        };
+
+        const selectCalendarMonth = (m) => {
+          calendarMonth.value = m;
+          fetchCalendar();
+        };
+
+        const nextCalendarMonth = () => {
+          calendarMonth.value = calendarMonth.value >= 12 ? 1 : calendarMonth.value + 1;
+          fetchCalendar();
+        };
+
+        const prevCalendarMonth = () => {
+          calendarMonth.value = calendarMonth.value <= 1 ? 12 : calendarMonth.value - 1;
+          fetchCalendar();
+        };
+
+        const toggleAutoCycle = () => {
+          isAutoCycling.value = !isAutoCycling.value;
+          if (isAutoCycling.value) {
+            autoCycleTimer = setInterval(() => {
+              nextCalendarMonth();
+            }, 4000);
+            showToast('已開啟全台產曆自動輪播 (4秒/月)');
+          } else {
+            if (autoCycleTimer) clearInterval(autoCycleTimer);
+            autoCycleTimer = null;
+            showToast('已暫停全台產曆自動輪播');
+          }
+        };
+
+        const quickOrderFromHarvest = (harvest) => {
+          if (window.AgriNativeBridge) {
+            if (typeof window.AgriNativeBridge.alertHarvest === 'function') {
+              window.AgriNativeBridge.alertHarvest(harvest.cropName, harvest.countdownDays);
+            } else if (typeof window.AgriNativeBridge.showToast === 'function') {
+              window.AgriNativeBridge.showToast(`🚨 【${harvest.cropName}】距離採收尚有 ${harvest.countdownDays} 天！`);
+            }
+            if (typeof window.AgriNativeBridge.vibrate === 'function') {
+              window.AgriNativeBridge.vibrate(200);
+            }
+          }
+          activeTab.value = 'orders';
+          showOrderCalc.value = true;
+          if (harvest.cropId) {
+            calcForm.cropId = harvest.cropId;
+          }
+          calculateOrderLive();
+          showToast(`已為您載入【${harvest.cropName}】收穫期派工參數！`);
+        };
+
+        const quickOrderFromCalendar = (monthItem) => {
+          activeTab.value = 'orders';
+          showOrderCalc.value = true;
+          if (crops.value && crops.value.length > 0) {
+            const found = crops.value.find(c => monthItem.crops.includes(c.name) || monthItem.crops.includes(c.id));
+            if (found) calcForm.cropId = found.id;
+          }
+          calculateOrderLive();
+          showToast(`已為您載入【${monthItem.monthLabel}】${monthItem.title} 試算參數！`);
+        };
+
+        // ==========================================
+        // WORKERS CRUD
+        // ==========================================
+        const filteredWorkers = computed(() => {
+          return workers.value.filter(w => {
+            const kw = (workerSearch.value || '').toLowerCase().trim();
+            const matchKw = !kw || 
+              (w.name && w.name.toLowerCase().includes(kw)) ||
+              (w.chineseName && w.chineseName.toLowerCase().includes(kw)) ||
+              (w.id && w.id.toLowerCase().includes(kw)) ||
+              (w.nationality && w.nationality.toLowerCase().includes(kw)) ||
+              (w.arcNumber && w.arcNumber.toLowerCase().includes(kw)) ||
+              (w.passportNumber && w.passportNumber.toLowerCase().includes(kw)) ||
+              (w.currentTask && w.currentTask.toLowerCase().includes(kw)) ||
+              (w.phone && w.phone.includes(kw));
+            const matchTeam = !workerTeamFilter.value || w.teamId === workerTeamFilter.value;
+            const matchTier = !workerTierFilter.value || w.tier === workerTierFilter.value;
+            const matchNat = !workerNationalityFilter.value || w.nationality === workerNationalityFilter.value;
+            return matchKw && matchTeam && matchTier && matchNat;
+          });
+        });
+
+        const openWorkerModal = (worker = null) => {
+          if (worker) {
+            workerModal.isEdit = true;
+            workerModal.form = { ...worker };
+          } else {
+            workerModal.isEdit = false;
+            const nextSeq = workers.value.length + 1;
+            const nextId = nextSeq < 10 ? `W00${nextSeq}` : (nextSeq < 100 ? `W0${nextSeq}` : `W${nextSeq}`);
+            workerModal.form = {
+              id: nextId,
+              name: '',
+              chineseName: '',
+              nationality: '越南',
+              passportNumber: '',
+              arcNumber: '',
+              permitExpiry: '2027-12-31',
+              teamId: 'team_a',
+              leader: false,
+              tier: 'tier1_foreign',
+              baseSalary: 28590,
+              agriBonus: 8800,
+              transportAllowance: 1200,
+              insuranceStatus: '已納保 (勞/健/職災)',
+              currentTask: '八德有機溫室葉菜採收與精細挑選',
+              dispatchStatus: 'dispatched_field',
+              phone: '0988-111-222'
+            };
+          }
+          workerModal.show = true;
+        };
+
+        const saveWorker = async () => {
+          try {
+            const method = workerModal.isEdit ? 'PUT' : 'POST';
+            const url = workerModal.isEdit ? `${API_BASE}/workers/${workerModal.form.id}` : `${API_BASE}/workers`;
+            const res = await fetch(url, {
+              method,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(workerModal.form)
+            });
+            const json = await res.json();
+            if (json.success) {
+              showToast(json.message || '農工資料儲存成功！');
+              workerModal.show = false;
+              fetchWorkers();
+              return;
+            } else {
+              showToast(json.error || '儲存失敗', 'error');
+            }
+          } catch (e) {
+            console.warn('Backend unavailable, saving worker locally', e);
+          }
+
+          if (workerModal.isEdit) {
+            const idx = workers.value.findIndex(w => w.id === workerModal.form.id);
+            if (idx >= 0) workers.value[idx] = { ...workerModal.form };
+          } else {
+            if (!workerModal.form.id) {
+              workerModal.form.id = 'W' + String(workers.value.length + 1).padStart(3, '0');
+            }
+            workers.value.push({ ...workerModal.form });
+          }
+          showToast('農工資料儲存成功 (本地模式)！');
+          workerModal.show = false;
+        };
+
+        const deleteWorker = async (id) => {
+          if (!confirm(`確定要刪除農工 ${id} 嗎？`)) return;
+          try {
+            const res = await fetch(`${API_BASE}/workers/${id}`, { method: 'DELETE' });
+            const json = await res.json();
+            if (json.success) {
+              showToast(`已成功刪除農工 ${id}`);
+              fetchWorkers();
+              return;
+            }
+          } catch (e) {
+            console.warn('Backend unavailable, deleting worker locally', e);
+          }
+
+          workers.value = workers.value.filter(w => w.id !== id);
+          showToast(`已成功刪除農工 ${id} (本地模式)`);
+        };
+
+        // ==========================================
+        // CROPS CRUD
+        // ==========================================
+        const openCropModal = (crop = null) => {
+          if (crop) {
+            cropModal.isEdit = true;
+            cropModal.form = { ...crop };
+          } else {
+            cropModal.isEdit = false;
+            cropModal.form = {
+              id: '',
+              name: '',
+              baseHoursPerFen: 20,
+              workersPerFen: 3,
+              rate: 300,
+              season: '全年',
+              taskDescription: '',
+              indoorAlternative: ''
+            };
+          }
+          cropModal.show = true;
+        };
+
+        const saveCrop = async () => {
+          try {
+            const method = cropModal.isEdit ? 'PUT' : 'POST';
+            const url = cropModal.isEdit ? `${API_BASE}/crops/${cropModal.form.id}` : `${API_BASE}/crops`;
+            const res = await fetch(url, {
+              method,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(cropModal.form)
+            });
+            const json = await res.json();
+            if (json.success) {
+              showToast(json.message || '作物基準儲存成功！');
+              cropModal.show = false;
+              fetchCrops();
+              return;
+            } else {
+              showToast(json.error || '儲存失敗', 'error');
+            }
+          } catch (e) {
+            console.warn('Backend unavailable, saving crop locally', e);
+          }
+
+          if (cropModal.isEdit) {
+            const idx = crops.value.findIndex(c => c.id === cropModal.form.id);
+            if (idx >= 0) crops.value[idx] = { ...cropModal.form };
+          } else {
+            crops.value.push({ ...cropModal.form });
+          }
+          showToast('作物基準儲存成功 (本地模式)！');
+          cropModal.show = false;
+        };
+
+        const deleteCrop = async (id) => {
+          if (!confirm(`確定要刪除作物基準 ${id} 嗎？`)) return;
+          try {
+            const res = await fetch(`${API_BASE}/crops/${id}`, { method: 'DELETE' });
+            const json = await res.json();
+            if (json.success) {
+              showToast(`已成功刪除作物基準 ${id}`);
+              fetchCrops();
+              return;
+            }
+          } catch (e) {
+            console.warn('Backend unavailable, deleting crop locally', e);
+          }
+
+          crops.value = crops.value.filter(c => c.id !== id);
+          showToast(`已成功刪除作物基準 ${id} (本地模式)`);
+        };
+
+        // ==========================================
+        // ORDERS CRUD & CALCULATOR
+        // ==========================================
+        const filteredOrders = computed(() => {
+          return orders.value.filter(o => !orderCategoryFilter.value || o.dispatchCategory === orderCategoryFilter.value);
+        });
+
+        const calculateOrderLive = async () => {
+          try {
+            const res = await fetch(`${API_BASE}/orders/calculate`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(calcForm)
+            });
+            const json = await res.json();
+            if (json.success && json.data) {
+              calcResult.value = json.data;
+              return;
+            }
+          } catch (e) { console.error(e); }
+
+          // Offline fallback calculation
+          const c = crops.value.find(item => item.id === calcForm.cropId) || (initialData && initialData.crops ? initialData.crops[0] : { rate: 290, baseHoursPerFen: 20, workersPerFen: 3, name: '桃園溫室有機蔬菜' });
+          const cat = orderCategories.value.find(item => item.id === calcForm.dispatchCategory) || { name: '【採收分級】田間採收與外銷分級' };
+          const area = parseFloat(calcForm.area) || 1.0;
+          const totalHours = Math.round(area * (c.baseHoursPerFen || 20));
+          const unitRate = c.rate || 290;
+          const standardAmount = totalHours * unitRate;
+          const discount = calcForm.plan === 'early_bird' ? 0.90 : 1.0;
+          const surcharge = calcForm.zone === 'cross_region' ? 1200 : (calcForm.zone === 'remote_mountain' ? 2400 : 0);
+          const finalAmount = Math.round(standardAmount * discount) + surcharge;
+          const depositAmount = calcForm.plan === 'hourly_flex' ? 0 : Math.round(finalAmount * 0.20);
+          const techFee = Math.round(finalAmount * 0.18);
+          const coopFee = finalAmount - techFee;
+
+          calcResult.value = {
+            cropId: calcForm.cropId,
+            cropName: c.name,
+            area,
+            totalHours,
+            unitRate,
+            suggestedWorkers: Math.max(2, Math.round(area * (c.workersPerFen || 3) * 0.5)),
+            standardAmount,
+            discountRate: calcForm.plan === 'early_bird' ? '9折' : '牌價',
+            finalAmount,
+            depositAmount,
+            depositPaid: true,
+            transportZone: calcForm.zone,
+            transportSurcharge: surcharge,
+            dispatchCategory: calcForm.dispatchCategory,
+            categoryName: cat.name,
+            suggestedTeam: (calcForm.dispatchCategory === 'cold_chain_pack') ? 'team_d' : ((calcForm.dispatchCategory === 'drone_pest_control' || calcForm.dispatchCategory === 'tillage_planting') ? 'team_c' : ((calcForm.zone === 'cross_region') ? 'team_b' : 'team_a')),
+            techShare: techFee,
+            coopShare: coopFee
+          };
+        };
+
+        const submitOrder = async () => {
+          const newId = 'ORD-2026-' + String(orders.value.length + 1).padStart(3, '0');
+          const payload = {
+            id: newId,
+            ...orderForm,
+            foremanName: orderForm.foremanName || (orderForm.farmerName ? `${orderForm.farmerName} (本人帶隊)` : '同農場主本人'),
+            foremanPhone: orderForm.foremanPhone || orderForm.phone,
+            foremanNotes: orderForm.foremanNotes || '',
+            cropId: calcForm.cropId,
+            cropName: calcResult.value ? calcResult.value.cropName : '桃園溫室有機蔬菜 (八德)',
+            area: calcForm.area,
+            plan: calcForm.plan,
+            planName: calcForm.plan === 'early_bird' ? '【Tier 1】產季早鳥工時包 (9折保證出工)' : (calcForm.plan === 'hourly_flex' ? '【Tier 2】在地彈性兼職包 (隨叫隨派)' : '【Tier 3】專業成果統包代耕 (驗收付款)'),
+            transportZone: calcForm.zone,
+            dispatchCategory: calcForm.dispatchCategory || 'harvest_grading',
+            categoryName: calcResult.value ? calcResult.value.categoryName : '🥬 【採收分級】田間採收與外銷分級',
+            assignedTeamId: calcResult.value ? calcResult.value.suggestedTeam : 'team_a',
+            totalHours: calcResult.value ? calcResult.value.totalHours : 100,
+            suggestedWorkers: calcResult.value ? calcResult.value.suggestedWorkers : 3,
+            unitRate: calcResult.value ? calcResult.value.unitRate : 290,
+            standardAmount: calcResult.value ? calcResult.value.standardAmount : 29000,
+            finalAmount: calcResult.value ? calcResult.value.finalAmount : 26100,
+            totalPrice: calcResult.value ? calcResult.value.finalAmount : 26100,
+            depositAmount: calcResult.value ? calcResult.value.depositAmount : 5220,
+            status: 'confirmed',
+            depositPaid: true,
+            createdAt: new Date().toLocaleString('zh-TW', { hour12: false }).replace(/\//g, '-')
+          };
+
+          try {
+            const res = await fetch(`${API_BASE}/orders`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const json = await res.json();
+            if (json.success) {
+              showToast('派工訂單已成功建立！');
+              showOrderCalc.value = false;
+              fetchOrders();
+              return;
+            } else {
+              showToast(json.error || '下單失敗', 'error');
+            }
+          } catch (e) {
+            console.warn('Backend unavailable, creating order locally', e);
+          }
+
+          orders.value.unshift(payload);
+          showToast('派工訂單已成功建立 (本地模式)！');
+          showOrderCalc.value = false;
+        };
+
+        const openOrderModal = (order) => {
+          orderModal.form = { ...order };
+          orderModal.show = true;
+        };
+
+        const saveOrder = async () => {
+          try {
+            const res = await fetch(`${API_BASE}/orders/${orderModal.form.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(orderModal.form)
+            });
+            const json = await res.json();
+            if (json.success) {
+              showToast('訂單資料已成功更新！');
+              orderModal.show = false;
+              fetchOrders();
+              return;
+            }
+          } catch (e) {
+            console.warn('Backend unavailable, updating order locally', e);
+          }
+
+          const idx = orders.value.findIndex(o => o.id === orderModal.form.id);
+          if (idx >= 0) {
+            orders.value[idx] = { ...orders.value[idx], ...orderModal.form };
+          }
+          showToast('訂單資料已成功更新 (本地模式)！');
+          orderModal.show = false;
+        };
+
+        const deleteOrder = async (id) => {
+          if (!confirm(`確定要取消/刪除訂單 ${id} 嗎？`)) return;
+          try {
+            const res = await fetch(`${API_BASE}/orders/${id}`, { method: 'DELETE' });
+            const json = await res.json();
+            if (json.success) {
+              showToast(`訂單 ${id} 已取消並刪除`);
+              fetchOrders();
+              return;
+            }
+          } catch (e) {
+            console.warn('Backend unavailable, deleting order locally', e);
+          }
+
+          orders.value = orders.value.filter(o => o.id !== id);
+          showToast(`訂單 ${id} 已取消並刪除 (本地模式)`);
+        };
+
+        // ==========================================
+        // DISPATCH & WEATHER
+        // ==========================================
+        const toggleWeather = async () => {
+          const nextState = !dispatch.isRainMode;
+          try {
+            const res = await fetch(`${API_BASE}/dispatch/weather-switch`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ isRainMode: nextState })
+            });
+            const json = await res.json();
+            if (json.success) {
+              showToast(json.message);
+              fetchDispatch();
+              return;
+            }
+          } catch (e) {
+            console.warn('Backend unavailable, toggling weather locally', e);
+          }
+
+          dispatch.isRainMode = nextState;
+          if (nextState) {
+            dispatch.currentWeather = '暴雨警戒 23°C (北部滯留鋒面)';
+            dispatch.weatherMessage = '⚡ 突發暴雨避險啟動：全體工班已專車轉派八德蔬果預冷冷鏈包裝線，出勤率 100%，零閒置虧損！';
+            dispatch.teams.forEach(t => t.status = 'hedged_indoor');
+          } else {
+            dispatch.currentWeather = '晴朗 28°C';
+            dispatch.weatherMessage = '全區田間出勤中・外展農工出勤率 100%';
+            dispatch.teams.forEach(t => {
+              if (t.id !== 'team_d') t.status = 'active_field';
+            });
+          }
+          showToast(nextState ? '已切換至暴雨避險模式 (全區轉入室內冷鏈)' : '已恢復晴天田間出勤模式');
+        };
+
+        // ==========================================
+        // TALENTS CRUD
+        // ==========================================
+        const openTalentModal = (talent = null) => {
+          if (talent) {
+            talentModal.isEdit = true;
+            talentModal.form = { ...talent };
+          } else {
+            talentModal.isEdit = false;
+            talentModal.form = {
+              name: '',
+              phone: '',
+              category: 'local_driver',
+              categoryName: '本國大型農機/曳引機駕駛員 (Tier 3)',
+              experience: '',
+              pdpaConsent: true
+            };
+          }
+          talentModal.show = true;
+        };
+
+        const onTalentCategoryChange = () => {
+          const map = {
+            local_driver: '本國大型農機/曳引機駕駛員 (Tier 3)',
+            drone_pilot: '本國專業植保機/無人機手 (Tier 3)',
+            transfer_worker: '合法期滿中途轉出外展移工 (Tier 1)',
+            local_flex: '本國二度就業/彈性兼職農工 (Tier 2)'
+          };
+          talentModal.form.categoryName = map[talentModal.form.category] || '';
+        };
+
+        const saveTalent = async () => {
+          try {
+            const method = talentModal.isEdit ? 'PUT' : 'POST';
+            const url = talentModal.isEdit ? `${API_BASE}/talents/${talentModal.form.id}` : `${API_BASE}/talents`;
+            const res = await fetch(url, {
+              method,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(talentModal.form)
+            });
+            const json = await res.json();
+            if (json.success) {
+              showToast(json.message || '人才資料儲存成功！');
+              talentModal.show = false;
+              fetchTalents();
+              return;
+            }
+          } catch (e) {
+            console.warn('Backend unavailable, saving talent locally', e);
+          }
+
+          if (talentModal.isEdit) {
+            const idx = talents.value.findIndex(t => t.id === talentModal.form.id);
+            if (idx >= 0) talents.value[idx] = { ...talentModal.form };
+          } else {
+            if (!talentModal.form.id) {
+              talentModal.form.id = 'TAL-' + String(talents.value.length + 1).padStart(3, '0');
+            }
+            talents.value.push({ ...talentModal.form });
+          }
+          showToast('人才資料儲存成功 (本地模式)！');
+          talentModal.show = false;
+        };
+
+        const deleteTalent = async (id) => {
+          if (!confirm(`確定要刪除人才 ${id} 嗎？`)) return;
+          try {
+            const res = await fetch(`${API_BASE}/talents/${id}`, { method: 'DELETE' });
+            const json = await res.json();
+            if (json.success) {
+              showToast(`已刪除人才 ${id}`);
+              fetchTalents();
+              return;
+            }
+          } catch (e) {
+            console.warn('Backend unavailable, deleting talent locally', e);
+          }
+
+          talents.value = talents.value.filter(t => t.id !== id);
+          showToast(`已刪除人才 ${id} (本地模式)`);
+        };
+
+        // ==========================================
+        // UI HELPERS
+        // ==========================================
+        const tabClass = (tab) => {
+          return activeTab.value === tab
+            ? 'px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold shadow transition flex items-center gap-1.5'
+            : 'px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium transition flex items-center gap-1.5';
+        };
+
+        const mobileTabClass = (tab) => {
+          return activeTab.value === tab
+            ? 'px-2 py-1 text-emerald-400 font-bold border-b-2 border-emerald-400 whitespace-nowrap'
+            : 'px-2 py-1 text-slate-400 font-medium whitespace-nowrap';
+        };
+
+        const teamName = (teamId) => {
+          const m = {
+            team_a: '工班 A 組 (桃園溫室)',
+            team_b: '工班 B 組 (跨區專線)',
+            team_c: '工班 C 組 (機耕無人機)',
+            team_d: '工班 D 組 (冷鏈常態)'
+          };
+          return m[teamId] || teamId;
+        };
+
+        const tierName = (tier) => {
+          const m = {
+            tier1_foreign: 'Tier 1 外展移工',
+            tier2_local_flex: 'Tier 2 本地彈性工',
+            tier3_turnkey: 'Tier 3 專業機耕手'
+          };
+          return m[tier] || tier;
+        };
+
+        const tierBadge = (tier) => {
+          if (tier === 'tier1_foreign') return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+          if (tier === 'tier2_local_flex') return 'bg-blue-500/20 text-blue-300 border border-blue-500/30';
+          return 'bg-purple-500/20 text-purple-300 border border-purple-500/30';
+        };
+
+        const flagFor = (nationality) => {
+          if (!nationality) return '🌐';
+          if (nationality.includes('越南')) return '🇻🇳';
+          if (nationality.includes('印尼')) return '🇮🇩';
+          if (nationality.includes('泰國')) return '🇹🇭';
+          if (nationality.includes('菲律賓')) return '🇵🇭';
+          if (nationality.includes('本國') || nationality.includes('台灣') || nationality.includes('臺灣')) return '🇹🇼';
+          return '🌐';
+        };
+
+        const exportWorkerCSV = () => {
+          if (!workers.value || workers.value.length === 0) {
+            showToast('目前無農工資料可匯出', 'error');
+            return;
+          }
+          const headers = ['工號', '中文通稱', '外籍原名', '國籍', '護照號碼', '居留證號(ARC)', '聘僱許可效期', '所屬工班', '三層分類', '帶隊組長', '底薪', '就業獎勵', '交通津貼', '納保狀態', '目前任務', '派遣狀態', '聯絡電話'];
+          const rows = workers.value.map(w => [
+            w.id,
+            w.chineseName || '',
+            w.name || '',
+            w.nationality || '',
+            w.passportNumber || '',
+            w.arcNumber || '',
+            w.permitExpiry || '',
+            teamName(w.teamId),
+            tierName(w.tier),
+            w.leader ? '是' : '否',
+            w.baseSalary || 0,
+            w.agriBonus || 0,
+            w.transportAllowance || 0,
+            w.insuranceStatus || '',
+            w.currentTask || '',
+            w.dispatchStatus || '',
+            w.phone || ''
+          ]);
+          const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\r\n');
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.setAttribute('href', url);
+          link.setAttribute('download', `外展農工與派遣名冊_${new Date().toISOString().slice(0,10)}.csv`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          showToast('已成功匯出主管機關送審名冊 (CSV)！');
+        };
+
+        const orderStatusBadge = (status) => {
+          const m = {
+            pending: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
+            confirmed: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
+            in_progress: 'bg-blue-500/20 text-blue-300 border border-blue-500/30',
+            completed: 'bg-slate-700 text-slate-300',
+            cancelled: 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+          };
+          return m[status] || 'bg-slate-700 text-slate-300';
+        };
+
+        const orderStatusName = (status) => {
+          const m = {
+            pending: '待確認',
+            confirmed: '已確認',
+            in_progress: '作業進行中',
+            completed: '已完工',
+            cancelled: '已取消'
+          };
+          return m[status] || status;
+        };
+
+        const teamStatusBadge = (status) => {
+          return status === 'hedged_indoor'
+            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+            : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+        };
+
+        const teamStatusName = (status) => {
+          return status === 'hedged_indoor' ? '🌧️ 室內冷鏈避險中' : '☀️ 田間出勤作業中';
+        };
+
+        const categoryBadge = (cat) => {
+          const m = {
+            harvest_grading: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+            tillage_planting: 'bg-lime-500/20 text-lime-300 border-lime-500/30',
+            pruning_bagging: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+            drone_pest_control: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+            cold_chain_pack: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
+            typhoon_emergency: 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+          };
+          return m[cat] || 'bg-slate-700 text-slate-300 border-slate-600';
+        };
+
+        const onOrderCategoryChange = () => {
+          const found = orderCategories.value.find(c => c.id === orderModal.form.dispatchCategory);
+          if (found) {
+            orderModal.form.categoryName = found.name;
+          }
+        };
+
+        const syncForemanAsFarmer = () => {
+          orderForm.foremanName = orderForm.farmerName ? `${orderForm.farmerName} (本人帶隊)` : '同農場主本人';
+          orderForm.foremanPhone = orderForm.phone || '';
+          orderForm.foremanNotes = '由農場主本人於現場親自引導帶工';
+          showToast('已同步農場主資訊至現場小工頭！');
+        };
+
+        const syncModalForemanAsFarmer = () => {
+          orderModal.form.foremanName = orderModal.form.farmerName ? `${orderModal.form.farmerName} (本人帶隊)` : '同農場主本人';
+          orderModal.form.foremanPhone = orderModal.form.phone || '';
+          orderModal.form.foremanNotes = '由農場主本人於現場親自引導帶工';
+          showToast('已同步農場主資訊至現場小工頭！');
+        };
+
+        const seedData = async (clean = true) => {
+          if (!confirm('確定要重新注入全套擬真假資料嗎？這將載入 26 位農工、12 筆派工訂單、10 種作物與 8 位人才庫！')) return;
+          try {
+            const res = await fetch(`${API_BASE}/dev/seed?cleanFirst=${clean}`, { method: 'POST' });
+            const json = await res.json();
+            if (json.success) {
+              showToast(json.message);
+              fetchWorkers();
+              fetchOrders();
+              fetchCrops();
+              fetchDispatch();
+              fetchTalents();
+              return;
+            }
+          } catch (e) {
+            console.warn('Backend seed failed, reloading local seeds', e);
+          }
+
+          if (initialData) {
+            workers.value = JSON.parse(JSON.stringify(initialData.workers || []));
+            orders.value = JSON.parse(JSON.stringify(initialData.orders || []));
+            crops.value = JSON.parse(JSON.stringify(initialData.crops || []));
+            talents.value = JSON.parse(JSON.stringify(initialData.talents || []));
+            dispatch.teams = JSON.parse(JSON.stringify(initialData.teams || []));
+            showToast('已成功從本地重置載入全套 26 位農工、12 筆訂單、10 種作物與 8 位人才！');
+          }
+        };
+
+        onMounted(() => {
+          fetchWorkers();
+          fetchOrders();
+          fetchCrops();
+          fetchDispatch();
+          fetchTalents();
+          fetchCalendar();
+          fetchOrderCategories();
+          calculateOrderLive();
+        });
+
+        return {
+          backendOnline,
+          activeTab,
+          workers,
+          orders,
+          orderCategoryFilter,
+          orderCategories,
+          filteredOrders,
+          crops,
+          talents,
+          calendarQuarters,
+          calendarMonths,
+          calendarHarvests,
+          calendarYear,
+          calendarMonth,
+          isAutoCycling,
+          selectCalendarMonth,
+          nextCalendarMonth,
+          prevCalendarMonth,
+          toggleAutoCycle,
+          quickOrderFromHarvest,
+          fetchCalendar,
+          quickOrderFromCalendar,
+          dispatch,
+          workerSearch,
+          workerTeamFilter,
+          workerTierFilter,
+          workerNationalityFilter,
+          filteredWorkers,
+          exportWorkerCSV,
+          toast,
+          workerModal,
+          cropModal,
+          orderModal,
+          talentModal,
+          showOrderCalc,
+          calcForm,
+          calcResult,
+          orderForm,
+          fetchWorkers,
+          fetchOrders,
+          fetchOrderCategories,
+          fetchCrops,
+          fetchDispatch,
+          fetchTalents,
+          openWorkerModal,
+          saveWorker,
+          deleteWorker,
+          openCropModal,
+          saveCrop,
+          deleteCrop,
+          calculateOrderLive,
+          submitOrder,
+          openOrderModal,
+          saveOrder,
+          deleteOrder,
+          toggleWeather,
+          openTalentModal,
+          onTalentCategoryChange,
+          saveTalent,
+          deleteTalent,
+          seedData,
+          tabClass,
+          mobileTabClass,
+          teamName,
+          tierName,
+          tierBadge,
+          flagFor,
+          orderStatusBadge,
+          orderStatusName,
+          categoryBadge,
+          onOrderCategoryChange,
+          syncForemanAsFarmer,
+          syncModalForemanAsFarmer,
+          teamStatusBadge,
+          teamStatusName
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

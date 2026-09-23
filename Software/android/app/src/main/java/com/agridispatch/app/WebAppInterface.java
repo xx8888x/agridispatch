@@ -1,0 +1,197 @@
+package com.agridispatch.app;
+
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.location.Location;
+import android.os.Build;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.os.VibratorManager;
+import android.webkit.JavascriptInterface;
+import android.widget.Toast;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
+import org.json.JSONException;
+import org.json.JSONObject;
+import java.util.Locale;
+
+/**
+ * 智農派工 (AgriDispatch) - Android 原生與 Web 容器交互橋接器 (Pure Java 實現)
+ */
+public class WebAppInterface {
+    private final MainActivity activity;
+    private final FusedLocationProviderClient fusedLocationClient;
+    private final SharedPreferences sharedPrefs;
+
+    public WebAppInterface(MainActivity activity) {
+        this.activity = activity;
+        this.fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity);
+        this.sharedPrefs = activity.getSharedPreferences("AgriDispatchCache", Context.MODE_PRIVATE);
+    }
+
+    @JavascriptInterface
+    public void showToast(String message) {
+        activity.runOnUiThread(() -> Toast.makeText(activity, message, Toast.LENGTH_SHORT).show());
+    }
+
+    @JavascriptInterface
+    public void vibrate(long milliseconds) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                VibratorManager vibratorManager = (VibratorManager) activity.getSystemService(Context.VIBRATOR_MANAGER_SERVICE);
+                if (vibratorManager != null) {
+                    vibratorManager.getDefaultVibrator().vibrate(
+                            VibrationEffect.createOneShot(milliseconds, VibrationEffect.DEFAULT_AMPLITUDE)
+                    );
+                }
+            } else {
+                Vibrator vibrator = (Vibrator) activity.getSystemService(Context.VIBRATOR_SERVICE);
+                if (vibrator != null) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        vibrator.vibrate(VibrationEffect.createOneShot(milliseconds, VibrationEffect.DEFAULT_AMPLITUDE));
+                    } else {
+                        vibrator.vibrate(milliseconds);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @JavascriptInterface
+    public void alertHarvest(String cropName, int daysRemaining) {
+        vibrate(250);
+        String msg = "🚨【" + cropName + "】距離預估採收日尚有 " + daysRemaining + " 天，請儘速鎖定合法外展工班！";
+        showToast(msg);
+        // 同步發送系統頂部橫幅通知
+        sendSystemNotification("🚨 產季採收預警", msg, "weather");
+    }
+
+    @JavascriptInterface
+    public void sendSystemNotification(String title, String message, String channel) {
+        vibrate(150);
+        int id = (int) System.currentTimeMillis();
+        NotificationHelper.postNotification(activity, channel, id, title, message, null);
+    }
+
+    @JavascriptInterface
+    public void sendWeatherAlert(String title, String message) {
+        vibrate(300);
+        int id = (int) System.currentTimeMillis();
+        NotificationHelper.postNotification(activity, "weather", id, title, message, null);
+        showToast(title + ": " + message);
+    }
+
+    @JavascriptInterface
+    public void sendDispatchNotification(String title, String message) {
+        vibrate(200);
+        int id = (int) System.currentTimeMillis();
+        NotificationHelper.postNotification(activity, "dispatch", id, title, message, null);
+    }
+
+    @JavascriptInterface
+    public String getFcmToken() {
+        return sharedPrefs.getString("fcm_token", "MOCK_FCM_TOKEN_" + Build.ID);
+    }
+
+    @JavascriptInterface
+    public void getFcmTokenAsync(final String callbackFunctionName) {
+        String token = getFcmToken();
+        JSONObject result = new JSONObject();
+        try {
+            result.put("success", true);
+            result.put("token", token);
+        } catch (JSONException ignored) {}
+        executeJsCallback(callbackFunctionName, result.toString());
+    }
+
+    @JavascriptInterface
+    public void requestGpsLocation(final String callbackFunctionName) {
+        activity.checkLocationPermission(hasPermission -> {
+            if (hasPermission) {
+                try {
+                    fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+                            .addOnSuccessListener(location -> {
+                                JSONObject result = new JSONObject();
+                                try {
+                                    if (location != null) {
+                                        result.put("success", true);
+                                        result.put("latitude", location.getLatitude());
+                                        result.put("longitude", location.getLongitude());
+                                        result.put("accuracy", location.getAccuracy());
+                                        result.put("provider", location.getProvider());
+                                        result.put("timestamp", System.currentTimeMillis());
+                                    } else {
+                                        result.put("success", false);
+                                        result.put("error", "Location unavailable, please enable GPS.");
+                                    }
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+                                executeJsCallback(callbackFunctionName, result.toString());
+                            })
+                            .addOnFailureListener(e -> {
+                                JSONObject result = new JSONObject();
+                                try {
+                                    result.put("success", false);
+                                    result.put("error", e.getMessage() != null ? e.getMessage() : "Failed to get GPS location");
+                                } catch (JSONException jsonException) {
+                                    jsonException.printStackTrace();
+                                }
+                                executeJsCallback(callbackFunctionName, result.toString());
+                            });
+                } catch (SecurityException se) {
+                    JSONObject result = new JSONObject();
+                    try {
+                        result.put("success", false);
+                        result.put("error", "Security exception: " + se.getMessage());
+                    } catch (JSONException jsonException) {
+                        jsonException.printStackTrace();
+                    }
+                    executeJsCallback(callbackFunctionName, result.toString());
+                }
+            } else {
+                JSONObject result = new JSONObject();
+                try {
+                    result.put("success", false);
+                    result.put("error", "Location permission denied");
+                } catch (JSONException jsonException) {
+                    jsonException.printStackTrace();
+                }
+                executeJsCallback(callbackFunctionName, result.toString());
+            }
+        });
+    }
+
+    @JavascriptInterface
+    public void saveOfflineData(String key, String value) {
+        sharedPrefs.edit().putString(key, value).apply();
+    }
+
+    @JavascriptInterface
+    public String getOfflineData(String key) {
+        return sharedPrefs.getString(key, "");
+    }
+
+    @JavascriptInterface
+    public String getSystemLanguage() {
+        Locale locale = activity.getResources().getConfiguration().getLocales().get(0);
+        String lang = locale.getLanguage();
+        if ("vi".equals(lang)) return "vi";
+        if ("in".equals(lang) || "id".equals(lang)) return "id";
+        return "zh";
+    }
+
+    private void executeJsCallback(String callbackName, String jsonString) {
+        activity.runOnUiThread(() -> {
+            if (activity.getBindingWebView() != null) {
+                activity.getBindingWebView().evaluateJavascript(
+                        "window." + callbackName + " && window." + callbackName + "(" + jsonString + ");",
+                        null
+                );
+            }
+        });
+    }
+}

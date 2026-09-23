@@ -1,0 +1,87 @@
+{
+  "type": "bubble",
+  "size": "mega",
+  "header": {
+    "type": "box",
+    "layout": "vertical",
+    "backgroundColor": "#065F46",
+    "paddingAll": "20px",
+    "contents": [
+      {
+        "type": "text",
+        "text": "🏛️ 農業部外展農務津貼透明看板",
+        "color": "#A7F3D0",
+        "size": "xs",
+        "weight": "bold"
+      },
+      {
+        "type": "text",
+        "text": "本月所得預估: NT$ 39,790",
+        "color": "#FFFFFF",
+        "size": "xl",
+        "weight": "bold"
+      }
+    ]
+  },
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "spacing": "sm",
+    "paddingAll": "20px",
+    "contents": [
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "外展保障底薪", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "NT$ 28,590 (每月 5 號入帳)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "農業部就業獎勵", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "+ NT$ 8,800 (中央政府直接撥付)", "color": "#059669", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "高溫交通補助", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "+ NT$ 2,400", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "勞健保與職災", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "合作社全額依法投保 500 萬意外險", "color": "#3B82F6", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "type": "box",
+    "layout": "vertical",
+    "paddingAll": "16px",
+    "contents": [
+      {
+        "type": "button",
+        "style": "primary",
+        "color": "#065F46",
+        "action": {
+          "type": "uri",
+          "label": "💰 查詢個人薪資與津貼帳本",
+          "uri": "https://agridispatch.tw/web/app.html#worker_foreign"
+        }
+      }
+    ]
+  }
+}

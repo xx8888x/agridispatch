@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">智農派工</string>
+    <string name="slogan">合法外展農務移工 ╳ 智慧農事調度大腦</string>
+    <string name="role_worker">外展移工工單</string>
+    <string name="role_farmer">小農契作叫工</string>
+    <string name="role_dispatch">調度戰情中心</string>
+    <string name="role_talent">合規人才庫</string>
+    <string name="btn_gps_clockin">📍 GPS 抵達現場數位打卡</string>
+    <string name="clockin_success">打卡成功！已紀錄 GPS 座標與時間</string>
+    <string name="weather_alert_title">天候避險啟動</string>
+    <string name="weather_alert_msg">遇雨田區泥濘，工班即刻改派屏南冷鏈預冷包裝場！</string>
+</resources>

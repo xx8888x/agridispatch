@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="brand_primary">#10B981</color>
+    <color name="brand_dark">#047857</color>
+    <color name="slate_900">#0F172A</color>
+    <color name="slate_950">#020617</color>
+    <color name="white">#FFFFFF</color>
+    <color name="amber_500">#F59E0B</color>
+    <color name="blue_600">#2563EB</color>
+</resources>

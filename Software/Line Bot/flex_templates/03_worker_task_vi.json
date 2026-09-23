@@ -1,0 +1,104 @@
+{
+  "type": "bubble",
+  "size": "mega",
+  "header": {
+    "type": "box",
+    "layout": "vertical",
+    "backgroundColor": "#047857",
+    "paddingAll": "20px",
+    "contents": [
+      {
+        "type": "text",
+        "text": "☀️ Đi Làm Bình Thường・Xe Đưa Đón",
+        "color": "#A7F3D0",
+        "size": "xs",
+        "weight": "bold"
+      },
+      {
+        "type": "text",
+        "text": "Thẻ Nhiệm Vụ Hôm Nay",
+        "color": "#FFFFFF",
+        "size": "xl",
+        "weight": "bold"
+      },
+      {
+        "type": "text",
+        "text": "Mã số: W001 Nguyễn Văn Hùng",
+        "color": "#E2E8F0",
+        "size": "xs"
+      }
+    ]
+  },
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "spacing": "md",
+    "paddingAll": "20px",
+    "contents": [
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "Thời Gian", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "06:30 Tập trung lên xe / 07:00 ~ 16:00 Làm việc", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "Địa Điểm", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "🌾 Vùng trồng xoài Ái Văn Phường Sơn (Khu 2)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "Xe Đưa Đón", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "Xe Trí Nông số 1 (Tài xế Trương / 0912-111-333)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "Công Việc", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "Thu hoạch xoài, cắt cuống, xếp giỏ chống va đập", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "spacing": "sm",
+        "contents": [
+          { "type": "text", "text": "Tiêu Chuẩn", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "Để lại cuống 0.5cm giữ phấn / Vết cắt phẳng", "color": "#059669", "size": "xs", "weight": "bold", "flex": 5 }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "type": "box",
+    "layout": "vertical",
+    "spacing": "sm",
+    "paddingAll": "16px",
+    "contents": [
+      {
+        "type": "button",
+        "style": "primary",
+        "color": "#10B981",
+        "height": "sm",
+        "action": {
+          "type": "uri",
+          "label": "📍 Điểm danh GPS hiện trường",
+          "uri": "https://agridispatch.tw/clockin?w=W001"
+        }
+      }
+    ]
+  }
+}

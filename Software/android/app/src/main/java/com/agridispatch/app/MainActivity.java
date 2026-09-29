@@ -1,4 +1,4 @@
-package com.agridispatch.app;
+﻿package com.agridispatch.app;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -22,7 +22,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * 智農派工 (AgriDispatch) - 原生 Android 主活動 (Pure Java 實現)
+ * ?箄噙瘣曉極 (AgriDispatch) - ?? Android 銝餅暑??(Pure Java 撖衣)
  */
 public class MainActivity extends AppCompatActivity {
 
@@ -30,10 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private PermissionCallback permissionCallback;
 
     /**
-     * 目前頁面是否為「受信任頁面」(內建 asset 或白名單正式網域)。
-     * 由 WebViewClient 的導覽回呼於 UI 執行緒更新，JS bridge (WebAppInterface) 執行於非 UI 執行緒時讀取此欄位判斷，
-     * 避免在非 UI 執行緒呼叫 WebView#getUrl() 造成不確定行為。
-     */
+     * ?桀???臬?箝?靽∩遙????批遣 asset ??甇??蝬脣?)??     * ??WebViewClient ??閬賢??潭 UI ?瑁?蝺?堆?JS bridge (WebAppInterface) ?瑁??潮? UI ?瑁?蝺?霈?迨甈??斗嚗?     * ?踹??券? UI ?瑁?蝺??WebView#getUrl() ??銝Ⅱ摰??箝?     */
     private volatile boolean currentPageTrusted = true;
 
     public interface PermissionCallback {
@@ -53,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
 
     private final ActivityResultLauncher<String> notificationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-                // Android 13+ 通知授權結果
+                // Android 13+ ???蝯?
             });
 
     public WebView getBindingWebView() {
@@ -65,17 +62,17 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 初始化系統推播通知渠道 (Android 8.0+)
+        // ???頂蝯望?剝皜? (Android 8.0+)
         NotificationHelper.initChannels(this);
 
-        // Android 13+ 主動請求通知權限
+        // Android 13+ 銝餃?隢??甈?
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
             }
         }
 
-        // 沉浸式全螢幕
+        // 瘝絡撘?Ｗ?
         getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
         );
@@ -85,8 +82,8 @@ public class MainActivity extends AppCompatActivity {
 
         configureWebView(bindingWebView);
 
-        // 載入本地離線資產，或回退至伺服器
-        bindingWebView.loadUrl("file:///android_asset/www/index.html");
+        // 頛?砍?Ｙ?鞈嚗???喃撩?
+        bindingWebView.loadUrl("file:///android_asset/www/農業派遣主網站/index.html");
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -95,9 +92,7 @@ public class MainActivity extends AppCompatActivity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
-        // 停用任意檔案系統存取；僅停用 file:// 對一般檔案系統的存取，
-        // 不影響內建 file:///android_asset/ 與 file:///android_res/ 資源載入。
-        settings.setAllowFileAccess(false);
+        // ?隞餅?瑼?蝟餌絞摮?嚗?? file:// 撠??祆?獢頂蝯梁?摮?嚗?        // 銝蔣?踹撱?file:///android_asset/ ??file:///android_res/ 鞈?頛??        settings.setAllowFileAccess(false);
         settings.setAllowFileAccessFromFileURLs(false);
         settings.setAllowUniversalAccessFromFileURLs(false);
         settings.setAllowContentAccess(true);
@@ -105,8 +100,7 @@ public class MainActivity extends AppCompatActivity {
         settings.setLoadWithOverviewMode(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
-        // 註冊原生 JavaScriptInterface 橋接器
-        webView.addJavascriptInterface(new WebAppInterface(this), "AgriNativeBridge");
+        // 閮餃??? JavaScriptInterface 璈??        webView.addJavascriptInterface(new WebAppInterface(this), "AgriNativeBridge");
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -119,16 +113,15 @@ public class MainActivity extends AppCompatActivity {
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 if (isTrustedUrl(uri.toString())) {
-                    return false; // 交由 WebView 自行載入 (內建 asset 或白名單正式網域)
+                    return false; // 鈭斤 WebView ?芾?頛 (?批遣 asset ??甇??蝬脣?)
                 }
-                // 其餘任意連結一律交給外部系統瀏覽器/App 處理，避免 WebView 被導去任意網域 (open redirect / 釣魚風險)
+                // ?園?隞餅????銝敺漱蝯血??函頂蝯梁汗??App ??嚗??WebView 鋡怠??颱遙?雯??(open redirect / ???憸券)
                 try {
                     Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(intent);
                 } catch (Exception e) {
-                    // 裝置上無對應 App 可處理該連結時忽略即可，不中斷使用者體驗
-                }
+                    // 鋆蔭銝撠? App ?航??府????蕭?亙?荔?銝葉?瑚蝙?刻?撽?                }
                 return true;
             }
 
@@ -147,8 +140,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * 判斷網址是否為受信任來源：內建 asset，或白名單正式網域 (含子網域，需 HTTPS)。
-     */
+     * ?斗蝬脣??臬?箏?靽∩遙靘?嚗撱?asset嚗??賢??格迤撘雯??(?怠?蝬脣?嚗? HTTPS)??     */
     private boolean isTrustedUrl(String url) {
         if (url == null) {
             return false;
@@ -172,8 +164,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * 供 WebAppInterface 判斷：目前頁面是否可安全回傳敏感資料 (FCM Token、GPS 座標、離線快取等)。
-     */
+     * 靘?WebAppInterface ?斗嚗???Ｘ?血摰???鞈? (FCM Token?PS 摨扳??蝺翰??)??     */
     public boolean isTrustedPage() {
         return currentPageTrusted;
     }
@@ -207,3 +198,4 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 }
+

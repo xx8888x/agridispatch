@@ -1,0 +1,84 @@
+/* 智農派工 AgriDispatch - Modern Custom Styles */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+
+:root {
+  --primary: #059669;
+  --primary-dark: #047857;
+  --primary-light: #10b981;
+  --accent: #f59e0b;
+  --bg-dark: #0f172a;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', 'Noto Sans TC', sans-serif;
+}
+
+/* Glassmorphism effects */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(229, 231, 235, 0.8);
+}
+
+.glass-card-dark {
+  background: rgba(30, 41, 59, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(51, 65, 85, 0.8);
+}
+
+/* Pulse animation for live status */
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 0.3; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.live-pulse {
+  position: relative;
+}
+.live-pulse::after {
+  content: '';
+  position: absolute;
+  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  border-radius: 9999px;
+  border: 2px solid #10b981;
+  animation: pulse-ring 2s infinite ease-in-out;
+}
+
+/* Rain animation overlay */
+.rain-active {
+  background: linear-gradient(180deg, rgba(30, 58, 138, 0.15) 0%, rgba(15, 23, 42, 0.25) 100%);
+  transition: all 0.5s ease-in-out;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Smooth transitions */
+.transition-all-300 {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Badge glows */
+.badge-glow-green {
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+}
+.badge-glow-amber {
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+.badge-glow-blue {
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+}

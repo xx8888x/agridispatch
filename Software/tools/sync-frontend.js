@@ -1,20 +1,13 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 /**
- * 智農派工 (AgriDispatch) - 前端同步腳本
+ * ?箄噙瘣曉極 (AgriDispatch) - ?垢?郊?單
  *
- * demo/ 為唯一原始碼，本腳本把它同步到：
- *   - android/app/src/main/assets/www/ （全部檔案）
- *   - web/                              （排除 js/app-config.js、js/demo-accounts.js）
- *
- * 規則：
- *   - 會刪除目標資料夾中「demo/ 已不存在」的檔案，但保留目標自己的 js/app-config.js
- *     （app-config.js 每份副本各自一份，永遠不覆蓋、不刪除）。
- *   - js/demo-accounts.js 為 demo 專用示範帳號清單，不同步到 web/。
- *   - --check：只報告差異，不寫入任何檔案；有差異時 process.exit(1)。
- *
- * 用法：
- *   node tools/sync-frontend.js           # 執行同步
- *   node tools/sync-frontend.js --check   # 僅檢查差異（CI 用）
+ * demo/ ?箏銝??蝣潘??祈?祆?摰?甇亙嚗? *   - android/app/src/main/assets/www/ 嚗?冽?獢?
+ *   - web/                              嚗???js/app-config.js?s/demo-accounts.js嚗? *
+ * 閬?嚗? *   - ??斤璅??冗銝准emo/ 撌脖?摮??瑼?嚗?靽??格??芸楛??js/app-config.js
+ *     嚗pp-config.js 瘥遢?舀?銝隞踝?瘞賊?銝????芷嚗? *   - js/demo-accounts.js ??demo 撠蝷箇?撣唾?皜嚗??郊??web/?? *   - --check嚗?勗?撌桃嚗?撖怠隞颱?瑼?嚗?撌桃??process.exit(1)?? *
+ * ?冽?嚗? *   node tools/sync-frontend.js           # ?瑁??郊
+ *   node tools/sync-frontend.js --check   # ?炎?亙榆?堆?CI ?剁?
  */
 
 'use strict';
@@ -29,17 +22,17 @@ const TARGETS = [
   {
     name: 'android www',
     dir: path.join(ROOT, 'android', 'app', 'src', 'main', 'assets', 'www'),
-    exclude: new Set() // 全部同步
+    exclude: new Set() // ?券?郊
   },
   {
     name: 'web',
     dir: path.join(ROOT, 'web'),
-    exclude: new Set(['js/app-config.js', 'js/demo-accounts.js'])
+    exclude: new Set(['科技後台/js/app-config.js', '科技後台/js/demo-accounts.js', 'linebot/js/app-config.js', 'linebot/js/demo-accounts.js', '農業派遣主網站/js/app-config.js', '農業派遣主網站/js/demo-accounts.js'])
   }
 ];
 
-// 目標資料夾中即使 demo/ 沒有也永遠不刪除的檔案（每份副本各自一份的設定檔）
-const NEVER_DELETE = new Set(['js/app-config.js']);
+// ?格?鞈?憭曆葉?喃蝙 demo/ 瘝?銋偶???芷??獢?瘥遢?舀?銝隞賜?閮剖?瑼?
+const NEVER_DELETE = new Set(['科技後台/js/app-config.js', 'linebot/js/app-config.js', '農業派遣主網站/js/app-config.js']);
 
 const isCheck = process.argv.includes('--check');
 
@@ -71,7 +64,7 @@ function syncTarget(target) {
   const srcFiles = walk(SRC_DIR).filter((f) => !target.exclude.has(f));
   const srcSet = new Set(srcFiles);
 
-  // 1. 新增 / 更新
+  // 1. ?啣? / ?湔
   for (const rel of srcFiles) {
     const srcPath = path.join(SRC_DIR, rel);
     const dstPath = path.join(target.dir, rel);
@@ -95,10 +88,9 @@ function syncTarget(target) {
     }
   }
 
-  // 2. 刪除目標中 demo/ 已不存在的檔案（排除 exclude 名單與 NEVER_DELETE 名單）
-  const dstFiles = walk(target.dir);
+  // 2. ?芷?格?銝?demo/ 撌脖?摮??獢?? exclude ???NEVER_DELETE ?嚗?  const dstFiles = walk(target.dir);
   for (const rel of dstFiles) {
-    if (target.exclude.has(rel)) continue; // web/ 的 app-config.js / demo-accounts.js：本就不比對
+    if (target.exclude.has(rel)) continue; // web/ ??app-config.js / demo-accounts.js嚗撠曹?瘥?
     if (NEVER_DELETE.has(rel)) continue;
     if (!srcSet.has(rel)) {
       diffs.push({ type: 'delete', file: rel });
@@ -113,7 +105,7 @@ function syncTarget(target) {
 
 function main() {
   if (!fs.existsSync(SRC_DIR)) {
-    console.error(`[sync-frontend] 找不到原始碼資料夾: ${SRC_DIR}`);
+    console.error(`[sync-frontend] ?曆??啣?憪Ⅳ鞈?憭? ${SRC_DIR}`);
     process.exit(1);
   }
 
@@ -125,23 +117,24 @@ function main() {
     totalDiffs += diffs.length;
 
     if (diffs.length === 0) {
-      console.log(`[sync-frontend] ${target.name}: 無差異`);
+      console.log(`[sync-frontend] ${target.name}: ?∪榆?躬);
       continue;
     }
 
-    console.log(`[sync-frontend] ${target.name}: ${diffs.length} 項差異${isCheck ? '（僅檢查，未寫入）' : '（已同步）'}`);
+    console.log(`[sync-frontend] ${target.name}: ${diffs.length} ?榆??{isCheck ? '嚗?瑼Ｘ嚗撖怠嚗? : '嚗歇?郊嚗?}`);
     for (const d of diffs) {
-      const tag = d.type === 'add' ? '+ 新增' : d.type === 'update' ? '~ 更新' : '- 刪除';
+      const tag = d.type === 'add' ? '+ ?啣?' : d.type === 'update' ? '~ ?湔' : '- ?芷';
       console.log(`    ${tag}  ${d.file}`);
     }
   }
 
   if (isCheck && totalDiffs > 0) {
-    console.log(`\n[sync-frontend] --check 發現 ${totalDiffs} 項差異，請執行 "node tools/sync-frontend.js" 同步。`);
+    console.log(`\n[sync-frontend] --check ?潛 ${totalDiffs} ?榆?堆?隢銵?"node tools/sync-frontend.js" ?郊?);
     process.exit(1);
   }
 
-  console.log(isCheck ? '\n[sync-frontend] --check 通過：demo/ 與 android www/、web/ 一致。' : '\n[sync-frontend] 同步完成。');
+  console.log(isCheck ? '\n[sync-frontend] --check ??嚗emo/ ??android www/?eb/ 銝?氬? : '\n[sync-frontend] ?郊摰???);
 }
 
 main();
+

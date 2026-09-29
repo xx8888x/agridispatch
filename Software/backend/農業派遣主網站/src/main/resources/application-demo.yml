@@ -1,0 +1,13 @@
+# demo 模式（路演展示）：--spring.profiles.active=demo
+# 免密示範登入、示範帳號清單、/api/dev/** 重灌資料、H2 console（僅本機）
+agri:
+  demo:
+    enabled: true
+
+spring:
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: false

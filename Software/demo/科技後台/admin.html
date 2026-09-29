@@ -78,7 +78,7 @@
     <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         <div class="flex items-center gap-3 shrink-0">
-          <a href="index.html" class="flex items-center gap-2">
+          <a href="../農業派遣主網站/index.html" class="flex items-center gap-2">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-600/30 shrink-0">
               <span class="text-xl">💻</span>
             </div>
@@ -116,12 +116,10 @@
               <button @click="activeTab = 'dispatch'; dispatchSubTab = 'brochures'" class="w-full text-left flex items-center gap-2 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 hover:text-amber-300 transition whitespace-nowrap cursor-pointer">
                 <span>⚙️</span> 管理與上傳 DM ({{ brochures.length }} 項)
               </button>
-              <a href="brochure.html" target="_blank" class="flex items-center gap-2 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 hover:text-amber-300 transition whitespace-nowrap">
+              <a href="../農業派遣主網站/brochure.html" target="_blank" class="flex items-center gap-2 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 hover:text-amber-300 transition whitespace-nowrap">
                 <span>📑</span> 前台 DM 展示館 (4+項)
               </a>
-              <a href="showcase.html" target="_blank" class="flex items-center gap-2 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 hover:text-amber-300 transition whitespace-nowrap">
-                <span>✨</span> 商業計畫簡報 (Pitch)
-              </a>
+              
             </div>
           </div>
           <!-- 全站 Demo 導覽選單 (Demo Jumper) -->
@@ -131,48 +129,46 @@
             </button>
             <div class="absolute right-0 mt-1 w-64 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-1.5 hidden group-hover:block z-50">
               <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">三大前線角色專區</div>
-              <a href="farmer.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-emerald-300 transition">
+              <a href="../農業派遣主網站/farmer.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-emerald-300 transition">
                 <span>👨‍🌾</span> 農場主專屬工作台 (farmer.html)
               </a>
-              <a href="worker-foreign.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-purple-300 transition">
+              <a href="../農業派遣主網站/worker-foreign.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-purple-300 transition">
                 <span>👷</span> 外展移工多語工作台 (worker-foreign.html)
               </a>
-              <a href="worker-local.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-blue-300 transition">
+              <a href="../農業派遣主網站/worker-local.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-blue-300 transition">
                 <span>🚜</span> 本國領班與機耕 (worker-local.html)
               </a>
-              <a href="worker-local.html?role=labor" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-green-300 transition">
+              <a href="../農業派遣主網站/role=labor" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-green-300 transition">
                 <span>🧑‍🌾</span> 合作社農業勞務員 (worker-local.html)
               </a>
               <div class="border-t border-slate-800 my-1"></div>
               <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">調度戰情與生態系統</div>
-              <a href="index.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-emerald-300 transition">
+              <a href="../農業派遣主網站/index.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-emerald-300 transition">
                 <span>🏠</span> 首頁形象官網 (index.html)
               </a>
-              <a href="app.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-300 transition">
+              <a href="../農業派遣主網站/app.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-300 transition">
                 <span>📱</span> 四大角色整合戰情 (app.html)
               </a>
               <a href="vue-crud.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-amber-300 transition">
                 <span>📊</span> 派工試算與訂單總台 (vue-crud.html)
               </a>
-              <a href="farmers_map.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-emerald-300 transition">
+              <a href="../農業派遣主網站/farmers_map.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-emerald-300 transition">
                 <span>🗺️</span> 全台農會產地地圖 (farmers_map.html)
               </a>
-              <a href="line.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-[#06C755] transition">
+              <a href="../linebot/line.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-[#06C755] transition">
                 <span>💬</span> LINE Bot 助理體驗館 (line.html)
               </a>
-              <a href="showcase.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-amber-300 transition">
-                <span>🎯</span> 投資人路演 Pitch (showcase.html)
-              </a>
-              <a href="brochure.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-amber-300 transition">
+              
+              <a href="../農業派遣主網站/brochure.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-amber-300 transition">
                 <span>📑</span> 產品文宣 DM 精選館 (brochure.html)
               </a>
               <div class="border-t border-slate-800 my-1"></div>
-              <a href="login.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-indigo-300 transition font-bold">
+              <a href="../農業派遣主網站/login.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-indigo-300 transition font-bold">
                 <span>🔑</span> 五大身分登入門戶 (login.html)
               </a>
             </div>
           </div>
-          <a href="login.html" class="px-2.5 py-1.5 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center gap-1 shrink-0 whitespace-nowrap" title="切換農場主、外勞或本地勞工登入">
+          <a href="../農業派遣主網站/login.html" class="px-2.5 py-1.5 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center gap-1 shrink-0 whitespace-nowrap" title="切換農場主、外勞或本地勞工登入">
             <span>👤</span> 登入門戶
           </a>
           <div class="w-2.5 h-2.5 rounded-full shrink-0" :class="backendOnline ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'" :title="backendOnline ? '後端連線正常' : '後端離線或連線中'"></div>
@@ -1095,7 +1091,7 @@
               <span :class="isAutoCycling ? 'animate-spin' : ''">🔄</span>
               <span>{{ isAutoCycling ? '自動輪播中 (4秒)' : '開啟自動輪播' }}</span>
             </button>
-            <a href="farmers_map.html" target="_blank" class="px-3.5 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 text-xs font-bold transition flex items-center gap-1.5">
+            <a href="../農業派遣主網站/farmers_map.html" target="_blank" class="px-3.5 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 text-xs font-bold transition flex items-center gap-1.5">
               <span>🗺️</span> 64 處農會地圖
             </a>
             <button @click="fetchCalendar()" class="p-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition" title="重新整理">
@@ -1329,7 +1325,7 @@
               </p>
             </div>
             <div class="flex items-center gap-2.5 flex-wrap">
-              <a href="brochure.html" target="_blank" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition flex items-center gap-1.5 shadow">
+              <a href="../農業派遣主網站/brochure.html" target="_blank" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition flex items-center gap-1.5 shadow">
                 <span>👁️</span> 前台 DM 展示館
               </a>
               <button @click="seedBrochures()" class="px-3.5 py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
@@ -1397,7 +1393,7 @@
 
               <!-- Action Buttons -->
               <div class="pt-2 border-t border-slate-700 flex items-center justify-between gap-1 text-xs">
-                <a :href="'brochure.html?id=' + dm.id" target="_blank" class="px-2.5 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium transition flex items-center gap-1">
+                <a :href="'../農業派遣主網站/brochure.html?id=' + dm.id" target="_blank" class="px-2.5 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium transition flex items-center gap-1">
                   <span>👁️</span> 預覽
                 </a>
                 <button @click="openBrochureModal(dm)" class="px-2.5 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/30 font-medium transition flex items-center gap-1 cursor-pointer">
@@ -3822,7 +3818,6 @@
           }
         };
 
-        
         // Weather Logs for Tab 1
 
         const weatherAlertLogs = ref([

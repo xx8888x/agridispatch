@@ -80,13 +80,13 @@
         <a href="worker-local.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
           <span>🚜</span> 本地工/領班
         </a>
-        <a href="admin.html" class="px-3 py-1.5 rounded-lg bg-indigo-600/80 hover:bg-indigo-600 text-white font-bold transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20 shrink-0 whitespace-nowrap">
+        <a href="../科技後台/admin.html" class="px-3 py-1.5 rounded-lg bg-indigo-600/80 hover:bg-indigo-600 text-white font-bold transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20 shrink-0 whitespace-nowrap">
           <span>💻</span> 科技後台
         </a>
-        <a href="line.html" class="px-3 py-1.5 rounded-lg bg-[#06C755]/20 text-emerald-300 hover:bg-[#06C755]/30 border border-emerald-500/40 font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+        <a href="../linebot/line.html" class="px-3 py-1.5 rounded-lg bg-[#06C755]/20 text-emerald-300 hover:bg-[#06C755]/30 border border-emerald-500/40 font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
           <span>💬</span> LINE Bot
         </a>
-        <a href="admin.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+        <a href="../科技後台/admin.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
           <span>📱</span> 整合戰情
         </a>
       </nav>
@@ -109,8 +109,8 @@
       <a href="farmer.html" class="px-2.5 py-1 text-slate-400 hover:text-white shrink-0 whitespace-nowrap">👨‍🌾 農場主</a>
       <a href="worker-foreign.html" class="px-2.5 py-1 text-purple-400 font-bold border-b-2 border-purple-400 shrink-0 whitespace-nowrap">👷 移工端</a>
       <a href="worker-local.html" class="px-2.5 py-1 text-slate-400 hover:text-white shrink-0 whitespace-nowrap">🚜 本地工/領班</a>
-      <a href="admin.html" class="px-2.5 py-1 text-indigo-400 hover:text-white shrink-0 whitespace-nowrap">💻 後台</a>
-      <a href="line.html" class="px-2.5 py-1 text-emerald-400 font-bold flex items-center gap-0.5 shrink-0 whitespace-nowrap"><span>💬</span>LINE</a>
+      <a href="../科技後台/admin.html" class="px-2.5 py-1 text-indigo-400 hover:text-white shrink-0 whitespace-nowrap">💻 後台</a>
+      <a href="../linebot/line.html" class="px-2.5 py-1 text-emerald-400 font-bold flex items-center gap-0.5 shrink-0 whitespace-nowrap"><span>💬</span>LINE</a>
     </div>
   </header>
 
@@ -148,7 +148,7 @@
           <p id="txt-line-desc" class="text-xs text-purple-200 mt-0.5">每日出勤車號、田間小工頭聯絡方式、午後暴雨冷鏈避險轉移均自動發送至 LINE。</p>
         </div>
       </div>
-      <a href="line.html" class="px-4 py-2 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs shadow flex items-center gap-1.5 transition flex-shrink-0">
+      <a href="../linebot/line.html" class="px-4 py-2 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs shadow flex items-center gap-1.5 transition flex-shrink-0">
         <span>📱</span> <span id="txt-open-line">開啟 LINE 助理</span>
       </a>
     </div>
@@ -781,7 +781,6 @@
       const rowStatus = document.getElementById('row-today-status');
       if (rowStatus) rowStatus.innerText = `${timeStr} 上班打卡 (作業中)`;
 
-
       if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
         window.AgriDocs.notify('📍 上班打卡成功', `時間: ${timeStr} ｜ GPS: 屏東高樹試驗田 (22.8214, 120.5982)。已同步調度大腦與現場小工頭。`, { channel: 'attendance' });
       }
@@ -823,7 +822,6 @@
         rowStatus.className = "text-emerald-400 font-bold font-mono";
         rowStatus.innerText = `${clockInTime} ~ ${timeStr} (8.5h 加班0.5h)`;
       }
-
 
       if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
         window.AgriDocs.notify('🏁 下班打卡成功', `時間: ${timeStr} ｜ 今日工時 8.5h (含 0.5h 加班費)。小工頭林小祥已數位簽核，已記入本月薪酬！`, { channel: 'attendance' });

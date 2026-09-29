@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
@@ -39,7 +39,7 @@
     }
   </script>
 </head>
-<body class="bg-slate-950 text-slate-100 antialiased selection:bg-brand-500 selection:text-white pb-20 sm:pb-24">
+<body class="bg-slate-950 text-slate-100 antialiased selection:bg-brand-500 selection:text-white">
 
   <!-- Navigation Bar -->
   <nav class="sticky top-0 z-50 bg-slate-950/95 backdrop-blur-md border-b border-slate-800">
@@ -61,8 +61,8 @@
         </a>
       </div>
 
-      <!-- Center Anchor Links (Large Screens: lg:flex) -->
-      <div class="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-6 text-sm font-medium text-slate-300 whitespace-nowrap shrink-0">
+      <!-- Center Anchor Links (Large Screens: 2xl:flex) -->
+      <div class="hidden 2xl:flex absolute left-1/2 -translate-x-1/2 items-center gap-6 text-sm font-medium text-slate-300 whitespace-nowrap shrink-0">
         <a href="#booking" class="text-amber-400 hover:text-amber-300 font-bold transition flex items-center gap-1"><span>📝</span> 派工預約</a>
         <a href="#solutions" class="hover:text-emerald-400 transition">痛點與解法</a>
         <a href="#dual-track" class="hover:text-emerald-400 transition">雙軌商業模式</a>
@@ -72,6 +72,21 @@
 
           </div>
   </nav>
+  <!-- Sub-Navbar: Demo Role Switcher -->
+  <div class="sticky top-20 z-40 bg-slate-900/95 border-b border-slate-800 py-2.5 overflow-x-auto no-scrollbar">
+    <div class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 sm:gap-3 whitespace-nowrap after:content-[''] after:w-4 after:shrink-0">
+      <a href="coldchain.html" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 border border-cyan-500/40 font-bold transition shrink-0 flex items-center gap-1">❄️ 冷鏈與物流</a>
+        <a href="farmer.html" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/40 font-bold transition shrink-0 flex items-center gap-1">👨‍🌾 農場主</a>
+      <a href="worker-foreign.html" class="px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 border border-purple-500/40 font-bold transition shrink-0 flex items-center gap-1">👷 移工端</a>
+      <a href="worker-local.html" class="px-2.5 py-1 rounded-lg bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 border border-blue-500/40 font-bold transition shrink-0 flex items-center gap-1">🚜 本地工/領班</a>
+      <a href="../科技後台/admin.html" class="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 border border-indigo-500/40 font-bold transition shrink-0 flex items-center gap-1">💻 科技後台</a>
+      <a href="farmers_map.html" class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30 font-bold transition shrink-0 flex items-center gap-1">🗺️ 產地地圖</a>
+      <a href="../linebot/line.html" class="px-2.5 py-1 rounded-lg bg-[#06C755]/20 text-[#06C755] hover:bg-[#06C755]/30 border border-[#06C755]/40 font-bold transition shrink-0 flex items-center gap-1">💬 LINE Bot</a>
+      <a href="brochure.html" class="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 border border-amber-500/30 font-bold transition shrink-0 flex items-center gap-1">📑 文宣 DM</a>
+      <a href="#booking" class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 font-bold transition shrink-0 flex items-center gap-1">📝 派工預約</a>
+      <a href="login.html" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700 font-bold transition shrink-0 flex items-center gap-1">🔑 登入門戶</a>
+    </div>
+  </div>
 
   <!-- Hero Section -->
   <section class="relative overflow-hidden pt-16 pb-24 lg:pt-28 lg:pb-36 border-b border-slate-900">
@@ -2375,20 +2390,5 @@
     </div>
   </footer>
 
-  <!-- Bottom Sticky Demo Role Switcher -->
-  <div class="fixed bottom-0 left-0 right-0 z-50 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar after:content-[''] after:w-4 after:shrink-0">
-      <a href="coldchain.html" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 border border-cyan-500/40 font-bold transition shrink-0 flex items-center gap-1">❄️ 冷鏈與物流</a>
-        <a href="farmer.html" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/40 font-bold transition shrink-0 flex items-center gap-1">👨‍🌾 農場主</a>
-      <a href="worker-foreign.html" class="px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 border border-purple-500/40 font-bold transition shrink-0 flex items-center gap-1">👷 移工端</a>
-      <a href="worker-local.html" class="px-2.5 py-1 rounded-lg bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 border border-blue-500/40 font-bold transition shrink-0 flex items-center gap-1">🚜 本地工/領班</a>
-      <a href="../科技後台/admin.html" class="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 border border-indigo-500/40 font-bold transition shrink-0 flex items-center gap-1">💻 科技後台</a>
-      <a href="farmers_map.html" class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30 font-bold transition shrink-0 flex items-center gap-1">🗺️ 產地地圖</a>
-      <a href="../linebot/line.html" class="px-2.5 py-1 rounded-lg bg-[#06C755]/20 text-[#06C755] hover:bg-[#06C755]/30 border border-[#06C755]/40 font-bold transition shrink-0 flex items-center gap-1">💬 LINE Bot</a>
-      <a href="brochure.html" class="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 border border-amber-500/30 font-bold transition shrink-0 flex items-center gap-1">📑 文宣 DM</a>
-      <a href="#booking" class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 font-bold transition shrink-0 flex items-center gap-1">📝 派工預約</a>
-      <a href="login.html" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700 font-bold transition shrink-0 flex items-center gap-1">🔑 登入門戶</a>
-    </div>
-  </div>
 </body>
 </html>

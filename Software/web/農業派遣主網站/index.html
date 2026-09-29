@@ -43,7 +43,7 @@
 
   <!-- Navigation Bar -->
   <nav class="sticky top-0 z-50 bg-slate-950/95 backdrop-blur-md border-b border-slate-800">
-    <div class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+    <div class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4 relative">
       
       <!-- Brand Logo & Title -->
       <div class="flex items-center gap-3 shrink-0">
@@ -61,8 +61,8 @@
         </a>
       </div>
 
-      <!-- Center Anchor Links (Large Screens: 2xl:flex) -->
-      <div class="hidden 2xl:flex items-center gap-6 text-sm font-medium text-slate-300 whitespace-nowrap shrink-0">
+      <!-- Center Anchor Links (Large Screens: lg:flex) -->
+      <div class="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-6 text-sm font-medium text-slate-300 whitespace-nowrap shrink-0">
         <a href="#booking" class="text-amber-400 hover:text-amber-300 font-bold transition flex items-center gap-1"><span>📝</span> 派工預約</a>
         <a href="#solutions" class="hover:text-emerald-400 transition">痛點與解法</a>
         <a href="#dual-track" class="hover:text-emerald-400 transition">雙軌商業模式</a>
@@ -2377,7 +2377,7 @@
 
   <!-- Bottom Sticky Demo Role Switcher -->
   <div class="fixed bottom-0 left-0 right-0 z-50 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar after:content-[''] after:w-4 after:shrink-0">
       <a href="coldchain.html" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 border border-cyan-500/40 font-bold transition shrink-0 flex items-center gap-1">❄️ 冷鏈與物流</a>
         <a href="farmer.html" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/40 font-bold transition shrink-0 flex items-center gap-1">👨‍🌾 農場主</a>
       <a href="worker-foreign.html" class="px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 border border-purple-500/40 font-bold transition shrink-0 flex items-center gap-1">👷 移工端</a>

@@ -1,4 +1,4 @@
-package com.agridispatch.controller;
+package com.agridispatch.controller.common;
 
 import com.agridispatch.common.ApiException;
 import com.agridispatch.entity.Order;
@@ -109,3 +109,4 @@ public class OrderController {
         }
     }
 }
+

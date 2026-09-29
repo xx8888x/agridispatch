@@ -1,4 +1,4 @@
-package com.agridispatch.controller;
+package com.agridispatch.controller.admin;
 
 import com.agridispatch.service.DispatchService;
 import com.agridispatch.service.SeedService;
@@ -32,3 +32,4 @@ public class DevController {
         ));
     }
 }
+

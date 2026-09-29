@@ -1,4 +1,4 @@
-package com.agridispatch.controller;
+package com.agridispatch.controller.common;
 
 import com.agridispatch.common.ApiException;
 import com.agridispatch.config.AgriSettings;
@@ -83,3 +83,4 @@ public class AuthController {
         return o == null ? null : o.toString();
     }
 }
+

@@ -1,4 +1,4 @@
-package com.agridispatch.controller;
+package com.agridispatch.controller.front;
 
 import com.agridispatch.config.AgriSettings;
 import org.springframework.http.ResponseEntity;
@@ -31,3 +31,4 @@ public class PublicController {
         return ResponseEntity.ok(res);
     }
 }
+

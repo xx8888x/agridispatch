@@ -1,4 +1,4 @@
-package com.agridispatch.controller;
+package com.agridispatch.controller.common;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -105,3 +105,4 @@ public class NotificationController {
         ));
     }
 }
+

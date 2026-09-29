@@ -1,4 +1,4 @@
-package com.agridispatch.controller;
+package com.agridispatch.controller.front;
 
 import com.agridispatch.entity.Brochure;
 import com.agridispatch.service.BrochureService;
@@ -64,3 +64,4 @@ public class BrochureController {
         return ResponseEntity.ok(Map.of("success", true, "message", "成功初始化/重置產品文宣 DM 範本", "data", brochureService.getAllBrochures(false)));
     }
 }
+

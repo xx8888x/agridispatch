@@ -1,4 +1,4 @@
-package com.agridispatch.controller;
+package com.agridispatch.controller.common;
 
 import com.agridispatch.entity.Attendance;
 import com.agridispatch.entity.Worker;
@@ -179,3 +179,4 @@ public class WorkerController {
         return ResponseEntity.ok(Map.of("success", true, "data", workerService.calculatePayroll(id)));
     }
 }
+

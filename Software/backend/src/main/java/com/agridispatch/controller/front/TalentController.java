@@ -1,4 +1,4 @@
-package com.agridispatch.controller;
+package com.agridispatch.controller.front;
 
 import com.agridispatch.entity.Talent;
 import com.agridispatch.service.TalentService;
@@ -56,3 +56,4 @@ public class TalentController {
         return ResponseEntity.ok(Map.of("success", true, "message", "成功刪除人才: " + id));
     }
 }
+

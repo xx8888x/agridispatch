@@ -1,4 +1,4 @@
-package com.agridispatch.controller;
+package com.agridispatch.controller.common;
 
 import com.agridispatch.entity.Crop;
 import com.agridispatch.service.CropService;
@@ -49,3 +49,4 @@ public class CropController {
         return ResponseEntity.ok(Map.of("success", true, "message", "成功刪除作物基準: " + id));
     }
 }
+

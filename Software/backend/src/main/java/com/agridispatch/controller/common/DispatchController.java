@@ -1,4 +1,4 @@
-package com.agridispatch.controller;
+package com.agridispatch.controller.common;
 
 import com.agridispatch.entity.DispatchTeam;
 import com.agridispatch.service.DispatchService;
@@ -74,3 +74,4 @@ public class DispatchController {
         return ResponseEntity.ok(Map.of("success", true, "data", result, "message", "天候避險狀態已切換"));
     }
 }
+

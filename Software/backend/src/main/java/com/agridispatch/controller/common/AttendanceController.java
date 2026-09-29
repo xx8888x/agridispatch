@@ -1,4 +1,4 @@
-package com.agridispatch.controller;
+package com.agridispatch.controller.common;
 
 import com.agridispatch.common.ApiException;
 import com.agridispatch.entity.Attendance;
@@ -105,3 +105,4 @@ public class AttendanceController {
         return ResponseEntity.ok(res);
     }
 }
+

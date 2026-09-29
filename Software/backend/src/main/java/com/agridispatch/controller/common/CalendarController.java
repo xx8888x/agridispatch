@@ -1,4 +1,4 @@
-package com.agridispatch.controller;
+package com.agridispatch.controller.common;
 
 import com.agridispatch.service.CalendarService;
 import org.springframework.http.ResponseEntity;
@@ -66,3 +66,4 @@ public class CalendarController {
         ));
     }
 }
+

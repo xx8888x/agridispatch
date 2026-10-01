@@ -1,6 +1,6 @@
 # 智農派工 (AgriDispatch) - 資料庫實體關聯圖與資料字典 (ERD)
 
-> **文件版本**：v3.0.0（2026-09-23，依 `Software/backend/src/main/java/com/agridispatch/entity/*.java` 實際 JPA 實體改寫）
+> **文件版本**：v3.1.0（2026-10-01，依 `Software/backend/src/main/java/com/agridispatch/entity/*.java` 實際 JPA 實體更新：新增 `team_ratings`、`insurance_records`，補列 `farmers`、`financial_ledger`、`line_users`、`line_messages`；v3.0.0 為 2026-09-23）
 > **資料庫**：H2 檔案資料庫（`Software/backend/data/agridispatch_db`），Hibernate `ddl-auto: update` 自動建表
 > **Visio 圖檔**：同資料夾的 `.vdx` / `.vsdx` 為 v2.0 舊版，**以本文件的 Mermaid 圖為準**
 
@@ -157,6 +157,66 @@ erDiagram
         text testimonialQuote "須標示「預期效益示意」"
         string status "active / draft"
     }
+    team_ratings {
+        string id PK "RAT-<訂單編號>"
+        string orderId "→ orders.id（一對一）"
+        string teamId "→ dispatch_teams.id"
+        string farmerId "評分者 token.ref"
+        int score "1～5"
+        string tags "逗號分隔，限 6 種標籤"
+        string comment "欄位名 rating_comment，≤300 字"
+        datetime createdAt
+        datetime updatedAt
+    }
+    insurance_records {
+        string id PK "INS-<工號>-<險種>-<加保日>"
+        string workerId "→ workers.id"
+        string type "labor / employment / occupational / health"
+        int insuredSalary "月投保薪資"
+        date enrollDate
+        date withdrawDate "null＝仍在保"
+        string withdrawReason
+        string filingRef "勞保局／健保署受理編號"
+        datetime createdAt
+        datetime updatedAt
+    }
+    farmers {
+        string id PK "保留實體・程式未使用"
+        string name
+        string phone
+        string address
+        string taxId
+        string farmType
+        datetime createdAt
+    }
+    financial_ledger {
+        string id PK "保留實體・程式未使用"
+        string orderId
+        long totalGmv
+        long techTakeRate
+        long coopPassThrough
+        long totalAgriSubsidy
+        datetime settlementDate
+    }
+    line_users {
+        string id PK "保留實體・程式未使用"
+        string lineUserId
+        string username
+        string displayName
+        string role
+        string lang
+        string isBound "Y / N"
+        datetime boundAt
+    }
+    line_messages {
+        string id PK "保留實體・程式未使用"
+        string lineUserId
+        string sender
+        string targetRole
+        string messageType
+        string content
+        datetime createdAt
+    }
 
     users ||..o| workers : "refId（工人帳號）"
     users ||..o{ orders : "refId = farmerId（農場主）"
@@ -165,6 +225,9 @@ erDiagram
     dispatch_teams ||..o{ workers : "teamId"
     orders ||..o{ payment_transactions : "orderId"
     workers ||..o{ clock_ins : "workerId"
+    orders ||..o| team_ratings : "orderId"
+    dispatch_teams ||..o{ team_ratings : "teamId"
+    workers ||..o{ insurance_records : "workerId"
 ```
 
 ---
@@ -310,29 +373,66 @@ erDiagram
 
 > 服務尚未營運，`testimonialQuote` 一律標示「預期效益示意，非實際客戶見證」。4 大標準 DM（固定 ID）可由 `POST /api/brochures/seed` 重置為目前範本。
 
+### 2.11 工班評價 `team_ratings`（實體 `TeamRating`）
+| 欄位 | 型別 | 說明 |
+| :--- | :--- | :--- |
+| `id` (PK) | String(50) | `RAT-<訂單編號>`，與訂單一對一，可重複修改 |
+| `order_id` | String(40) | → `orders.id`（必填、唯一） |
+| `team_id` | String(32) | → `dispatch_teams.id`（取自訂單的 `assignedTeamId`） |
+| `farmer_id` | String(40) | 評分者 `token.ref`；admin 代評時為 admin 的 ref |
+| `score` | int | 整體評分 1～5 |
+| `tags` | String(200) | 逗號分隔，限：準時到場、做工細心、效率高、溝通順暢、遵守安全規範、需加強訓練 |
+| `rating_comment` | String(300) | 留言（避開 Oracle 保留字 `COMMENT`） |
+| `createdAt` / `updatedAt` | LocalDateTime | 建立 / 更新時間 |
+
+> 只評到「工班」層級、不評個別工人，避免個資與報復性評分疑慮。API：`/api/ratings`。
+
+### 2.12 加退保紀錄 `insurance_records`（實體 `InsuranceRecord`）
+| 欄位 | 型別 | 說明 |
+| :--- | :--- | :--- |
+| `id` (PK) | String(60) | `INS-<工號>-<險種>-<加保日 yyyyMMdd>` |
+| `worker_id` | String(32) | → `workers.id`（必填） |
+| `insurance_type` | String(16) | `labor` 勞保 / `employment` 就保 / `occupational` 職保 / `health` 健保 |
+| `insured_salary` | int | 月投保薪資（健保為投保金額） |
+| `enroll_date` | LocalDate | 加保日（當天起承保） |
+| `withdraw_date` | LocalDate | 退保日（當天起不再承保）；null 表示仍在保 |
+| `withdraw_reason` | String(100) | 退保原因 |
+| `filing_ref` | String(40) | 勞保局／健保署申報受理編號（選填） |
+| `createdAt` / `updatedAt` | LocalDateTime | 建立 / 更新時間 |
+
+> 每一段投保期間一筆，歷史紀錄保留不覆蓋。實際申報由合作社於勞保局／健保署系統辦理，本表記錄申報結果。加退保後同步更新 `workers.insuranceStatus` 文字欄位。API：`/api/insurance`（加退保限 admin）。
+
+### 2.13 保留實體（程式尚未使用）
+`farmers`、`financial_ledger`、`line_users`、`line_messages` 為對應 Oracle 早期設計的 JPA 實體（2026-09-29 加入），目前沒有任何 Service／Controller 讀寫，H2 會因 `ddl-auto: update` 自動建立空表。農場主目前以 `users`（role=`farmer`）加 `orders.farmerId` 表示；雙軌分帳尚未落地成帳本資料。
+
 ---
 
 ## 參、 商業完整性規則（程式實作）
 
-1. **訂單狀態機**（`OrderService.TRANSITIONS`）：`pending → confirmed → in_progress → completed`；`pending` / `confirmed` / `in_progress` 可轉 `cancelled`；`completed`、`cancelled` 為終態。需定金的新訂單從 `pending` 開始，免定金方案直接 `confirmed`。
-2. **定金付款**：金額由後端依訂單計算；已付款訂單再次付款回傳既有結果（冪等）；已取消或已完工訂單拒絕付款；定金為 0 的方案不建立交易。付款成功時 `depositPaid=true`，若原為 `pending` 則轉 `confirmed`。
-3. **綠界通知**：先驗證 CheckMacValue 與金額才入帳；`RtnCode≠1` 標記 `FAILED`；重複通知冪等回 `1|OK`。
-4. **打卡**：同一工人同時最多一筆未下班紀錄（重複上班打卡回 409）；下班打卡取最近一筆未下班紀錄，可跨日。
-5. **編號產生**：訂單、農工、人才等 ID 由後端產生且不覆寫既有資料（不再使用 `count()+1`）。
-6. **種子資料**：`SeedService` 依 ID 補缺，只新增不存在的資料、不覆蓋既有內容；本國工 `arcNumber` 為 null。
-7. **權限**：農場主只能讀寫自己的訂單（`farmerId = token.ref`）；工人只能存取自己的出勤與薪資；詳見規格書第肆、捌章。
+1. **訂單狀態機**（`OrderService.TRANSITIONS`）：`pending → confirmed → in_progress → completed`；`pending` / `confirmed` / `in_progress` 可轉 `cancelled`；`completed`、`cancelled` 為終態。需定金的新訂單從 `pending` 開始，免定金方案直接 `confirmed`。狀態只能經 `PUT /api/orders/{id}/status` 變更（一般更新 `PUT /api/orders/{id}` 不處理狀態）。對外顯示用語：待付定金／已排定／履約中／已完工／已取消（`OrderService.statusLabel`，前台、科技後台、LINE 卡片一致）。
+2. **派工前加保檢查**：轉為 `in_progress` 時，已分派工班的每位成員須於當天完整在保，否則回 409 並列出缺保人員與險種。外籍移工應保：勞保、職保、健保；本國工另加就保。
+3. **定金付款**：金額由後端依訂單計算；已付款訂單再次付款回傳既有結果（冪等）；已取消或已完工訂單拒絕付款；定金為 0 的方案不建立交易。付款成功時 `depositPaid=true`，若原為 `pending` 則轉 `confirmed`。
+4. **綠界通知**：先驗證 CheckMacValue 與金額才入帳；`RtnCode≠1` 標記 `FAILED`；重複通知冪等回 `1|OK`。
+5. **打卡**：同一工人同時最多一筆未下班紀錄（重複上班打卡回 409）；下班打卡取最近一筆未下班紀錄，可跨日。
+6. **編號產生**：訂單、農工、人才等 ID 由後端產生且不覆寫既有資料（不再使用 `count()+1`）。
+7. **工班評價**：限訂單擁有者或 admin；訂單須為 `in_progress` 或 `completed` 且已分派工班；`score` 1～5、標籤限白名單、留言 ≤300 字。
+8. **種子資料**：`SeedService` 依 ID 補缺，只新增不存在的資料、不覆蓋既有內容；本國工 `arcNumber` 為 null。
+9. **權限**：農場主只能讀寫自己的訂單（`farmerId = token.ref`）；工人只能存取自己的出勤與薪資；詳見規格書第肆、捌章。
 
 ---
 
-## 肆、 與舊 Oracle 設計（`Software/database/01_agridispatch_oracle_schema.sql`）的差異
+## 肆、 Oracle 部署 schema（`Software/database/01_agridispatch_oracle_schema.sql`）
 
-現行系統以 **H2 + JPA 實體**為準，`Software/database/` 的 Oracle schema 與種子 SQL 為早期設計，**與程式不一致**：
+現行系統以 **H2 + JPA 實體**為準。Oracle 腳本已於 2026-10-01 依 JPA 實體對齊（補齊 `workers`、`orders`、`clock_ins` 缺少的欄位，新增 `brochures`、`payment_transactions`、`users`），並在本機 Oracle 26ai Free 以臨時 schema 實測建表與兩套種子皆 0 錯誤（詳見 `Software/database/README_ORACLE_SETUP.md`）。之後新增的 `team_ratings`、`insurance_records` 已由開發者補入腳本，**尚未在 Oracle 重新實測**。
+
+仍存在的差異：
 
 | 類別 | 內容 |
 | :--- | :--- |
-| Oracle 有、程式沒有的表 | `farmers`（農場主改由 `users` + `orders.farmerId` 表示）、`financial_ledger`（雙軌分帳帳本）、`line_users`、`line_messages` |
-| 程式有、Oracle 沒有的表 | `users`、`brochures`、`payment_transactions` |
-| 兩邊都有但結構不同 | `clock_ins`：Oracle 為 VARCHAR2 主鍵加經緯度欄位，程式為自動遞增主鍵加工時欄位；`orders`：Oracle 有 `farmer_id NOT NULL` 外鍵，程式另有派工類別、小工頭、交通區等欄位，`created_at` 在 Oracle 為 TIMESTAMP、程式為字串；`workers`：Oracle 缺 tier、證件、電話等欄位；`crops.base_hours_per_fen`：Oracle 為 NUMBER(6,1)、程式為 int |
-| 布林欄位 | Oracle 以 `CHAR(1)` 表示，程式為 boolean，改用 Oracle 時需轉換器 |
+| 外鍵 | Oracle 腳本有外鍵約束；JPA 實體沒有關聯註解，H2 不建外鍵 |
+| 布林欄位 | Oracle 以 `CHAR(1)`（`Y`/`N`）表示，程式為 boolean，改用 Oracle 時需轉換器 |
+| 主鍵型別 | `clock_ins.id`：Oracle 為 VARCHAR2，程式為自動遞增 Long |
+| 時間欄位 | `orders.created_at`、`talents.registered_at`：Oracle 為 TIMESTAMP，程式為字串 |
+| 後端驅動 | `pom.xml` 未加入 Oracle JDBC 驅動，後端目前只能連 H2 |
 
 **建議**：正式上線若改用 Oracle 或其他資料庫，以 JPA 實體為準重新產生 schema，並導入 migration 工具（建議 Flyway）管理結構變更；`ddl-auto: update` 只會新增欄位，不會刪除或改名。

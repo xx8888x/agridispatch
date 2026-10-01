@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,6 +37,9 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
     /** 查詢指定訂單的所有出勤紀錄（合法用工證明） */
     List<Attendance> findByOrderIdOrderByWorkDateAscClockInTimeAsc(String orderId);
+
+    /** 工班某日的出勤（領班逐人評核） */
+    List<Attendance> findByWorkerIdInAndWorkDateOrderByWorkerIdAsc(Collection<String> workerIds, LocalDate workDate);
 
     /** 查詢指定農工今日所有打卡記錄 */
     List<Attendance> findByWorkerIdAndWorkDate(String workerId, LocalDate workDate);

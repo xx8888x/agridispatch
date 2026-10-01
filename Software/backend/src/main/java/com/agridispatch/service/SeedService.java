@@ -54,6 +54,7 @@ public class SeedService {
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final TeamRatingRepository teamRatingRepository;
     private final InsuranceRecordRepository insuranceRecordRepository;
+    private final SkillReviewRepository skillReviewRepository;
     private final PasswordHasher passwordHasher;
     private final AgriSettings settings;
 
@@ -72,6 +73,7 @@ public class SeedService {
                        PaymentTransactionRepository paymentTransactionRepository,
                        TeamRatingRepository teamRatingRepository,
                        InsuranceRecordRepository insuranceRecordRepository,
+                       SkillReviewRepository skillReviewRepository,
                        PasswordHasher passwordHasher,
                        AgriSettings settings) {
         this.userRepository = userRepository;
@@ -86,6 +88,7 @@ public class SeedService {
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.teamRatingRepository = teamRatingRepository;
         this.insuranceRecordRepository = insuranceRecordRepository;
+        this.skillReviewRepository = skillReviewRepository;
         this.passwordHasher = passwordHasher;
         this.settings = settings;
     }
@@ -94,6 +97,7 @@ public class SeedService {
         if (cleanFirst) {
             teamRatingRepository.deleteAll();
             insuranceRecordRepository.deleteAll();
+            skillReviewRepository.deleteAll();
             paymentTransactionRepository.deleteAll();
             orderRepository.deleteAll();
             workerRepository.deleteAll();
@@ -799,6 +803,7 @@ public class SeedService {
             attendanceRepository.saveAll(java.util.List.of(a1, a2, a3, a4, a5, a6));
         }
         seedOrderAttendance();
+        seedSkillHistory();
     }
 
     /** ORD-2026-013（工班 B、枋山愛文芒果）9/25 起 4 天、6 人、每日 7 小時的出勤紀錄，供合法用工證明示範 */
@@ -816,9 +821,44 @@ public class SeedService {
                 Attendance a = new Attendance(workerId, day.atTime(7, 0), "枋山愛文芒果合作園區 2 號地 (22.2612°N, 120.6543°E)", 3.0);
                 a.completeShift(day.atTime(14, 0), "林小龍 (副班長)");
                 a.setOrderId(orderId);
+                // 領班逐人評核：W026（領班）評其他人、W006（另一位領班）評 W026；W023 最後兩天「需加強」→ 採收熟手暫停待複核
+                String rating = workerId.equals("W011") ? "excellent"
+                        : workerId.equals("W023") && d >= 2 ? "needs_improvement" : "ok";
+                rate(a, rating, workerId.equals("W026") ? "W006" : "W026", day);
                 list.add(a);
             }
         }
         attendanceRepository.saveAll(list);
+    }
+
+    /** ORD-2026-002（工班 B、宜蘭三星青蔥採收）9/19～9/24 與 9/29 共 7 天、每日 8 小時，讓部分工人累積到採收熟手 */
+    private void seedSkillHistory() {
+        String orderId = "ORD-2026-002";
+        java.time.LocalDate first = java.time.LocalDate.of(2026, 9, 19);
+        boolean seeded = attendanceRepository.findByOrderIdOrderByWorkDateAscClockInTimeAsc(orderId).stream()
+                .anyMatch(a -> first.equals(a.getWorkDate()));
+        if (seeded) return;
+        List<java.time.LocalDate> days = new java.util.ArrayList<>();
+        for (int d = 0; d < 6; d++) days.add(first.plusDays(d));
+        days.add(java.time.LocalDate.of(2026, 9, 29));
+        List<Attendance> list = new java.util.ArrayList<>();
+        for (java.time.LocalDate day : days) {
+            for (String workerId : List.of("W009", "W010", "W011", "W023", "W024", "W026")) {
+                Attendance a = new Attendance(workerId, day.atTime(7, 0), "宜蘭三星鄉大隱村青蔥契作田 (24.6730°N, 121.6552°E)", 4.0);
+                a.completeShift(day.atTime(15, 0), "阿迪 (Agus Santoso)");
+                a.setOrderId(orderId);
+                String rating = workerId.equals("W011") ? "excellent"
+                        : workerId.equals("W024") && day.getDayOfMonth() >= 23 ? "needs_improvement" : "ok";
+                rate(a, rating, "W006", day);
+                list.add(a);
+            }
+        }
+        attendanceRepository.saveAll(list);
+    }
+
+    private static void rate(Attendance a, String rating, String by, java.time.LocalDate day) {
+        a.setForemanRating(rating);
+        a.setForemanRatedBy(by);
+        a.setForemanRatedAt(day.atTime(16, 0));
     }
 }

@@ -532,8 +532,7 @@
               <div class="text-sm font-bold text-emerald-300">外展工班 B 組 (6人)</div>
               <p class="text-[11px] text-amber-300" data-team-rating="team_b">⭐ 工班評價載入中…</p>
               <div class="flex flex-wrap gap-1">
-                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">✔️ 履歷認證</span>
-                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">💪 採收熟手</span>
+                <span class="text-[10px] text-slate-500" data-team-skills="team_b" data-skill="harvest">技能標籤載入中…</span>
               </div>
               <p class="text-[11px] text-slate-300">現場小工頭：<strong>林小龍 (副班長)</strong> 0921-999-888</p>
               <p class="text-[10px] text-amber-400">指示：早上 06:45 枋山 2 號集貨場集合</p>
@@ -607,8 +606,7 @@
               <span class="text-slate-400 font-semibold block">👷 派遣工班與現場小工頭</span>
               <div class="text-sm font-bold text-slate-300">工班 B 組 (5人待分派)</div>
               <div class="flex flex-wrap gap-1">
-                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">✔️ 履歷認證</span>
-                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">✂️ 修剪熟手</span>
+                <span class="text-[10px] text-slate-500" data-team-skills="team_b" data-skill="pruning">技能標籤載入中…</span>
               </div>
               <p class="text-[11px] text-emerald-300">現場小工頭：<strong>陳建龍 (農場主本人帶隊)</strong></p>
               <p class="text-[10px] text-slate-400">指示：農場主本人親自現場帶隊指揮調度</p>
@@ -873,6 +871,27 @@
       }
     }
     document.addEventListener('DOMContentLoaded', loadTeamInsurance);
+
+    // 工班技能標籤：依後端熟手規則即時計算（只顯示人數，不列姓名）；只顯示與該訂單派工類別相符的熟手標籤
+    async function loadTeamSkills() {
+      const tagCls = 'px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+      for (const el of document.querySelectorAll('[data-team-skills]')) {
+        try {
+          const t = await ratingApi(`/skills/teams/${encodeURIComponent(el.dataset.teamSkills)}`);
+          const s = t.skills[el.dataset.skill];
+          const tags = [`<span class="${tagCls}" title="工作許可有效、完整加保、無暫停中標籤">✔️ 履歷認證 ×${t.verified}</span>`];
+          if (s && s.skilled > 0) {
+            tags.push(`<span class="${tagCls}" title="同類作業最近 24 個月 ≥ 80 小時、≥ 2 張訂單">${s.label} ×${s.skilled}</span>`);
+          } else if (s) {
+            tags.push(`<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-700/40 text-slate-400 border border-slate-600" title="尚無成員達到熟手門檻">${s.label}：培養中</span>`);
+          }
+          el.outerHTML = tags.join('');
+        } catch (e) {
+          el.textContent = '技能標籤暫時無法載入';
+        }
+      }
+    }
+    document.addEventListener('DOMContentLoaded', loadTeamSkills);
   </script>
 
   <script>

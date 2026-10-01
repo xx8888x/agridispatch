@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 AgriDispatch - 派工媒合</title>
+  <script src="js/app-config.js"></script>
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AgriAuth) window.AgriAuth.requireRole(['admin_tech'], 'admin-login.html');
+  </script>
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
+
+  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-400 flex items-center justify-center"><span class="text-xl">🧭</span></div>
+        <div>
+          <div class="font-extrabold text-lg text-white">智農派工 <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold">科技後台</span></div>
+          <p class="hidden sm:block text-[11px] text-slate-400">技能標籤 ╳ 工班評價 ╳ 加保資格 → 派工建議</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="skills.html" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">💪 技能標籤</a>
+        <a href="admin.html" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">← 回整合管理後台</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div class="space-y-2 border-b border-slate-800 pb-5">
+      <h1 class="text-2xl sm:text-3xl font-black text-white">🧭 派工媒合</h1>
+      <p class="text-sm text-slate-400 max-w-4xl leading-relaxed">
+        系統依「該類別熟手人數 → 資深人數 → 工班評價 → 目前施工中訂單數」排序工班，並建議出工名單（必含一位領班，
+        名單 ≥ 4 人時保留 1 個培養名額給新進工人）。未完整加保或工作許可過期者不列入名單。最後由合作社確認後儲存。
+      </p>
+      <p class="text-[11px] text-amber-300/90">【待確認】排序不使用國籍、性別、年齡；標籤只影響優先順序，不得作為排除特定工人或差別待遇的依據。</p>
+    </div>
+
+    <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-2xl bg-slate-900 border border-slate-800">
+      <label for="orderSel" class="text-xs text-slate-400 shrink-0">選擇訂單</label>
+      <select id="orderSel" onchange="loadOrder()" class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"></select>
+    </div>
+
+    <div id="loadError" class="hidden p-4 rounded-2xl bg-rose-950/50 border border-rose-500/40 text-sm text-rose-200"></div>
+    <div id="orderBox"></div>
+
+    <div class="grid lg:grid-cols-12 gap-6">
+      <div class="lg:col-span-5 space-y-3">
+        <h2 class="text-sm font-black text-white">① 工班排序</h2>
+        <div id="teams" class="space-y-2"></div>
+      </div>
+      <div class="lg:col-span-7 space-y-3">
+        <h2 class="text-sm font-black text-white">② 出工名單 <span id="crewTeam" class="text-xs font-normal text-slate-400"></span></h2>
+        <div id="crew" class="space-y-2"></div>
+        <div id="crewFooter"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const base = () => (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+    let rec = null;
+    let crewData = null;
+    let crewTeamId = null;
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    async function api(path, options) {
+      const res = await fetch(`${base()}${path}`, options);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body.success === false) throw new Error(body.error || `HTTP ${res.status}`);
+      return body.data;
+    }
+    function showError(msg) {
+      const el = document.getElementById('loadError');
+      el.textContent = msg;
+      el.classList.toggle('hidden', !msg);
+    }
+
+    async function init() {
+      try {
+        const orders = (await api('/orders')).filter(o => ['pending', 'confirmed', 'in_progress'].includes(o.status));
+        orders.sort((a, b) => a.id.localeCompare(b.id));
+        const labels = { pending: '待付定金', confirmed: '已排定', in_progress: '施工中' };
+        const sel = document.getElementById('orderSel');
+        sel.innerHTML = orders.map(o => `<option value="${esc(o.id)}">${esc(o.id)}・${esc(o.cropName)}・${esc(o.categoryName)}・${labels[o.status]}</option>`).join('');
+        const want = new URLSearchParams(location.search).get('order');
+        if (want && orders.some(o => o.id === want)) sel.value = want;
+        loadOrder();
+      } catch (e) {
+        showError(`無法載入訂單：${e.message}（請確認後端 3000 已啟動，且以管理員身分登入）`);
+      }
+    }
+
+    async function loadOrder() {
+      showError('');
+      const id = document.getElementById('orderSel').value;
+      try {
+        rec = await api(`/matching/orders/${encodeURIComponent(id)}`);
+      } catch (e) {
+        showError(`無法取得媒合建議：${e.message}`);
+        return;
+      }
+      const o = rec.order;
+      document.getElementById('orderBox').innerHTML = `
+        <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-sm flex flex-wrap gap-x-6 gap-y-1">
+          <span><span class="text-slate-400">訂單</span> <span class="font-mono text-amber-300">${esc(o.orderId)}</span>（${esc(o.statusLabel)}）</span>
+          <span><span class="text-slate-400">農場</span> ${esc(o.farmerName)}</span>
+          <span><span class="text-slate-400">作業</span> ${esc(o.categoryName)}</span>
+          <span><span class="text-slate-400">需求</span> ${o.suggestedWorkers} 人</span>
+          <span><span class="text-slate-400">依據技能</span> ${esc(o.skillLabel || '證照類（不依經驗標籤）')}</span>
+          <span><span class="text-slate-400">目前派工</span> ${esc(o.assignedTeamId || '—')}${o.crew.length ? `・名單 ${o.crew.length} 人` : '・尚無出工名單'}</span>
+        </div>`;
+      renderTeams();
+      if (rec.crew) { crewTeamId = rec.crew.teamId; crewData = rec.crew; renderCrew(); }
+    }
+
+    function renderTeams() {
+      document.getElementById('teams').innerHTML = rec.teams.map(t => `
+        <div class="p-4 rounded-2xl border ${t.eligible ? 'bg-slate-900 border-slate-700' : 'bg-slate-900/50 border-slate-800 opacity-70'} ${t.teamId === crewTeamId ? 'ring-2 ring-cyan-400' : ''}">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="text-sm font-black text-white">#${t.rank} ${esc(t.teamName)}</div>
+              <div class="text-[11px] text-slate-400">${t.eligibleMembers}/${t.members} 人可出工</div>
+            </div>
+            ${t.eligible
+              ? `<button type="button" data-team="${esc(t.teamId)}" onclick="pickTeam(this.dataset.team)" class="shrink-0 px-2.5 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold">選這個工班</button>`
+              : '<span class="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/40">不符資格</span>'}
+          </div>
+          <ul class="mt-2 text-[11px] text-slate-300 space-y-0.5">${t.reasons.map(r => `<li>・${esc(r)}</li>`).join('')}</ul>
+          ${t.blockers.length ? `<div class="mt-1 text-[11px] text-rose-300">${t.blockers.map(esc).join('；')}</div>` : ''}
+        </div>`).join('');
+    }
+
+    async function pickTeam(teamId) {
+      try {
+        crewData = await api(`/matching/orders/${encodeURIComponent(rec.order.orderId)}/crew?teamId=${encodeURIComponent(teamId)}`);
+        crewTeamId = teamId;
+        renderTeams();
+        renderCrew();
+      } catch (e) {
+        showError(`無法取得出工名單建議：${e.message}`);
+      }
+    }
+
+    function roleBadge(c) {
+      if (!c.role) return '';
+      const cls = c.role === '帶隊領班' ? 'bg-indigo-500/20 text-indigo-200 border-indigo-500/40'
+        : c.role === '培養名額' ? 'bg-sky-500/20 text-sky-200 border-sky-500/40'
+        : c.role === '標籤暫停中' ? 'bg-rose-500/20 text-rose-200 border-rose-500/40'
+        : 'bg-emerald-500/20 text-emerald-200 border-emerald-500/40';
+      return `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${cls}">${esc(c.role)}</span>`;
+    }
+
+    function renderCrew() {
+      const d = crewData;
+      document.getElementById('crewTeam').textContent = `・${d.teamId}・需求 ${d.needed} 人`;
+      // 已有名單且是同一工班時沿用；否則採用系統建議
+      const useCurrent = d.currentCrew.length && rec.order.assignedTeamId === d.teamId;
+      const checked = new Set(useCurrent ? d.currentCrew : d.candidates.filter(c => c.recommended).map(c => c.workerId));
+      document.getElementById('crew').innerHTML = d.candidates.map(c => `
+        <label class="flex items-center gap-3 p-3 rounded-xl bg-slate-900 border ${c.recommended ? 'border-cyan-500/40' : 'border-slate-800'} cursor-pointer">
+          <input type="checkbox" value="${esc(c.workerId)}" ${checked.has(c.workerId) ? 'checked' : ''} onchange="updateCount()" class="w-4 h-4 accent-cyan-500">
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-bold text-white flex flex-wrap items-center gap-1.5">${esc(c.name)} <span class="text-[10px] text-slate-500 font-mono">${esc(c.workerId)}</span>${c.leader ? '<span class="text-[10px] text-indigo-300">領班</span>' : ''} ${roleBadge(c)}</div>
+            <div class="text-[11px] text-slate-400">${esc(c.levelLabel)}・同類 ${c.hours} 小時・領班評「優」${Math.round(c.excellentRate * 100)}%・「需加強」${Math.round(c.needsImprovementRate * 100)}%</div>
+          </div>
+          ${c.recommended ? '<span class="text-[10px] text-cyan-300 shrink-0">系統建議</span>' : ''}
+        </label>`).join('') + (d.excluded.length ? `
+        <div class="p-3 rounded-xl bg-slate-900/50 border border-slate-800 text-[11px] text-slate-400">
+          <div class="font-bold text-slate-300 mb-1">不列入名單（資格不符）</div>
+          ${d.excluded.map(c => `<div>・${esc(c.name)}（${esc(c.workerId)}）：${esc(c.excludedReason)}</div>`).join('')}
+        </div>` : '');
+      document.getElementById('crewFooter').innerHTML = `
+        <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="text-xs"><span id="crewCount" class="font-black text-white"></span>${d.shortage ? `<div class="text-rose-300 mt-0.5">合格人數不足，缺 ${d.shortage} 人</div>` : ''}<div id="saveMsg" class="mt-0.5"></div></div>
+          <button type="button" id="saveBtn" onclick="saveCrew()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-black">確認派工並儲存名單</button>
+        </div>`;
+      updateCount();
+    }
+
+    function selected() {
+      return [...document.querySelectorAll('#crew input[type=checkbox]:checked')].map(i => i.value);
+    }
+    function updateCount() {
+      const n = selected().length;
+      const need = crewData.needed;
+      const el = document.getElementById('crewCount');
+      el.textContent = `已選 ${n} / ${need} 人`;
+      el.className = `font-black ${n === need ? 'text-emerald-300' : 'text-amber-300'}`;
+    }
+
+    async function saveCrew() {
+      const crew = selected();
+      const msg = document.getElementById('saveMsg');
+      if (!crew.length) { msg.innerHTML = '<span class="text-rose-300">請至少選 1 位工人</span>'; return; }
+      document.getElementById('saveBtn').disabled = true;
+      try {
+        await api(`/matching/orders/${encodeURIComponent(rec.order.orderId)}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ teamId: crewTeamId, crew })
+        });
+        await loadOrder();
+        document.getElementById('saveMsg').innerHTML = `<span class="text-emerald-300">✓ 已派工給 ${esc(crewTeamId)}，出工名單 ${crew.length} 人</span>`;
+      } catch (e) {
+        msg.innerHTML = `<span class="text-rose-300">未儲存：${esc(e.message)}</span>`;
+        document.getElementById('saveBtn').disabled = false;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

@@ -11,6 +11,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.List;
@@ -34,6 +38,9 @@ public class SeedService {
     static final String DEMO_ADMIN_PASSWORD = "admin888";
     /** 舊版曾寫死的預設密碼：非 demo 模式偵測到時於 log 警告 */
     private static final Set<String> KNOWN_DEFAULT_PASSWORDS = Set.of("123456", "admin888");
+    /** 路演來賓帳號清單（含明碼，已 gitignore）；可用環境變數 AGRI_ROADSHOW_ACCOUNTS 指定其他路徑 */
+    private static final String DEFAULT_ROADSHOW_ACCOUNTS = "../data/roadshow-accounts.csv";
+    private static final Set<String> ROADSHOW_ROLES = Set.of("farmer", "worker_foreign", "worker_local", "admin_tech");
 
     private final UserRepository userRepository;
     private final CropRepository cropRepository;
@@ -139,6 +146,41 @@ public class SeedService {
             }
             userRepository.save(u);
         }
+        if (demo) seedRoadshowAccounts();
+    }
+
+    /**
+     * 路演來賓帳號（僅 demo 模式）：從 gitignore 的 CSV 讀入，帳號不存在才新增，既有帳號（含已改的密碼）一律保留。
+     * 格式：username,password,name,role,refId,roleDesc（# 開頭為註解）
+     */
+    private void seedRoadshowAccounts() {
+        String env = System.getenv("AGRI_ROADSHOW_ACCOUNTS");
+        Path file = Path.of(env != null && !env.isBlank() ? env : DEFAULT_ROADSHOW_ACCOUNTS);
+        if (!Files.isRegularFile(file)) return;
+        List<String> lines;
+        try {
+            lines = Files.readAllLines(file, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            log.warn("[路演帳號] 無法讀取 {}：{}", file.toAbsolutePath(), e.getMessage());
+            return;
+        }
+        int added = 0;
+        for (String raw : lines) {
+            String line = raw.strip();
+            if (line.startsWith("﻿")) line = line.substring(1);
+            if (line.isEmpty() || line.startsWith("#")) continue;
+            String[] f = line.split(",", 6);
+            if (f.length < 6 || f[0].isBlank() || f[1].isBlank() || !ROADSHOW_ROLES.contains(f[3].strip())) {
+                log.warn("[路演帳號] 略過格式錯誤的列：{}", f[0]);
+                continue;
+            }
+            String username = f[0].strip();
+            if (userRepository.existsById(username)) continue;
+            userRepository.save(new User(username, passwordHasher.hash(f[1].strip()), f[2].strip(),
+                    f[3].strip(), f[4].strip(), f[5].strip()));
+            added++;
+        }
+        if (added > 0) log.info("[路演帳號] 已從 {} 新增 {} 個帳號", file.toAbsolutePath(), added);
     }
 
     /** 管理員初始密碼：AGRI_ADMIN_PASSWORD → demo 示範密碼 → 隨機產生（只在 log 顯示一次） */

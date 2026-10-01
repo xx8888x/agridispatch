@@ -14,6 +14,8 @@ node_modules/
 # 執行期資料
 Software/backend/data/*.mv.db
 Software/backend/data/*.trace.db
+Software/backend/data/*.lock.db
+Software/backend/data/roadshow-accounts.csv
 *.log
 
 # 機密（只提交 .example 範本）

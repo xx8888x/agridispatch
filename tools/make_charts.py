@@ -3,12 +3,13 @@
 
 數字來源：02_財務模型與政府補助/03_財務計畫報表2_…（F2 v2.2 財務定版）。
 F2 數字變動時，更新下方 DATA 後重新執行：
-    python tools/make_charts.py
+    python tools/make_charts.py [圖名 ...]   # 不帶參數則全部重產
 輸出：02_財務模型與政府補助/charts/*.svg、*.png
 配色：dataviz 參考色盤淺色模式前 3 槽（已以 validate_palette 驗證）；
 aqua 對白底對比 < 3:1，故每張圖都有數值標籤，文件中亦保留數據表。
 """
 import html
+import sys
 import subprocess
 from pathlib import Path
 
@@ -30,6 +31,7 @@ W, H = 960, 520
 PAD_L, PAD_R, PAD_T, PAD_B = 88, 32, 128, 64
 
 SOURCE = "資料來源：F2 財務計畫報表 2（v2.2 財務定版），基本情境不含政府補助、平台不承擔宿舍與專車"
+SOURCE_V23 = "資料來源：F2 財務計畫報表 2（v2.3）第玖章 3 節，C2 為試算方案、待經營團隊決定"
 
 
 def esc(s):
@@ -110,7 +112,7 @@ def svg_wrap(parts):
             f'font-family="{FONT}">\n  <rect width="{W}" height="{H}" fill="{SURFACE}"/>\n  {body}\n</svg>\n')
 
 
-def grouped_bars(categories, series, title, subtitle, unit="萬元"):
+def grouped_bars(categories, series, title, subtitle, unit="萬元", note=SOURCE):
     vals = [v for s in series for v in s["values"]]
     lo, hi = min(0, min(vals)), max(0, max(vals))
     ticks = nice_ticks(lo, hi)
@@ -134,7 +136,7 @@ def grouped_bars(categories, series, title, subtitle, unit="萬元"):
             ly = y - 8 if v >= 0 else y + 18
             parts.append(f'<text x="{x + bw / 2:.1f}" y="{ly:.1f}" font-size="13" fill="{TEXT_1}" text-anchor="middle">{wan(v)}</text>')
         parts.append(f'<text x="{PAD_L + group_w * i + group_w / 2:.1f}" y="{H - PAD_B + 26}" font-size="15" fill="{TEXT_1}" text-anchor="middle">{esc(cat)}</text>')
-    return svg_wrap(parts + footer())
+    return svg_wrap(parts + footer(note))
 
 
 def stacked_bars(categories, series, title, subtitle, unit="萬元", total_label="合計", note=SOURCE):
@@ -277,6 +279,23 @@ CHARTS = {
          dict(name="建議方案 C1（待經營團隊決定）", color=S2, values=[145592, 2203272, 10952500])],
         "合作社損益：建議方案 C1 可使第一年起即有結餘",
         "C1＝第一層均價 +30 元/hr、師傅 80% 工時計費、代管費率 15%（不含宿舍與專車），單位：萬元"),
+    # 玖-3、基本情境 vs C1 vs C2（v2.3）
+    "f2_coop_c2": lambda: grouped_bars(
+        YEARS,
+        [dict(name="基本情境", color=S1, values=[-1397008, -4313600, -7523800]),
+         dict(name="建議方案 C1", color=S2, values=[145592, 2203272, 10952500]),
+         dict(name="建議方案 C2（含合規預備金）", color=S3, values=[175056, 2123842, 10736280])],
+        "合作社損益：C1、C2 皆可使第一年起轉為微利",
+        "C2＝均價 +30、師傅 80% 計費、師傅 1:10＋移工組長、代管費 16%、第二層 +50%、住宿預備金，單位：萬元",
+        note=SOURCE_V23),
+    # 玖-3、C2 第一年壓力測試（v2.3）
+    "f2_c2_stress_y1": lambda: hbars(
+        ["C2", "兼職須投勞健保", "年工時降為約 1,904 小時", "移工須提繳勞退 6%",
+         "利用率 −5 個百分點", "年工時、兼職投保、勞退同時成立", "8,800 獎勵由合作社自付"],
+        [175056, 61764, 2325, -79824, -156858, -365847, -1092144],
+        "C2 第一年仍脆弱：利用率 −5 個百分點或須提繳勞退即轉虧",
+        "建議方案 C2 下各情境之合作社第一年損益，灰色為 C2",
+        highlight=0, note=SOURCE_V23),
     # 柒、青創貸款還款（科技公司實際支付）
     "f2_loan_repayment": lambda: stacked_bars(
         ["第1年", "第2年", "第3年", "第4年", "第5年", "第6年"],
@@ -320,7 +339,10 @@ if __name__ == "__main__":
     import tempfile
     work = Path(tempfile.mkdtemp(prefix="agri_charts_"))
     try:
+        only = set(sys.argv[1:])   # 可指定圖名，只重產部分圖表
         for name, build in CHARTS.items():
+            if only and name not in only:
+                continue
             print("OK", render(name, build(), work).name)
     finally:
         shutil.rmtree(work, ignore_errors=True)

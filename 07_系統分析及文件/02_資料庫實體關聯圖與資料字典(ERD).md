@@ -1,6 +1,6 @@
 # 智農派工 (AgriDispatch) - 資料庫實體關聯圖與資料字典 (ERD)
 
-> **文件版本**：v3.1.0（2026-10-01，依 `Software/backend/src/main/java/com/agridispatch/entity/*.java` 實際 JPA 實體更新：新增 `team_ratings`、`insurance_records`，補列 `farmers`、`financial_ledger`、`line_users`、`line_messages`；v3.0.0 為 2026-09-23）
+> **文件版本**：v3.1.1（2026-10-01，依 `Software/backend/src/main/java/com/agridispatch/entity/*.java` 實際 JPA 實體更新：新增 `team_ratings`、`insurance_records`、`clock_ins.orderId`，補列 `farmers`、`financial_ledger`、`line_users`、`line_messages`；v3.0.0 為 2026-09-23）
 > **資料庫**：H2 檔案資料庫（`Software/backend/data/agridispatch_db`），Hibernate `ddl-auto: update` 自動建表
 > **Visio 圖檔**：同資料夾的 `.vdx` / `.vsdx` 為 v2.0 舊版，**以本文件的 Mermaid 圖為準**
 
@@ -108,6 +108,7 @@ erDiagram
     clock_ins {
         long id PK "自動遞增"
         string workerId "→ workers.id"
+        string orderId "→ orders.id（可為 null）"
         date workDate
         datetime clockInTime
         datetime clockOutTime "null＝尚未下班"
@@ -225,6 +226,7 @@ erDiagram
     dispatch_teams ||..o{ workers : "teamId"
     orders ||..o{ payment_transactions : "orderId"
     workers ||..o{ clock_ins : "workerId"
+    orders ||..o{ clock_ins : "orderId"
     orders ||..o| team_ratings : "orderId"
     dispatch_teams ||..o{ team_ratings : "teamId"
     workers ||..o{ insurance_records : "workerId"
@@ -334,6 +336,7 @@ erDiagram
 | :--- | :--- | :--- |
 | `id` (PK) | Long | 自動遞增 |
 | `worker_id` | String(20) | → `workers.id`（必填） |
+| `order_id` | String(40) | → `orders.id`；本次出勤所屬訂單（可為 null，見第參章打卡規則）。合法用工證明依此彙整出勤 |
 | `work_date` | LocalDate | 上班日（必填） |
 | `clock_in_time` | LocalDateTime | 上班時間（必填） |
 | `clockOutTime` | LocalDateTime | 下班時間；null 表示尚未下班 |
@@ -413,17 +416,18 @@ erDiagram
 2. **派工前加保檢查**：轉為 `in_progress` 時，已分派工班的每位成員須於當天完整在保，否則回 409 並列出缺保人員與險種。外籍移工應保：勞保、職保、健保；本國工另加就保。
 3. **定金付款**：金額由後端依訂單計算；已付款訂單再次付款回傳既有結果（冪等）；已取消或已完工訂單拒絕付款；定金為 0 的方案不建立交易。付款成功時 `depositPaid=true`，若原為 `pending` 則轉 `confirmed`。
 4. **綠界通知**：先驗證 CheckMacValue 與金額才入帳；`RtnCode≠1` 標記 `FAILED`；重複通知冪等回 `1|OK`。
-5. **打卡**：同一工人同時最多一筆未下班紀錄（重複上班打卡回 409）；下班打卡取最近一筆未下班紀錄，可跨日。
-6. **編號產生**：訂單、農工、人才等 ID 由後端產生且不覆寫既有資料（不再使用 `count()+1`）。
-7. **工班評價**：限訂單擁有者或 admin；訂單須為 `in_progress` 或 `completed` 且已分派工班；`score` 1～5、標籤限白名單、留言 ≤300 字。
-8. **種子資料**：`SeedService` 依 ID 補缺，只新增不存在的資料、不覆蓋既有內容；本國工 `arcNumber` 為 null。
-9. **權限**：農場主只能讀寫自己的訂單（`farmerId = token.ref`）；工人只能存取自己的出勤與薪資；詳見規格書第肆、捌章。
+5. **打卡**：同一工人同時最多一筆未下班紀錄（重複上班打卡回 409）；下班打卡取最近一筆未下班紀錄，可跨日。上班打卡可帶 `orderId`：指定時須為履約中訂單且工人屬於該訂單的工班（否則 400／409）；未指定時，工人所屬工班恰有一張履約中訂單才自動連結，零張或多張則不連結。
+6. **合法用工證明**（不另建資料表，即時計算）：訂單須為履約中或已完工且有出勤紀錄；逐日核對每位出勤工人「外籍者聘僱許可在效期內（含當日；本國籍免）」與「應保險種當天皆在保」，全部符合才可開立（`issuable`），否則列出問題。證明編號 `LEC-<訂單編號>`，查驗碼由 `AGRI_TOKEN_SECRET` 對證明內容簽出（取 12 碼），內容變動或密鑰改變後舊查驗碼即失效。
+7. **編號產生**：訂單、農工、人才等 ID 由後端產生且不覆寫既有資料（不再使用 `count()+1`）。
+8. **工班評價**：限訂單擁有者或 admin；訂單須為 `in_progress` 或 `completed` 且已分派工班；`score` 1～5、標籤限白名單、留言 ≤300 字。
+9. **種子資料**：`SeedService` 依 ID 補缺，只新增不存在的資料、不覆蓋既有內容；本國工 `arcNumber` 為 null。
+10. **權限**：農場主只能讀寫自己的訂單（`farmerId = token.ref`）；工人只能存取自己的出勤與薪資；詳見規格書第肆、捌章。
 
 ---
 
 ## 肆、 Oracle 部署 schema（`Software/database/01_agridispatch_oracle_schema.sql`）
 
-現行系統以 **H2 + JPA 實體**為準。Oracle 腳本已於 2026-10-01 依 JPA 實體對齊（補齊 `workers`、`orders`、`clock_ins` 缺少的欄位，新增 `brochures`、`payment_transactions`、`users`），並在本機 Oracle 26ai Free 以臨時 schema 實測建表與兩套種子皆 0 錯誤（詳見 `Software/database/README_ORACLE_SETUP.md`）。之後新增的 `team_ratings`、`insurance_records` 已由開發者補入腳本，**尚未在 Oracle 重新實測**。
+現行系統以 **H2 + JPA 實體**為準。Oracle 腳本已於 2026-10-01 依 JPA 實體對齊（補齊 `workers`、`orders`、`clock_ins` 缺少的欄位，新增 `brochures`、`payment_transactions`、`users`），並在本機 Oracle 26ai Free 以臨時 schema 實測建表與兩套種子皆 0 錯誤（詳見 `Software/database/README_ORACLE_SETUP.md`）。之後新增的 `team_ratings`、`insurance_records` 與 `clock_ins.order_id`（含外鍵與索引 `idx_clock_ins_order`）已於同日再次實測：16 張表建立 0 錯誤、16 個實體欄位全數對應，並驗證險種 CHECK、退保日不早於加保日、評價每訂單唯一、打卡訂單外鍵等限制皆有效。
 
 仍存在的差異：
 

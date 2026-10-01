@@ -5,7 +5,7 @@ spring:
   application:
     name: agridispatch-backend-admin
   datasource:
-    url: jdbc:h2:file:../data/agridispatch_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE;AUTO_SERVER=TRUE
+    url: jdbc:h2:file:../data/agridispatch_db;DB_CLOSE_DELAY=-1;AUTO_RECONNECT=TRUE;AUTO_SERVER=TRUE
     driverClassName: org.h2.Driver
     username: sa
     password:

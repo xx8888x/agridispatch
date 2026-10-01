@@ -760,29 +760,63 @@
         return;
       }
       if (cmd === '黑轉白') {
-        appendUserBubble('現有工班要怎麼黑轉白？');
-        runLegalizeIntro();
-        return;
-      }
-      if (cmd.startsWith('黑轉白:')) {
-        runLegalizeType(cmd.slice(4));
+        sendLineText('現有工班要怎麼黑轉白？');
         return;
       }
       appendUserBubble(cmd);
       processCommand(cmd);
     }
 
-    // 農場主「現有工班黑轉白」：依身分分流（與 農業派遣主網站/legalize.html 同一套規則，純前端示範）
+    // 送出一則使用者訊息（輸入框與 Flex 卡片「傳訊息」按鈕共用）
+    function sendLineText(text) {
+      appendUserBubble(text);
+      if (currentRole === 'farmer' && /黑轉白|黑工/.test(text)) {
+        runLegalize(text);
+        return;
+      }
+      processCommand(text);
+    }
+
+    // Flex 卡片內 message 類按鈕：點擊即以按鈕文字作為使用者訊息送出
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-line-msg]');
+      if (btn) sendLineText(btn.dataset.lineMsg);
+    });
+
+    // 農場主「現有工班黑轉白」：優先由 Java LINE Bot (5000) 回覆 Flex 卡片，與實機 LINE 同一份邏輯；
+    // 後端未啟動時改用本地示範卡片（規則同 農業派遣主網站/legalize.html）
+    async function runLegalize(text) {
+      showTypingIndicator();
+      let reply = null;
+      try {
+        const res = await fetch(`${LINEBOT_BASE}/mock/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUserId, text: text }),
+          signal: AbortSignal.timeout(1500)
+        });
+        if (res.ok) reply = await res.json();
+      } catch (e) {}
+      removeTypingIndicator();
+      if (reply && reply.type === 'flex') {
+        renderFlexCard(reply);
+        return;
+      }
+      const key = Object.keys(LEGALIZE_TYPES).find(k => text.includes(LEGALIZE_TYPES[k].short));
+      if (key) renderLocalLegalizeType(key); else renderLocalLegalizeIntro();
+    }
+
+    // short 須與 Java FlexMessageBuilder.LEGALIZE_TYPES 的指令關鍵字一致
     const LEGALIZE_TYPES = {
-      local:    { label: '本國籍臨時工（未投保）', icon: '🧑‍🌾', path: 'direct',
+      local:    { short: '本國臨時工', label: '本國籍臨時工（未投保）', icon: '🧑‍🌾', path: 'direct',
                   summary: '可直接轉白：由合作社聘僱為農務士，簽約後依法加保勞保／就保／職災保險並申報薪資。' },
-      spouse:   { label: '新住民（外籍／陸籍配偶）', icon: '🏠', path: 'direct',
+      spouse:   { short: '新住民', label: '新住民（外籍／陸籍配偶）', icon: '🏠', path: 'direct',
                   summary: '可直接轉白：依親居留之配偶在台工作免申請許可，上傳居留證審核後由合作社聘僱加保。' },
-      student:  { label: '外籍學生／僑生', icon: '🎓', path: 'conditional',
+      student:  { short: '外籍學生', label: '外籍學生／僑生', icon: '🎓', path: 'conditional',
                   summary: '有條件轉白：須先取得工作許可，學期中每週最多 20 小時；許可前不得排班。【待確認】' },
-      borrowed: { label: '借用他人雇主的合法移工', icon: '🔁', path: 'replace',
+      borrowed: { short: '借用移工', label: '借用他人雇主的合法移工', icon: '🔁', path: 'replace',
                   summary: '不可就地轉白：移工只能為原雇主工作，請今日起停止使用並結清工資，空缺改由合作社外展工班補位。' },
-      runaway:  { label: '失聯（逃逸）移工', icon: '⚠️', path: 'replace',
+      runaway:  { short: '失聯移工', label: '失聯（逃逸）移工', icon: '⚠️', path: 'replace',
                   summary: '依法無法就地合法化：請停止使用並結清工資，勿扣留證件；本人可洽移民署專勤隊或勞動部 1955 專線了解到案方式【待確認】。系統不記錄其個資，空缺由合法工班補位。' }
     };
     const LEGALIZE_BADGE = {
@@ -806,30 +840,21 @@
       scrollToBottom();
     }
 
-    function runLegalizeIntro() {
-      showTypingIndicator();
-      setTimeout(() => {
-        removeTypingIndicator();
-        const typeButtons = Object.entries(LEGALIZE_TYPES).map(([k, t]) => `
-          <button type="button" onclick="handleQuickCmd('黑轉白:${k}')" class="w-full text-left px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 border border-slate-200 text-slate-700 font-bold transition">${t.icon} ${t.label}</button>
+    function renderLocalLegalizeIntro() {
+        const typeButtons = Object.values(LEGALIZE_TYPES).map(t => `
+          <button type="button" data-line-msg="黑轉白：${t.short}" class="w-full text-left px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 border border-slate-200 text-slate-700 font-bold transition">${t.icon} ${t.label}</button>
         `).join('');
         appendBotHtml(`
           <div class="font-bold text-emerald-700">🔄 現有工班黑轉白</div>
           <div>請選擇這位工人目前的身分，我告訴您怎麼轉：</div>
           <div class="space-y-1 pt-0.5">${typeButtons}</div>
           <a href="../農業派遣主網站/legalize.html" class="block text-center px-2.5 py-1.5 rounded-lg bg-[#06C755] hover:brightness-110 text-white font-bold transition">📋 開啟轉換中心（整班盤點）</a>
-          <div class="text-[10px] text-slate-500">※ 示範流程；法規細節標【待確認】處以律師或主管機關意見為準</div>
+          <div class="text-[10px] text-slate-500">※ 離線示範（LINE Bot 後端未啟動）；法規細節標【待確認】處以律師或主管機關意見為準</div>
         `);
-      }, 700);
     }
 
-    function runLegalizeType(key) {
-      const t = LEGALIZE_TYPES[key];
-      if (!t) return;
-      appendUserBubble(`身分：${t.label}`);
-      showTypingIndicator();
-      setTimeout(() => {
-        removeTypingIndicator();
+    function renderLocalLegalizeType(key) {
+        const t = LEGALIZE_TYPES[key];
         const action = t.path === 'replace'
           ? `<button type="button" onclick="handleQuickCmd('快速叫工')" class="w-full px-2.5 py-1.5 rounded-lg bg-[#06C755] hover:brightness-110 text-white font-bold transition">🚐 改派合法工班補位</button>`
           : `<a href="../農業派遣主網站/legalize.html" class="block text-center px-2.5 py-1.5 rounded-lg bg-[#06C755] hover:brightness-110 text-white font-bold transition">✅ 到轉換中心開始轉白</a>`;
@@ -838,8 +863,8 @@
           <div>${LEGALIZE_BADGE[t.path]}</div>
           <div>${t.summary}</div>
           ${action}
+          <button type="button" data-line-msg="黑轉白" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-bold transition">↩ 選擇其他身分</button>
         `);
-      }, 700);
     }
 
     // 農場主「明日急件叫工」展示：與地下仲介比拼速度，但全程走合作社合法派工（純前端示範，不寫入後端）
@@ -875,12 +900,7 @@
       const text = input.value.trim();
       if (!text) return;
       input.value = '';
-      appendUserBubble(text);
-      if (currentRole === 'farmer' && /黑轉白|黑工/.test(text)) {
-        runLegalizeIntro();
-        return;
-      }
-      processCommand(text);
+      sendLineText(text);
     }
 
     // 5. 處理指令並呼叫後端 API (優先直連 Port 5000 專用 LINE Bot 核心，回退至 Port 3000)
@@ -1144,6 +1164,12 @@
       let footerHtml = '';
       if (bubble.footer && bubble.footer.contents) {
         footerHtml = bubble.footer.contents.map(btn => {
+          if (btn.action && btn.action.type === 'message') {
+            const msg = escapeHtml(btn.action.text || btn.action.label).replace(/"/g, '&quot;');
+            return `<button type="button" data-line-msg="${msg}" class="block w-full text-center py-2 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-bold text-xs transition">
+              ${escapeHtml(btn.action.label)}
+            </button>`;
+          }
           const color = btn.color || '#059669';
           const isJs = btn.action.uri && btn.action.uri.startsWith('javascript:');
           const targetAttr = isJs ? '' : 'target="_blank" rel="noopener"';

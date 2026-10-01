@@ -1,6 +1,8 @@
 package com.agridispatch.linebot;
 
 import java.io.File;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -157,12 +159,152 @@ public class FlexMessageBuilder {
               { "type": "text", "text": "• 輸入「早鳥」：試算產季早鳥保證工時包", "size": "sm", "weight": "bold", "color": "#1E293B" },
               { "type": "text", "text": "• 輸入「機耕」：查看無人機代噴與農機排程", "size": "sm", "weight": "bold", "color": "#1E293B" },
               { "type": "text", "text": "• 輸入「薪資」：查詢農業部 8,800 元獎勵與薪資", "size": "sm", "weight": "bold", "color": "#1E293B" },
+              { "type": "text", "text": "• 輸入「黑轉白」：現有工班依身分轉為合法聘僱", "size": "sm", "weight": "bold", "color": "#1E293B" },
               { "type": "text", "text": "• 輸入「越南語」/「印尼語」：切換多語系介面", "size": "sm", "weight": "bold", "color": "#1E293B" }
             ]
           }
         }
         """;
         return wrapFlex("🌱 智農派工官方助理 - 服務導覽", bubble);
+    }
+
+    /**
+     * 9. 現有工班「黑轉白」身分分流（規則與前端 農業派遣主網站/legalize.html 一致）
+     * 欄位：指令關鍵字, 圖示, 身分, 轉換路徑, 路徑色, 是否改派補位, 說明
+     */
+    private static final String[][] LEGALIZE_TYPES = {
+        {"本國臨時工", "🧑‍🌾", "本國籍臨時工（未投保）", "可直接轉白", "#059669", "N",
+            "由合作社聘僱為農務士，簽約後依法加保勞保／就保／職災保險並申報薪資所得。"},
+        {"新住民", "🏠", "新住民（外籍／陸籍配偶）", "可直接轉白", "#059669", "N",
+            "依親居留之配偶在台工作免申請許可，上傳居留證審核後由合作社聘僱加保。陸籍配偶居留類別與工作資格【待確認】。"},
+        {"外籍學生", "🎓", "外籍學生／僑生", "有條件轉白", "#D97706", "N",
+            "須先取得工作許可，學期中每週最多 20 小時；許可前不得排班。農業勞務是否適用【待確認】。"},
+        {"借用移工", "🔁", "借用他人雇主的合法移工", "改派合法工班補位", "#E11D48", "Y",
+            "移工只能為申請許可的原雇主工作，借用即違法。請今日起停止使用並結清工資，空缺改由合作社外展工班補位。"},
+        {"失聯移工", "⚠️", "失聯（逃逸）移工", "改派合法工班補位", "#E11D48", "Y",
+            "依法無法就地合法化。請停止使用並結清工資，勿扣留證件；本人可洽移民署專勤隊或勞動部 1955 專線了解到案方式【待確認】。本系統不記錄其個資。"}
+    };
+
+    private static String webPageUrl(String page) {
+        String site = URLEncoder.encode("農業派遣主網站", StandardCharsets.UTF_8);
+        return Config.WEB_BASE_URL + "/" + site + "/" + page;
+    }
+
+    private static String messageButton(String label, String text) {
+        return """
+            { "type": "button", "style": "secondary", "height": "sm", "action": { "type": "message", "label": "%s", "text": "%s" } }"""
+                .formatted(escapeJson(label), escapeJson(text));
+    }
+
+    private static String uriButton(String label, String uri, String color) {
+        return """
+            { "type": "button", "style": "primary", "height": "sm", "color": "%s", "action": { "type": "uri", "label": "%s", "uri": "%s" } }"""
+                .formatted(color, escapeJson(label), escapeJson(uri));
+    }
+
+    /**
+     * 依訊息內容回傳黑轉白卡片：含身分關鍵字回傳該身分的轉換路徑，否則回傳身分選單
+     */
+    public static String getLegalizeFlex(String text) {
+        String clean = text == null ? "" : text;
+        for (String[] t : LEGALIZE_TYPES) {
+            if (clean.contains(t[0])) {
+                return getLegalizeTypeFlex(t);
+            }
+        }
+        return getLegalizeIntroFlex();
+    }
+
+    private static String getLegalizeIntroFlex() {
+        StringBuilder buttons = new StringBuilder();
+        for (String[] t : LEGALIZE_TYPES) {
+            buttons.append(messageButton(t[1] + " " + t[2], "黑轉白：" + t[0])).append(",\n");
+        }
+        buttons.append(uriButton("📋 開啟轉換中心（整班盤點）", webPageUrl("legalize.html"), "#06C755"));
+
+        String bubble = """
+        {
+          "type": "bubble",
+          "header": {
+            "type": "box",
+            "layout": "vertical",
+            "backgroundColor": "#0E7490",
+            "paddingAll": "20px",
+            "contents": [
+              { "type": "text", "text": "智農派工 AgriDispatch", "color": "#A5F3FC", "size": "xs", "weight": "bold" },
+              { "type": "text", "text": "🔄 現有工班黑轉白", "color": "#FFFFFF", "size": "lg", "weight": "bold" }
+            ]
+          },
+          "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "paddingAll": "20px",
+            "contents": [
+              { "type": "text", "text": "請選擇這位工人目前的身分，我告訴您怎麼轉：", "size": "sm", "color": "#1E293B", "wrap": true },
+              { "type": "text", "text": "※ 示範流程；標示【待確認】處以律師或主管機關意見為準", "size": "xxs", "color": "#64748B", "wrap": true }
+            ]
+          },
+          "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "paddingAll": "16px",
+            "contents": [
+%s
+            ]
+          }
+        }
+        """.formatted(buttons);
+        return wrapFlex("🔄 現有工班黑轉白 - 請選擇工人身分", bubble);
+    }
+
+    private static String getLegalizeTypeFlex(String[] t) {
+        boolean replace = "Y".equals(t[5]);
+        String action = replace
+                ? uriButton("🚐 改派合法工班補位", webPageUrl("farmer.html?workers=1&from=legalize"), "#06C755")
+                : uriButton("✅ 到轉換中心開始轉白", webPageUrl("legalize.html"), "#06C755");
+
+        String bubble = """
+        {
+          "type": "bubble",
+          "header": {
+            "type": "box",
+            "layout": "vertical",
+            "backgroundColor": "%s",
+            "paddingAll": "20px",
+            "contents": [
+              { "type": "text", "text": "現有工班黑轉白", "color": "#FFFFFF", "size": "xs", "weight": "bold" },
+              { "type": "text", "text": "%s %s", "color": "#FFFFFF", "size": "lg", "weight": "bold", "wrap": true }
+            ]
+          },
+          "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "md",
+            "paddingAll": "20px",
+            "contents": [
+              { "type": "box", "layout": "baseline", "contents": [
+                  { "type": "text", "text": "轉換路徑", "size": "sm", "color": "#64748B", "flex": 2 },
+                  { "type": "text", "text": "%s", "size": "sm", "color": "%s", "weight": "bold", "flex": 4 }
+              ]},
+              { "type": "text", "text": "%s", "size": "sm", "color": "#1E293B", "wrap": true }
+            ]
+          },
+          "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "paddingAll": "16px",
+            "contents": [
+%s,
+%s
+            ]
+          }
+        }
+        """.formatted(t[4], t[1], escapeJson(t[2]), escapeJson(t[3]), t[4], escapeJson(t[6]),
+                action, messageButton("↩ 選擇其他身分", "黑轉白"));
+        return wrapFlex("🔄 黑轉白：" + t[2] + "（" + t[3] + "）", bubble);
     }
 
     /**

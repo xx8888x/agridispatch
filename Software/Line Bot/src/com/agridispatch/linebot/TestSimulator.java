@@ -27,6 +27,7 @@ public class TestSimulator {
         System.out.println("  6. 越南語      -> 切換為越南語模式 (再打 'nhiệm vụ')");
         System.out.println("  7. 印尼語      -> 切換為印尼語模式 (再打 'tugas')");
         System.out.println("  8. 帳號綁定    -> 查看帳號綁定引導卡");
+        System.out.println("  9. 黑轉白      -> 現有工班依身分分流轉為合法聘僱");
         System.out.println("  輸入 'exit' 或 'quit' 退出測試。");
         System.out.println("==================================================================");
 
@@ -58,7 +59,7 @@ public class TestSimulator {
      */
     private static void runAutomatedCheck() {
         System.out.println("⚡ 正在執行核心指令自動檢測...");
-        String[] testCases = {"派工", "避險", "早鳥", "機耕", "薪資", "越南語", "nhiệm vụ", "繁體中文"};
+        String[] testCases = {"派工", "避險", "早鳥", "機耕", "薪資", "黑轉白", "黑轉白：失聯移工", "越南語", "nhiệm vụ", "繁體中文"};
         String userId = "U_AUTO_CHECK";
 
         for (String cmd : testCases) {

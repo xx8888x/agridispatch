@@ -20,6 +20,13 @@ public class Config {
     public static boolean IS_MOCK_MODE = true;
 
     /**
+     * Flex 卡片按鈕連結的前端網站根網址 (其下為 農業派遣主網站/、linebot/ 等子站)。
+     * 實機 LINE 必須改成手機連得到的公開 https 網址。
+     * 來源：環境變數 WEB_BASE_URL，或 config.properties 的 web.base.url。
+     */
+    public static String WEB_BASE_URL = "http://localhost:3000/demo";
+
+    /**
      * /api/config 等管理端點的存取金鑰。未設定 (null) 時，該類 API 應整體停用並回應 403，
      * 不可只靠「僅允許本機」當保護，因為透過 localtunnel/ngrok 對外時本機也會收到來自 127.0.0.1 的請求。
      * 來源：環境變數 LINEBOT_ADMIN_KEY，或 config.properties 的 admin.key。
@@ -69,6 +76,12 @@ public class Config {
 
         String envBackend = System.getenv("BACKEND_API_BASE");
         BACKEND_API_BASE = envBackend != null ? envBackend : prop.getProperty("backend.api.base", BACKEND_API_BASE);
+
+        String envWebBase = System.getenv("WEB_BASE_URL");
+        String webBase = (envWebBase != null && !envWebBase.isBlank())
+                ? envWebBase
+                : prop.getProperty("web.base.url", WEB_BASE_URL);
+        WEB_BASE_URL = webBase.trim().replaceAll("/+$", "");
 
         String envAdminKey = System.getenv("LINEBOT_ADMIN_KEY");
         String adminKey = (envAdminKey != null && !envAdminKey.isBlank())

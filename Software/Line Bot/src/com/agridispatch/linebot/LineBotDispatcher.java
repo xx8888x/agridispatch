@@ -30,7 +30,12 @@ public class LineBotDispatcher {
             return FlexMessageBuilder.wrapText("🌐 請輸入欲切換的語言名稱：\n• 輸入「繁體中文」\n• 輸入「越南語」(Tiếng Việt)\n• 輸入「印尼語」(Bahasa Indonesia)");
         }
 
-        // 2. 今日派工 / 任務卡
+        // 2. 現有工班黑轉白（須在「派工」之前判斷，避免「改派」等字被派工規則吃掉）
+        if (clean.contains("黑轉白") || clean.contains("黑工")) {
+            return FlexMessageBuilder.getLegalizeFlex(clean);
+        }
+
+        // 3. 今日派工 / 任務卡
         if (clean.contains("派工") || clean.contains("任務") || clean.contains("工單") 
                 || clean.contains("task") || clean.contains("nhiệm vụ") || clean.contains("tugas")) {
             // 若為外籍移工語言模式或特定移工帳號，回傳三語任務卡；否則回傳農場主派工單
@@ -41,34 +46,34 @@ public class LineBotDispatcher {
             }
         }
 
-        // 3. 突發暴雨天候避險
+        // 4. 突發暴雨天候避險
         if (clean.contains("避險") || clean.contains("天氣") || clean.contains("暴雨") || clean.contains("雨") 
                 || clean.contains("weather") || clean.contains("mưa") || clean.contains("hujan")) {
             return FlexMessageBuilder.getWeatherHedgeFlex();
         }
 
-        // 4. 早鳥工時包
+        // 5. 早鳥工時包
         if (clean.contains("早鳥") || clean.contains("預購") || clean.contains("優惠") || clean.contains("early")) {
             return FlexMessageBuilder.getEarlyBirdFlex();
         }
 
-        // 5. 本國機耕與無人機代噴
+        // 6. 本國機耕與無人機代噴
         if (clean.contains("機耕") || clean.contains("代噴") || clean.contains("無人機") || clean.contains("曳引機") || clean.contains("代耕")) {
             return FlexMessageBuilder.getMachineryTaskFlex();
         }
 
-        // 6. 薪資津貼與就業獎勵
+        // 7. 薪資津貼與就業獎勵
         if (clean.contains("薪資") || clean.contains("津貼") || clean.contains("8800") 
                 || clean.contains("獎勵") || clean.contains("lương") || clean.contains("gaji")) {
             return FlexMessageBuilder.getSalaryBonusFlex();
         }
 
-        // 7. 帳號綁定
+        // 8. 帳號綁定
         if (clean.contains("綁定") || clean.contains("帳號") || clean.contains("bind")) {
             return FlexMessageBuilder.getBindingFlex(userId);
         }
 
-        // 8. 預設回傳服務導覽說明卡
+        // 9. 預設回傳服務導覽說明卡
         return FlexMessageBuilder.getHelpMenuFlex();
     }
 }

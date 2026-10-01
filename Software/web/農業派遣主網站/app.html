@@ -212,7 +212,7 @@
                 <input type="radio" name="calc-plan" value="early_bird" checked class="sr-only">
                 <div class="flex items-center justify-between mb-1">
                   <span class="text-xs font-black text-emerald-400">★ 推薦早鳥包</span>
-                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950 font-bold">9 折</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950 font-bold">315/hr</span>
                 </div>
                 <span class="text-sm font-bold text-white">產季早鳥工時包</span>
                 <span class="text-[11px] text-slate-400 mt-1">預付 20% 定金，享搶工期 100% 保證出工</span>
@@ -238,7 +238,7 @@
           <div class="p-5 rounded-xl bg-slate-900/90 border border-slate-700 space-y-4">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
               <span class="text-xs font-bold uppercase tracking-wider text-slate-400">智慧派工試算摘要</span>
-              <span id="calc-out-savings" class="text-xs font-bold text-emerald-400">已省下 NT$ 4,200 (10% 優惠)</span>
+              <span id="calc-out-savings" class="text-xs font-bold text-emerald-400">鎖定名額・優先排班</span>
             </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
@@ -251,18 +251,18 @@
                 <span id="calc-out-workers" class="text-xs font-bold text-emerald-400">4 位 (約 4.4 天)</span>
               </div>
               <div class="p-2.5 rounded-lg bg-slate-800/80">
-                <span class="text-[11px] text-slate-400 block">原價牌價</span>
-                <span id="calc-out-standard" class="text-xs line-through text-slate-400">NT$ 42,000</span>
+                <span class="text-[11px] text-slate-400 block">牌告標準金額</span>
+                <span id="calc-out-standard" class="text-xs text-slate-400">NT$ 44,100</span>
               </div>
               <div class="p-2.5 rounded-lg bg-emerald-950/60 border border-emerald-500/40">
                 <span class="text-[11px] text-emerald-300 block font-semibold">應付總額</span>
-                <span id="calc-out-final" class="text-base font-black text-emerald-400">NT$ 37,800</span>
+                <span id="calc-out-final" class="text-base font-black text-emerald-400">NT$ 44,100</span>
               </div>
             </div>
 
             <div class="flex items-center justify-between text-xs text-slate-400 px-1">
-              <span>所選方案：<strong id="calc-out-plan-desc" class="text-slate-200">產季早鳥工時包 (9折優惠)</strong></span>
-              <span>簽約定金：<strong id="calc-out-deposit" class="text-amber-400">NT$ 7,560 (20%)</strong></span>
+              <span>所選方案：<strong id="calc-out-plan-desc" class="text-slate-200">產季早鳥工時包 (315/hr・鎖定名額)</strong></span>
+              <span>簽約定金：<strong id="calc-out-deposit" class="text-amber-400">NT$ 8,820 (20%)</strong></span>
             </div>
           </div>
 
@@ -286,9 +286,9 @@
               <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
                 <div>
                   <strong class="text-white block">發票號碼：AG-98765432</strong>
-                  <span class="text-slate-400">發票金額：NT$ 45,360 (含稅可扣抵)</span>
+                  <span class="text-slate-400">發票金額：NT$ 52,920 (含稅可扣抵)</span>
                 </div>
-                <button onclick="AgriDocs.downloadInvoice('ORD-2026-001', { invoiceNo: 'AG-98765432', amount: 45360, deposit: 9072, cropName: '屏東枋山愛文芒果產區 (6.0 分地)' })" class="px-2.5 py-1 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30 transition">下載 PDF</button>
+                <button onclick="AgriDocs.downloadInvoice('ORD-2026-001', { invoiceNo: 'AG-98765432', amount: 52920, deposit: 10584, cropName: '屏東枋山愛文芒果產區 (6.0 分地)' })" class="px-2.5 py-1 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30 transition">下載 PDF</button>
               </div>
             </div>
           </div>

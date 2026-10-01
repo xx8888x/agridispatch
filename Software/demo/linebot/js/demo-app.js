@@ -123,12 +123,12 @@ function initCalculator() {
 
     let unitRate = crop.rate;
     let discount = 1.0;
-    let planDesc = "【Tier 1】核心外展移工主力早鳥包 (9折・享保證出工特權)";
+    let planDesc = "【Tier 1】核心外展移工主力早鳥包 (鎖定名額・優先排班)";
     let surcharge = zone === 'cross_region' ? 1200 : 0;
 
     if (plan === 'early_bird') {
-      discount = 0.90; // 9折
-      planDesc = "【Tier 1】核心外展移工早鳥包 (預售 9 折・20%定金鎖定)";
+      unitRate = 315; // 早鳥不打折：統一 315 元/hr，誘因為鎖定名額・優先排班
+      planDesc = "【Tier 1】核心外展移工早鳥包 ($315/hr・鎖定名額・優先排班・20%定金)";
     } else if (plan === 'hourly_flex') {
       discount = 1.0;
       unitRate = 310;
@@ -148,9 +148,10 @@ function initCalculator() {
     setText('calc-out-workers', `${suggestedWorkers} 位專業農工 (約 ${estDays} 天完工)`);
     setText('calc-out-plan-desc', planDesc);
     setText('calc-out-standard', `NT$ ${(standardTotal + surcharge).toLocaleString()}`);
+    document.getElementById('calc-out-standard')?.classList.toggle('line-through', savings > 0);
     setText('calc-out-final', `NT$ ${actualTotal.toLocaleString()}`);
     setText('calc-out-deposit', deposit > 0 ? `NT$ ${deposit.toLocaleString()} (${plan === 'early_bird' ? '20% 鎖約定金' : '30% 備料款'})` : '免預付 (完工結算)');
-    setText('calc-out-savings', savings > 0 ? `已省下 NT$ ${savings.toLocaleString()} (${Math.round((1 - discount) * 100)}% 優惠)` : (surcharge > 0 ? `跨區專車 +$1,200` : '一般標準費率'));
+    setText('calc-out-savings', savings > 0 ? `已省下 NT$ ${savings.toLocaleString()} (${Math.round((1 - discount) * 100)}% 優惠)` : (surcharge > 0 ? `跨區專車 +$1,200` : (plan === 'early_bird' ? '鎖定名額・優先排班' : '一般標準費率')));
 
     const zoneBadge = document.getElementById('calc-out-zone-badge');
     if (zoneBadge) {

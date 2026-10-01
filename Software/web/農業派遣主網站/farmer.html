@@ -208,7 +208,7 @@
             <span class="w-3 h-3 rounded-full bg-emerald-500"></span> 📝 線上填寫派工預約單
           </h2>
           <span class="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
-            早鳥 9 折預購中
+            早鳥鎖定名額中
           </span>
         </div>
 
@@ -273,7 +273,7 @@
                 <input type="radio" name="fPlan" value="early_bird" checked onchange="calcFarmerForm()" class="sr-only">
                 <div class="flex items-center justify-between mb-1">
                   <span class="text-xs font-black text-emerald-400">★ 推薦早鳥包</span>
-                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950 font-bold">9 折</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950 font-bold">315/hr</span>
                 </div>
                 <span class="text-xs font-bold text-white">產季早鳥工時包</span>
                 <span class="text-[11px] text-slate-400 mt-1">預付 20% 定金，保證產季出工</span>
@@ -344,7 +344,7 @@
             <div>
               <h4 class="text-blue-200 font-black text-sm mb-1.5">現在預約享「黑轉白」四大保障</h4>
               <ul class="text-xs text-slate-300 space-y-1 list-disc list-inside">
-                <li><span class="text-emerald-400 font-bold">早鳥定價：</span>提前預約享早鳥 9 折，並保留出工配額</li>
+                <li><span class="text-emerald-400 font-bold">早鳥定價：</span>提前預約鎖定產季名額、優先排班（315 元/hr 不打折）</li>
                 <li><span class="text-emerald-400 font-bold">合法雇用：</span>人員由合作社雇用並依法加保勞保／職災保險，免除非法容留外國人工作之罰鍰風險（就服法每人 15～75 萬）</li>
                 <li><span class="text-emerald-400 font-bold">通路認證：</span>完工可匯出出勤與合法用工證明，供產銷履歷與通路稽核使用</li>
                 <li><span class="text-emerald-400 font-bold">帳務透明：</span>開立合法發票，勞務費支出有憑有據，可交會計師依法列報</li>
@@ -368,7 +368,7 @@
 
           <div class="flex items-center justify-between border-b border-slate-800 pb-3">
             <span class="text-xs font-bold uppercase tracking-wider text-slate-400">智慧派工試算面板</span>
-            <span id="fOutSavings" class="text-xs font-bold text-emerald-400">已省下 NT$ 3,520 (早鳥 9 折)</span>
+            <span id="fOutSavings" class="text-xs font-bold text-emerald-400">早鳥 315 元/hr・鎖定名額・優先排班</span>
           </div>
 
           <div class="grid grid-cols-2 gap-3 text-center">
@@ -382,16 +382,16 @@
             </div>
             <div class="p-3 rounded-xl bg-slate-800/80">
               <span class="text-[11px] text-slate-400 block">牌告標準金額</span>
-              <span id="fOutStandard" class="text-xs line-through text-slate-500 font-mono">NT$ 35,200</span>
+              <span id="fOutStandard" class="text-xs line-through text-slate-500 font-mono">NT$ 40,320</span>
             </div>
             <div class="p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/40">
               <span class="text-[11px] text-emerald-300 block font-semibold">應付總額 (早鳥)</span>
-              <span id="fOutFinal" class="text-lg font-black text-emerald-400 font-mono">NT$ 31,680</span>
+              <span id="fOutFinal" class="text-lg font-black text-emerald-400 font-mono">NT$ 40,320</span>
             </div>
           </div>
 
           <div class="flex items-center justify-between text-xs text-slate-300 pt-2 border-t border-slate-800/80">
-            <span>定金 (20% 鎖約)：<strong id="fOutDeposit" class="text-amber-400 font-mono">NT$ 6,336</strong></span>
+            <span>定金 (20% 鎖約)：<strong id="fOutDeposit" class="text-amber-400 font-mono">NT$ 8,064</strong></span>
             <span class="text-[11px] text-slate-400">保證產季充足人力</span>
           </div>
         </div>
@@ -420,7 +420,7 @@
               <div class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold flex-shrink-0">1</div>
               <div>
                 <strong class="text-white block">線上填單・鎖定早鳥配額</strong>
-                <span class="text-slate-400">填寫作物面積、自訂現場小工頭與需求人數，享早鳥 9 折與充足外展工班。</span>
+                <span class="text-slate-400">填寫作物面積、自訂現場小工頭與需求人數，早鳥 315 元/hr 鎖定名額、優先排班與充足外展工班。</span>
               </div>
             </div>
             <div class="flex items-start gap-3">
@@ -540,8 +540,8 @@
             </div>
             <div class="p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700/60 space-y-1.5">
               <span class="text-slate-400 font-semibold block">💰 費用明細與合規發票</span>
-              <div class="text-sm font-bold text-amber-400 font-mono">總額 NT$ 45,360</div>
-              <p class="text-[11px] text-slate-300">已付 20% 定金：<span class="text-emerald-400 font-mono">NT$ 9,072</span></p>
+              <div class="text-sm font-bold text-amber-400 font-mono">總額 NT$ 52,920</div>
+              <p class="text-[11px] text-slate-300">已付 20% 定金：<span class="text-emerald-400 font-mono">NT$ 10,584</span></p>
               <p class="text-[10px] text-slate-400">發票號碼：<span class="font-mono text-slate-200">AG-98765432</span></p>
             </div>
           </div>
@@ -563,7 +563,7 @@
               <span class="text-xs text-slate-400">外銷採收良率：<strong class="text-emerald-400 font-mono">96.8%</strong> (留蒂 ≥ 0.5cm)</span>
             </div>
             <div class="flex items-center gap-2">
-              <button onclick="AgriDocs.downloadInvoice('ORD-2026-013', { invoiceNo: 'AG-98765432', cropName: '枋山愛文芒果 (6.0 分地)', amount: 45360, deposit: 9072 })" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-xs font-bold border border-emerald-500/30 transition flex items-center gap-1 shadow">
+              <button onclick="AgriDocs.downloadInvoice('ORD-2026-013', { invoiceNo: 'AG-98765432', cropName: '枋山愛文芒果 (6.0 分地)', amount: 52920, deposit: 10584 })" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-xs font-bold border border-emerald-500/30 transition flex items-center gap-1 shadow">
                 <span>📄</span> 下載發票 PDF
               </button>
               <button onclick="AgriDocs.showGpsLocation('🚐 專車 GPS 即時定位', '屏東枋山集貨場專車，預計明日清晨 06:50 抵達果園門口。')" class="px-3 py-1.5 rounded-xl bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 text-xs font-bold border border-blue-500/30 transition flex items-center gap-1">
@@ -615,8 +615,8 @@
             </div>
             <div class="p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700/60 space-y-1.5">
               <span class="text-slate-400 font-semibold block">💰 費用明細</span>
-              <div class="text-sm font-bold text-amber-400 font-mono">總額 NT$ 34,560</div>
-              <p class="text-[11px] text-slate-300">待付定金 (20%)：<span class="text-amber-300 font-mono font-bold">NT$ 6,912</span></p>
+              <div class="text-sm font-bold text-amber-400 font-mono">總額 NT$ 40,320</div>
+              <p class="text-[11px] text-slate-300">待付定金 (20%)：<span class="text-amber-300 font-mono font-bold">NT$ 8,064</span></p>
               <p class="text-[10px] text-slate-400">支付定金後即啟動專車派遣與早鳥鎖約</p>
             </div>
           </div>
@@ -624,11 +624,11 @@
           <!-- Action Buttons -->
           <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800">
             <div class="text-xs text-slate-400">
-              早鳥優惠：已折抵 10% (省下 NT$ 3,840)
+              早鳥 315 元/hr：已鎖定產季名額・優先排班
             </div>
             <div class="flex items-center gap-2">
-              <button onclick="const parent = this.parentElement; AgriDocs.openPaymentCashier('ORD-2026-014', 6912, '苗栗卓蘭高接梨 (4分地)', '卓蘭果園', (data) => { parent.innerHTML = '<span class=\'text-emerald-400 font-bold text-xs flex items-center gap-1\'>✓ 定金已付清</span> <button onclick=\'AgriDocs.downloadInvoice(\&quot;ORD-2026-014\&quot;, { invoiceNo: \&quot;' + (data.invoiceNo || 'AG-88192041') + '\&quot;, cropName: \&quot;苗栗卓蘭高接梨 (4分地)\&quot;, amount: 22400, deposit: 4480 })\' class=\'px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-xs font-bold border border-emerald-500/30 transition flex items-center gap-1\'><span>📄</span> 下載發票 PDF</button>'; })" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition flex items-center gap-1.5">
-                <span>💳</span> 線上支付 20% 定金 (NT$ 6,912)
+              <button onclick="const parent = this.parentElement; AgriDocs.openPaymentCashier('ORD-2026-014', 8064, '苗栗卓蘭高接梨 (4分地)', '卓蘭果園', (data) => { parent.innerHTML = '<span class=\'text-emerald-400 font-bold text-xs flex items-center gap-1\'>✓ 定金已付清</span> <button onclick=\'AgriDocs.downloadInvoice(\&quot;ORD-2026-014\&quot;, { invoiceNo: \&quot;' + (data.invoiceNo || 'AG-88192041') + '\&quot;, cropName: \&quot;苗栗卓蘭高接梨 (4分地)\&quot;, amount: 22400, deposit: 4480 })\' class=\'px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-xs font-bold border border-emerald-500/30 transition flex items-center gap-1\'><span>📄</span> 下載發票 PDF</button>'; })" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition flex items-center gap-1.5">
+                <span>💳</span> 線上支付 20% 定金 (NT$ 8,064)
               </button>
               <button onclick="switchFarmerTab('booking')" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold border border-slate-700 transition">
                 ✏️ 修改預約
@@ -884,6 +884,11 @@
       document.getElementById('fForemanNotes').value = '農場主本人親自現場帶隊指揮調度';
     }
 
+    // 早鳥工時包不打折：統一 315 元/hr（每人日 8 小時 = 2,520 元）；無人機專隊按組日計價，不適用
+    function earlyBirdDayRate(planVal, category, dayRate) {
+      return planVal === 'early_bird' && category !== 'drone_pest_control' ? 315 * 8 : dayRate;
+    }
+
     function calcFarmerForm() {
       const catSelect = document.getElementById('fCategory');
       const unitRate = parseInt(catSelect.options[catSelect.selectedIndex].getAttribute('data-rate') || '2200', 10);
@@ -895,11 +900,9 @@
       const planVal = planRadio ? planRadio.value : 'early_bird';
 
       const totalHours = workers * days * 8;
-      const stdAmount = workers * days * unitRate;
+      const stdAmount = workers * days * earlyBirdDayRate(planVal, catSelect.value, unitRate);
 
-      let discountRate = 0;
-      if (planVal === 'early_bird') discountRate = 0.10;
-      else if (planVal === 'lump_sum') discountRate = 0.05;
+      const discountRate = planVal === 'lump_sum' ? 0.05 : 0;
 
       const discountAmt = Math.round(stdAmount * discountRate);
       const finalAmt = stdAmount - discountAmt;
@@ -907,10 +910,12 @@
 
       document.getElementById('fOutHours').innerText = `${totalHours} 小時`;
       document.getElementById('fOutWorkers').innerText = `${workers} 人 ╳ ${days} 天 (${acreage} 分地)`;
-      document.getElementById('fOutStandard').innerText = `NT$ ${stdAmount.toLocaleString()}`;
+      const stdEl = document.getElementById('fOutStandard');
+      stdEl.innerText = `NT$ ${stdAmount.toLocaleString()}`;
+      stdEl.classList.toggle('line-through', discountAmt > 0);
       document.getElementById('fOutFinal').innerText = `NT$ ${finalAmt.toLocaleString()}`;
       document.getElementById('fOutDeposit').innerText = `NT$ ${depositAmt.toLocaleString()}`;
-      document.getElementById('fOutSavings').innerText = discountAmt > 0 ? `已省下 NT$ ${discountAmt.toLocaleString()} (${Math.round(discountRate * 100)}% 優惠)` : '標準費率計價';
+      document.getElementById('fOutSavings').innerText = discountAmt > 0 ? `已省下 NT$ ${discountAmt.toLocaleString()} (${Math.round(discountRate * 100)}% 優惠)` : (planVal === 'early_bird' ? '早鳥 315 元/hr・鎖定名額・優先排班' : '標準費率計價');
     }
 
     async function submitFarmerBooking(e) {
@@ -930,8 +935,8 @@
       const planVal = planRadio ? planRadio.value : 'early_bird';
 
       const totalHours = workers * days * 8;
-      const stdAmount = workers * days * unitRate;
-      const discountRate = planVal === 'early_bird' ? 0.10 : (planVal === 'lump_sum' ? 0.05 : 0);
+      const stdAmount = workers * days * earlyBirdDayRate(planVal, catSelect.value, unitRate);
+      const discountRate = planVal === 'lump_sum' ? 0.05 : 0;
       const finalAmt = stdAmount - Math.round(stdAmount * discountRate);
       const depositAmt = Math.round(finalAmt * 0.20);
 
@@ -944,7 +949,7 @@
         cropName: cropSelect.options[cropSelect.selectedIndex].text.split(' ')[1] || cropSelect.value,
         area: acreage,
         plan: planVal,
-        planName: planVal === 'early_bird' ? '早鳥預購包 (9折)' : (planVal === 'lump_sum' ? '專案統包一口價' : '彈性工時約'),
+        planName: planVal === 'early_bird' ? '早鳥預購包 (315/hr・鎖定名額)' : (planVal === 'lump_sum' ? '專案統包一口價' : '彈性工時約'),
         dispatchCategory: catSelect.value,
         categoryName: catSelect.options[catSelect.selectedIndex].text,
         transportZone: '南部核心產區',

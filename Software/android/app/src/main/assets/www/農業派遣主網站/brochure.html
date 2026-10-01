@@ -253,12 +253,16 @@
           </div>
 
           <div class="p-5 rounded-2xl bg-white border border-emerald-300 text-center min-w-[210px] shadow-sm flex-shrink-0">
-            <span class="text-xs line-through text-slate-400 block">牌告價 NT$ {{ (currentDm.originalPrice || 0).toLocaleString() }}</span>
+            <span v-if="(currentDm.originalPrice || 0) > (currentDm.discountPrice || 0)" class="text-xs line-through text-slate-400 block">牌告價 NT$ {{ (currentDm.originalPrice || 0).toLocaleString() }}</span>
+            <span v-else class="text-xs text-slate-400 block">{{ currentDm.hours || 0 }} 工時 × NT$ 315</span>
             <span class="text-2xl sm:text-3xl font-black text-emerald-700 block font-mono">
               NT$ {{ (currentDm.discountPrice || 0).toLocaleString() }}
             </span>
-            <span class="text-xs font-bold text-emerald-600 block mt-0.5">
-              （現省 NT$ {{ ((currentDm.originalPrice || 0) - (currentDm.discountPrice || 0)).toLocaleString() }} 元 / 享早鳥折扣）
+            <span v-if="(currentDm.originalPrice || 0) > (currentDm.discountPrice || 0)" class="text-xs font-bold text-emerald-600 block mt-0.5">
+              （現省 NT$ {{ ((currentDm.originalPrice || 0) - (currentDm.discountPrice || 0)).toLocaleString() }} 元）
+            </span>
+            <span v-else class="text-xs font-bold text-emerald-600 block mt-0.5">
+              （不打折・鎖定產季名額、優先排班）
             </span>
             <div class="mt-3 pt-3 border-t border-slate-100">
               <span class="text-[11px] text-slate-500 block">簽約 20% 定金僅需</span>
@@ -393,14 +397,14 @@
             badge: '★ 產銷班長指名推薦款',
             icon: '🥭',
             themeColor: 'emerald',
-            originalPrice: 18000,
-            discountPrice: 16200,
+            originalPrice: 18900,
+            discountPrice: 18900,
             depositRate: 20,
-            depositAmount: 3240,
+            depositAmount: 3780,
             hours: 60,
             workers: 4,
             days: 2,
-            description: '內含 60 個標準外展技術工時（約 4 位熟練農工出勤 2 天）。產季前 60 天預購享 9 折優惠，預付 20% 定金即可鎖定黃金採收期第一優先出工特權！',
+            description: '內含 60 個標準外展技術工時（約 4 位熟練農工出勤 2 天）。產季前 60 天預購，每小時 315 元不打折；預付 20% 定金即可鎖定產季名額、優先排班，遲到免單、放鳥雙倍賠！',
             featuresJson: JSON.stringify([
               { icon: '🛡️', title: '保證 1：保證出工，違約雙倍賠償', desc: '合約簽訂後，約定出工日清晨 07:00 前專車準時送抵田門口。因平台失誤導致延遲，當日工資全免並加倍賠償農損！' },
               { icon: '✂️', title: '保證 2：外銷採收 SOP，保護果粉', desc: '全程配戴細絨棉手套，嚴禁手指摩擦果粉。蒂頭精準保留 0.5～1.0 公分，輕採輕放，特級品良率高達 95% 以上！' },
@@ -432,10 +436,10 @@
             badge: '★ 全年常態合作滿意度 99.8%',
             icon: '🥬',
             themeColor: 'lime',
-            originalPrice: 33600,
-            discountPrice: 30240,
+            originalPrice: 37800,
+            discountPrice: 37800,
             depositRate: 20,
-            depositAmount: 6048,
+            depositAmount: 7560,
             hours: 120,
             workers: 6,
             days: 4,
@@ -510,10 +514,10 @@
             badge: '★ 防颱 24 小時快速馳援保證',
             icon: '❄️',
             themeColor: 'cyan',
-            originalPrice: 22000,
-            discountPrice: 19800,
+            originalPrice: 25200,
+            discountPrice: 25200,
             depositRate: 20,
-            depositAmount: 3960,
+            depositAmount: 5040,
             hours: 80,
             workers: 5,
             days: 2,

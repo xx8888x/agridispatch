@@ -170,7 +170,7 @@
                 <ul class="list-disc list-inside text-[11px] text-slate-600 space-y-0.5">
                   <li>📋 查閱今日出工與專車司機</li>
                   <li>🌧️ 突發暴雨室內冷鏈避險通報</li>
-                  <li>⚡ 產季早鳥保證工時包 9 折試算</li>
+                  <li>⚡ 產季早鳥保證工時包試算 (315 元/hr)</li>
                   <li>🇻🇳/🇮🇩 移工母語工單切換</li>
                 </ul>
               </div>
@@ -210,7 +210,7 @@
                   </div>
                   <div class="flex justify-between items-center text-[11px] pt-1 border-t border-slate-200">
                     <span class="text-slate-500">應付金額</span>
-                    <span class="font-extrabold text-emerald-600 text-xs">NT$ 45,360 (定金已收 20%)</span>
+                    <span class="font-extrabold text-emerald-600 text-xs">NT$ 52,920 (定金已收 20%)</span>
                   </div>
                 </div>
                 <div class="p-2 bg-white flex gap-1.5 border-t border-slate-100">
@@ -254,7 +254,7 @@
             <button onclick="handleQuickCmd('早鳥工時包')" class="p-2.5 rounded-lg bg-gradient-to-b from-amber-950 to-slate-900 hover:from-amber-900 hover:to-slate-800 text-center transition flex flex-col items-center justify-center gap-1 group border border-amber-900/40 cursor-pointer">
               <span class="text-lg group-hover:scale-110 transition-transform">⚡</span>
               <span class="text-[11px] font-bold text-amber-300">早鳥工時包</span>
-              <span class="text-[9px] text-amber-400/80">享9折保證出工</span>
+              <span class="text-[9px] text-amber-400/80">鎖定名額・優先排班</span>
             </button>
             <!-- Grid 3 -->
             <button onclick="handleQuickCmd('天候避險')" class="p-2.5 rounded-lg bg-gradient-to-b from-blue-950 to-slate-900 hover:from-blue-900 hover:to-slate-800 text-center transition flex flex-col items-center justify-center gap-1 group border border-blue-900/40 cursor-pointer">
@@ -292,7 +292,7 @@
             <span>📋</span> 查派工單
           </button>
           <button onclick="handleQuickCmd('早鳥工時包')" class="px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-medium transition flex items-center gap-1 shrink-0 cursor-pointer">
-            <span>⚡</span> 早鳥9折
+            <span>⚡</span> 早鳥工時包
           </button>
           <button onclick="handleQuickCmd('天候避險')" class="px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-blue-300 border border-blue-500/30 font-medium transition flex items-center gap-1 shrink-0 cursor-pointer">
             <span>🌧️</span> 暴雨避險
@@ -421,7 +421,7 @@
               <span class="text-2xl group-hover:scale-110 transition-transform">⚡</span>
               <div>
                 <div class="font-bold text-xs text-white">2026 產季早鳥保證工時包促銷</div>
-                <div class="text-[10px] text-amber-200">預付 20% 定金享 9 折，承諾「遲到免單、放鳥雙倍賠」</div>
+                <div class="text-[10px] text-amber-200">315 元/hr・預付 20% 定金鎖定名額，承諾「遲到免單、放鳥雙倍賠」</div>
               </div>
             </div>
             <span class="px-2 py-1 rounded bg-amber-600 text-white text-[10px] font-bold">推播發送</span>
@@ -567,7 +567,7 @@
         buttons: [
           { cmd: '查派工單', icon: '📋', title: '我的派工單', desc: 'ORD-001/車號/進度', bg: 'from-slate-800 to-slate-900', titleCol: 'text-white', descCol: 'text-slate-400', border: 'border-slate-800' },
           { cmd: '黑轉白', icon: '🔄', title: '現有工班黑轉白', desc: '依身分合法轉換', bg: 'from-cyan-950 to-slate-900', titleCol: 'text-cyan-300', descCol: 'text-cyan-400/80', border: 'border-cyan-500/40' },
-          { cmd: '早鳥工時包', icon: '⚡', title: '早鳥工時包', desc: '享9折保證出工', bg: 'from-amber-950 to-slate-900', titleCol: 'text-amber-300', descCol: 'text-amber-400/80', border: 'border-amber-900/40' },
+          { cmd: '早鳥工時包', icon: '⚡', title: '早鳥工時包', desc: '鎖定名額・優先排班', bg: 'from-amber-950 to-slate-900', titleCol: 'text-amber-300', descCol: 'text-amber-400/80', border: 'border-amber-900/40' },
           { cmd: '天候避險', icon: '🌧️', title: '暴雨天候避險', desc: '冷鏈轉移通報', bg: 'from-blue-950 to-slate-900', titleCol: 'text-blue-300', descCol: 'text-blue-400/80', border: 'border-blue-900/40' },
           { cmd: '機耕代噴', icon: '🚜', title: '預約專業機耕', desc: 'T50植保/80hp深耕', bg: 'from-slate-800 to-slate-900', titleCol: 'text-white', descCol: 'text-slate-400', border: 'border-slate-800' },
           { cmd: '快速叫工', icon: '⚡', title: '明日急件叫工', desc: '一鍵叫合法工班', bg: 'from-purple-950 to-slate-900', titleCol: 'text-purple-300', descCol: 'text-purple-400/80', border: 'border-purple-500/40' },
@@ -577,7 +577,7 @@
         chips: [
           { cmd: '黑轉白', icon: '🔄', text: '現有工班黑轉白', color: 'text-cyan-300' },
           { cmd: '查派工單', icon: '📋', text: '查派工單', color: 'text-emerald-300' },
-          { cmd: '早鳥工時包', icon: '⚡', text: '早鳥9折', color: 'text-amber-300' },
+          { cmd: '早鳥工時包', icon: '⚡', text: '早鳥工時包', color: 'text-amber-300' },
           { cmd: '天候避險', icon: '🌧️', text: '暴雨避險', color: 'text-blue-300' },
           { cmd: '查產曆', icon: '📅', text: '查全台產曆', color: 'text-sky-300' },
           { cmd: '查費率', icon: '💰', text: '查服務費率', color: 'text-amber-300' }
@@ -1389,7 +1389,7 @@
               { layout: 'baseline', contents: [{ text: '📋 訂單進度', color: '#64748B' }, { text: '輸入「查訂單」或「ORD-2026-001」', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '📅 全台產曆', color: '#64748B' }, { text: '輸入「查產曆」、「芒果產季」、「洋蔥」', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '👷 工班人力', color: '#64748B' }, { text: '輸入「查工班」、「工班B組」、「外展移工」', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '💰 服務費率', color: '#64748B' }, { text: '輸入「查費率」、「早鳥9折」、「防颱搶收」', color: '#0F172A' }] }
+              { layout: 'baseline', contents: [{ text: '💰 服務費率', color: '#64748B' }, { text: '輸入「查費率」、「早鳥」、「防颱搶收」', color: '#0F172A' }] }
             ]
           },
           footer: {
@@ -1423,7 +1423,7 @@
               { layout: 'baseline', contents: [{ text: '接送專車', color: '#64748B' }, { text: '智農 2 號車 (司機: 李大哥 0912-222-444)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '作業手路', color: '#64748B' }, { text: '留蒂 0.5cm 護果粉採收 / 完整驗收標準', color: '#047857' }] },
               { layout: 'baseline', contents: [{ text: '合約保障', color: '#64748B' }, { text: 'SLA 遲到免單、放鳥雙倍賠償、依法加保勞健保', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '總計金額', color: '#64748B' }, { text: 'NT$ 45,360 (早鳥9折 / 定金已收 20%)', color: '#047857' }] }
+              { layout: 'baseline', contents: [{ text: '總計金額', color: '#64748B' }, { text: 'NT$ 52,920 (早鳥 315/hr / 定金已收 20%)', color: '#047857' }] }
             ]
           },
           footer: {
@@ -1460,7 +1460,7 @@
           },
           footer: {
             contents: [
-              { action: { label: '⚡ 預購產季早鳥保證工時包 (9折)', uri: '../農業派遣主網站/farmer-login.html' }, color: '#D97706' },
+              { action: { label: '⚡ 預購產季早鳥保證工時包 (鎖定名額・優先排班)', uri: '../農業派遣主網站/farmer-login.html' }, color: '#D97706' },
               { action: { label: '🗓️ 瀏覽 52 週完整產曆動態輪播', uri: '../農業派遣主網站/index.html#calendar' }, color: '#2563EB' }
             ]
           }
@@ -1513,7 +1513,7 @@
           body: {
             contents: [
               { layout: 'baseline', contents: [{ text: '田間標準採收', color: '#64748B' }, { text: 'NT$ 300 / 小時 (基本工時)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '產季早鳥保證包', color: '#64748B' }, { text: 'NT$ 270 / 小時 (享 9 折，定金 20%)', color: '#D97706' }] },
+              { layout: 'baseline', contents: [{ text: '產季早鳥保證包', color: '#64748B' }, { text: 'NT$ 315 / 小時 (鎖定名額・優先排班，定金 20%)', color: '#D97706' }] },
               { layout: 'baseline', contents: [{ text: '防颱搶收馳援', color: '#64748B' }, { text: 'NT$ 360 / 小時 (24H 優先調度加乘)', color: '#DC2626' }] },
               { layout: 'baseline', contents: [{ text: '大型曳引機整地', color: '#64748B' }, { text: 'NT$ 310 / 小時 (80hp 機具另計)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '無人機精準代噴', color: '#64748B' }, { text: 'NT$ 250 / 分地 (大疆 T50 植保機)', color: '#047857' }] },
@@ -1570,15 +1570,15 @@
           header: {
             backgroundColor: '#78350F',
             contents: [
-              { text: '⚡ 2026 產季早鳥保證工時包 ｜ 9 折超值預購', color: '#FDE68A', size: 'xs', weight: 'bold' },
+              { text: '⚡ 2026 產季早鳥保證工時包 ｜ 鎖定產季名額', color: '#FDE68A', size: 'xs', weight: 'bold' },
               { text: '提早鎖定產季工班 ｜ 保證出工', color: '#FFFFFF', size: 'xl', weight: 'bold' },
-              { text: '預付 20% 定金享 9 折・承諾「遲到免單、放鳥雙倍賠」', color: '#FEF3C7', size: 'xs', weight: 'normal' }
+              { text: '315 元/hr 不打折・預付 20% 定金優先排班・承諾「遲到免單、放鳥雙倍賠」', color: '#FEF3C7', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
               { layout: 'baseline', contents: [{ text: '🥭 適用產季作物', color: '#64748B' }, { text: '枋山芒果、金鑽鳳梨、紅龍果、大西瓜', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '💰 優惠工時單價', color: '#64748B' }, { text: 'NT$ 270 / 小時 (原價 $300，現折 10%)', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '💰 早鳥工時單價', color: '#64748B' }, { text: 'NT$ 315 / 小時 (不打折・鎖定名額)', color: '#047857' }] },
               { layout: 'baseline', contents: [{ text: '🔒 保證出工承諾', color: '#64748B' }, { text: 'SLA 合約保障，旺季搶工絕不被挖角放鳥', color: '#D97706' }] },
               { layout: 'baseline', contents: [{ text: '🌧️ 暴雨天候避險', color: '#64748B' }, { text: '免費轉移冷鏈預冷包裝廠室內作業', color: '#2563EB' }] },
               { layout: 'baseline', contents: [{ text: '⏱️ 本季限量席位', color: '#64748B' }, { text: '限量 20 席，目前僅剩最後 4 席', color: '#DC2626' }] }
@@ -1928,7 +1928,7 @@
               { layout: 'baseline', contents: [{ text: '⭐ 手路評分', color: '#64748B' }, { text: '5.0 顆星 (優於外銷標準・零刮傷)', color: '#D97706' }] },
               { layout: 'baseline', contents: [{ text: '👷 帶工責任領班', color: '#64748B' }, { text: '林小祥 (簽章核銷完成)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '🧾 雙軌帳務發票', color: '#64748B' }, { text: '18%科技服務發票 #AG-882199 已雲端開立', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '💵 尾款核算', color: '#64748B' }, { text: 'NT$ 36,288 (早鳥9折扣除20%定金)', color: '#0F172A' }] }
+              { layout: 'baseline', contents: [{ text: '💵 尾款核算', color: '#64748B' }, { text: 'NT$ 42,336 (總額 52,920 扣除 20% 定金)', color: '#0F172A' }] }
             ]
           },
           footer: {
@@ -2204,7 +2204,7 @@
           body: {
             contents: [
               { text: '現正上架熱銷 DM 清單：', color: '#1E293B', size: 'xs', weight: 'bold' },
-              { layout: 'baseline', contents: [{ text: '🏷️ DM 1 (芒果早鳥)', color: '#64748B' }, { text: '枋山產季早鳥保證工時包 (9折・熱銷中)', color: '#D97706' }] },
+              { layout: 'baseline', contents: [{ text: '🏷️ DM 1 (芒果早鳥)', color: '#64748B' }, { text: '枋山產季早鳥保證工時包 (315/hr・熱銷中)', color: '#D97706' }] },
               { layout: 'baseline', contents: [{ text: '🏷️ DM 2 (防颱搶收)', color: '#64748B' }, { text: '颱風汛期緊急搶收馳援特約包 (保證24H出工)', color: '#DC2626' }] },
               { layout: 'baseline', contents: [{ text: '🏷️ DM 3 (智慧機耕)', color: '#64748B' }, { text: '大疆 T50 植保機代噴 ╳ 80hp 曳引機整地', color: '#047857' }] },
               { layout: 'baseline', contents: [{ text: '🏷️ DM 4 (暴雨避險)', color: '#64748B' }, { text: '冷鏈預冷中繼保全室內分級包 (零工時浪費)', color: '#2563EB' }] },

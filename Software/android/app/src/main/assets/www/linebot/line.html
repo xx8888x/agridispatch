@@ -568,7 +568,7 @@
           { cmd: '早鳥工時包', icon: '⚡', title: '早鳥工時包', desc: '享9折保證出工', bg: 'from-amber-950 to-slate-900', titleCol: 'text-amber-300', descCol: 'text-amber-400/80', border: 'border-amber-900/40' },
           { cmd: '天候避險', icon: '🌧️', title: '暴雨天候避險', desc: '冷鏈轉移通報', bg: 'from-blue-950 to-slate-900', titleCol: 'text-blue-300', descCol: 'text-blue-400/80', border: 'border-blue-900/40' },
           { cmd: '機耕代噴', icon: '🚜', title: '預約專業機耕', desc: 'T50植保/80hp深耕', bg: 'from-slate-800 to-slate-900', titleCol: 'text-white', descCol: 'text-slate-400', border: 'border-slate-800' },
-          { cmd: '查產曆', icon: '📅', title: '全台產曆查詢', desc: '採收倒數雷達', bg: 'from-slate-800 to-slate-900', titleCol: 'text-white', descCol: 'text-slate-400', border: 'border-slate-800' },
+          { cmd: '快速叫工', icon: '⚡', title: '明日急件叫工', desc: '一鍵叫合法工班', bg: 'from-purple-950 to-slate-900', titleCol: 'text-purple-300', descCol: 'text-purple-400/80', border: 'border-purple-500/40' },
           { cmd: '聯絡工頭', icon: '📞', title: '聯絡專屬工頭', desc: '小工頭/司機專線', bg: 'from-emerald-950 to-slate-900', titleCol: 'text-emerald-300', descCol: 'text-emerald-400/80', border: 'border-emerald-500/40' }
         ],
         chips: [
@@ -754,8 +754,39 @@
 
     // 3. 點擊快捷按鈕
     function handleQuickCmd(cmd) {
+      if (cmd === '快速叫工') {
+        runQuickDispatchDemo();
+        return;
+      }
       appendUserBubble(cmd);
       processCommand(cmd);
+    }
+
+    // 農場主「明日急件叫工」展示：與地下仲介比拼速度，但全程走合作社合法派工（純前端示範，不寫入後端）
+    function runQuickDispatchDemo() {
+      appendUserBubble('我需要明日急件叫工 5 人（採收）');
+      showTypingIndicator();
+      setTimeout(() => {
+        removeTypingIndicator();
+        const anchor = document.getElementById('dynamic-chat-anchor');
+        const time = getCurrentTimeString();
+        anchor.insertAdjacentHTML('beforebegin', `
+          <div class="flex items-start gap-2 mb-2">
+            <div class="w-7 h-7 rounded-full bg-white text-emerald-700 flex items-center justify-center text-xs shadow flex-shrink-0">🌱</div>
+            <div class="max-w-[82%]">
+              <div class="line-bubble-bot p-3 text-slate-800 text-xs shadow leading-relaxed space-y-1">
+                <div class="font-bold text-emerald-700">✅ 已啟動明日急件調度（合法派工）</div>
+                <div>👷 媒合「履歷認證工班」5 人，班長確認後回傳集合時間</div>
+                <div>🛡️ 人員由合作社雇用，依法加保勞保／職災保險</div>
+                <div>🧾 完工後可下載出勤紀錄與勞務費明細</div>
+                <div class="text-[10px] text-slate-500">※ 示範流程；急件費用與可派人數依實際排班為準</div>
+              </div>
+              <span class="text-[9px] text-slate-700 ml-1 mt-0.5 inline-block">${time}</span>
+            </div>
+          </div>
+        `);
+        scrollToBottom();
+      }, 900);
     }
 
     // 4. 輸入訊息發送
@@ -1314,8 +1345,8 @@
           },
           footer: {
             contents: [
-              { action: { label: '⚡ 預購產季早鳥保證工時包 (9折)', uri: 'farmer-login.html' }, color: '#D97706' },
-              { action: { label: '🗓️ 瀏覽 52 週完整產曆動態輪播', uri: 'index.html#calendar' }, color: '#2563EB' }
+              { action: { label: '⚡ 預購產季早鳥保證工時包 (9折)', uri: '../農業派遣主網站/farmer-login.html' }, color: '#D97706' },
+              { action: { label: '🗓️ 瀏覽 52 週完整產曆動態輪播', uri: '../農業派遣主網站/index.html#calendar' }, color: '#2563EB' }
             ]
           }
         }
@@ -1376,7 +1407,7 @@
           },
           footer: {
             contents: [
-              { action: { label: '⚡ 立即線上派工試算 (農場主專區)', uri: 'farmer-login.html' }, color: '#D97706' }
+              { action: { label: '⚡ 立即線上派工試算 (農場主專區)', uri: '../農業派遣主網站/farmer-login.html' }, color: '#D97706' }
             ]
           }
         }
@@ -1440,7 +1471,7 @@
           },
           footer: {
             contents: [
-              { action: { label: '💳 立即線上選購早鳥工時包 (定金20%)', uri: 'farmer-login.html' }, color: '#D97706' },
+              { action: { label: '💳 立即線上選購早鳥工時包 (定金20%)', uri: '../農業派遣主網站/farmer-login.html' }, color: '#D97706' },
               { action: { label: '💰 查詢各項農事標準費率', uri: 'javascript:handleQuickCmd("查費率")' }, color: '#2563EB' }
             ]
           }
@@ -1470,7 +1501,7 @@
           },
           footer: {
             contents: [
-              { action: { label: '⚡ 立即預約機耕班次 (農場主專屬)', uri: 'farmer-login.html' }, color: '#059669' },
+              { action: { label: '⚡ 立即預約機耕班次 (農場主專屬)', uri: '../農業派遣主網站/farmer-login.html' }, color: '#059669' },
               { action: { label: '🚁 檢視無人機飛行歷史航跡', uri: 'javascript:handleQuickCmd("機耕航跡")' }, color: '#4F46E5' }
             ]
           }
@@ -2035,7 +2066,7 @@
           },
           footer: {
             contents: [
-              { action: { label: '📑 匯出主管機關查核備查名冊', uri: 'javascript:window.AgriDocs && window.AgriDocs.notify("📑 備查名冊", "農業部外展合規名冊已由資料庫即時產生 (CSV/PDF)！")' }, color: '#7E22CE' },
+              { action: { label: '📑 匯出主管機關查核備查名冊', uri: 'javascript:lineBotToast("📑 備查名冊：農業部外展合規名冊已由資料庫即時產生 (CSV/PDF)！")' }, color: '#7E22CE' },
               { action: { label: '📊 檢視全區戰情大腦', uri: 'javascript:handleQuickCmd("全區戰情")' }, color: '#4F46E5' }
             ]
           }
@@ -2067,8 +2098,8 @@
           },
           footer: {
             contents: [
-              { action: { label: '🎠 前往首頁檢視 DM 旋轉木馬', uri: 'index.html#dm-carousel' }, color: '#D97706' },
-              { action: { label: '➕ 新增一筆產季促銷 DM', uri: 'javascript:window.AgriDocs && window.AgriDocs.notify("➕ 新增促銷 DM", "促銷 DM 編輯精靈已開啟！")' }, color: '#2563EB' }
+              { action: { label: '🎠 前往首頁檢視 DM 旋轉木馬', uri: '../農業派遣主網站/index.html#dmCarouselSection' }, color: '#D97706' },
+              { action: { label: '➕ 新增一筆產季促銷 DM', uri: 'javascript:lineBotToast("➕ 促銷 DM 編輯精靈已開啟！")' }, color: '#2563EB' }
             ]
           }
         }

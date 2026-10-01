@@ -335,6 +335,20 @@
           </div>
 
           <!-- Submit Button -->
+          <!-- 合法派工四大保障（黑轉白誘因展示） -->
+          <div id="legalBenefitsBanner" class="p-4 bg-gradient-to-r from-blue-900/50 to-purple-900/50 border border-blue-500/40 rounded-2xl flex items-start gap-3">
+            <div class="text-2xl mt-0.5">🎁</div>
+            <div>
+              <h4 class="text-blue-200 font-black text-sm mb-1.5">現在預約享「黑轉白」四大保障</h4>
+              <ul class="text-xs text-slate-300 space-y-1 list-disc list-inside">
+                <li><span class="text-emerald-400 font-bold">早鳥定價：</span>提前預約享早鳥 9 折，並保留出工配額</li>
+                <li><span class="text-emerald-400 font-bold">合法雇用：</span>人員由合作社雇用並依法加保勞保／職災保險，免除非法容留外國人工作之罰鍰風險（就服法每人 15～75 萬）</li>
+                <li><span class="text-emerald-400 font-bold">通路認證：</span>完工可匯出出勤與合法用工證明，供產銷履歷與通路稽核使用</li>
+                <li><span class="text-emerald-400 font-bold">帳務透明：</span>開立合法發票，勞務費支出有憑有據，可交會計師依法列報</li>
+              </ul>
+            </div>
+          </div>
+
           <button type="submit" id="fSubmitBtn" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-brand-600 hover:from-emerald-500 hover:to-brand-500 text-white font-black text-base shadow-lg shadow-emerald-600/30 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
             <span>🚀</span> 立即送出派工預約（保留早鳥保證出工配額）
           </button>
@@ -496,6 +510,7 @@
             <div class="flex items-center gap-3">
               <span class="font-mono text-sm font-bold text-amber-400">ORD-2026-013</span>
               <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">🟢 履約作業中・專車已排定</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">🛡️ 勞保／職災保險已加保</span>
             </div>
             <div class="text-xs text-slate-400">
               起工日期：<strong class="text-white">2026/09/25</strong> (共 4 天・168 工時)
@@ -511,6 +526,10 @@
             <div class="p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700/60 space-y-1.5">
               <span class="text-slate-400 font-semibold block">👷 派遣工班與現場小工頭</span>
               <div class="text-sm font-bold text-emerald-300">外展工班 B 組 (6人)</div>
+              <div class="flex flex-wrap gap-1">
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">✔️ 履歷認證</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">💪 採收熟手</span>
+              </div>
               <p class="text-[11px] text-slate-300">現場小工頭：<strong>林小龍 (副班長)</strong> 0921-999-888</p>
               <p class="text-[10px] text-amber-400">指示：早上 06:45 枋山 2 號集貨場集合</p>
             </div>
@@ -549,6 +568,14 @@
                 <span>📞</span> 致電小工頭
               </a>
             </div>
+          </div>
+
+          <!-- 合規文件與評價（黑轉白誘因展示） -->
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-[11px] text-slate-500 font-semibold">合規與評價：</span>
+            <button type="button" onclick="farmerDemoNotice('📄 合法用工證明已產生（示範）', '內含出勤人員、工時與合作社雇用紀錄，可提供產銷履歷與通路稽核使用。')" class="px-3 py-1.5 rounded-xl bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 text-xs font-bold border border-blue-500/30 transition flex items-center gap-1">📄 合法用工證明</button>
+            <button type="button" onclick="farmerDemoNotice('💰 勞務費支出明細已匯出（示範）', '本月派工費用與發票號碼彙整，可交會計師依法列報。')" class="px-3 py-1.5 rounded-xl bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 text-xs font-bold border border-purple-500/30 transition flex items-center gap-1">💰 勞務費明細</button>
+            <button type="button" onclick="farmerDemoNotice('⭐ 感謝評價（示範）', '您的評分會回饋到工班履歷，優良工班將優先媒合給您。')" class="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-xs font-bold border border-amber-500/30 transition flex items-center gap-1">⭐ 評價工班</button>
           </div>
         </div>
 
@@ -794,10 +821,19 @@
       }, 3500);
     }
 
+    // 合規文件／評價按鈕（純前端示範）
+    function farmerDemoNotice(title, message) {
+      if (typeof AgriDocs !== 'undefined' && AgriDocs.notify) {
+        AgriDocs.notify(title, message, { channel: 'system' });
+      } else {
+        alert(title + '\n' + message);
+      }
+    }
+
     function switchFarmerTab(tab) {
-      const tabProgressSteps = document.getElementById('tabContentProgressSteps');
+      const tabProgressSteps = document.getElementById('tabContentBooking');
       const tabOrders = document.getElementById('tabContentOrders');
-      const btnProgressSteps = document.getElementById('tabBtnProgressSteps');
+      const btnProgressSteps = document.getElementById('tabBtnBooking');
       const btnOrders = document.getElementById('tabBtnOrders');
 
       if (tab === 'progress_steps' || tab === 'booking') {
@@ -908,10 +944,11 @@
       tomorrow.setDate(tomorrow.getDate() + 1);
       document.getElementById('fStartDate').value = tomorrow.toISOString().split('T')[0];
       calcFarmerForm();
-      if (window.location.hash === '#booking' || window.location.hash === '#progress_steps') {
-        switchFarmerTab('progress_steps');
-      } else {
+      // 預設顯示「發起派工」（與分頁按鈕的初始樣式一致）；#orders 直接開啟訂單列表
+      if (window.location.hash === '#orders') {
         switchFarmerTab('orders');
+      } else {
+        switchFarmerTab('booking');
       }
     });
   </script>

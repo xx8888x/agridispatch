@@ -329,7 +329,7 @@ def create_presentation():
         ("813.1 萬", "第一年平台 GMV", "12 名移工 ╳ 12 戶；2026 最低工資、法定工時重算", PRIMARY_GREEN),
         ("25.2 萬", "第一年科技公司 EBITDA", "不含補助；科技公司毛利率 87.0%", PRIMARY_GREEN),
         ("≈ 9 名", "科技公司損益平衡移工數", "每名移工年 1,800 計費小時", MANGO_ORANGE),
-        ("−139.7 萬", "合作社第一年損益 (現行定價)", "已不含宿舍與專車；調整方案 C1 約 +14.6 萬，待經營團隊決定", ALERT_RED)
+        ("−139.7 萬", "合作社第一年損益 (現行定價)", "已不含宿舍與專車；調整方案 C1 約 +14.6 萬、C2 約 +17.5 萬，待經營團隊決定", ALERT_RED)
     ]
 
     for i, (val, label, sub, color) in enumerate(metrics):
@@ -404,11 +404,11 @@ def create_presentation():
     charts_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                               "02_財務模型與政府補助", "charts")
     chart_cons = os.path.join(charts_dir, "f2_consolidated.png")
-    chart_c1 = os.path.join(charts_dir, "f2_coop_base_vs_c1.png")
+    chart_c1 = os.path.join(charts_dir, "f2_coop_c2.png")   # 基本情境、C1、C2（F2 v2.3）
     if os.path.exists(chart_cons) and os.path.exists(chart_c1):
         slide7b = prs.slides.add_slide(blank_slide_layout)
         set_bg(slide7b, LIGHT_BG)
-        add_header(slide7b, "如實揭露：現行定價下合作社仍虧損，建議方案 C1 可使其第一年起即有結餘", category="FINANCIALS")
+        add_header(slide7b, "如實揭露：現行定價下合作社仍虧損，建議方案 C1／C2 可使其第一年起即有結餘", category="FINANCIALS")
         # 兩張圖左右並排（原圖 960×520，等比縮放）
         slide7b.shapes.add_picture(chart_cons, Inches(0.5), Inches(1.9), width=Inches(6.1))
         slide7b.shapes.add_picture(chart_c1, Inches(6.75), Inches(1.9), width=Inches(6.1))
@@ -417,7 +417,7 @@ def create_presentation():
         tf_c.word_wrap = True
         for line_text in [
             "• 不含宿舍與專車後合併結果第三年轉正，但合作社（法定雇主）三年仍虧損，此狀態不可持續，須在開業前調整。",
-            "• C1＝第一層均價 +30 元/hr、帶班師傅 80% 工時計費、代管費率 15%（待經營團隊決定，須經市場驗證）。",
+            "• C1＝第一層均價 +30 元/hr、帶班師傅 80% 工時計費、代管費率 15%；C2＝C1 再加師傅 1:10＋移工組長、本土兼職 +50%、代管費率 16%、住宿預備金（皆待經營團隊決定，須經市場驗證）。",
         ]:
             p_c = tf_c.add_paragraph() if tf_c.paragraphs[0].text else tf_c.paragraphs[0]
             p_c.text = line_text
@@ -425,7 +425,7 @@ def create_presentation():
             p_c.font.name = FONT_BODY
             p_c.font.color.rgb = TEXT_MAIN
             p_c.space_after = Pt(6)
-        add_notes(slide7b, "左圖是三年的科技公司 EBITDA、合作社損益與合併結果：宿舍與專車不由平台負擔後，合併結果第三年轉正，但合作社在現行定價下三年仍虧損。右圖是我們研擬的組合方案 C1，可以讓合作社第一年起就有結餘、第三年約 1,095 萬。這個方案還需要市場驗證，也要經合作社社員大會決議。")
+        add_notes(slide7b, "左圖是三年的科技公司 EBITDA、合作社損益與合併結果：宿舍與專車不由平台負擔後，合併結果第三年轉正，但合作社在現行定價下三年仍虧損。右圖是我們研擬的兩個組合方案：C1 可以讓合作社第一年起就有結餘、第三年約 1,095 萬；C2 另外精簡帶班人力、擴大本土兼職，並預留住宿合規預備金，第一年約 17.5 萬、第三年約 1,074 萬。這個方案還需要市場驗證，也要經合作社社員大會決議。")
 
     # ==========================================
     # SLIDE 8: DUAL-ENTITY MOAT

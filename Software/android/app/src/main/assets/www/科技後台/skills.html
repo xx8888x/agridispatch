@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 AgriDispatch - 技能標籤複核</title>
+  <script src="js/app-config.js"></script>
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AgriAuth) window.AgriAuth.requireRole(['admin_tech'], 'admin-login.html');
+  </script>
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
+
+  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center"><span class="text-xl">💪</span></div>
+        <div>
+          <div class="font-extrabold text-lg text-white">智農派工 <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold">科技後台</span></div>
+          <p class="hidden sm:block text-[11px] text-slate-400">熟手標籤 ╳ 暫停複核 ╳ 履歷認證</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="insurance.html" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">🛡️ 保險登錄</a>
+        <a href="admin.html" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">← 回整合管理後台</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div class="space-y-2 border-b border-slate-800 pb-5">
+      <h1 class="text-2xl sm:text-3xl font-black text-white">💪 技能標籤與複核</h1>
+      <p class="text-sm text-slate-400 max-w-3xl leading-relaxed">依出勤時數、訂單數、工班評價與領班逐人評核自動判定。被暫停的標籤需由合作社確認原因（面談、補訓）後按「複核恢復」；恢復前的評價不再觸發暫停，但該工人 6 個月內不給「履歷認證」。</p>
+      <p class="text-[11px] text-amber-300/90">【待確認】標籤只用於派工媒合優先順序，不得作為扣薪、解僱或差別待遇依據。</p>
+    </div>
+
+    <div id="loadError" class="hidden p-4 rounded-2xl bg-rose-950/50 border border-rose-500/40 text-sm text-rose-200"></div>
+    <div id="kpiRow" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+
+    <div>
+      <h2 class="text-sm font-black text-white mb-2">⏸ 暫停中待複核</h2>
+      <div id="suspended" class="space-y-2"></div>
+    </div>
+
+    <div class="p-4 rounded-3xl bg-slate-900 border border-slate-800 overflow-x-auto">
+      <table class="w-full text-xs min-w-[860px]">
+        <thead>
+          <tr class="text-left text-slate-400 border-b border-slate-800">
+            <th class="py-2 pr-3">工人</th>
+            <th class="py-2 pr-3">履歷認證</th>
+            <th class="py-2 pr-3">💪 採收</th>
+            <th class="py-2 pr-3">✂️ 修剪套袋</th>
+            <th class="py-2 pr-3">🌱 整地定植</th>
+            <th class="py-2 pr-3">📦 包裝</th>
+          </tr>
+        </thead>
+        <tbody id="rows"><tr><td colspan="6" class="py-8 text-center text-slate-500">載入中…</td></tr></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    const KEYS = ['harvest', 'pruning', 'tillage', 'packing'];
+    let profiles = [];
+    const base = () => (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    async function api(path, options) {
+      const res = await fetch(`${base()}${path}`, options);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body.success === false) throw new Error(body.error || `HTTP ${res.status}`);
+      return body.data;
+    }
+
+    async function load() {
+      try {
+        profiles = await api('/skills/workers');
+        document.getElementById('loadError').classList.add('hidden');
+      } catch (e) {
+        const el = document.getElementById('loadError');
+        el.textContent = `無法載入：${e.message}（請確認後端 3000 已啟動，且以管理員身分登入）`;
+        el.classList.remove('hidden');
+        return;
+      }
+      render();
+    }
+
+    function cell(s) {
+      if (s.suspended) return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/40">暫停</span><div class="text-[10px] text-slate-500 mt-0.5">${s.hours}h・${s.orders} 單</div>`;
+      if (s.level === 'senior') return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/40">資深熟手</span><div class="text-[10px] text-slate-500 mt-0.5">${s.hours}h・${s.orders} 單</div>`;
+      if (s.level === 'skilled') return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/40">熟手</span><div class="text-[10px] text-slate-500 mt-0.5">${s.hours}h・${s.orders} 單</div>`;
+      return s.hours > 0 ? `<span class="text-slate-400">${s.hours}h／80</span>` : '<span class="text-slate-600">—</span>';
+    }
+
+    function render() {
+      const all = profiles.flatMap(p => p.skills.map(s => ({ p, s })));
+      const active = all.filter(x => x.s.active);
+      const suspended = all.filter(x => x.s.suspended);
+      const tiles = [
+        ['工人數', profiles.length, 'text-white'],
+        ['履歷認證', profiles.filter(p => p.verified).length, 'text-emerald-300'],
+        ['有效熟手標籤', active.length, 'text-emerald-300'],
+        ['暫停待複核', suspended.length, suspended.length ? 'text-rose-300' : 'text-slate-400']
+      ];
+      document.getElementById('kpiRow').innerHTML = tiles.map(([k, v, c]) => `
+        <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800"><div class="text-[11px] text-slate-400">${k}</div><div class="mt-1 text-2xl font-black ${c}">${v}</div></div>`).join('');
+
+      document.getElementById('suspended').innerHTML = suspended.length ? suspended.map(({ p, s }) => `
+        <div class="p-4 rounded-2xl bg-rose-950/30 border border-rose-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="text-xs">
+            <div class="text-sm font-bold text-white">${esc(p.name)} <span class="text-slate-500 font-mono">${esc(p.workerId)}</span>・${esc(s.label)}</div>
+            <div class="text-rose-200 mt-0.5">${s.suspendReasons.map(esc).join('；')}</div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <input type="text" maxlength="200" placeholder="複核說明（例：已面談並補訓）" data-note-for="${esc(p.workerId)}-${esc(s.key)}" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white w-56">
+            <button type="button" data-worker="${esc(p.workerId)}" data-skill="${esc(s.key)}" onclick="restore(this)" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">複核恢復</button>
+          </div>
+        </div>`).join('') : '<p class="text-xs text-slate-500">目前沒有暫停中的標籤</p>';
+
+      document.getElementById('rows').innerHTML = profiles.map(p => {
+        const byKey = Object.fromEntries(p.skills.map(s => [s.key, s]));
+        return `<tr class="border-b border-slate-800/70">
+          <td class="py-2.5 pr-3"><div class="font-bold text-white">${esc(p.name)}</div><div class="text-[10px] text-slate-500 font-mono">${esc(p.workerId)}・${esc(p.teamId || '—')}</div></td>
+          <td class="py-2.5 pr-3">${p.verified ? '<span class="text-emerald-300 font-bold">✔️</span>' : `<span class="text-amber-300" title="${esc(p.unverifiedReasons.join('；'))}">未通過</span>`}</td>
+          ${KEYS.map(k => `<td class="py-2.5 pr-3">${cell(byKey[k])}</td>`).join('')}
+        </tr>`;
+      }).join('');
+    }
+
+    async function restore(btn) {
+      const note = [...document.querySelectorAll('[data-note-for]')].find(el => el.dataset.noteFor === `${btn.dataset.worker}-${btn.dataset.skill}`).value.trim();
+      if (!note) { alert('請填寫複核說明（例如：已面談並補訓）'); return; }
+      btn.disabled = true;
+      try {
+        await api(`/skills/workers/${encodeURIComponent(btn.dataset.worker)}/${encodeURIComponent(btn.dataset.skill)}/restore`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note })
+        });
+        await load();
+      } catch (e) {
+        alert(`複核失敗：${e.message}`);
+        btn.disabled = false;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', load);
+  </script>
+</body>
+</html>

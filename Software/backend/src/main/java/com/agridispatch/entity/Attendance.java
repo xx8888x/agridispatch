@@ -75,6 +75,17 @@ public class Attendance {
     @Column(name = "order_id", length = 40)
     private String orderId;
 
+    /** 領班逐人評核：excellent 優 / ok 可 / needs_improvement 需加強；未評核為 null */
+    @Column(name = "foreman_rating", length = 20)
+    private String foremanRating;
+
+    /** 評核者（領班工號；admin 代評時為 admin 的 ref） */
+    @Column(name = "foreman_rated_by", length = 32)
+    private String foremanRatedBy;
+
+    @Column(name = "foreman_rated_at")
+    private LocalDateTime foremanRatedAt;
+
     /** 記錄建立時間 */
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -140,6 +151,13 @@ public class Attendance {
 
     public String getOrderId() { return orderId; }
     public void setOrderId(String orderId) { this.orderId = orderId; }
+
+    public String getForemanRating() { return foremanRating; }
+    public void setForemanRating(String foremanRating) { this.foremanRating = foremanRating; }
+    public String getForemanRatedBy() { return foremanRatedBy; }
+    public void setForemanRatedBy(String foremanRatedBy) { this.foremanRatedBy = foremanRatedBy; }
+    public LocalDateTime getForemanRatedAt() { return foremanRatedAt; }
+    public void setForemanRatedAt(LocalDateTime foremanRatedAt) { this.foremanRatedAt = foremanRatedAt; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
 

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif">
   <rect width="960" height="520" fill="#ffffff"/>
-  <text x="32" y="40" font-size="22" font-weight="700" fill="#0b0b0b">平台總流水 GMV：三年由 813 萬成長至 1.15 億</text>
+  <text x="32" y="40" font-size="22" font-weight="700" fill="#0b0b0b">平台總流水 GMV：三年由 983 萬成長至 1.39 億</text>
   <text x="32" y="68" font-size="14" fill="#52514e">依三層人力分列，單位：萬元</text>
   <rect x="32" y="88" width="14" height="14" rx="3" fill="#2a78d6"/>
   <text x="52" y="100" font-size="14" fill="#0b0b0b">第一層 外展移工</text>
@@ -10,29 +10,27 @@
   <text x="386" y="100" font-size="14" fill="#0b0b0b">第三層 統包代耕</text>
   <line x1="88" x2="928" y1="456.0" y2="456.0" stroke="#b9b8b2" stroke-width="1.5"/>
   <text x="78" y="461.0" font-size="13" fill="#52514e" text-anchor="end">0</text>
-  <line x1="88" x2="928" y1="390.4" y2="390.4" stroke="#e6e5e0" stroke-width="1"/>
-  <text x="78" y="395.4" font-size="13" fill="#52514e" text-anchor="end">2,500</text>
-  <line x1="88" x2="928" y1="324.8" y2="324.8" stroke="#e6e5e0" stroke-width="1"/>
-  <text x="78" y="329.8" font-size="13" fill="#52514e" text-anchor="end">5,000</text>
-  <line x1="88" x2="928" y1="259.2" y2="259.2" stroke="#e6e5e0" stroke-width="1"/>
-  <text x="78" y="264.2" font-size="13" fill="#52514e" text-anchor="end">7,500</text>
-  <line x1="88" x2="928" y1="193.6" y2="193.6" stroke="#e6e5e0" stroke-width="1"/>
-  <text x="78" y="198.6" font-size="13" fill="#52514e" text-anchor="end">10,000</text>
+  <line x1="88" x2="928" y1="374.0" y2="374.0" stroke="#e6e5e0" stroke-width="1"/>
+  <text x="78" y="379.0" font-size="13" fill="#52514e" text-anchor="end">5,000</text>
+  <line x1="88" x2="928" y1="292.0" y2="292.0" stroke="#e6e5e0" stroke-width="1"/>
+  <text x="78" y="297.0" font-size="13" fill="#52514e" text-anchor="end">10,000</text>
+  <line x1="88" x2="928" y1="210.0" y2="210.0" stroke="#e6e5e0" stroke-width="1"/>
+  <text x="78" y="215.0" font-size="13" fill="#52514e" text-anchor="end">15,000</text>
   <line x1="88" x2="928" y1="128.0" y2="128.0" stroke="#e6e5e0" stroke-width="1"/>
-  <text x="78" y="133.0" font-size="13" fill="#52514e" text-anchor="end">12,500</text>
-  <path d="M180.0,456.0 L276.0,456.0 L276.0,439.8 L180.0,439.8 Z" fill="#2a78d6"><title>第一層 外展移工 第一年：615.6 萬元</title></path>
-  <path d="M180.0,437.8 L276.0,437.8 L276.0,436.7 L180.0,436.7 Z" fill="#eb6834"><title>第二層 本土部分工時 第一年：120 萬元</title></path>
-  <text x="228.0" y="424.7" font-size="14" font-weight="700" fill="#0b0b0b" text-anchor="middle">GMV 813.1</text>
+  <text x="78" y="133.0" font-size="13" fill="#52514e" text-anchor="end">20,000</text>
+  <path d="M180.0,456.0 L276.0,456.0 L276.0,444.1 L180.0,444.1 Z" fill="#2a78d6"><title>第一層 外展移工 第一年：725.8 萬元</title></path>
+  <path d="M180.0,442.1 L276.0,442.1 L276.0,441.1 L180.0,441.1 Z" fill="#eb6834"><title>第二層 本土部分工時 第一年：180 萬元</title></path>
+  <text x="228.0" y="429.9" font-size="14" font-weight="700" fill="#0b0b0b" text-anchor="middle">GMV 983.3</text>
   <text x="228.0" y="482" font-size="15" fill="#0b0b0b" text-anchor="middle">第一年</text>
-  <path d="M460.0,456.0 L556.0,456.0 L556.0,386.0 L460.0,386.0 Z" fill="#2a78d6"><title>第一層 外展移工 第二年：2,668 萬元</title></path>
-  <path d="M460.0,384.0 L556.0,384.0 L556.0,371.3 L460.0,371.3 Z" fill="#eb6834"><title>第二層 本土部分工時 第二年：558 萬元</title></path>
-  <path d="M460.0,369.34976 L460.0,363.01696 Q460.0,359.01696 464.0,359.01696 L552.0,359.01696 Q556.0,359.01696 556.0,363.01696 L556.0,369.34976 Z" fill="#1baf7a"><title>第三層 統包代耕 第二年：470 萬元</title></path>
-  <text x="508.0" y="349.0" font-size="14" font-weight="700" fill="#0b0b0b" text-anchor="middle">GMV 3,696</text>
+  <path d="M460.0,456.0 L556.0,456.0 L556.0,403.1 L460.0,403.1 Z" fill="#2a78d6"><title>第一層 外展移工 第二年：3,226.6 萬元</title></path>
+  <path d="M460.0,401.1 L556.0,401.1 L556.0,389.4 L460.0,389.4 Z" fill="#eb6834"><title>第二層 本土部分工時 第二年：837 萬元</title></path>
+  <path d="M460.0,387.3565664 L460.0,384.5025664 Q460.0,381.6485664 462.85400000000004,381.6485664 L553.146,381.6485664 Q556.0,381.6485664 556.0,384.5025664 L556.0,387.3565664 Z" fill="#1baf7a"><title>第三層 統包代耕 第二年：470 萬元</title></path>
+  <text x="508.0" y="371.6" font-size="14" font-weight="700" fill="#0b0b0b" text-anchor="middle">GMV 4,533.6</text>
   <text x="508.0" y="482" font-size="15" fill="#0b0b0b" text-anchor="middle">第二年</text>
-  <path d="M740.0,456.0 L836.0,456.0 L836.0,237.7 L740.0,237.7 Z" fill="#2a78d6"><title>第一層 外展移工 第三年：8,319 萬元</title></path>
-  <path d="M740.0,235.7 L836.0,235.7 L836.0,195.7 L740.0,195.7 Z" fill="#eb6834"><title>第二層 本土部分工時 第三年：1,600 萬元</title></path>
-  <path d="M740.0,193.72544 L740.0,157.74144 Q740.0,153.74144 744.0,153.74144 L832.0,153.74144 Q836.0,153.74144 836.0,157.74144 L836.0,193.72544 Z" fill="#1baf7a"><title>第三層 統包代耕 第三年：1,600 萬元</title></path>
-  <text x="788.0" y="143.7" font-size="14" font-weight="700" fill="#0b0b0b" text-anchor="middle">GMV 11,519</text>
+  <path d="M740.0,456.0 L836.0,456.0 L836.0,293.7 L740.0,293.7 Z" fill="#2a78d6"><title>第一層 外展移工 第三年：9,898.2 萬元</title></path>
+  <path d="M740.0,291.7 L836.0,291.7 L836.0,254.3 L740.0,254.3 Z" fill="#eb6834"><title>第二層 本土部分工時 第三年：2,400 萬元</title></path>
+  <path d="M740.0,252.30952 L740.0,232.06952 Q740.0,228.06952 744.0,228.06952 L832.0,228.06952 Q836.0,228.06952 836.0,232.06952 L836.0,252.30952 Z" fill="#1baf7a"><title>第三層 統包代耕 第三年：1,600 萬元</title></path>
+  <text x="788.0" y="218.1" font-size="14" font-weight="700" fill="#0b0b0b" text-anchor="middle">GMV 13,898.2</text>
   <text x="788.0" y="482" font-size="15" fill="#0b0b0b" text-anchor="middle">第三年</text>
-  <text x="32" y="504" font-size="12" fill="#7a7974">資料來源：F2 財務計畫報表 2（v2.2 財務定版），基本情境不含政府補助、平台不承擔宿舍與專車</text>
+  <text x="32" y="504" font-size="12" fill="#7a7974">資料來源：F2 財務計畫報表 2（v2.4 財務定版），基本情境採方案 C2、不含政府補助、平台不承擔宿舍與專車</text>
 </svg>

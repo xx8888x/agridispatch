@@ -1,6 +1,6 @@
 # 智農派工 (AgriDispatch) - Oracle Database 建置與 SQL Developer 連線指引
 
-本專案已備妥專屬之 Oracle 資料庫建庫腳本、16 大實體資料表結構（含主外鍵與完整中文註解）、20 位在籍移工與訂單初始種子資料，以及 Oracle SQL Developer 連線設定檔。
+本專案已備妥專屬之 Oracle 資料庫建庫腳本、17 大實體資料表結構（含主外鍵與完整中文註解）、20 位在籍移工與訂單初始種子資料，以及 Oracle SQL Developer 連線設定檔。
 
 ---
 
@@ -58,13 +58,14 @@ D:\派遣專案網站(農事及其它)\Software\database\
   - **服務名稱 (Service Name)**：`XEPDB1` 或 `FREEPDB1` (若為舊版 SID 請選 `XE` 或 `ORCL`)
 
 ### 步驟 4：一鍵執行腳本
-點擊 SQL 編輯器工具列的 **「以指令碼執行 (Run Script)」** 按鈕（快捷鍵：`F5`），即可自動完成 16 大資料表建立與種子資料匯入！
+點擊 SQL 編輯器工具列的 **「以指令碼執行 (Run Script)」** 按鈕（快捷鍵：`F5`），即可自動完成 17 大資料表建立與種子資料匯入！
 
 > ⚠️ 注意：
 > - 腳本開頭會 **DROP 再重建** 全部資料表，既有資料會被清除。
 > - `01_agridispatch_oracle_schema.sql` 已內含精簡種子，**不要接著再執行 `02_agridispatch_universal_seed.sql`**，否則主鍵會重複。
 > - 若要改用 02 的完整種子（26 位農工、12 筆訂單），請只執行 01 的建表部分，再先執行 `ALTER SESSION SET NLS_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH24:MI:SS';`，最後執行 02。
-> - 以上流程已於 2026-10-01 在本機 Oracle 26ai Free（FREEPDB1，臨時 schema）實測，兩種流程皆 0 錯誤（同日加入評價、加保紀錄與打卡訂單欄位後再次實測通過）。
+> - 以上流程已於 2026-10-01 在本機 Oracle 26ai Free（FREEPDB1，臨時 schema）實測，兩種流程皆 0 錯誤（同日加入評價、加保紀錄、打卡訂單與領班評核欄位、熟手複核表後再次實測通過；本機 AGRIDISPATCH 已用「01 建表＋02 完整種子」重建）。
+> - `skill_reviews` 使用 identity 欄位，需 Oracle 12c 以上。
 
 ---
 

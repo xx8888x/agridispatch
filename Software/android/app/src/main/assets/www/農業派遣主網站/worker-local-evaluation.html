@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 AgriDispatch - 領班逐人評核</title>
+  <script src="js/app-config.js"></script>
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AgriAuth) window.AgriAuth.requireRole(['worker_local', 'worker_foreign', 'admin_tech'], 'worker-local-login.html');
+  </script>
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
+
+  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+      <a href="worker-local.html" class="text-xs text-slate-300 hover:text-white">← 回本地工／領班工作台</a>
+      <a href="worker-skills.html" class="text-xs font-bold text-emerald-300 hover:text-white">📈 我的技能進度</a>
+    </div>
+  </header>
+
+  <main class="flex-1 w-full max-w-3xl mx-auto px-4 py-6 space-y-5">
+    <div class="space-y-1">
+      <h1 class="text-xl font-black text-white">✅ 領班逐人評核</h1>
+      <p class="text-xs text-slate-400 leading-relaxed">每位工人下班簽核後，請依當天表現評「優／可／需加強」。評核只用於技能標籤與派工媒合，不作為扣薪或解僱依據。
+        本人的班次須由同工班其他領班或合作社評核；超過 7 天的班次請洽合作社。</p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2 p-3 rounded-2xl bg-slate-900 border border-slate-800">
+      <label for="team" class="text-xs text-slate-400">工班</label>
+      <select id="team" onchange="load()" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-sm text-white"></select>
+      <label for="day" class="text-xs text-slate-400 ml-2">日期</label>
+      <input id="day" type="date" onchange="load()" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-sm text-white">
+      <div class="flex gap-1 ml-auto">
+        <button type="button" onclick="shiftDay(-1)" class="px-2 py-1 rounded-lg bg-slate-800 text-xs text-slate-300 border border-slate-700">◀ 前一天</button>
+        <button type="button" onclick="shiftDay(1)" class="px-2 py-1 rounded-lg bg-slate-800 text-xs text-slate-300 border border-slate-700">後一天 ▶</button>
+      </div>
+    </div>
+
+    <p id="msg" class="hidden text-xs"></p>
+    <div id="list" class="space-y-2"></div>
+  </main>
+
+  <script>
+    const OPTIONS = [
+      ['excellent', '優', 'bg-emerald-600 text-white border-emerald-500'],
+      ['ok', '可', 'bg-sky-600 text-white border-sky-500'],
+      ['needs_improvement', '需加強', 'bg-rose-600 text-white border-rose-500']
+    ];
+    const base = () => (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+
+    async function api(path, options) {
+      const res = await fetch(`${base()}${path}`, options);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body.success === false) {
+        const msg = body.error === 'FORBIDDEN' ? '沒有權限（只有該工班領班或合作社可以評核）' : (body.error || `HTTP ${res.status}`);
+        throw new Error(msg);
+      }
+      return body.data;
+    }
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function setMsg(text, ok) {
+      const el = document.getElementById('msg');
+      el.textContent = text;
+      el.className = text ? `text-xs ${ok ? 'text-emerald-300' : 'text-rose-300'}` : 'hidden text-xs';
+    }
+    function iso(d) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    function shiftDay(n) {
+      const el = document.getElementById('day');
+      const d = new Date(el.value + 'T00:00:00');
+      d.setDate(d.getDate() + n);
+      el.value = iso(d);
+      load();
+    }
+
+    async function load() {
+      setMsg('');
+      const team = document.getElementById('team').value;
+      const day = document.getElementById('day').value;
+      const list = document.getElementById('list');
+      list.innerHTML = '<p class="text-sm text-slate-500">載入中…</p>';
+      try {
+        const data = await api(`/evaluations/teams/${encodeURIComponent(team)}?date=${encodeURIComponent(day)}`);
+        if (!data.shifts.length) {
+          list.innerHTML = '<p class="p-6 text-center text-sm text-slate-500 rounded-2xl bg-slate-900 border border-slate-800">這一天沒有出勤紀錄</p>';
+          return;
+        }
+        list.innerHTML = data.shifts.map(s => {
+          const locked = s.self ? '本人班次，請由其他領班或合作社評核' : (!s.clockOut ? '尚未下班簽核' : '');
+          const buttons = OPTIONS.map(([val, label, on]) => `
+            <button type="button" data-id="${s.attendanceId}" data-rating="${val}" onclick="rate(this)" ${locked ? 'disabled' : ''}
+              class="px-3 py-1.5 rounded-lg text-xs font-bold border transition ${s.rating === val ? on : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'} disabled:opacity-40 disabled:cursor-not-allowed">${label}</button>`).join('');
+          return `<div class="p-4 rounded-2xl bg-slate-900 border ${s.rating ? 'border-slate-700' : 'border-amber-500/40'} flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div class="text-sm font-bold text-white">${esc(s.name)} <span class="text-[11px] text-slate-500 font-mono">${esc(s.workerId)}</span></div>
+                <div class="text-[11px] text-slate-400">${esc(s.clockIn)}–${esc(s.clockOut || '進行中')}${s.hours != null ? `・${s.hours} 小時` : ''}${s.orderId ? `・${esc(s.orderId)}` : ''}</div>
+                ${locked ? `<div class="text-[11px] text-amber-300 mt-0.5">${locked}</div>` : (!s.rating ? '<div class="text-[11px] text-amber-300 mt-0.5">尚未評核</div>' : '')}
+              </div>
+              <div class="flex gap-1.5 shrink-0">${buttons}</div>
+            </div>`;
+        }).join('');
+      } catch (e) {
+        list.innerHTML = '';
+        setMsg(`無法載入：${e.message}`, false);
+      }
+    }
+
+    async function rate(btn) {
+      btn.disabled = true;
+      try {
+        await api(`/evaluations/attendance/${encodeURIComponent(btn.dataset.id)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rating: btn.dataset.rating })
+        });
+        await load();
+        setMsg('✓ 已儲存評核', true);
+      } catch (e) {
+        setMsg(`評核未儲存：${e.message}`, false);
+        btn.disabled = false;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = (() => { try { return JSON.parse(sessionStorage.getItem('agri_user') || '{}'); } catch (e) { return {}; } })();
+      const teams = ['team_a', 'team_b', 'team_c', 'team_d'];
+      let myTeam = 'team_b';
+      // 依登入者工號找出所屬工班（admin 可切換工班）
+      if (!user.refId) await fetch(`${base()}/auth/me`).catch(() => null);
+      const me = (() => { try { return JSON.parse(sessionStorage.getItem('agri_user') || '{}'); } catch (e) { return {}; } })();
+      if (me.refId && /^W\d+/.test(me.refId)) {
+        try { myTeam = (await api(`/skills/workers/${encodeURIComponent(me.refId)}`)).teamId || myTeam; } catch (e) {}
+      }
+      document.getElementById('team').innerHTML = teams.map(t => `<option value="${t}" ${t === myTeam ? 'selected' : ''}>${t}</option>`).join('');
+      // 預設顯示昨天（下班簽核通常隔日補評）
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      document.getElementById('day').value = iso(d);
+      load();
+    });
+  </script>
+</body>
+</html>

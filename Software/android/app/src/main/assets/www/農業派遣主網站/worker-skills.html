@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 AgriDispatch - 我的技能進度</title>
+  <script src="js/app-config.js"></script>
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AgriAuth) window.AgriAuth.requireRole(['worker_local', 'worker_foreign', 'admin_tech'], 'login.html');
+  </script>
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
+
+  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+      <a id="backLink" href="worker-local.html" class="text-xs text-slate-300 hover:text-white">← 回工作台</a>
+      <span class="text-xs text-slate-500">技能標籤只用於派工媒合</span>
+    </div>
+  </header>
+
+  <main class="flex-1 w-full max-w-3xl mx-auto px-4 py-6 space-y-5">
+    <div>
+      <h1 class="text-xl font-black text-white">📈 我的技能進度</h1>
+      <p id="who" class="text-xs text-slate-400 mt-1"></p>
+    </div>
+    <div id="verified"></div>
+    <div id="skills" class="space-y-3"><p class="text-sm text-slate-500">載入中…</p></div>
+
+    <details class="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-xs text-slate-300 leading-relaxed">
+      <summary class="font-bold text-white cursor-pointer">標籤怎麼計算？</summary>
+      <ul class="mt-2 space-y-1 list-disc list-inside">
+        <li>只計算最近 24 個月、有下班簽核、且有連結派工訂單的班次，依訂單作業類別歸入技能。</li>
+        <li><b>熟手</b>：累計 ≥ 80 小時、≥ 2 張訂單；有評價的訂單工班平均 ≥ 4.0 星；領班評「需加強」不超過 20%。</li>
+        <li><b>資深熟手</b>：累計 ≥ 240 小時、≥ 4 張訂單；至少 2 張有評價且平均 ≥ 4.3 星；領班評核 ≥ 5 班且「優」≥ 50%。</li>
+        <li><b>暫停</b>：最近 3 張有評價訂單平均低於 3.0 星、工班被標記「需加強訓練」2 次，或最近 5 次領班評核有 2 次「需加強」。暫停後由合作社複核才恢復，可向合作社申訴。</li>
+        <li>無人機植保等須持證照的作業不適用經驗標籤。規則對本國與外籍工人完全相同。</li>
+      </ul>
+    </details>
+  </main>
+
+  <script>
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function bar(value, max) {
+      const pct = Math.max(0, Math.min(100, Math.round(value / max * 100)));
+      return `<div class="h-1.5 rounded-full bg-slate-800 overflow-hidden"><div class="h-full bg-emerald-400" style="width:${pct}%"></div></div>`;
+    }
+
+    async function load() {
+      const base = (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+      const params = new URLSearchParams(location.search);
+      // 先發一次請求以觸發 demo 自動登入，取得目前登入者工號
+      await fetch(`${base}/auth/me`).catch(() => null);
+      const me = (() => { try { return JSON.parse(sessionStorage.getItem('agri_user') || '{}'); } catch (e) { return {}; } })();
+      // demo 模式下若分頁沿用了農場主／管理員的示範 token（refId 不是工號），改看示範領班 W026
+      const isDemo = !window.AGRI_CONFIG || window.AGRI_CONFIG.mode !== 'production';
+      const workerId = params.get('worker') || (/^W\d+$/.test(me.refId || '') ? me.refId : (isDemo ? 'W026' : me.refId));
+      if (me.role === 'worker_foreign') document.getElementById('backLink').href = 'worker-foreign.html';
+      try {
+        const res = await fetch(`${base}/skills/workers/${encodeURIComponent(workerId)}`);
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) throw new Error(body.error || `HTTP ${res.status}`);
+        render(body.data);
+      } catch (e) {
+        document.getElementById('skills').innerHTML = `<p class="text-sm text-rose-300">無法載入技能資料：${esc(e.message)}</p>`;
+      }
+    }
+
+    function render(p) {
+      document.getElementById('who').textContent = `${p.name}（${p.workerId}）・${p.teamId || '未分班'}`;
+      document.getElementById('verified').innerHTML = p.verified
+        ? '<div class="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-sm font-bold text-emerald-300">✔️ 履歷認證：工作許可有效、完整加保、無暫停中標籤</div>'
+        : `<div class="p-4 rounded-2xl bg-amber-950/40 border border-amber-500/40 text-sm text-amber-200"><div class="font-bold">尚未取得履歷認證</div><ul class="text-xs mt-1 list-disc list-inside">${p.unverifiedReasons.map(r => `<li>${esc(r)}</li>`).join('')}</ul></div>`;
+
+      document.getElementById('skills').innerHTML = p.skills.map(s => {
+        const badge = s.suspended
+          ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/20 text-rose-200 border border-rose-500/40">暫停中・待複核</span>'
+          : s.level === 'senior' ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-200 border border-amber-500/40">資深熟手</span>'
+          : s.level === 'skilled' ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-200 border border-emerald-500/40">熟手</span>'
+          : '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-700/50 text-slate-300 border border-slate-600">培養中</span>';
+        const target = s.level === 'none' ? 80 : 240;
+        return `<div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <div class="font-bold text-white">${esc(s.label)}</div>${badge}
+            </div>
+            <div class="flex justify-between text-[11px] text-slate-400"><span>累計 ${s.hours} 小時・${s.orders} 張訂單</span><span>目標 ${target} 小時</span></div>
+            ${bar(s.hours, target)}
+            <div class="grid grid-cols-3 gap-2 text-[11px] text-slate-400">
+              <div>工班評價<div class="text-sm font-bold text-white">${s.averageRating == null ? '—' : s.averageRating + ' ★'}</div><div>${s.ratedOrders} 張有評價</div></div>
+              <div>領班評核<div class="text-sm font-bold text-white">${s.evaluatedShifts} 班</div><div>優 ${Math.round(s.excellentRate * 100)}%</div></div>
+              <div>需加強<div class="text-sm font-bold ${s.needsImprovementRate > 0.2 ? 'text-rose-300' : 'text-white'}">${Math.round(s.needsImprovementRate * 100)}%</div><div>上限 20%</div></div>
+            </div>
+            ${s.suspended ? `<div class="text-[11px] text-rose-200">暫停原因：${s.suspendReasons.map(esc).join('；')}</div>` : ''}
+            ${s.next.length ? `<div class="text-[11px] text-slate-300">${s.level === 'none' ? '升為熟手還差' : '升為資深熟手還差'}：${s.next.map(esc).join('、')}</div>` : ''}
+          </div>`;
+      }).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', load);
+  </script>
+</body>
+</html>

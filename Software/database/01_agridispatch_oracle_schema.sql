@@ -17,6 +17,21 @@ ALTER SESSION SET CURRENT_SCHEMA = c##agridispatch;
 
 -- 清理舊有資料表 (若存在)
 BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE payment_transactions CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE brochures CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE users CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
     EXECUTE IMMEDIATE 'DROP TABLE line_messages CASCADE CONSTRAINTS';
 EXCEPTION WHEN OTHERS THEN NULL;
 END;
@@ -321,6 +336,95 @@ CREATE TABLE line_messages (
 );
 
 COMMENT ON TABLE line_messages IS 'LINE 訊息與推播歷程表：記錄 Flex Message 廣播與即時警報';
+
+-- ====================================================================
+-- 12. 產品文宣 DM 範本表 (BROCHURES)
+-- ====================================================================
+CREATE TABLE brochures (
+    id                 VARCHAR2(64)   NOT NULL,
+    title              VARCHAR2(200)  NOT NULL,
+    subtitle           VARCHAR2(200),
+    category           VARCHAR2(50),
+    crop               VARCHAR2(100),
+    region             VARCHAR2(100),
+    target_audience    VARCHAR2(200),
+    badge              VARCHAR2(100),
+    icon               VARCHAR2(50),
+    theme_color        VARCHAR2(30),
+    cover_image        CLOB,
+    original_price     NUMBER(10)     DEFAULT 0 NOT NULL,
+    discount_price     NUMBER(10)     DEFAULT 0 NOT NULL,
+    deposit_rate       NUMBER(4)      DEFAULT 20 NOT NULL,
+    deposit_amount     NUMBER(10)     DEFAULT 0 NOT NULL,
+    hours              NUMBER(6)      DEFAULT 0 NOT NULL,
+    workers            NUMBER(4)      DEFAULT 0 NOT NULL,
+    days               NUMBER(4)      DEFAULT 0 NOT NULL,
+    description        CLOB,
+    features_json      CLOB,
+    comparison_json    CLOB,
+    testimonial_name   VARCHAR2(100),
+    testimonial_title  VARCHAR2(200),
+    testimonial_quote  CLOB,
+    phone              VARCHAR2(30),
+    service_office     VARCHAR2(200),
+    status             VARCHAR2(20)   DEFAULT 'active' NOT NULL,
+    created_at         VARCHAR2(30),
+    CONSTRAINT pk_brochures PRIMARY KEY (id),
+    CONSTRAINT chk_brochure_status CHECK (status IN ('active', 'draft'))
+);
+
+COMMENT ON TABLE brochures IS '產品文宣 DM 範本表：早鳥工時包行銷文宣與農場主購買引導';
+COMMENT ON COLUMN brochures.features_json IS '商品亮點清單 JSON 陣列';
+COMMENT ON COLUMN brochures.comparison_json IS '同業比較表 JSON 陣列';
+COMMENT ON COLUMN brochures.deposit_rate IS '定金比例 (% 整數，預設 20)';
+
+-- ====================================================================
+-- 13. 金流交易紀錄表 (PAYMENT_TRANSACTIONS)
+-- ====================================================================
+CREATE TABLE payment_transactions (
+    id                 VARCHAR2(20)   NOT NULL,
+    order_id           VARCHAR2(40)   NOT NULL,
+    amount             NUMBER(10)     NOT NULL,
+    provider           VARCHAR2(16)   NOT NULL,
+    payment_method     VARCHAR2(32),
+    status             VARCHAR2(16)   NOT NULL,
+    payer_name         VARCHAR2(100),
+    gateway_trade_no   VARCHAR2(40),
+    auth_code          VARCHAR2(20),
+    invoice_no         VARCHAR2(20),
+    created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP,
+    paid_at            TIMESTAMP,
+    CONSTRAINT pk_payment_transactions PRIMARY KEY (id),
+    CONSTRAINT fk_payment_order FOREIGN KEY (order_id) REFERENCES orders(id),
+    CONSTRAINT chk_payment_status CHECK (status IN ('PENDING', 'PAID', 'FAILED')),
+    CONSTRAINT chk_payment_provider CHECK (provider IN ('mock', 'ecpay'))
+);
+
+COMMENT ON TABLE payment_transactions IS '定金付款交易紀錄表：綠界 ECPay 與模擬金流之完整交易流水';
+COMMENT ON COLUMN payment_transactions.id IS '交易序號（亦作為綠界 MerchantTradeNo，英數 20 碼內）';
+COMMENT ON COLUMN payment_transactions.provider IS '金流供應商：mock (模擬) / ecpay (綠界)';
+COMMENT ON COLUMN payment_transactions.gateway_trade_no IS '金流商回傳之交易編號（綠界 TradeNo）';
+COMMENT ON COLUMN payment_transactions.auth_code IS '信用卡授權碼';
+COMMENT ON COLUMN payment_transactions.invoice_no IS '電子發票號碼';
+
+-- ====================================================================
+-- 14. 系統帳號表 (USERS)
+-- ====================================================================
+CREATE TABLE users (
+    username           VARCHAR2(64)   NOT NULL,
+    password           VARCHAR2(255),
+    name               VARCHAR2(100)  NOT NULL,
+    role               VARCHAR2(32)   NOT NULL,
+    ref_id             VARCHAR2(64),
+    role_desc          VARCHAR2(200),
+    CONSTRAINT pk_users PRIMARY KEY (username),
+    CONSTRAINT chk_user_role CHECK (role IN ('admin_tech', 'farmer', 'worker_foreign', 'worker_local'))
+);
+
+COMMENT ON TABLE users IS '系統帳號表：各角色登入身分與 PBKDF2 密碼雜湊';
+COMMENT ON COLUMN users.password IS '密碼雜湊（pbkdf2$iterations$salt$hash），永不明碼儲存；NULL 表示尚未設定密碼（正式模式的示範帳號，須由管理員重設後才能登入）';
+COMMENT ON COLUMN users.role IS '角色：admin_tech / farmer / worker_foreign / worker_local';
+COMMENT ON COLUMN users.ref_id IS '關聯業務實體 ID（如農工 W001、農場主 F001）';
 
 -- ====================================================================
 -- 【初始種子資料 (SEED DATA)】

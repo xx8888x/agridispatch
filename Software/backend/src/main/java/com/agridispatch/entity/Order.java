@@ -43,7 +43,34 @@ public class Order {
     @jakarta.persistence.Column(name = "crew_worker_ids", length = 400)
     private String crewWorkerIds;
 
+    /** 預定開工日（含當日） */
+    @jakarta.persistence.Column(name = "start_date")
+    private java.time.LocalDate startDate;
+
+    /** 預定完工日（含當日）；須不早於開工日 */
+    @jakarta.persistence.Column(name = "end_date")
+    private java.time.LocalDate endDate;
+
     public Order() {}
+
+    public java.time.LocalDate getStartDate() { return startDate; }
+    public void setStartDate(java.time.LocalDate startDate) { this.startDate = startDate; }
+    public java.time.LocalDate getEndDate() { return endDate; }
+    public void setEndDate(java.time.LocalDate endDate) { this.endDate = endDate; }
+
+    /** 是否已排定工期 */
+    public boolean hasPeriod() { return startDate != null && endDate != null; }
+
+    /** 指定日期是否在工期內 */
+    public boolean coversDate(java.time.LocalDate day) {
+        return hasPeriod() && !day.isBefore(startDate) && !day.isAfter(endDate);
+    }
+
+    /** 兩張訂單工期是否重疊（任一未排定工期視為不重疊） */
+    public boolean overlaps(Order other) {
+        return hasPeriod() && other.hasPeriod()
+                && !startDate.isAfter(other.endDate) && !other.startDate.isAfter(endDate);
+    }
 
     public String getCrewWorkerIds() { return crewWorkerIds; }
     public void setCrewWorkerIds(String crewWorkerIds) { this.crewWorkerIds = crewWorkerIds; }

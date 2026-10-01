@@ -39,8 +39,8 @@ public class AttendanceService {
     /**
      * 決定本次出勤所屬訂單：
      * - 有指定 orderId：須為進行中訂單，且工人屬於該訂單分派的工班，否則 400／409
-     * - 未指定：工人所屬工班恰有一張進行中訂單時自動連結；有多張時，取出工名單含此工人的那一張（恰一張才連結）；
-     *   無法判定則不連結（null）
+     * - 未指定：工人所屬工班恰有一張進行中訂單時自動連結；有多張時，先取出工名單含此工人的那一張，
+     *   再取今天落在工期內的那一張（恰一張才連結）；無法判定則不連結（null）
      */
     private String resolveOrderId(String workerId, String requestedOrderId) {
         Worker worker = workerRepository.findById(workerId).orElseThrow();
@@ -63,7 +63,14 @@ public class AttendanceService {
                 .filter(o -> OrderService.IN_PROGRESS.equals(o.getStatus())).toList();
         if (active.size() == 1) return active.get(0).getId();
         List<Order> onCrew = active.stream().filter(o -> o.crewList().contains(workerId)).toList();
-        return onCrew.size() == 1 ? onCrew.get(0).getId() : null;
+        if (onCrew.size() == 1) return onCrew.get(0).getId();
+        // 依工期判斷：今天在工期內、且出工名單未排除此工人的訂單恰有一張
+        LocalDate today = LocalDate.now();
+        List<Order> inPeriod = (onCrew.isEmpty() ? active : onCrew).stream()
+                .filter(o -> o.crewList().isEmpty() || o.crewList().contains(workerId))
+                .filter(o -> o.coversDate(today))
+                .toList();
+        return inPeriod.size() == 1 ? inPeriod.get(0).getId() : null;
     }
 
     private void requireWorker(String workerId) {

@@ -343,6 +343,9 @@ public class OrderService {
         order.setForemanPhone(input.getForemanPhone());
         order.setForemanNotes(input.getForemanNotes());
         order.setAssignedTeamId(input.getAssignedTeamId());
+        validatePeriod(input.getStartDate(), input.getEndDate());
+        order.setStartDate(input.getStartDate());
+        order.setEndDate(input.getEndDate());
         order.setCreatedAt(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         if (order.getForemanName() == null || order.getForemanName().isBlank()) {
             order.setForemanName(order.getFarmerName() + " (本人帶隊)");
@@ -410,6 +413,19 @@ public class OrderService {
         if (updated.getForemanPhone() != null) existing.setForemanPhone(updated.getForemanPhone());
         if (updated.getForemanNotes() != null) existing.setForemanNotes(updated.getForemanNotes());
         if (isAdmin && updated.getAssignedTeamId() != null) existing.setAssignedTeamId(updated.getAssignedTeamId());
+        if (updated.getStartDate() != null || updated.getEndDate() != null) {
+            if (COMPLETED.equals(existing.getStatus()) || CANCELLED.equals(existing.getStatus())) {
+                throw ApiException.conflict("已完工或已取消的訂單不可修改工期");
+            }
+            if (!isAdmin && !PENDING.equals(existing.getStatus())) {
+                throw ApiException.conflict("訂單已排定，工期調整請聯絡合作社（可能影響已安排的出工名單）");
+            }
+            java.time.LocalDate start = updated.getStartDate() != null ? updated.getStartDate() : existing.getStartDate();
+            java.time.LocalDate end = updated.getEndDate() != null ? updated.getEndDate() : existing.getEndDate();
+            validatePeriod(start, end);
+            existing.setStartDate(start);
+            existing.setEndDate(end);
+        }
 
         if (pricingChanged) {
             applyPricing(existing);
@@ -455,6 +471,14 @@ public class OrderService {
         order.setDepositAmount((int) calc.get("deposit"));
         order.setTransportSurcharge((int) calc.get("transportSurcharge"));
         return calc;
+    }
+
+    /** 工期：開工、完工日須同時提供，完工不可早於開工，單張訂單最長 366 天；皆未提供視為尚未排定 */
+    static void validatePeriod(java.time.LocalDate start, java.time.LocalDate end) {
+        if (start == null && end == null) return;
+        if (start == null || end == null) throw ApiException.badRequest("開工日 (startDate) 與完工日 (endDate) 須同時提供");
+        if (end.isBefore(start)) throw ApiException.badRequest("完工日不可早於開工日");
+        if (java.time.temporal.ChronoUnit.DAYS.between(start, end) > 366) throw ApiException.badRequest("單張訂單工期不可超過一年");
     }
 
     // =========================================================================

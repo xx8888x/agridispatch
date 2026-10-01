@@ -91,6 +91,10 @@ class MatchingApiTest extends ApiTestSupport {
     @Test
     @Order(2)
     void crewDisambiguatesClockInAndScopesInsuranceCheck() throws Exception {
+        // 002 工期設為昨天到明天（測試不受執行日期影響）；013 工期在 9/25–9/28（已過）
+        LocalDate today = LocalDate.now();
+        assertEquals(200, status("PUT", "/api/orders/ORD-2026-002", admin,
+                Map.of("startDate", today.minusDays(1).toString(), "endDate", today.plusDays(1).toString())));
         // 013 排定出工名單後，同時有 002、013 施工中的工班 B 成員打卡可正確連結
         assertEquals(200, status("PUT", "/api/matching/orders/ORD-2026-013", admin,
                 Map.of("teamId", "team_b", "crew", List.of("W006", "W007", "W008", "W011", "W023", "W026"))));
@@ -98,7 +102,7 @@ class MatchingApiTest extends ApiTestSupport {
         assertEquals("ORD-2026-013", json(in).get("data").get("orderId").asText());
         assertEquals(200, status("POST", "/api/workers/W007/clock-out", admin, Map.of()));
         MvcResult other = call("POST", "/api/workers/W009/clock-in", admin, Map.of("location", "宜蘭"));
-        assertTrue(json(other).get("data").get("orderId").isNull(), "不在任何出工名單、工班又有兩張施工中訂單 → 不連結");
+        assertEquals("ORD-2026-002", json(other).get("data").get("orderId").asText(), "不在 013 名單上，依工期連到今天施工中的 002");
         assertEquals(200, status("POST", "/api/workers/W009/clock-out", admin, Map.of()));
         assertEquals(400, status("POST", "/api/workers/W009/clock-in", admin, Map.of("orderId", "ORD-2026-013")), "不在 013 出工名單");
 
@@ -132,13 +136,74 @@ class MatchingApiTest extends ApiTestSupport {
         JsonNode crew = json(call("GET", "/api/matching/orders/ORD-2026-005/crew?teamId=team_b", admin, null)).get("data");
         Set<String> picks = recommendedIds(crew);
         assertEquals(6, picks.size());
-        assertTrue(picks.contains("W026"), "必含領班");
+        assertTrue(picks.contains("W026") || picks.contains("W006"), "必含一位領班（工班 B 的領班為 W006、W026）：" + picks);
         assertTrue(picks.contains("W010"), "保留 1 個培養名額給時數最多的培養中工人：" + picks);
         assertFalse(picks.contains("W023"), "標籤暫停中的工人不佔培養名額：" + picks);
         assertFalse(picks.contains("W024"), "未完整加保者不推薦");
         boolean w024Excluded = false;
         for (JsonNode e : crew.get("excluded")) if ("W024".equals(e.get("workerId").asText())) w024Excluded = true;
         assertTrue(w024Excluded);
+    }
+
+    @Test
+    @Order(5)
+    void overlappingPeriodsExcludeBookedWorkers() throws Exception {
+        LocalDate today = LocalDate.now();
+        // 002 排在 +11～+14 天並派 W009、W010；再把 005 改到 +10～+13 天 → 兩張重疊
+        assertEquals(200, status("PUT", "/api/orders/ORD-2026-002", admin,
+                Map.of("startDate", today.plusDays(11).toString(), "endDate", today.plusDays(14).toString())));
+        MvcResult a = call("PUT", "/api/matching/orders/ORD-2026-002", admin, Map.of("teamId", "team_b", "crew", List.of("W009", "W010")));
+        assertEquals(200, a.getResponse().getStatus(), a.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertEquals(200, status("PUT", "/api/orders/ORD-2026-005", admin,
+                Map.of("startDate", today.plusDays(10).toString(), "endDate", today.plusDays(13).toString())));
+
+        JsonNode rec = json(call("GET", "/api/matching/orders/ORD-2026-005", admin, null)).get("data");
+        assertEquals(today.plusDays(10).toString(), rec.get("order").get("startDate").asText());
+        JsonNode teamB = null;
+        for (JsonNode t : rec.get("teams")) if ("team_b".equals(t.get("teamId").asText())) teamB = t;
+        assertNotNull(teamB);
+        assertTrue(teamB.get("reasons").toString().contains("同期間另有 1 張訂單"), teamB.get("reasons").toString());
+        assertEquals(6, teamB.get("eligibleMembers").asInt(), "9 人扣除撞期的 W009、W010，以及第 1 個測試退保的 W024");
+
+        JsonNode crew = json(call("GET", "/api/matching/orders/ORD-2026-005/crew?teamId=team_b", admin, null)).get("data");
+        assertTrue(crew.get("periodChecked").asBoolean());
+        Set<String> excludedIds = new HashSet<>();
+        for (JsonNode e : crew.get("excluded")) {
+            excludedIds.add(e.get("workerId").asText());
+            if ("W009".equals(e.get("workerId").asText())) assertTrue(e.get("excludedReason").asText().contains("ORD-2026-002"));
+        }
+        assertTrue(excludedIds.containsAll(List.of("W009", "W010")), excludedIds.toString());
+        assertFalse(recommendedIds(crew).contains("W009"));
+        assertEquals(409, status("PUT", "/api/matching/orders/ORD-2026-005", admin, Map.of("teamId", "team_b", "crew", List.of("W026", "W009"))),
+                "撞期工人不可派");
+    }
+
+    @Test
+    @Order(6)
+    void periodValidationAndWhoMayChangeIt() throws Exception {
+        Map<String, Object> base = Map.of("farmerName", "工期測試", "cropId", "taoyuan_veg", "area", 2.0, "plan", "early_bird");
+        Map<String, Object> bad = new HashMap<>(base);
+        bad.put("startDate", "2026-11-10");
+        bad.put("endDate", "2026-11-05");
+        assertEquals(400, status("POST", "/api/orders", admin, bad), "完工早於開工");
+        Map<String, Object> half = new HashMap<>(base);
+        half.put("startDate", "2026-11-10");
+        assertEquals(400, status("POST", "/api/orders", admin, half), "只給開工日");
+        Map<String, Object> ok = new HashMap<>(base);
+        ok.put("startDate", "2026-11-10");
+        ok.put("endDate", "2026-11-12");
+        JsonNode created = json(call("POST", "/api/orders", admin, ok)).get("data");
+        assertEquals("2026-11-12", created.get("endDate").asText());
+
+        MvcResult r = call("POST", "/api/auth/reset-password", admin, Map.of("identifier", "farmer", "newPassword", "Farmer#2026pw"));
+        assertEquals(200, r.getResponse().getStatus());
+        String farmer = login("farmer", "Farmer#2026pw");
+        assertEquals(200, status("PUT", "/api/orders/ORD-2026-014", farmer,
+                Map.of("startDate", "2026-10-06", "endDate", "2026-10-08")), "待付款訂單農場主可改工期");
+        assertEquals(409, status("PUT", "/api/orders/ORD-2026-001", farmer,
+                Map.of("startDate", "2026-10-07", "endDate", "2026-10-09")), "已排定訂單須由合作社調整");
+        assertEquals(409, status("PUT", "/api/orders/ORD-2026-004", admin,
+                Map.of("startDate", "2026-09-16", "endDate", "2026-09-19")), "已完工不可改");
     }
 
     @Test

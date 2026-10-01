@@ -388,7 +388,7 @@
           // 嘗試後端驗證（若後端運作則同步資料；若離線或帳密不符亦不阻擋 Demo 體驗）
           try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 600);
+            const timeoutId = setTimeout(() => controller.abort(), 3000); // 後端 PBKDF2 驗證約 1~1.5 秒
             const res = await fetch(`${API_BASE}/auth/login`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },

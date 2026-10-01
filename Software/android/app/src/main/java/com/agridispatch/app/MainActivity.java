@@ -86,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
         configureWebView(bindingWebView);
 
         // 載入本地離線資產，或回退至伺服器
-        bindingWebView.loadUrl("file:///android_asset/www/index.html");
+        bindingWebView.loadUrl("file:///android_asset/www/農業派遣主網站/index.html");
     }
 
     @SuppressLint("SetJavaScriptEnabled")

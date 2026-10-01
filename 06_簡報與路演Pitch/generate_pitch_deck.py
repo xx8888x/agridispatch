@@ -408,7 +408,7 @@ def create_presentation():
     if os.path.exists(chart_cons) and os.path.exists(chart_c1):
         slide7b = prs.slides.add_slide(blank_slide_layout)
         set_bg(slide7b, LIGHT_BG)
-        add_header(slide7b, "如實揭露：現行定價下合作社仍虧損，建議方案 C1／C2 可使其第一年起即有結餘", category="FINANCIALS")
+        add_header(slide7b, "如實揭露：現行定價下合作社仍虧損，C1／C2 可使其第一年起即有結餘", category="FINANCIALS")
         # 兩張圖左右並排（原圖 960×520，等比縮放）
         slide7b.shapes.add_picture(chart_cons, Inches(0.5), Inches(1.9), width=Inches(6.1))
         slide7b.shapes.add_picture(chart_c1, Inches(6.75), Inches(1.9), width=Inches(6.1))

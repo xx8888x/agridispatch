@@ -1886,10 +1886,11 @@
       }
 
       const statusMap = {
-        pending: { text: '待確認', bg: 'bg-amber-500/20', textCol: 'text-amber-300', border: 'border-amber-500/30' },
-        confirmed: { text: '已排班', bg: 'bg-emerald-500/20', textCol: 'text-emerald-300', border: 'border-emerald-500/30' },
-        in_progress: { text: '作業中', bg: 'bg-cyan-500/20', textCol: 'text-cyan-300', border: 'border-cyan-500/30' },
-        completed: { text: '已完工', bg: 'bg-slate-700/50', textCol: 'text-slate-300', border: 'border-slate-600' }
+        pending: { text: '待付定金', bg: 'bg-amber-500/20', textCol: 'text-amber-300', border: 'border-amber-500/30' },
+        confirmed: { text: '已排定', bg: 'bg-emerald-500/20', textCol: 'text-emerald-300', border: 'border-emerald-500/30' },
+        in_progress: { text: '履約中', bg: 'bg-cyan-500/20', textCol: 'text-cyan-300', border: 'border-cyan-500/30' },
+        completed: { text: '已完工', bg: 'bg-slate-700/50', textCol: 'text-slate-300', border: 'border-slate-600' },
+        cancelled: { text: '已取消', bg: 'bg-red-500/10', textCol: 'text-red-300', border: 'border-red-500/30' }
       };
 
       const esc = window.AgriUtil ? window.AgriUtil.escapeHtml : (s) => s;

@@ -73,8 +73,9 @@ public class LineBotDispatcher {
             return FlexMessageBuilder.getBindingFlex(userId);
         }
 
-        // 9. 需要即時資料的查詢（工班名冊、產曆、費率）轉由後端產生；後端離線時回到服務導覽
-        if (clean.contains("工班") || clean.contains("名冊") || clean.contains("司機")
+        // 9. 需要即時資料的查詢（訂單、工班名冊、產曆、費率）轉由後端產生；後端離線時回到服務導覽
+        if (clean.contains("訂單") || clean.contains("單號") || clean.contains("ord-")
+                || clean.contains("工班") || clean.contains("名冊") || clean.contains("司機")
                 || clean.contains("產曆") || clean.contains("產季") || clean.contains("收穫") || clean.contains("採收")
                 || clean.contains("費率") || clean.contains("價格") || clean.contains("多少錢") || clean.contains("計費")) {
             String backendReply = BackendQueryClient.query(userId, userText);

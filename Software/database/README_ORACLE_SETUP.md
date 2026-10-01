@@ -1,6 +1,6 @@
 # 智農派工 (AgriDispatch) - Oracle Database 建置與 SQL Developer 連線指引
 
-本專案已備妥專屬之 Oracle 資料庫建庫腳本、11 大實體資料表結構（含主外鍵與完整中文註解）、20 位在籍移工與訂單初始種子資料，以及 Oracle SQL Developer 連線設定檔。
+本專案已備妥專屬之 Oracle 資料庫建庫腳本、14 大實體資料表結構（含主外鍵與完整中文註解）、20 位在籍移工與訂單初始種子資料，以及 Oracle SQL Developer 連線設定檔。
 
 ---
 
@@ -52,13 +52,13 @@ D:\派遣專案網站(農事及其它)\Software\database\
 - **方法 B（手動建立連線）**：
   - **連線名稱**：`AgriDispatch_Oracle`
   - **使用者名稱**：`c##agridispatch` (或 `system`)
-  - **密碼**：`AgriDispatch2026#` (或您設定之密碼)
+  - **密碼**：您自行設定的密碼（連線檔不儲存密碼，連線時輸入；請勿把密碼寫進任何檔案）
   - **主機名稱**：`localhost` (或遠端資料庫 IP)
   - **連接埠**：`1521`
   - **服務名稱 (Service Name)**：`XEPDB1` 或 `FREEPDB1` (若為舊版 SID 請選 `XE` 或 `ORCL`)
 
 ### 步驟 4：一鍵執行腳本
-點擊 SQL 編輯器工具列的 **「以指令碼執行 (Run Script)」** 按鈕（快捷鍵：`F5`），即可自動完成 11 大資料表建立與種子資料匯入！
+點擊 SQL 編輯器工具列的 **「以指令碼執行 (Run Script)」** 按鈕（快捷鍵：`F5`），即可自動完成 14 大資料表建立與種子資料匯入！
 
 ---
 
@@ -68,13 +68,13 @@ D:\派遣專案網站(農事及其它)\Software\database\
 
 1. **官方安裝包 (最推薦 Windows 原生)**：
    - 前往 Oracle 官網下載：[Oracle Database 23ai Free for Windows (x64)](https://www.oracle.com/database/technologies/oracle23ai-free-downloads.html)
-   - 下載解壓縮後點擊 `setup.exe`，安裝過程設定密碼（例如 `AgriDispatch2026#`）。
+   - 下載解壓縮後點擊 `setup.exe`，安裝過程設定一組強密碼（請自行保管，勿寫入專案檔案）。
    - 安裝完成後，服務會自動於背景開機啟動，連接埠即為 `1521`，服務名稱為 `FREEPDB1`。
 
 2. **Docker / Podman 容器化運行 (若有使用容器環境)**：
    ```bash
    docker run -d --name oracle23ai \
      -p 1521:1521 \
-     -e ORACLE_PWD=AgriDispatch2026# \
+     -e ORACLE_PWD="<請自行設定強密碼>" \
      container-registry.oracle.com/database/free:latest
    ```

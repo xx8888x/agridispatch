@@ -6,7 +6,7 @@
 
 -- 【步驟 0】建立專案專用使用者與權限 (需以 SYSDBA 或 SYSTEM 執行，若已在專屬 Schema 下可略過)
 /*
-CREATE USER c##agridispatch IDENTIFIED BY "AgriDispatch2026#"
+CREATE USER c##agridispatch IDENTIFIED BY "<請自行設定強密碼，勿寫入版本控制>"
 DEFAULT TABLESPACE users
 TEMPORARY TABLESPACE temp
 QUOTA UNLIMITED ON users;
@@ -222,7 +222,7 @@ CREATE TABLE workers (
     CONSTRAINT chk_workers_leader CHECK (is_leader IN ('Y', 'N'))
 );
 
-COMMENT ON TABLE workers IS '在籍外展農工表：農業部特許在籍之 20 位外展移工與本國師級人才';
+COMMENT ON TABLE workers IS '在籍外展農工表：外展機構合法聘僱之 20 位外展移工與本國師級人才';
 COMMENT ON COLUMN workers.id IS '移工編號 (如 W001)';
 COMMENT ON COLUMN workers.nationality IS '國籍 (越南, 印尼, 泰國, 本國)';
 COMMENT ON COLUMN workers.base_salary IS '外展保障基本法定底薪 (NT$ 28,590)';

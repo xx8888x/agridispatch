@@ -6,9 +6,9 @@
          <entry key="name" value="智農派工_AgriDispatch_FREEPDB1"/>
          <entry key="user" value="agridispatch"/>
          <entry key="customUrl" value=""/>
-         <entry key="password" value="AgriDispatch2026#"/>
+         <entry key="password" value=""/>
          <entry key="role" value="DEFAULT"/>
-         <entry key="savePassword" value="true"/>
+         <entry key="savePassword" value="false"/>
          <entry key="connType" value="Basic"/>
          <entry key="driver" value="thin"/>
          <entry key="port" value="1521"/>
@@ -21,9 +21,9 @@
          <entry key="connectionId" value="AgriDispatch_SYSDBA"/>
          <entry key="name" value="本機_SYSDBA_FREEPDB1"/>
          <entry key="user" value="sys"/>
-         <entry key="password" value="AgriDispatch2026#"/>
+         <entry key="password" value=""/>
          <entry key="role" value="SYSDBA"/>
-         <entry key="savePassword" value="true"/>
+         <entry key="savePassword" value="false"/>
          <entry key="connType" value="Basic"/>
          <entry key="driver" value="thin"/>
          <entry key="port" value="1521"/>

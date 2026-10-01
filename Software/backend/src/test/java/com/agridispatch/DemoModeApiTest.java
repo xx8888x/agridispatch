@@ -126,7 +126,7 @@ class DemoModeApiTest extends ApiTestSupport {
 
         JsonNode c1 = json(call("POST", "/api/payments/checkout", farmer, Map.of("orderId", orderId, "amount", 1)));
         assertEquals("PENDING", c1.get("status").asText());
-        assertEquals(5220, c1.get("amount").asInt());
+        assertEquals(6300, c1.get("amount").asInt());
         String txId = c1.get("transactionId").asText();
         JsonNode c2 = json(call("POST", "/api/payments/checkout", farmer, Map.of("orderId", orderId)));
         assertEquals(txId, c2.get("transactionId").asText(), "未付款前重複結帳沿用同一筆交易");
@@ -135,7 +135,7 @@ class DemoModeApiTest extends ApiTestSupport {
         assertEquals(200, confirm.getResponse().getStatus());
         JsonNode paid = json(confirm);
         assertEquals("SUCCESS", paid.get("status").asText());
-        assertEquals(5220, paid.get("amountPaid").asInt());
+        assertEquals(6300, paid.get("amountPaid").asInt());
         assertEquals("confirmed", paid.get("orderStatus").asText(), "pending → confirmed");
         assertFalse(paid.get("alreadyPaid").asBoolean());
 

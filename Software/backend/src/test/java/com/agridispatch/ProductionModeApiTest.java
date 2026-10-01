@@ -262,8 +262,8 @@ class ProductionModeApiTest extends ApiTestSupport {
         assertNotEquals("ORD-2026-001", created.get("id").asText(), "不可覆寫既有訂單");
         assertEquals("pending", created.get("status").asText(), "需定金方案新訂單為 pending");
         assertFalse(created.get("depositPaid").asBoolean());
-        assertEquals(26100, created.get("finalAmount").asInt(), "金額由後端計算：100h×290×0.9");
-        assertEquals(5220, created.get("depositAmount").asInt());
+        assertEquals(31500, created.get("finalAmount").asInt(), "金額由後端計算：100h×315（早鳥不打折）");
+        assertEquals(6300, created.get("depositAmount").asInt());
         assertEquals("陳建龍 (阿龍班長)", orderRepository.findById("ORD-2026-001").orElseThrow().getFarmerName());
     }
 
@@ -280,13 +280,13 @@ class ProductionModeApiTest extends ApiTestSupport {
         JsonNode u = json(r).get("data");
         assertFalse(u.get("depositPaid").asBoolean());
         assertEquals("pending", u.get("status").asText());
-        assertEquals(26100, u.get("finalAmount").asInt());
+        assertEquals(31500, u.get("finalAmount").asInt());
         assertEquals("請帶剪刀", u.get("foremanNotes").asText());
 
         // 面積變更 → 重算
         JsonNode u2 = json(call("PUT", "/api/orders/" + id, adminToken, Map.of("area", 10.0))).get("data");
         assertEquals(200, u2.get("totalHours").asInt());
-        assertEquals(52200, u2.get("finalAmount").asInt());
+        assertEquals(63000, u2.get("finalAmount").asInt());
 
         // 方案改為免定金 → 定金 0、狀態轉 confirmed
         JsonNode u3 = json(call("PUT", "/api/orders/" + id, adminToken, Map.of("plan", "hourly_flex"))).get("data");
@@ -330,11 +330,11 @@ class ProductionModeApiTest extends ApiTestSupport {
         assertEquals(200, co.getResponse().getStatus());
         JsonNode res = json(co);
         assertEquals("PENDING", res.get("status").asText());
-        assertEquals(5220, res.get("amount").asInt(), "金額由後端依訂單計算，忽略 client amount");
+        assertEquals(6300, res.get("amount").asInt(), "金額由後端依訂單計算，忽略 client amount");
         String txId = res.get("transactionId").asText();
         assertTrue(txId.length() <= 20);
         Map<String, String> formParams = om.convertValue(res.get("next").get("params"), Map.class);
-        assertEquals("5220", formParams.get("TotalAmount"));
+        assertEquals("6300", formParams.get("TotalAmount"));
         assertTrue(EcpayCheckMac.verify(formParams, HASH_KEY, HASH_IV), "送往綠界的表單 CheckMacValue 正確");
 
         Map<String, String> notify = new LinkedHashMap<>();
@@ -343,7 +343,7 @@ class ProductionModeApiTest extends ApiTestSupport {
         notify.put("RtnCode", "1");
         notify.put("RtnMsg", "交易成功");
         notify.put("TradeNo", "2309231234567890");
-        notify.put("TradeAmt", "5220");
+        notify.put("TradeAmt", "6300");
         notify.put("PaymentDate", "2026/09/23 10:00:00");
         notify.put("PaymentType", "Credit_CreditCard");
         notify.put("TradeDate", "2026/09/23 09:59:00");

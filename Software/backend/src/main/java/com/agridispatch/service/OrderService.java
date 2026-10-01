@@ -23,6 +23,8 @@ public class OrderService {
             "drone_pest_control", "cold_chain_pack", "typhoon_emergency");
     /** 單筆訂單面積上限（分地），防止誤植或惡意輸入造成金額溢位 */
     public static final double MAX_AREA = 10_000;
+    /** 產季早鳥工時包單價（元/hr）：不打折，全案統一 315，高於 F2 v2.3 方案 C2 損益兩平價約 306 */
+    public static final int EARLY_BIRD_RATE = 315;
 
     private final OrderRepository orderRepository;
     private final CropRepository cropRepository;
@@ -55,7 +57,7 @@ public class OrderService {
                 "description", "蔬菜採收、果實留蒂剪摘、田間初級篩選去老葉、標準規格分級裝箱。",
                 "suggestedTeam", "team_a",
                 "suggestedTeamName", "工班 A 組 (桃園溫室蔬菜組)",
-                "rateNote", "標準牌價 (早鳥 9 折)"
+                "rateNote", "早鳥工時包 $315/hr (鎖定名額・優先排班)"
             ),
             Map.of(
                 "id", "tillage_planting",
@@ -183,12 +185,15 @@ public class OrderService {
         double estDays = Math.round((totalHours / (suggestedWorkers * 8.0)) * 10.0) / 10.0;
 
         double discount = 1.0;
-        String planName = "【Tier 1】產季早鳥工時包 (9折・保證出工)";
+        String planName = "【Tier 1】產季早鳥工時包 (鎖定名額・優先排班)";
         int surcharge = "cross_region".equals(zone) ? 1200 : 0;
 
         if ("early_bird".equals(plan)) {
-            discount = 0.90;
-            planName = "【Tier 1】核心外展移工早鳥包 (預售 9 折・20%定金鎖定)";
+            // 早鳥不打折：統一 315 元/hr，誘因改為鎖定產季名額、優先排班、遲到免單、放鳥雙倍賠
+            if (!"typhoon_emergency".equals(dispatchCategory)) {
+                unitRate = EARLY_BIRD_RATE;
+            }
+            planName = "【Tier 1】核心外展移工早鳥包 ($315/hr・鎖定名額・優先排班・20%定金)";
         } else if ("hourly_flex".equals(plan)) {
             discount = 1.0;
             if (!"typhoon_emergency".equals(dispatchCategory)) {

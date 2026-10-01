@@ -69,7 +69,7 @@ public class FlexMessageBuilder {
      * 4. 產季早鳥保證工時包
      */
     public static String getEarlyBirdFlex() {
-        return wrapFlex("⚡ 2026 產季早鳥保證工時包 - 預付20%定金享9折", 
+        return wrapFlex("⚡ 2026 產季早鳥保證工時包 - 315元/hr・鎖定名額・優先排班", 
                 loadTemplateOrFallback("06_early_bird.json", "{}"));
     }
 

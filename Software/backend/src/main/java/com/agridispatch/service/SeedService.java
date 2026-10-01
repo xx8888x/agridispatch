@@ -252,6 +252,7 @@ public class SeedService {
      * 既有資料修正（不覆蓋使用者資料，只修正已知錯誤值）
      * - 本國工 arcNumber 佔位字「本國身分證」→ null（避免證號查詢重複）
      * - 舊版基本工資說明文字 28,590 → 現行常數
+     * - 早鳥工時包改為 315 元/hr 不打折：未經使用者修改（金額仍為舊種子值）的示範訂單與標準 DM 改為新金額
      */
     private void migrateLegacyData() {
         for (Worker w : workerRepository.findAll()) {
@@ -272,6 +273,48 @@ public class SeedService {
                 userRepository.save(u);
             }
         }
+        migrateEarlyBirdPricing();
+    }
+
+    /** 早鳥 9 折 → 315 元/hr 不打折。值：{舊 finalAmount, 新 unitRate, 新 standardAmount, 新 finalAmount, 新 depositAmount} */
+    private static final java.util.Map<String, int[]> EARLY_BIRD_SEED_ORDERS = java.util.Map.of(
+            "ORD-2026-001", new int[]{26100, 315, 31500, 31500, 6300},
+            "ORD-2026-002", new int[]{53040, 315, 61680, 61680, 12096},
+            "ORD-2026-005", new int[]{110064, 360, 122160, 122160, 24192},
+            "ORD-2026-006", new int[]{126480, 315, 152400, 152400, 30240},
+            "ORD-2026-009", new int[]{36246, 315, 42780, 42780, 8316},
+            "ORD-2026-010", new int[]{45750, 315, 48450, 48450, 9450},
+            "ORD-2026-013", new int[]{45360, 315, 52920, 52920, 10584},
+            "ORD-2026-014", new int[]{34560, 315, 40320, 40320, 8064});
+    /** 值：{舊 discountPrice, 新 originalPrice = 新 discountPrice, 新 depositAmount} */
+    private static final java.util.Map<String, int[]> EARLY_BIRD_SEED_BROCHURES = java.util.Map.of(
+            "dm-mango-2026", new int[]{16200, 18900, 3780},
+            "dm-greenhouse-2026", new int[]{30240, 37800, 7560},
+            "dm-coldchain-2026", new int[]{19800, 25200, 5040});
+
+    private void migrateEarlyBirdPricing() {
+        String oldPlanName = "【Tier 1】產季早鳥工時包 (9折保證出工)";
+        EARLY_BIRD_SEED_ORDERS.forEach((id, v) -> orderRepository.findById(id).ifPresent(o -> {
+            if (!"early_bird".equals(o.getPlan()) || !oldPlanName.equals(o.getPlanName()) || o.getFinalAmount() != v[0]) return;
+            o.setPlanName("【Tier 1】產季早鳥工時包 (鎖定名額・優先排班)");
+            o.setUnitRate(v[1]);
+            o.setStandardAmount(v[2]);
+            o.setFinalAmount(v[3]);
+            o.setDepositAmount(v[4]);
+            orderRepository.save(o);
+        }));
+        EARLY_BIRD_SEED_BROCHURES.forEach((id, v) -> brochureRepository.findById(id).ifPresent(b -> {
+            if (b.getDiscountPrice() != v[0]) return;
+            b.setOriginalPrice(v[1]);
+            b.setDiscountPrice(v[1]);
+            b.setDepositAmount(v[2]);
+            if (b.getDescription() != null) {
+                b.setDescription(b.getDescription().replace(
+                        "產季前 60 天預購享 9 折優惠，預付 20% 定金即可鎖定黃金採收期第一優先出工特權！",
+                        "產季前 60 天預購，每小時 315 元不打折；預付 20% 定金即可鎖定產季名額、優先排班，遲到免單、放鳥雙倍賠！"));
+            }
+            brochureRepository.save(b);
+        }));
     }
 
     private void seedCrops() {
@@ -404,15 +447,15 @@ public class SeedService {
         {
             List<Order> orders = List.of(
                 createOrder("ORD-2026-001", "陳建龍 (阿龍班長)", "0912-345-678", "桃園市八德區興豐路有機蔬菜專區",
-                        "taoyuan_veg", "桃園溫室有機蔬菜 (八德)", 5.0, "early_bird", "【Tier 1】產季早鳥工時包 (9折保證出工)",
+                        "taoyuan_veg", "桃園溫室有機蔬菜 (八德)", 5.0, "early_bird", "【Tier 1】產季早鳥工時包 (鎖定名額・優先排班)",
                         "harvest_grading", "【採收分級】田間採收與外銷分級",
                         "廖國安 (八德三號棚領班)", "0932-111-222", "進場請先至 3 號棚工具室報到，由廖領班分派菜畦",
-                        "core_35km", 0, 100, 3, 290, 29000, 26100, 5220, true, "confirmed", "team_a", "2026-09-18 08:30:00"),
+                        "core_35km", 0, 100, 3, 315, 31500, 31500, 6300, true, "confirmed", "team_a", "2026-09-18 08:30:00"),
                 createOrder("ORD-2026-002", "林友財 (三星青蔥契作組長)", "0921-888-777", "宜蘭縣三星鄉大隱村青蔥契作田",
-                        "scallion", "宜蘭三星青蔥 (三星/壯圍)", 8.0, "early_bird", "【Tier 1】產季早鳥工時包 (9折保證出工)",
+                        "scallion", "宜蘭三星青蔥 (三星/壯圍)", 8.0, "early_bird", "【Tier 1】產季早鳥工時包 (鎖定名額・優先排班)",
                         "harvest_grading", "【採收分級】田間採收與外銷分級",
                         "林友財 (本人帶隊)", "0921-888-777", "水洗機已備妥，請直接至水洗場分組出工",
-                        "cross_region", 1200, 192, 4, 300, 58800, 53040, 10368, true, "in_progress", "team_b", "2026-09-19 09:15:00"),
+                        "cross_region", 1200, 192, 4, 315, 61680, 61680, 12096, true, "in_progress", "team_b", "2026-09-19 09:15:00"),
                 createOrder("ORD-2026-003", "張金泉 (峨眉東方美人茶園)", "0932-111-999", "新竹縣峨眉鄉石井村茶園第2區",
                         "hsinchu_tea", "新竹手採茶/坪林包種茶", 3.5, "turnkey", "【Tier 3】專業成果統包代耕 (驗收付款)",
                         "drone_pest_control", "【科技植保】無人機精準噴藥施肥",
@@ -424,15 +467,15 @@ public class SeedService {
                         "黃世勳 (本人帶隊)", "0918-666-333", "彩椒棚內已拉好引蔓線，請帶剪定鋏",
                         "core_35km", 0, 80, 3, 310, 24800, 24800, 0, true, "completed", "team_a", "2026-09-15 10:00:00"),
                 createOrder("ORD-2026-005", "枋山愛文芒果產銷第7班", "0935-777-555", "屏東縣枋山鄉善餘村芒果專區",
-                        "mango", "愛文芒果 (屏東枋山/台南玉井)", 12.0, "early_bird", "【Tier 1】產季早鳥工時包 (9折保證出工)",
+                        "mango", "愛文芒果 (屏東枋山/台南玉井)", 12.0, "early_bird", "【Tier 1】產季早鳥工時包 (鎖定名額・優先排班)",
                         "typhoon_emergency", "【緊急救火】防颱搶收 24H 馳援",
                         "柯志明 (搶收應變指揮)", "0920-555-666", "🚨 颱風警報搶收，24H分兩班，向柯指揮官領取採收箱",
-                        "cross_region", 1200, 336, 6, 360, 122160, 110064, 21773, false, "pending", "team_b", "2026-09-21 14:10:00"),
+                        "cross_region", 1200, 336, 6, 360, 122160, 122160, 24192, false, "pending", "team_b", "2026-09-21 14:10:00"),
                 createOrder("ORD-2026-006", "恆春鎮農會契作洋蔥大聯盟", "0910-222-333", "屏東縣恆春鎮德和里洋蔥專業區",
-                        "onion", "洋蔥 (屏東恆春/高樹)", 15.0, "early_bird", "【Tier 1】產季早鳥工時包 (9折保證出工)",
+                        "onion", "洋蔥 (屏東恆春/高樹)", 15.0, "early_bird", "【Tier 1】產季早鳥工時包 (鎖定名額・優先排班)",
                         "tillage_planting", "【整地種植】曳引機深耕與定植",
                         "陳得勝 (洋蔥班工頭)", "0915-444-555", "曳引機進場請走東側產業道路，注意灌溉溝渠",
-                        "cross_region", 1200, 480, 6, 290, 140400, 126480, 25056, true, "completed", "team_c", "2026-09-12 08:00:00"),
+                        "cross_region", 1200, 480, 6, 315, 152400, 152400, 30240, true, "completed", "team_c", "2026-09-12 08:00:00"),
                 createOrder("ORD-2026-007", "彭宏基 (新埔照門柑橘園)", "0928-333-888", "新竹縣新埔鎮照門里果園",
                         "xinpu_citrus", "新竹新埔柑橘/柿餅", 6.0, "hourly_flex", "【Tier 2】在地彈性兼職包 (隨叫隨派)",
                         "pruning_bagging", "【田間管理】修枝疏果與引蔓套袋",
@@ -444,15 +487,15 @@ public class SeedService {
                         "張金福 (草莓棚領班)", "0919-666-777", "草莓採收需輕拿輕放，九分熟紅果優先挑選",
                         "cross_region", 1200, 113, 3, 310, 36230, 36230, 0, false, "pending", "team_a", "2026-09-22 16:40:00"),
                 createOrder("ORD-2026-009", "新社香菇智慧產銷班", "0937-555-888", "台中市新社區協成里香菇溫室",
-                        "mushroom", "台中新社太空包香菇", 6.0, "early_bird", "【Tier 1】產季早鳥工時包 (9折保證出工)",
+                        "mushroom", "台中新社太空包香菇", 6.0, "early_bird", "【Tier 1】產季早鳥工時包 (鎖定名額・優先排班)",
                         "cold_chain_pack", "【冷鏈包裝】室內預冷與生鮮截切",
                         "李添木 (溫控班長)", "0937-111-333", "進入預冷庫請著保暖外套，先做截切後入庫",
-                        "cross_region", 1200, 132, 3, 295, 40140, 36246, 7009, true, "confirmed", "team_d", "2026-09-20 13:15:00"),
+                        "cross_region", 1200, 132, 3, 315, 42780, 42780, 8316, true, "confirmed", "team_d", "2026-09-20 13:15:00"),
                 createOrder("ORD-2026-010", "壯圍網紋洋香瓜示範園", "0922-999-000", "宜蘭縣壯圍鄉新南村瓜棚",
-                        "melon", "宜蘭壯圍網紋洋香瓜", 5.0, "early_bird", "【Tier 1】產季早鳥工時包 (9折保證出工)",
+                        "melon", "宜蘭壯圍網紋洋香瓜", 5.0, "early_bird", "【Tier 1】產季早鳥工時包 (鎖定名額・優先排班)",
                         "pruning_bagging", "【田間管理】修枝疏果與引蔓套袋",
                         "吳政宏 (瓜棚領工)", "0922-333-444", "網紋瓜疏果一株留一果，請依標記修剪",
-                        "cross_region", 1200, 150, 4, 330, 50700, 45750, 8910, false, "cancelled", "team_b", "2026-09-17 15:30:00"),
+                        "cross_region", 1200, 150, 4, 315, 48450, 48450, 9450, false, "cancelled", "team_b", "2026-09-17 15:30:00"),
                 createOrder("ORD-2026-011", "蘆竹水耕智慧農場", "0911-333-222", "桃園市蘆竹區南山路溫室二廠",
                         "taoyuan_veg", "桃園溫室有機蔬菜 (八德/大溪)", 3.0, "hourly_flex", "【Tier 2】在地彈性兼職包 (隨叫隨派)",
                         "cold_chain_pack", "【冷鏈包裝】室內預冷與生鮮截切",
@@ -465,15 +508,15 @@ public class SeedService {
                         "cross_region", 1200, 150, 4, 310, 47700, 45375, 13253, true, "completed", "team_c", "2026-09-10 09:00:00"),
                 // 農場主工作台 (farmer.html) 展示的兩筆訂單；金額與後端試算 /api/orders/calculate 一致
                 createOrder("ORD-2026-013", "陳建龍 (阿龍班長)", "0912-345-678", "枋山愛文芒果合作園區 2 號地",
-                        "mango", "愛文芒果 (屏東枋山/台南玉井)", 6.0, "early_bird", "【Tier 1】產季早鳥工時包 (9折保證出工)",
+                        "mango", "愛文芒果 (屏東枋山/台南玉井)", 6.0, "early_bird", "【Tier 1】產季早鳥工時包 (鎖定名額・優先排班)",
                         "harvest_grading", "【採收分級】田間採收與外銷分級",
                         "林小龍 (副班長)", "0921-999-888", "早上 06:45 枋山 2 號集貨場集合",
-                        "core_35km", 0, 168, 6, 300, 50400, 45360, 9072, true, "in_progress", "team_b", "2026-09-22 09:00:00"),
+                        "core_35km", 0, 168, 6, 315, 52920, 52920, 10584, true, "in_progress", "team_b", "2026-09-22 09:00:00"),
                 createOrder("ORD-2026-014", "陳建龍 (阿龍班長)", "0912-345-678", "苗栗卓蘭果園產區",
-                        "pear", "高接梨 (台中東勢/苗栗卓蘭)", 4.0, "early_bird", "【Tier 1】產季早鳥工時包 (9折保證出工)",
+                        "pear", "高接梨 (台中東勢/苗栗卓蘭)", 4.0, "early_bird", "【Tier 1】產季早鳥工時包 (鎖定名額・優先排班)",
                         "pruning_bagging", "【田間管理】修枝疏果與引蔓套袋",
                         "陳建龍 (農場主本人帶隊)", "0912-345-678", "農場主本人親自現場帶隊指揮調度",
-                        "core_35km", 0, 128, 5, 300, 38400, 34560, 6912, false, "pending", "待分派", "2026-09-23 10:00:00")
+                        "core_35km", 0, 128, 5, 315, 40320, 40320, 8064, false, "pending", "待分派", "2026-09-23 10:00:00")
             );
             // 示範農場主 F001（陳建龍）的訂單
             orders.get(0).setFarmerId("F001");
@@ -606,14 +649,14 @@ public class SeedService {
                 "🥭",
                 "emerald",
                 "https://images.unsplash.com/photo-1553279768-865429fa0078?w=800&auto=format&fit=crop&q=80",
-                18000,
-                16200,
+                18900,
+                18900,
                 20,
-                3240,
+                3780,
                 60,
                 4,
                 2,
-                "內含 60 個標準外展技術工時（約 4 位熟練農工出勤 2 天）。產季前 60 天預購享 9 折優惠，預付 20% 定金即可鎖定黃金採收期第一優先出工特權！",
+                "內含 60 個標準外展技術工時（約 4 位熟練農工出勤 2 天）。產季前 60 天預購，每小時 315 元不打折；預付 20% 定金即可鎖定產季名額、優先排班，遲到免單、放鳥雙倍賠！",
                 "[{\"icon\":\"🛡️\",\"title\":\"保證 1：保證出工，違約雙倍賠償\",\"desc\":\"合約簽訂後，約定出工日清晨 07:00 前專車準時送抵田門口。因平台失誤導致延遲，當日工資全免並加倍賠償農損！\"},{\"icon\":\"✂️\",\"title\":\"保證 2：外銷採收 SOP，保護果粉\",\"desc\":\"全程配戴細絨棉手套，嚴禁手指摩擦果粉。蒂頭精準保留 0.5～1.0 公分，輕採輕放，特級品良率高達 95% 以上！\"},{\"icon\":\"🌧️\",\"title\":\"保證 3：下雨轉冷鏈，果農零停工損失\",\"desc\":\"遇暴雨田區泥濘，專車 15 分鐘轉接至屏南冷鏈集貨場做外銷分級套袋。果農免付停工底薪，風雨無阻全勤營運！\"},{\"icon\":\"🧾\",\"title\":\"保證 4：合法發票與勞保名冊，安心報帳\",\"desc\":\"完工即開立合作社統一發票並附上全員職災保險名冊，全聯、好市多與國稅局稽核 100% 合規，經營高枕無憂！\"}]",
                 "[{\"item\":\"法律合規性\",\"illegal\":\"違法非法黑工，被查獲罰 15～75 萬元\",\"legal\":\"依外展農務制度申請中，依法足額納保！\"},{\"item\":\"出工確定性\",\"illegal\":\"口頭約定，隨時被隔壁大戶加價 300 截工放鳥\",\"legal\":\"簽署正式契約，白紙黑字保證出工，違約雙倍賠償！\"},{\"item\":\"採收手路技術\",\"illegal\":\"烏合之眾，碰掉外銷果粉、剪傷蒂頭變次級品\",\"legal\":\"受過外銷日韓採收 SOP 訓練，蒂頭留 0.5cm，果粉完好！\"},{\"item\":\"下雨天候停工\",\"illegal\":\"田間泥濘無法下田，果農白賠錢，工人沒收入\",\"legal\":\"降雨 15 分鐘專車轉派屏南冷鏈預冷場包裝，零損失！\"},{\"item\":\"發票與稽核\",\"illegal\":\"只能開手寫白單，全聯、好市多無法報帳抵稅\",\"legal\":\"開立合法合作社統一發票，全聯通路稽核 100% 過關！\"}]",
                 "陳建龍（阿龍班長）",
@@ -637,10 +680,10 @@ public class SeedService {
                 "🥬",
                 "lime",
                 "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&auto=format&fit=crop&q=80",
-                33600,
-                30240,
+                37800,
+                37800,
                 20,
-                6048,
+                7560,
                 120,
                 6,
                 4,
@@ -699,10 +742,10 @@ public class SeedService {
                 "❄️",
                 "cyan",
                 "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&auto=format&fit=crop&q=80",
-                22000,
-                19800,
+                25200,
+                25200,
                 20,
-                3960,
+                5040,
                 80,
                 5,
                 2,

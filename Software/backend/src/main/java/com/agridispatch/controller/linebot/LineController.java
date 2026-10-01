@@ -310,7 +310,7 @@ public class LineController {
         bItems.add(createRowKV("📋 訂單進度", "輸入「查訂單」或「ORD-2026-001」"));
         bItems.add(createRowKV("📅 全台產曆", "輸入「查產曆」、「芒果產季」、「洋蔥」"));
         bItems.add(createRowKV("👷 工班人力", "輸入「查工班」、「工班B組」、「外展移工」"));
-        bItems.add(createRowKV("💰 服務費率", "輸入「查費率」、「早鳥9折」、「防颱搶收」"));
+        bItems.add(createRowKV("💰 服務費率", "輸入「查費率」、「早鳥」、「防颱搶收」"));
         body.put("contents", bItems);
         contents.put("body", body);
 
@@ -367,7 +367,7 @@ public class LineController {
                 ? target.getForemanName() + " (" + target.getForemanPhone() + ")"
                 : "陳建龍 (農場主本人帶隊 0921-999-888)";
         String catName = target != null && target.getCategoryName() != null ? target.getCategoryName() : "採收與初級分級";
-        double total = target != null ? target.getFinalAmount() : 45360.0;
+        double total = target != null ? target.getFinalAmount() : 52920.0;
 
         List<Map<String, Object>> hItems = new ArrayList<>();
         hItems.add(createLabel("訂單查詢結果・即時履約戰情", "#A7F3D0", "xs", "bold"));
@@ -474,7 +474,7 @@ public class LineController {
         footer.put("paddingAll", "16px");
 
         List<Map<String, Object>> fItems = new ArrayList<>();
-        fItems.add(createButton("⚡ 預購產季早鳥保證工時包 (9折)", "https://agridispatch.tw/web/farmer.html", "#D97706"));
+        fItems.add(createButton("⚡ 預購產季早鳥保證工時包 (鎖定名額・優先排班)", "https://agridispatch.tw/web/farmer.html", "#D97706"));
         fItems.add(createButton("🗓️ 瀏覽 52 週完整產曆動態輪播", "https://agridispatch.tw/web/index.html#calendar", "#2563EB"));
         footer.put("contents", fItems);
         contents.put("footer", footer);
@@ -580,7 +580,7 @@ public class LineController {
 
         List<Map<String, Object>> bItems = new ArrayList<>();
         bItems.add(createRowKV("田間標準採收", "NT$ 300 / 小時 (基本工時)"));
-        bItems.add(createRowKV("產季早鳥保證包", "NT$ 270 / 小時 (享 9 折，定金 20%)"));
+        bItems.add(createRowKV("產季早鳥保證包", "NT$ 315 / 小時 (鎖定名額・優先排班，定金 20%)"));
         bItems.add(createRowKV("防颱搶收馳援", "NT$ 360 / 小時 (24H 優先調度加乘)"));
         bItems.add(createRowKV("大型曳引機整地", "NT$ 310 / 小時 (80hp 機具另計)"));
         bItems.add(createRowKV("無人機精準代噴", "NT$ 250 / 分地 (大疆 T50 植保機)"));

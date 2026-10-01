@@ -254,7 +254,7 @@ public class AuthService {
         }
         return Map.of(
             "farmers", List.of(
-                Map.of("label", "陳建龍 (阿龍班長) - 八德有機蔬菜班", "username", "farmer", "refId", "F001", "note", "契作面積 5.0 分地・早鳥 9 折預約中"),
+                Map.of("label", "陳建龍 (阿龍班長) - 八德有機蔬菜班", "username", "farmer", "refId", "F001", "note", "契作面積 5.0 分地・早鳥工時包預約中"),
                 Map.of("label", "李春發 (春發伯) - 宜蘭三星青蔥專班", "username", "farmer_yilan", "refId", "F002", "note", "契作面積 8.2 分地・跨區調度專線")
             ),
             "foreignWorkers", List.of(

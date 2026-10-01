@@ -215,7 +215,7 @@ CREATE TABLE orders (
 
 COMMENT ON TABLE orders IS '派工訂單表：早鳥工時包預約與出工履約紀錄';
 COMMENT ON COLUMN orders.id IS '訂單流水號 (如 ORD-2026-001)';
-COMMENT ON COLUMN orders.plan IS '商業方案 (early_bird:早鳥9折, hourly_flex:彈性點工, turnkey:成果統包)';
+COMMENT ON COLUMN orders.plan IS '商業方案 (early_bird:早鳥工時包 315元/hr 不打折, hourly_flex:彈性點工, turnkey:成果統包)';
 COMMENT ON COLUMN orders.final_amount IS '折讓後應付總額';
 COMMENT ON COLUMN orders.deposit_amount IS '早鳥 20% 鎖約定金';
 COMMENT ON COLUMN orders.deposit_paid IS '定金是否已繳納 (Y/N)';
@@ -571,8 +571,8 @@ INSERT INTO dispatch_teams VALUES ('team_d', '工班 D 組 (冷鏈常態組)', 5
 
 -- 4. 派工訂單
 INSERT INTO orders (id, farmer_id, farmer_name, phone, farm_location, crop_id, crop_name, area, plan, plan_name, total_hours, suggested_workers, unit_rate, standard_amount, final_amount, deposit_amount, deposit_paid, status, assigned_team_id, created_at) VALUES ('ORD-2026-001', 'F001', '陳建龍 (阿龍班長)', '0912-345-678', '屏東縣枋山鄉加祿段 32 號',
-    'mango', '愛文芒果 (屏東枋山)', 6.0, 'early_bird', '產季早鳥工時包 (9折保證出工)',
-    168, 4, 300, 50400, 45360, 9072, 'Y', 'confirmed', 'team_b', SYSTIMESTAMP);
+    'mango', '愛文芒果 (屏東枋山)', 6.0, 'early_bird', '產季早鳥工時包 (鎖定名額・優先排班)',
+    168, 4, 315, 52920, 52920, 10584, 'Y', 'confirmed', 'team_b', SYSTIMESTAMP);
 
 -- 5. 在籍移工 (20位)
 INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W001', 'team_a', 'Nguyễn Văn Hùng', '阮文雄', '越南', 'Y', 29500, 8800, 2400, SYSTIMESTAMP);
@@ -608,7 +608,7 @@ INSERT INTO weather_states VALUES ('WS-001', 'sunny', '全台晴朗炎熱', 'N',
     '全區田間出勤中・外展農工出勤率 100% (20/20 人在崗)', 62500, 160, NULL, SYSTIMESTAMP);
 
 -- 8. 雙軌財務帳本
-INSERT INTO financial_ledger VALUES ('LED-001', 'ORD-2026-001', 45360, 8165, 37195, 8800, SYSTIMESTAMP);
+INSERT INTO financial_ledger VALUES ('LED-001', 'ORD-2026-001', 52920, 9526, 43394, 8800, SYSTIMESTAMP);
 
 -- 9. LINE 使用者綁定
 INSERT INTO line_users VALUES ('LU-001', 'U1001_FARMER', 'farmer', '陳建龍 (阿龍班長)', 'farmer', 'zh', 'Y', SYSTIMESTAMP);
@@ -618,7 +618,7 @@ INSERT INTO line_users VALUES ('LU-004', 'U4001_ADMIN', 'admin_tech', '智農調
 
 -- 10. LINE 推播歷程
 INSERT INTO line_messages VALUES ('LMSG-1726826610001', 'U1001_FARMER', 'SYSTEM_BROADCAST', 'farmer', 'early_bird',
-    '📋 智農派工 - 枋山愛文芒果派工確認單 (早鳥9折保證出工)', SYSTIMESTAMP);
+    '📋 智農派工 - 枋山愛文芒果派工確認單 (早鳥工時包・鎖定名額)', SYSTIMESTAMP);
 INSERT INTO line_messages VALUES ('LMSG-1726826610002', 'U2001_WORKER_VN', 'SYSTEM_BROADCAST', 'worker_foreign', 'daily_task',
     '📋 Thẻ Nhiệm Vụ Hôm Nay - 06:30 Tập hợp lên xe 1 (张大哥)', SYSTIMESTAMP);
 

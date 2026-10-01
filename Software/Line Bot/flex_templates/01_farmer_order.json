@@ -86,7 +86,7 @@
         "spacing": "sm",
         "contents": [
           { "type": "text", "text": "應付金額", "color": "#64748B", "size": "xs", "flex": 2 },
-          { "type": "text", "text": "NT$ 45,360 (早鳥9折 / 定金已收 20%)", "color": "#DC2626", "size": "xs", "weight": "bold", "flex": 5 }
+          { "type": "text", "text": "NT$ 52,920 (早鳥 315/hr / 定金已收 20%)", "color": "#DC2626", "size": "xs", "weight": "bold", "flex": 5 }
         ]
       }
     ]

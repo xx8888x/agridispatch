@@ -191,7 +191,7 @@ public class WebSimulatorHandler implements HttpHandler {
                     🌧️ 暴雨避險通報
                   </button>
                   <button onclick="sendKeyword('早鳥')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left font-medium transition">
-                    ⚡ 早鳥 9 折工時包
+                    ⚡ 早鳥工時包・鎖定名額
                   </button>
                   <button onclick="sendKeyword('機耕')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left font-medium transition">
                     🚜 大疆 T50 機耕工單

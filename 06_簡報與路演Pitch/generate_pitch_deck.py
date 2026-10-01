@@ -5,6 +5,7 @@ from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 from pptx.enum.shapes import MSO_SHAPE
+from pptx.oxml.ns import qn
 
 def create_presentation():
     prs = Presentation()
@@ -38,7 +39,7 @@ def create_presentation():
         bg.line.fill.background()
         return bg
 
-    def add_header(slide, title_text, category="智農派工 AgriDispatch"):
+    def add_header(slide, title_text, category="智農派工 AgriDispatch", dark=False):
         # Header banner
         cat_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.5), Inches(11.7), Inches(0.35))
         tf_cat = cat_box.text_frame
@@ -57,7 +58,7 @@ def create_presentation():
         p_title.text = title_text
         p_title.font.size = Pt(24)
         p_title.font.bold = True
-        p_title.font.color.rgb = TEXT_MAIN
+        p_title.font.color.rgb = WHITE if dark else TEXT_MAIN   # 深色背景頁標題改白字
         p_title.font.name = FONT_HEADING
 
     def add_card(slide, left, top, width, height, title, content_list, bg_color=CARD_BG, border_color=CARD_BORDER, title_color=PRIMARY_GREEN):
@@ -81,13 +82,53 @@ def create_presentation():
 
         for item in content_list:
             p = tf.add_paragraph()
-            p.text = "• " + item
-            p.font.size = Pt(13)
+            if not item:                       # 空字串＝段落間距，不加圓點
+                p.font.size = Pt(6)
+                continue
+            sub = item.startswith("• ")        # 已帶圓點者視為子項目，縮排並改用空心圓點
+            p.text = ("◦ " + item[2:]) if sub else ("• " + item)
+            # 懸掛縮排：換行後對齊圓點後的文字
+            p._p.get_or_add_pPr().set("marL", str(Pt(34 if sub else 14)))
+            p._p.get_or_add_pPr().set("indent", str(-Pt(14)))
+            p.font.size = Pt(16)
             p.font.color.rgb = TEXT_MAIN
             p.font.name = FONT_BODY
             p.space_after = Pt(8)
 
         return card
+
+    def set_font(rPr, face):
+        """確保 rPr 依 schema 順序含 a:latin 與 a:ea（latin 須在 cs、sym、hlink 等之前）。"""
+        latin = rPr.find(qn("a:latin"))
+        if latin is None:
+            latin = rPr.makeelement(qn("a:latin"), {"typeface": face})
+            later = [c for c in rPr if c.tag in {qn("a:ea"), qn("a:cs"), qn("a:sym"), qn("a:hlinkClick"),
+                                                  qn("a:hlinkMouseOver"), qn("a:rtl"), qn("a:extLst")}]
+            later[0].addprevious(latin) if later else rPr.append(latin)
+        ea = rPr.find(qn("a:ea"))
+        if ea is None:
+            latin.addnext(rPr.makeelement(qn("a:ea"), {"typeface": latin.get("typeface")}))
+
+    def polish_cjk(prs):
+        """全份簡報套用中文排版：標點懸尾（避免句號單獨成行）、東亞斷行規則、繁中語系。"""
+        for slide in prs.slides:
+            for shape in slide.shapes:
+                if not shape.has_text_frame:
+                    continue
+                for para in shape.text_frame.paragraphs:
+                    pPr = para._p.get_or_add_pPr()
+                    pPr.set("hangingPunct", "1")
+                    pPr.set("eaLnBrk", "1")
+                    # 語系設為繁中後 PowerPoint 會改用東亞字型（預設新細明體），須同步指定 ea 字型
+                    defRPr = pPr.find(qn("a:defRPr"))
+                    latin = defRPr.find(qn("a:latin")) if defRPr is not None else None
+                    face = latin.get("typeface") if latin is not None else FONT_BODY
+                    if defRPr is not None:
+                        set_font(defRPr, face)
+                    for run in para.runs:
+                        rPr = run._r.get_or_add_rPr()
+                        rPr.set("lang", "zh-TW")
+                        set_font(rPr, face)
 
     def add_notes(slide, script_text):
         notes_slide = slide.notes_slide
@@ -211,7 +252,7 @@ def create_presentation():
     # ==========================================
     slide4 = prs.slides.add_slide(blank_slide_layout)
     set_bg(slide4, DARK_BG)
-    add_header(slide4, "現場原型展示：手捏可運行的數位戰情室 (Live Demo)", category="PRODUCT & TECHNOLOGY")
+    add_header(slide4, "現場原型展示：手捏可運行的數位戰情室 (Live Demo)", category="PRODUCT & TECHNOLOGY", dark=True)
 
     # Big highlight center box
     box = slide4.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(1.8), Inches(11.7), Inches(5.0))
@@ -225,7 +266,7 @@ def create_presentation():
     tf.word_wrap = True
 
     p = tf.paragraphs[0]
-    p.text = "【請切換筆電螢幕至展示系統：Software/demo/app.html】"
+    p.text = "【請切換筆電螢幕至展示系統：Software/demo/index.html】"
     p.font.size = Pt(22)
     p.font.bold = True
     p.font.color.rgb = MANGO_ORANGE
@@ -457,7 +498,7 @@ def create_presentation():
     # ==========================================
     slide9 = prs.slides.add_slide(blank_slide_layout)
     set_bg(slide9, DARK_BG)
-    add_header(slide9, "極致資本效率：一個人、一部電腦、會寫程式的硬派創辦人", category="FOUNDER & EXECUTION")
+    add_header(slide9, "極致資本效率：一個人、一部電腦、會寫程式的硬派創辦人", category="FOUNDER & EXECUTION", dark=True)
 
     box = slide9.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(1.8), Inches(11.7), Inches(5.0))
     box.fill.solid()
@@ -506,7 +547,7 @@ def create_presentation():
     # ==========================================
     slide10 = prs.slides.add_slide(blank_slide_layout)
     set_bg(slide10, DARK_BG)
-    add_header(slide10, "進駐訴求與願景：攜手 Garage+ 建立農業勞務數位基礎設施", category="THE ASK & VISION")
+    add_header(slide10, "進駐訴求與願景：攜手 Garage+ 建立農業勞務數位基礎設施", category="THE ASK & VISION", dark=True)
 
     box = slide10.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(1.8), Inches(11.7), Inches(5.0))
     box.fill.solid()
@@ -558,6 +599,7 @@ def create_presentation():
 
     # Output file
     output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "02_智農派工_Demo簡報_加速器Pitch.pptx")
+    polish_cjk(prs)
     prs.save(output_path)
     print(f"Successfully generated: {output_path}")
 

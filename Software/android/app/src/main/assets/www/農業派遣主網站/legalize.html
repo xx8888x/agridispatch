@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 AgriDispatch - 現有工班黑轉白轉換中心</title>
+  <!-- 執行模式設定（demo / production，每份副本各自一份） -->
+  <script src="js/app-config.js"></script>
+  <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
+  <script src="js/api-client.js"></script>
+  <script>
+    // production 模式：無 token 或角色不符則導向登入頁（demo 模式不強制）
+    if (window.AgriAuth) window.AgriAuth.requireRole(['farmer'], 'farmer-login.html');
+  </script>
+  <script>
+    if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode !== 'production') {
+      document.write('<script src="js/demo-accounts.js"><\/script>');
+    }
+  </script>
+  <!-- Tailwind CSS CDN -->
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
+  <!-- Chart.js CDN -->
+  <script src="js/vendor/chart.umd.min.js"></script>
+  <script>
+    if (typeof Chart === 'undefined') {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"><\/script>');
+    }
+  </script>
+  <!-- AgriDocs: Payment & Document Downloader -->
+  <script src="js/agri-docs.js"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <!-- Logo & System Title -->
+      <div class="flex items-center gap-3 shrink-0">
+        <a href="index.html" class="flex items-center gap-2 group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-brand-600/30 shrink-0">
+            <span class="text-xl">👨‍🌾</span>
+          </div>
+          <div class="whitespace-nowrap">
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-lg tracking-tight text-white group-hover:text-brand-400 transition">智農派工</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 font-semibold">農場主專屬工作台</span>
+            </div>
+            <p class="hidden sm:block text-[11px] text-slate-400">早鳥工時包 ╳ 6大派工類別 ╳ 自訂現場小工頭</p>
+          </div>
+        </a>
+      </div>
+
+      <!-- Center Role Switcher Links (Individual HTML Pages) -->
+      <nav class="hidden lg:flex items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700/60 shadow-inner text-xs shrink-0 whitespace-nowrap">
+        <a href="farmer.html" class="px-3 py-1.5 rounded-lg bg-cyan-600 text-white font-bold shadow transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <span>👨‍🌾</span> 農場主
+        </a>
+        <a href="worker-foreign.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <span>👷</span> 外展移工
+        </a>
+        <a href="worker-local.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <span>🚜</span> 本地工/領班
+        </a>
+        <a href="../科技後台/admin.html" class="px-3 py-1.5 rounded-lg bg-indigo-600/80 hover:bg-indigo-600 text-white font-bold transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20 shrink-0 whitespace-nowrap">
+          <span>💻</span> 科技後台
+        </a>
+        <a href="../linebot/line.html" class="px-3 py-1.5 rounded-lg bg-[#06C755]/20 text-cyan-300 hover:bg-[#06C755]/30 border border-cyan-500/40 font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <span>💬</span> LINE Bot
+        </a>
+        <a href="farmers_map.html" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <span>🗺️</span> 產地地圖
+        </a>
+        <a href="brochure.html" class="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <span>📑</span> 產品文宣 DM
+        </a>
+        <a href="../科技後台/admin.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <span>📱</span> 整合戰情
+        </a>
+        
+      </nav>
+
+      <!-- Right User Profile -->
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0 whitespace-nowrap">
+        <div class="hidden sm:flex flex-col text-right shrink-0">
+          <span id="header-user-name" class="text-xs font-bold text-cyan-400 flex items-center justify-end gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> 陳建龍 (阿龍班長)
+          </span>
+          <span id="header-farm-name" class="text-[11px] text-slate-400">屏東枋山愛文芒果合作園</span>
+        </div>
+        <a href="farmer-login.html" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1 shrink-0 whitespace-nowrap">
+          <span>🔑</span> 切換帳號
+        </a>
+        <a href="index.html" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 transition flex items-center gap-1 shrink-0 whitespace-nowrap">
+          <span>🏠</span> 首頁
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile Sub-nav -->
+    <div class="lg:hidden flex items-center justify-around border-t border-slate-800 py-2 px-2 bg-slate-900/95 overflow-x-auto no-scrollbar text-xs whitespace-nowrap gap-1">
+      <a href="farmer.html" class="px-2.5 py-1 text-cyan-400 font-bold border-b-2 border-cyan-400 shrink-0 whitespace-nowrap">👨‍🌾 農場主</a>
+      <a href="worker-foreign.html" class="px-2.5 py-1 text-slate-400 hover:text-white shrink-0 whitespace-nowrap">👷 移工端</a>
+      <a href="worker-local.html" class="px-2.5 py-1 text-slate-400 hover:text-white shrink-0 whitespace-nowrap">🚜 本地工/領班</a>
+      <a href="../科技後台/admin.html" class="px-2.5 py-1 text-indigo-400 hover:text-white shrink-0 whitespace-nowrap">💻 後台</a>
+      <a href="brochure.html" class="px-2.5 py-1 text-amber-300 font-bold shrink-0 whitespace-nowrap">📑 DM</a>
+      <a href="../linebot/line.html" class="px-2.5 py-1 text-cyan-400 font-bold flex items-center gap-0.5 shrink-0 whitespace-nowrap"><span>💬</span>LINE</a>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- Title & Value Prop -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800 pb-6">
+      <div class="space-y-2">
+        <a href="farmer.html" class="text-xs text-slate-400 hover:text-cyan-300 transition">← 回農場主工作台</a>
+        <h1 class="text-2xl sm:text-3xl font-black text-white flex items-center gap-2">
+          <span>🔄</span> 現有工班「黑轉白」轉換中心
+        </h1>
+        <p class="text-sm text-slate-400 max-w-3xl leading-relaxed">
+          盤點目前在農場工作、尚未合法聘僱或投保的人員，系統依身分自動分流：<span class="text-emerald-400 font-bold">能直接轉白的</span>，由合作社聘僱並加保；
+          <span class="text-amber-300 font-bold">有條件的</span>，先補齊許可；<span class="text-rose-300 font-bold">依法不能就地轉白的</span>，由平台派合法工班補位，不讓農忙斷人。
+        </p>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button onclick="resetDemo()" class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">↺ 重設示範資料</button>
+        <button onclick="openAddForm()" class="px-4 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white shadow-lg shadow-emerald-600/20 transition">＋ 登錄現有工人</button>
+      </div>
+    </div>
+
+    <!-- 法規重點提醒 -->
+    <div class="p-4 rounded-2xl bg-rose-950/40 border border-rose-500/40 flex items-start gap-3">
+      <div class="text-2xl">⚖️</div>
+      <div class="text-xs text-slate-300 leading-relaxed space-y-1">
+        <p class="text-rose-200 font-black text-sm">先講清楚：失聯（逃逸）移工依法無法在農場「就地合法化」</p>
+        <p>就業服務法第 44 條、第 57 條第 1 款禁止非法容留、聘僱未經許可或他人所申請之外國人，違者依第 63 條處<span class="text-rose-300 font-bold">每人新臺幣 15 萬～75 萬元罰鍰</span>，五年內再犯另有刑責。
+          平台不會把這類人員登錄為工人或代為派工；本模組改為提供<span class="font-bold text-white">正規到案資訊</span>，並由合作社派<span class="font-bold text-white">合法外展工班補上空缺</span>。</p>
+        <p class="text-slate-500">本頁為路演示範，法規說明僅供參考；標示 <span class="text-amber-300">【待確認】</span> 之處須由律師或主管機關確認。</p>
+      </div>
+    </div>
+
+    <!-- 流程四步驟 -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800"><div class="text-cyan-400 font-black text-xs">STEP 1</div><div class="text-white font-bold text-sm mt-1">📋 盤點現有工班</div><p class="text-[11px] text-slate-400 mt-1">登錄目前在園區工作的人員與身分</p></div>
+      <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800"><div class="text-cyan-400 font-black text-xs">STEP 2</div><div class="text-white font-bold text-sm mt-1">🧭 系統身分分流</div><p class="text-[11px] text-slate-400 mt-1">依法規判斷可直接轉、有條件或不可轉</p></div>
+      <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800"><div class="text-cyan-400 font-black text-xs">STEP 3</div><div class="text-white font-bold text-sm mt-1">✅ 逐項完成轉白</div><p class="text-[11px] text-slate-400 mt-1">合作社聘僱、簽約、加保、開通打卡</p></div>
+      <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800"><div class="text-cyan-400 font-black text-xs">STEP 4</div><div class="text-white font-bold text-sm mt-1">🚐 缺口合法補位</div><p class="text-[11px] text-slate-400 mt-1">無法轉白的空缺，一鍵改派外展工班</p></div>
+    </div>
+
+    <!-- KPI -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3" id="kpiRow"></div>
+
+    <div class="grid lg:grid-cols-12 gap-6">
+      <!-- 左：工班清冊 -->
+      <div class="lg:col-span-7 space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-black text-white">📋 現有工班清冊</h2>
+          <span class="text-[11px] text-slate-500">點選人員查看轉白步驟</span>
+        </div>
+        <div id="rosterList" class="space-y-2"></div>
+      </div>
+
+      <!-- 右：轉白步驟 + 補位 + 風險 -->
+      <div class="lg:col-span-5 space-y-6">
+        <div id="detailPanel" class="p-5 rounded-3xl bg-slate-900 border border-cyan-500/40 shadow-2xl space-y-4"></div>
+
+        <div class="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+          <h3 class="text-white font-black flex items-center gap-2"><span>🛡️</span> 違法聘僱罰鍰暴露試算</h3>
+          <p class="text-[11px] text-slate-400">計算基礎：清冊中「失聯移工」與「借用他人移工」且尚未停止使用之人數 × 就服法第 63 條罰鍰（每人 15～75 萬）。</p>
+          <div class="grid grid-cols-2 gap-3 text-center">
+            <div class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30">
+              <div class="text-[11px] text-rose-300">目前暴露風險</div>
+              <div id="riskNow" class="text-lg font-black text-rose-200 mt-1">—</div>
+            </div>
+            <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+              <div class="text-[11px] text-emerald-300">全數改派合法工班後</div>
+              <div class="text-lg font-black text-emerald-200 mt-1">0 元</div>
+            </div>
+          </div>
+          <p class="text-[11px] text-amber-300">【待確認】過去已發生之違法聘僱，停止使用後責任能否減輕，須諮詢律師，本系統不作判斷。</p>
+        </div>
+
+        <div class="p-5 rounded-3xl bg-gradient-to-br from-emerald-900/50 to-cyan-900/40 border border-emerald-500/40 space-y-3">
+          <h3 class="text-white font-black flex items-center gap-2"><span>🚐</span> 合法工班補位</h3>
+          <p class="text-xs text-slate-300">無法就地轉白的人力缺口共 <span id="gapCount" class="text-2xl font-black text-emerald-300 mx-1">0</span> 人／日，由合作社外展移工或本地農務士補上，同樣享早鳥 9 折與職災保險。</p>
+          <a id="gapLink" href="farmer.html" class="block w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-brand-600 hover:from-emerald-500 hover:to-brand-500 text-white text-center font-black text-sm shadow-lg shadow-emerald-600/30 transition">🚀 一鍵帶入派工預約單</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 身分分流規則說明 -->
+    <div class="space-y-3">
+      <h2 class="text-lg font-black text-white">🧭 身分分流規則</h2>
+      <div id="rulesGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+    </div>
+
+  </main>
+
+  <!-- 登錄工人 Modal -->
+  <div id="addModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4">
+    <div class="w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-slate-700 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-white font-black">＋ 登錄現有工人</h3>
+        <button onclick="closeAddForm()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 mb-1">身分類型</label>
+        <select id="addType" onchange="onAddTypeChange()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white"></select>
+        <p id="addTypeHint" class="text-[11px] text-slate-400 mt-1"></p>
+      </div>
+      <div id="addNameWrap">
+        <label class="block text-xs font-semibold text-slate-300 mb-1">稱呼（可用暱稱）</label>
+        <input id="addName" type="text" placeholder="例：阿美姐" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white">
+      </div>
+      <div id="addAnonNote" class="hidden p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-[11px] text-rose-200">此類別不登錄姓名、證件或聯絡方式，只記錄「需補位的人力數」。</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">目前工作內容</label>
+          <input id="addJob" type="text" value="採收" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">每週約幾天</label>
+          <input id="addDays" type="number" min="1" max="7" value="5" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white">
+        </div>
+      </div>
+      <button onclick="submitAdd()" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-black text-sm transition">加入清冊並自動分流</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden px-4 py-3 rounded-2xl bg-slate-800 border border-cyan-500/40 text-sm text-white shadow-2xl max-w-[90vw]"></div>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 bg-slate-950 py-8 text-center text-xs text-slate-500 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 space-y-2">
+      <p>© 2026 智農派工 AgriDispatch. All rights reserved. 雙軌合規農事外展派遣平台</p>
+      <p>技術代管：智農科技有限公司 ╳ 外展主體：有限責任智農農業勞務生產合作社</p>
+    </div>
+  </footer>
+
+  <script>
+    // ------------------------------------------------------------------
+    // 黑轉白轉換中心（demo：資料存在瀏覽器 localStorage）
+    // ------------------------------------------------------------------
+    const STORE_KEY = 'agri.legalize.roster.v1';
+
+    // 身分類型 → 轉換路徑。path: direct 可直接轉 / conditional 有條件 / replace 不可就地轉、改派補位
+    const TYPES = {
+      local: {
+        label: '本國籍臨時工（未投保）', icon: '🧑‍🌾', path: 'direct',
+        summary: '由合作社聘僱為農務士，依法加保並申報薪資所得。',
+        steps: [
+          '填寫農務士加入申請（身分證、存摺影本）',
+          '與合作社簽訂定期勞動契約',
+          '合作社加保勞保／就保／職災保險並提繳勞退',
+          '開通 LINE 綁定與 GPS 上下班打卡',
+          '首次以合作社名義派回本園區'
+        ],
+        note: '已有農保或年滿 65 歲者之投保方式不同【待確認】，由合作社專員個別處理。'
+      },
+      spouse: {
+        label: '新住民（外籍／陸籍配偶）', icon: '🏠', path: 'direct',
+        summary: '依親居留之配偶在台工作免申請許可，可直接由合作社聘僱。',
+        steps: [
+          '上傳居留證正反面供合作社審核（確認為依親居留）',
+          '與合作社簽訂勞動契約（提供母語版本）',
+          '合作社加保勞保／就保／職災保險並提繳勞退',
+          '開通 LINE 綁定與 GPS 上下班打卡',
+          '首次以合作社名義派回本園區'
+        ],
+        note: '依就業服務法第 48 條、臺灣地區與大陸地區人民關係條例第 17-1 條；陸籍配偶居留類別與工作資格【待確認】。'
+      },
+      student: {
+        label: '外籍學生／僑生', icon: '🎓', path: 'conditional',
+        summary: '須先取得工作許可，學期中每週工時上限 20 小時。',
+        steps: [
+          '確認已向勞動部申請並取得工作許可',
+          '排班設定學期中每週 ≤ 20 小時（寒暑假除外）',
+          '與合作社簽訂勞動契約並加保',
+          '開通 LINE 綁定與打卡（系統自動攔截超時排班）'
+        ],
+        note: '依就業服務法第 50 條；許可效期與農業勞務是否適用【待確認】。未取得許可前不得排班。'
+      },
+      borrowed: {
+        label: '借用他人雇主的合法移工', icon: '🔁', path: 'replace',
+        summary: '移工只能為申請許可的原雇主工作，借用即違法，須立即停止，改由外展工班補位。',
+        steps: [
+          '今日起停止使用，請移工回原雇主處',
+          '結清已提供勞務之工資，勿扣留證件或財物',
+          '同一人力需求改由平台外展工班補位'
+        ],
+        note: '依就業服務法第 57 條第 1 款。若移工符合轉換雇主條件，須由原雇主及勞動部依法辦理【待確認】，平台不可直接接手。'
+      },
+      runaway: {
+        label: '失聯（逃逸）移工', icon: '⚠️', path: 'replace',
+        summary: '依法無法就地合法化。平台不登錄個資，只提供到案資訊並派合法工班補位。',
+        steps: [
+          '今日起停止使用；結清已提供勞務之工資，勿扣留證件或財物',
+          '可提供本人到案管道：移民署各縣市專勤隊、勞動部 1955 專線（多語）',
+          '同一人力需求改由平台外展工班補位'
+        ],
+        note: '自行到案之罰鍰、收容與日後能否再入境，依當時移民署規定與專案而定【待確認】；雇主既往責任請諮詢律師【待確認】。'
+      }
+    };
+
+    const PATH_STYLE = {
+      direct:      { text: '可直接轉白', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40' },
+      conditional: { text: '有條件轉白', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/40' },
+      replace:     { text: '不可就地轉・改派補位', cls: 'bg-rose-500/15 text-rose-300 border-rose-500/40' }
+    };
+
+    const DEMO_ROSTER = [
+      { id: 'w1', type: 'local',    name: '阿美姐',  job: '採收、分級', days: 6, done: [true, true, true, false, false] },
+      { id: 'w2', type: 'local',    name: '林伯',    job: '剪枝', days: 4, done: [true, false, false, false, false] },
+      { id: 'w3', type: 'spouse',   name: '阮氏蘭',  job: '套袋、採收', days: 5, done: [true, true, true, true, true] },
+      { id: 'w4', type: 'student',  name: '小黃（僑生）', job: '包裝', days: 2, done: [false, false, false, false] },
+      { id: 'w5', type: 'borrowed', name: '鄰園移工', job: '搬運', days: 3, done: [false, false, false] },
+      { id: 'w6', type: 'runaway',  name: null,     job: '採收', days: 6, done: [false, false, false] },
+      { id: 'w7', type: 'runaway',  name: null,     job: '採收', days: 6, done: [false, false, false] }
+    ];
+
+    let roster = [];
+    let selectedId = null;
+
+    function loadRoster() {
+      try {
+        const raw = localStorage.getItem(STORE_KEY);
+        if (raw) { roster = JSON.parse(raw); return; }
+      } catch (e) {}
+      roster = JSON.parse(JSON.stringify(DEMO_ROSTER));
+    }
+    function saveRoster() {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(roster)); } catch (e) {}
+    }
+
+    function displayName(w, idx) {
+      if (w.name) return w.name;
+      const n = roster.filter(x => x.type === w.type).indexOf(w) + 1;
+      return `匿名人力 #${n}`;
+    }
+    function isDone(w) { return w.done.every(Boolean); }
+    // 補位型：只要第 1 步「停止使用」完成，就不再計入罰鍰暴露
+    function isStopped(w) { return TYPES[w.type].path === 'replace' && w.done[0]; }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => el.classList.add('hidden'), 2600);
+    }
+
+    function renderKpis() {
+      const total = roster.length;
+      const direct = roster.filter(w => TYPES[w.type].path === 'direct').length;
+      const cond = roster.filter(w => TYPES[w.type].path === 'conditional').length;
+      const gap = roster.filter(w => TYPES[w.type].path === 'replace').length;
+      const white = roster.filter(w => TYPES[w.type].path !== 'replace' && isDone(w)).length;
+      const tiles = [
+        ['現有工班', total, 'text-white', '人'],
+        ['可直接轉白', direct, 'text-emerald-300', '人'],
+        ['有條件轉白', cond, 'text-amber-300', '人'],
+        ['需改派補位', gap, 'text-rose-300', '人'],
+        ['已完成轉白', white, 'text-cyan-300', '人']
+      ];
+      document.getElementById('kpiRow').innerHTML = tiles.map(([k, v, c, u]) => `
+        <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+          <div class="text-[11px] text-slate-400">${k}</div>
+          <div class="mt-1"><span class="text-2xl font-black ${c}">${v}</span> <span class="text-xs text-slate-500">${u}</span></div>
+        </div>`).join('');
+
+      const exposed = roster.filter(w => TYPES[w.type].path === 'replace' && !isStopped(w)).length;
+      document.getElementById('riskNow').textContent = exposed
+        ? `${(exposed * 15).toLocaleString()}～${(exposed * 75).toLocaleString()} 萬`
+        : '0 元';
+
+      document.getElementById('gapCount').textContent = gap;
+      document.getElementById('gapLink').href = gap ? `farmer.html?workers=${gap}&from=legalize` : 'farmer.html';
+    }
+
+    function renderRoster() {
+      const list = document.getElementById('rosterList');
+      if (!roster.length) {
+        list.innerHTML = '<div class="p-6 rounded-2xl bg-slate-900 border border-dashed border-slate-700 text-center text-sm text-slate-400">清冊是空的，請點「＋ 登錄現有工人」。</div>';
+        return;
+      }
+      list.innerHTML = roster.map(w => {
+        const t = TYPES[w.type];
+        const p = PATH_STYLE[t.path];
+        const doneCount = w.done.filter(Boolean).length;
+        const pct = Math.round(doneCount / w.done.length * 100);
+        const status = t.path === 'replace'
+          ? (isDone(w) ? '<span class="text-emerald-300">✓ 已停止使用並補位</span>' : (isStopped(w) ? '<span class="text-amber-300">已停止使用，待補位</span>' : '<span class="text-rose-300">仍在使用中</span>'))
+          : (isDone(w) ? '<span class="text-emerald-300">✓ 已轉白</span>' : `<span class="text-slate-400">進度 ${doneCount}/${w.done.length}</span>`);
+        const active = w.id === selectedId ? 'border-cyan-400 bg-slate-800/80' : 'border-slate-800 bg-slate-900 hover:border-slate-600';
+        return `
+          <button onclick="selectWorker('${w.id}')" class="w-full text-left p-4 rounded-2xl border ${active} transition">
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="text-2xl">${t.icon}</div>
+                <div class="min-w-0">
+                  <div class="text-white font-bold text-sm truncate">${escapeHtml(displayName(w))} <span class="text-[11px] text-slate-500 font-normal">· ${escapeHtml(w.job)} · 每週 ${w.days} 天</span></div>
+                  <div class="text-[11px] text-slate-400 truncate">${t.label}</div>
+                </div>
+              </div>
+              <span class="shrink-0 px-2 py-0.5 rounded-full border text-[11px] font-bold ${p.cls}">${p.text}</span>
+            </div>
+            <div class="mt-3 flex items-center gap-3">
+              <div class="flex-1 h-1.5 rounded-full bg-slate-800 overflow-hidden"><div class="h-full ${t.path === 'replace' ? 'bg-rose-400' : 'bg-emerald-400'}" style="width:${pct}%"></div></div>
+              <div class="text-[11px] shrink-0">${status}</div>
+            </div>
+          </button>`;
+      }).join('');
+    }
+
+    function renderDetail() {
+      const panel = document.getElementById('detailPanel');
+      const w = roster.find(x => x.id === selectedId);
+      if (!w) {
+        panel.innerHTML = '<div class="text-center text-sm text-slate-400 py-8">👈 點選左側人員，查看該身分的轉白步驟</div>';
+        return;
+      }
+      const t = TYPES[w.type];
+      const p = PATH_STYLE[t.path];
+      const steps = t.steps.map((s, i) => `
+        <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 cursor-pointer hover:border-slate-500 transition">
+          <input type="checkbox" ${w.done[i] ? 'checked' : ''} onchange="toggleStep('${w.id}', ${i}, this.checked)" class="mt-0.5 w-4 h-4 accent-emerald-500">
+          <span class="text-xs ${w.done[i] ? 'text-slate-500 line-through' : 'text-slate-200'}">${i + 1}. ${s}</span>
+        </label>`).join('');
+      const extra = t.path === 'replace'
+        ? `<a href="farmer.html?workers=1&from=legalize" class="block w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-center text-xs font-black transition">🚐 為此空缺預約合法工班</a>`
+        : '';
+      panel.innerHTML = `
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="text-white font-black text-lg">${t.icon} ${escapeHtml(displayName(w))}</div>
+            <div class="text-[11px] text-slate-400">${t.label}</div>
+          </div>
+          <span class="shrink-0 px-2 py-0.5 rounded-full border text-[11px] font-bold ${p.cls}">${p.text}</span>
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">${t.summary}</p>
+        <div class="space-y-2">${steps}</div>
+        <p class="text-[11px] text-amber-300/90 leading-relaxed">${t.note}</p>
+        ${extra}
+        <button onclick="removeWorker('${w.id}')" class="w-full py-2 rounded-xl text-[11px] text-slate-500 hover:text-rose-300 transition">從清冊移除</button>`;
+    }
+
+    function renderRules() {
+      document.getElementById('rulesGrid').innerHTML = Object.values(TYPES).map(t => {
+        const p = PATH_STYLE[t.path];
+        return `
+          <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <div class="text-white font-bold text-sm">${t.icon} ${t.label}</div>
+              <span class="shrink-0 px-2 py-0.5 rounded-full border text-[10px] font-bold ${p.cls}">${p.text}</span>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">${t.summary}</p>
+            <p class="text-[11px] text-amber-300/80 leading-relaxed">${t.note}</p>
+          </div>`;
+      }).join('');
+    }
+
+    function renderAll() { renderKpis(); renderRoster(); renderDetail(); }
+
+    function selectWorker(id) { selectedId = id; renderRoster(); renderDetail(); }
+
+    function toggleStep(id, i, checked) {
+      const w = roster.find(x => x.id === id);
+      if (!w) return;
+      w.done[i] = checked;
+      saveRoster();
+      renderAll();
+      if (checked && isDone(w)) {
+        toast(TYPES[w.type].path === 'replace'
+          ? `✅ ${displayName(w)} 的空缺已改由合法工班補位`
+          : `🎉 ${displayName(w)} 已完成轉白，已納入合作社農務士名冊`);
+      }
+    }
+
+    function removeWorker(id) {
+      roster = roster.filter(x => x.id !== id);
+      selectedId = null;
+      saveRoster();
+      renderAll();
+    }
+
+    function resetDemo() {
+      try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+      selectedId = null;
+      loadRoster();
+      renderAll();
+      toast('已重設為示範資料');
+    }
+
+    function openAddForm() {
+      const m = document.getElementById('addModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+      onAddTypeChange();
+    }
+    function closeAddForm() {
+      const m = document.getElementById('addModal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+    function onAddTypeChange() {
+      const t = TYPES[document.getElementById('addType').value];
+      const anon = t.path === 'replace';
+      document.getElementById('addTypeHint').textContent = `${PATH_STYLE[t.path].text}：${t.summary}`;
+      document.getElementById('addNameWrap').classList.toggle('hidden', anon);
+      document.getElementById('addAnonNote').classList.toggle('hidden', !anon);
+    }
+    function submitAdd() {
+      const type = document.getElementById('addType').value;
+      const t = TYPES[type];
+      const anon = t.path === 'replace';
+      const name = document.getElementById('addName').value.trim();
+      if (!anon && !name) { toast('請填寫稱呼'); return; }
+      const w = {
+        id: 'w' + Date.now(),
+        type,
+        name: anon ? null : name,
+        job: document.getElementById('addJob').value.trim() || '農務',
+        days: Math.min(7, Math.max(1, parseInt(document.getElementById('addDays').value, 10) || 1)),
+        done: t.steps.map(() => false)
+      };
+      roster.push(w);
+      selectedId = w.id;
+      saveRoster();
+      closeAddForm();
+      document.getElementById('addName').value = '';
+      renderAll();
+      toast(`已加入清冊，分流為「${PATH_STYLE[t.path].text}」`);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('addType').innerHTML = Object.entries(TYPES)
+        .map(([k, t]) => `<option value="${k}">${t.icon} ${t.label}</option>`).join('');
+      loadRoster();
+      selectedId = roster.length ? roster[0].id : null;
+      renderRules();
+      renderAll();
+    });
+  </script>
+</body>
+</html>

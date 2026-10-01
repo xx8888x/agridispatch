@@ -188,6 +188,9 @@
           <span>📋</span> 我的派工訂單與履約進度
           <span id="orderBadgeCount" class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">2 筆</span>
         </button>
+        <a href="legalize.html" class="px-5 py-3 rounded-2xl font-bold text-sm sm:text-base transition flex items-center gap-2 bg-slate-900 text-blue-300 hover:text-white hover:bg-slate-800 border border-blue-500/40">
+          <span>🔄</span> 現有工班黑轉白
+        </a>
       </div>
       <div class="hidden sm:flex items-center gap-2 text-xs text-slate-400">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -346,6 +349,7 @@
                 <li><span class="text-emerald-400 font-bold">通路認證：</span>完工可匯出出勤與合法用工證明，供產銷履歷與通路稽核使用</li>
                 <li><span class="text-emerald-400 font-bold">帳務透明：</span>開立合法發票，勞務費支出有憑有據，可交會計師依法列報</li>
               </ul>
+              <a href="legalize.html" class="inline-block mt-2 text-xs font-bold text-cyan-300 hover:text-white underline underline-offset-2">園區已有未投保的工班？→ 前往「黑轉白轉換中心」逐一轉換</a>
             </div>
           </div>
 
@@ -943,6 +947,9 @@
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       document.getElementById('fStartDate').value = tomorrow.toISOString().split('T')[0];
+      // 從黑轉白轉換中心帶入補位人數（?workers=N）
+      const qsWorkers = parseInt(new URLSearchParams(window.location.search).get('workers'), 10);
+      if (qsWorkers > 0) document.getElementById('fWorkersCount').value = Math.min(30, qsWorkers);
       calcFarmerForm();
       // 預設顯示「發起派工」（與分頁按鈕的初始樣式一致）；#orders 直接開啟訂單列表
       if (window.location.hash === '#orders') {

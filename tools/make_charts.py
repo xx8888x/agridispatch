@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""產生財務文件用圖表（SVG → PNG，以 Edge headless 轉檔，不需額外套件）。
+"""產生財務文件用圖表（SVG → PNG，以 Edge 或 Chrome headless 轉檔，不需額外套件）。
 
-數字來源：02_財務模型與政府補助/03_財務計畫報表2_…（F2 v2.1 財務定版）。
+數字來源：02_財務模型與政府補助/03_財務計畫報表2_…（F2 v2.2 財務定版）。
 F2 數字變動時，更新下方 DATA 後重新執行：
     python tools/make_charts.py
 輸出：02_財務模型與政府補助/charts/*.svg、*.png
@@ -14,7 +14,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "02_財務模型與政府補助" / "charts"
-EDGE = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+BROWSERS = [r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe"]
 
 # ── 色彩與版面（角色 token） ─────────────────────────────────────────
 SURFACE = "#ffffff"
@@ -28,7 +29,7 @@ FONT = "Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif"
 W, H = 960, 520
 PAD_L, PAD_R, PAD_T, PAD_B = 88, 32, 128, 64
 
-SOURCE = "資料來源：F2 財務計畫報表 2（v2.1 財務定版），基本情境不含政府補助"
+SOURCE = "資料來源：F2 財務計畫報表 2（v2.2 財務定版），基本情境不含政府補助、平台不承擔宿舍與專車"
 
 
 def esc(s):
@@ -227,7 +228,7 @@ def line_chart(categories, values, title, subtitle, color=S1, note=SOURCE):
     return svg_wrap(parts + footer(note))
 
 
-# ── DATA（元；出處為 F2 v2.1 章節） ───────────────────────────────────
+# ── DATA（元；出處為 F2 v2.2 章節） ───────────────────────────────────
 YEARS = ["第一年", "第二年", "第三年"]
 
 CHARTS = {
@@ -251,31 +252,31 @@ CHARTS = {
     "f2_consolidated": lambda: grouped_bars(
         YEARS,
         [dict(name="科技公司 EBITDA", color=S1, values=[252080, 3516800, 13924200]),
-         dict(name="合作社本期損益", color=S2, values=[-2585008, -8567600, -19241800]),
-         dict(name="合併營運結果", color=S3, values=[-2332928, -5050800, -5317600])],
-        "現行定價下，合作社三年皆虧損，合併結果為負",
-        "科技公司帳面獲利建立在合作社承擔虧損之上，須以第玖章調整方案解決，單位：萬元"),
+         dict(name="合作社本期損益", color=S2, values=[-1397008, -4313600, -7523800]),
+         dict(name="合併營運結果", color=S3, values=[-1144928, -796800, 6400400])],
+        "刪除宿舍與專車後，合併結果第三年轉正，合作社仍三年虧損",
+        "合作社虧損仍須以第玖章調整方案解決，單位：萬元"),
     # 柒、期末現金餘額
     "f2_cash_balance": lambda: line_chart(
         ["第0年（籌備）", "第一年", "第二年", "第三年"],
-        [430000, 280794, 1909734, 10669270],
-        "科技公司期末現金：第一年僅剩約 28 萬元",
+        [730000, 580794, 2209734, 10969270],
+        "科技公司期末現金：第一年期末約 58 萬元",
         "基本情境（不含補助、不含合作社預收定金），單位：萬元"),
     # 捌、敏感度分析（合併 Y3）
     "f2_sensitivity_y3": lambda: hbars(
         ["基本情境", "利用率 −5 個百分點", "最低工資每年 +3%", "利用率 −10 個百分點",
          "最低工資每年 +5%", "8,800 獎勵由合作社自付"],
-        [-5317600, -9654100, -10656070, -13990600, -14302709, -21157600],
-        "第三年合併營運結果：工資與利用率風險全落在合作社",
+        [6400400, 2063900, 1061930, -2272600, -2584709, -9439600],
+        "第三年合併營運結果：利用率 −10 或工資每年 +5% 即轉負",
         "各情境下第三年「科技公司 EBITDA + 合作社損益」，灰色為基本情境",
         highlight=0),
     # 玖、基本情境 vs 建議方案 C1
     "f2_coop_base_vs_c1": lambda: grouped_bars(
         YEARS,
-        [dict(name="基本情境（現行定價、18% 代管費）", color=S1, values=[-2585008, -8567600, -19241800]),
-         dict(name="建議方案 C1（待經營團隊決定）", color=S2, values=[1592, 1603272, 9152500])],
-        "合作社損益：建議方案 C1 可使第一年約損益兩平",
-        "C1＝第一層均價 +30 元/hr、交通費實報實銷、師傅 80% 工時計費、代管費率 15%，單位：萬元"),
+        [dict(name="基本情境（現行定價、18% 代管費）", color=S1, values=[-1397008, -4313600, -7523800]),
+         dict(name="建議方案 C1（待經營團隊決定）", color=S2, values=[145592, 2203272, 10952500])],
+        "合作社損益：建議方案 C1 可使第一年起即有結餘",
+        "C1＝第一層均價 +30 元/hr、師傅 80% 工時計費、代管費率 15%（不含宿舍與專車），單位：萬元"),
     # 柒、青創貸款還款（科技公司實際支付）
     "f2_loan_repayment": lambda: stacked_bars(
         ["第1年", "第2年", "第3年", "第4年", "第5年", "第6年"],
@@ -284,26 +285,42 @@ CHARTS = {
         "青創貸款 100 萬元：第 1 年寬限、第 2 年起每年還款約 20~21 萬",
         "前 2 年利息假設由政府補貼【待確認：補貼年限 2 年或 5 年】，單位：萬元",
         total_label="",
-        note="資料來源：F2 財務計畫報表 2（v2.1）第柒章 3 節，年息約 2.145%，6 年 72 期"),
+        note="資料來源：F2 財務計畫報表 2（v2.2）第柒章 3 節，年息約 2.145%，6 年 72 期"),
 }
 
 
-def render(name, svg):
+def render(name, svg, work):
     OUT.mkdir(parents=True, exist_ok=True)
     svg_path = OUT / f"{name}.svg"
     svg_path.write_text(svg, encoding="utf-8")
-    page = OUT / f"_{name}.html"
+    # 瀏覽器 headless 對含中文的路徑會靜默失敗（回傳 0 卻未寫檔），故在 ASCII 暫存資料夾轉檔後再複製回來
+    page = work / f"{name}.html"
     page.write_text(f'<!doctype html><meta charset="utf-8"><style>html,body{{margin:0;background:{SURFACE}}}</style>{svg}',
                     encoding="utf-8")
+    tmp_png = work / f"{name}.png"
+    for i, exe in enumerate(BROWSERS):
+        if not Path(exe).exists():
+            continue
+        subprocess.run([exe, "--headless=new", "--disable-gpu", "--hide-scrollbars",
+                        f"--window-size={W},{H}", "--force-device-scale-factor=2",
+                        f"--user-data-dir={work / f'profile{i}'}",   # Edge 與 Chrome 不可共用 profile
+                        f"--screenshot={tmp_png}", page.as_uri()],
+                       capture_output=True, timeout=120, stdin=subprocess.DEVNULL)
+        if tmp_png.exists():
+            break
+    if not tmp_png.exists():
+        raise RuntimeError(f"PNG 轉檔失敗：{name}")
     png = OUT / f"{name}.png"
-    subprocess.run([EDGE, "--headless=new", "--disable-gpu", "--hide-scrollbars",
-                    f"--window-size={W},{H}", "--force-device-scale-factor=2",
-                    f"--screenshot={png}", page.as_uri()],
-                   check=True, capture_output=True, timeout=120)
-    page.unlink()
+    png.write_bytes(tmp_png.read_bytes())
     return png
 
 
 if __name__ == "__main__":
-    for name, build in CHARTS.items():
-        print("OK", render(name, build()).name)
+    import shutil
+    import tempfile
+    work = Path(tempfile.mkdtemp(prefix="agri_charts_"))
+    try:
+        for name, build in CHARTS.items():
+            print("OK", render(name, build(), work).name)
+    finally:
+        shutil.rmtree(work, ignore_errors=True)

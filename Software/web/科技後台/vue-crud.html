@@ -1379,7 +1379,7 @@
         // Modals
         const workerModal = reactive({ show: false, isEdit: false, form: {} });
         const cropModal = reactive({ show: false, isEdit: false, form: {} });
-        const orderModal = reactive({ show: false, form: {} });
+        const orderModal = reactive({ show: false, form: {}, originalStatus: null });
         const talentModal = reactive({ show: false, isEdit: false, form: {} });
 
         // Order Calculator & Categories
@@ -1846,23 +1846,44 @@
 
         const openOrderModal = (order) => {
           orderModal.form = { ...order };
+          orderModal.originalStatus = order.status;
           orderModal.show = true;
         };
 
         const saveOrder = async () => {
+          const id = orderModal.form.id;
+          const statusChanged = orderModal.form.status !== orderModal.originalStatus;
           try {
-            const res = await fetch(`${API_BASE}/orders/${orderModal.form.id}`, {
+            const res = await fetch(`${API_BASE}/orders/${id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(orderModal.form)
             });
             const json = await res.json();
-            if (json.success) {
-              showToast('訂單資料已成功更新！');
-              orderModal.show = false;
-              fetchOrders();
+            if (!res.ok || !json.success) {
+              // 後端有回應但拒絕（例：已完工不可修改）：顯示原因，不改用本地模式
+              showToast(json.error || json.message || `訂單更新失敗 (HTTP ${res.status})`, 'error');
               return;
             }
+            // 一般更新 API 不處理狀態；狀態變更需走狀態機端點（含轉換規則與派工前加保檢查）
+            if (statusChanged) {
+              const sres = await fetch(`${API_BASE}/orders/${id}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: orderModal.form.status })
+              });
+              const sjson = await sres.json();
+              if (!sres.ok || !sjson.success) {
+                showToast(`訂單資料已更新，但狀態未變更：${sjson.error || sjson.message || `HTTP ${sres.status}`}`, 'error');
+                orderModal.show = false;
+                fetchOrders();
+                return;
+              }
+            }
+            showToast('訂單資料已成功更新！');
+            orderModal.show = false;
+            fetchOrders();
+            return;
           } catch (e) {
             console.warn('Backend unavailable, updating order locally', e);
           }

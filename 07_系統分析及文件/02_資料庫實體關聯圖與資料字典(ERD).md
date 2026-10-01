@@ -1,6 +1,6 @@
 # 智農派工 (AgriDispatch) - 資料庫實體關聯圖與資料字典 (ERD)
 
-> **文件版本**：v3.3.0（2026-10-01，依 `Software/backend/src/main/java/com/agridispatch/entity/*.java` 實際 JPA 實體更新：新增 `team_ratings`、`insurance_records`、`skill_reviews`、`clock_ins.orderId` 與領班評核欄位、`orders.crewWorkerIds`，補列 `farmers`、`financial_ledger`、`line_users`、`line_messages`；v3.0.0 為 2026-09-23）
+> **文件版本**：v3.4.0（2026-10-01，依 `Software/backend/src/main/java/com/agridispatch/entity/*.java` 實際 JPA 實體更新：新增 `team_ratings`、`insurance_records`、`skill_reviews`、`clock_ins.orderId` 與領班評核欄位、`orders.crewWorkerIds`、`orders.startDate`／`endDate`，補列 `farmers`、`financial_ledger`、`line_users`、`line_messages`；v3.0.0 為 2026-09-23）
 > **資料庫**：H2 檔案資料庫（`Software/backend/data/agridispatch_db`），Hibernate `ddl-auto: update` 自動建表
 > **Visio 圖檔**：同資料夾的 `.vdx` / `.vsdx` 為 v2.0 舊版，**以本文件的 Mermaid 圖為準**
 
@@ -87,6 +87,8 @@ erDiagram
         string status "pending / confirmed / in_progress / completed / cancelled"
         string assignedTeamId "→ dispatch_teams.id"
         string crewWorkerIds "出工名單（工號逗號分隔）"
+        date startDate "預定開工日（含當日）"
+        date endDate "預定完工日（含當日）"
         string foremanName
         string foremanPhone
         string foremanNotes
@@ -327,6 +329,7 @@ erDiagram
 | `depositPaid` | boolean | 定金是否已付；只能經金流流程設為 true |
 | `status` | String | 訂單狀態（見第參章） |
 | `assignedTeamId` | String | → `dispatch_teams.id` |
+| `startDate` / `endDate` | LocalDate | 預定開工／完工日（皆含當日）；須同時有值或同時為 null，完工不可早於開工，最長一年（Oracle 以 `chk_orders_period` 約束） |
 | `crewWorkerIds` | String(400) | 出工名單（工號以逗號分隔），只能由派工媒合 API 設定，`POST`／`PUT /api/orders` 不接受此欄位；null 表示未指定名單（以整個工班計） |
 | `foremanName` / `foremanPhone` / `foremanNotes` | String | 現場小工頭與交辦事項 |
 | `createdAt` | String | 建立時間 |
@@ -453,23 +456,25 @@ erDiagram
    - 暫停（任一，只看最近一次複核之後）：最近 3 張有評價訂單平均 < 3.0；工班評價標記「需加強訓練」≥ 2 張；最近 5 次領班評核中「需加強」≥ 2 次。須由 admin 複核恢復（寫入 `skill_reviews`）。
    - 履歷認證徽章：工作許可有效（本國籍免）、今日完整加保、沒有暫停中的標籤、近 6 個月未曾經暫停複核。
    - 標籤只用於派工媒合優先順序，不得作為扣薪或解僱依據【待確認】；規則不使用國籍、性別、年齡。農場主端只看得到工班的標籤人數，看不到個人。
-8. **派工媒合**（`MatchingService`，管理員確認後才寫入 `assignedTeamId`、`crewWorkerIds`；訂單須為待付定金／已排定／履約中）：
+8. **工期**：開工、完工日須同時提供，完工不可早於開工，單張訂單最長一年；兩者皆未提供視為尚未排定。已完工或已取消的訂單不可修改工期；農場主只能在「待付定金」時修改，之後由 admin 調整。
+9. **派工媒合**（`MatchingService`，管理員確認後才寫入 `assignedTeamId`、`crewWorkerIds`；訂單須為待付定金／已排定／履約中）：
    - 工班排序：先過硬性條件（成員皆完整加保、人數足夠），再依該派工類別有效熟手人數 → 資深熟手人數 → 工班評價平均 → 目前施工中訂單數（少者優先）→ 該類別預設工班。
    - 出工名單建議：先過硬性條件（外籍工作許可有效、今日完整加保），必含一位領班，其餘依 資深＞熟手＞培養中 → 領班「需加強」比例低 → 「優」比例高 → 該類別時數多；名單 ≥ 4 人時保留至少 1 個培養中名額，標籤暫停中的人不能佔用。
+   - 工期撞期：已排入其他工期重疊（且未完工、未取消）訂單出工名單的工人，不列入名單、也不計入工班合格人數；工班負載在訂單有工期時改看「同期間訂單數」，未排工期時看施工中訂單數。
    - 儲存名單時，每人須為該工班成員（否則 400）且符合硬性條件（否則 409 並列出原因）。
-   - 有出工名單時，轉履約中的加保檢查只看名單成員；同工班有多張履約中訂單時，打卡依名單決定連結哪一張，指定的訂單不在名單上回 400。
+   - 有出工名單時，轉履約中的加保檢查只看名單成員；同工班有多張履約中訂單時，打卡依名單決定連結哪一張，指定的訂單不在名單上回 400；名單仍無法判定時，改取今天落在工期內的那一張（恰一張才連結）。
    - 排序不使用國籍、性別、年齡；標籤只影響優先順序、不排除合格工人【待確認】。
-9. **合法用工證明**（不另建資料表，即時計算）：訂單須為履約中或已完工且有出勤紀錄；逐日核對每位出勤工人「外籍者聘僱許可在效期內（含當日；本國籍免）」與「應保險種當天皆在保」，全部符合才可開立（`issuable`），否則列出問題。證明編號 `LEC-<訂單編號>`，查驗碼由 `AGRI_TOKEN_SECRET` 對證明內容簽出（取 12 碼），內容變動或密鑰改變後舊查驗碼即失效。
-10. **編號產生**：訂單、農工、人才等 ID 由後端產生且不覆寫既有資料（不再使用 `count()+1`）。
-11. **工班評價**：限訂單擁有者或 admin；訂單須為 `in_progress` 或 `completed` 且已分派工班；`score` 1～5、標籤限白名單、留言 ≤300 字。
-12. **種子資料**：`SeedService` 依 ID 補缺，只新增不存在的資料、不覆蓋既有內容；本國工 `arcNumber` 為 null。
-13. **權限**：農場主只能讀寫自己的訂單（`farmerId = token.ref`）；工人只能存取自己的出勤與薪資；詳見規格書第肆、捌章。
+10. **合法用工證明**（不另建資料表，即時計算）：訂單須為履約中或已完工且有出勤紀錄；逐日核對每位出勤工人「外籍者聘僱許可在效期內（含當日；本國籍免）」與「應保險種當天皆在保」，全部符合才可開立（`issuable`），否則列出問題。證明編號 `LEC-<訂單編號>`，查驗碼由 `AGRI_TOKEN_SECRET` 對證明內容簽出（取 12 碼），內容變動或密鑰改變後舊查驗碼即失效。
+11. **編號產生**：訂單、農工、人才等 ID 由後端產生且不覆寫既有資料（不再使用 `count()+1`）。
+12. **工班評價**：限訂單擁有者或 admin；訂單須為 `in_progress` 或 `completed` 且已分派工班；`score` 1～5、標籤限白名單、留言 ≤300 字。
+13. **種子資料**：`SeedService` 依 ID 補缺，只新增不存在的資料、不覆蓋既有內容；本國工 `arcNumber` 為 null。
+14. **權限**：農場主只能讀寫自己的訂單（`farmerId = token.ref`）；工人只能存取自己的出勤與薪資；詳見規格書第肆、捌章。
 
 ---
 
 ## 肆、 Oracle 部署 schema（`Software/database/01_agridispatch_oracle_schema.sql`）
 
-現行系統以 **H2 + JPA 實體**為準。Oracle 腳本已於 2026-10-01 依 JPA 實體對齊（補齊 `workers`、`orders`、`clock_ins` 缺少的欄位，新增 `brochures`、`payment_transactions`、`users`），並在本機 Oracle 26ai Free 以臨時 schema 實測建表與兩套種子皆 0 錯誤（詳見 `Software/database/README_ORACLE_SETUP.md`）。之後新增的 `team_ratings`、`insurance_records`、`skill_reviews`、`clock_ins` 的訂單與領班評核欄位、`orders.crew_worker_ids`，已於同日再次實測：17 張表建立 0 錯誤、17 個實體欄位全數對應，並驗證險種 CHECK、退保日不早於加保日、評價每訂單唯一、打卡訂單外鍵、領班評核值與技能代碼 CHECK、`skill_reviews` identity 主鍵等限制皆有效。本機 `FREEPDB1` 的 `AGRIDISPATCH` schema 已於同日用此腳本建表並匯入 02 完整種子重建（原為 9/21 的 11 張表示範資料）。
+現行系統以 **H2 + JPA 實體**為準。Oracle 腳本已於 2026-10-01 依 JPA 實體對齊（補齊 `workers`、`orders`、`clock_ins` 缺少的欄位，新增 `brochures`、`payment_transactions`、`users`），並在本機 Oracle 26ai Free 以臨時 schema 實測建表與兩套種子皆 0 錯誤（詳見 `Software/database/README_ORACLE_SETUP.md`）。之後新增的 `team_ratings`、`insurance_records`、`skill_reviews`、`clock_ins` 的訂單與領班評核欄位、`orders.crew_worker_ids` 與工期欄位（含 `chk_orders_period`），已於同日再次實測：17 張表建立 0 錯誤、17 個實體欄位全數對應，並驗證險種 CHECK、退保日不早於加保日、評價每訂單唯一、打卡訂單外鍵、領班評核值與技能代碼 CHECK、`skill_reviews` identity 主鍵、工期須同時有值且完工不早於開工等限制皆有效。本機 `FREEPDB1` 的 `AGRIDISPATCH` schema 已於同日用此腳本建表並匯入 02 完整種子重建（原為 9/21 的 11 張表示範資料）。
 
 仍存在的差異：
 

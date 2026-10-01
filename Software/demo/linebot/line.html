@@ -563,13 +563,16 @@
         badge: '👨‍🌾 農場主模式',
         badgeColor: 'text-emerald-400',
         gridClass: 'border-emerald-500/40',
+        gridCols: 'grid-cols-4',
         buttons: [
           { cmd: '查派工單', icon: '📋', title: '我的派工單', desc: 'ORD-001/車號/進度', bg: 'from-slate-800 to-slate-900', titleCol: 'text-white', descCol: 'text-slate-400', border: 'border-slate-800' },
+          { cmd: '黑轉白', icon: '🔄', title: '現有工班黑轉白', desc: '依身分合法轉換', bg: 'from-cyan-950 to-slate-900', titleCol: 'text-cyan-300', descCol: 'text-cyan-400/80', border: 'border-cyan-500/40' },
           { cmd: '早鳥工時包', icon: '⚡', title: '早鳥工時包', desc: '享9折保證出工', bg: 'from-amber-950 to-slate-900', titleCol: 'text-amber-300', descCol: 'text-amber-400/80', border: 'border-amber-900/40' },
           { cmd: '天候避險', icon: '🌧️', title: '暴雨天候避險', desc: '冷鏈轉移通報', bg: 'from-blue-950 to-slate-900', titleCol: 'text-blue-300', descCol: 'text-blue-400/80', border: 'border-blue-900/40' },
           { cmd: '機耕代噴', icon: '🚜', title: '預約專業機耕', desc: 'T50植保/80hp深耕', bg: 'from-slate-800 to-slate-900', titleCol: 'text-white', descCol: 'text-slate-400', border: 'border-slate-800' },
           { cmd: '快速叫工', icon: '⚡', title: '明日急件叫工', desc: '一鍵叫合法工班', bg: 'from-purple-950 to-slate-900', titleCol: 'text-purple-300', descCol: 'text-purple-400/80', border: 'border-purple-500/40' },
-          { cmd: '聯絡工頭', icon: '📞', title: '聯絡專屬工頭', desc: '小工頭/司機專線', bg: 'from-emerald-950 to-slate-900', titleCol: 'text-emerald-300', descCol: 'text-emerald-400/80', border: 'border-emerald-500/40' }
+          { cmd: '聯絡工頭', icon: '📞', title: '聯絡專屬工頭', desc: '小工頭/司機專線', bg: 'from-emerald-950 to-slate-900', titleCol: 'text-emerald-300', descCol: 'text-emerald-400/80', border: 'border-emerald-500/40' },
+          { cmd: '查費率', icon: '💰', title: '查服務費率', desc: '時薪/日薪/包工', bg: 'from-amber-950 to-slate-900', titleCol: 'text-amber-300', descCol: 'text-amber-400/80', border: 'border-amber-900/40' }
         ],
         chips: [
           { cmd: '黑轉白', icon: '🔄', text: '現有工班黑轉白', color: 'text-cyan-300' },
@@ -657,6 +660,8 @@
       // 2. 動態渲染 6 宮格按鈕
       const gridEl = document.getElementById('rich-menu-grid');
       if (gridEl) {
+        gridEl.classList.remove('grid-cols-3', 'grid-cols-4');
+        gridEl.classList.add(menuConfig.gridCols || 'grid-cols-3');
         gridEl.innerHTML = menuConfig.buttons.map(btn => `
           <button type="button" onclick="handleQuickCmd('${btn.cmd}')" class="p-2.5 rounded-lg bg-gradient-to-b ${btn.bg} hover:brightness-125 text-center transition-all duration-200 flex flex-col items-center justify-center gap-1 group border ${btn.border} cursor-pointer shadow-sm">
             <span class="text-lg group-hover:scale-110 transition-transform">${btn.icon}</span>

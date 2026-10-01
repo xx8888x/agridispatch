@@ -153,8 +153,21 @@ Invoke-RestMethod -Uri "http://localhost:5000/health"
 | **右下 (6)** | 👤 帳號綁定 | `帳號綁定` | 綁定智農派工帳號、查詢個人津貼明細 |
 
 若要一鍵將 Rich Menu 上傳發布至真實 LINE 帳號：
-- 先將 `rich_menu/rich_menu.svg` 匯出為 `rich_menu/rich_menu.png`。
+- 先將 `rich_menu/rich_menu.svg` 匯出為 `rich_menu/rich_menu.png`（或 .jpg，1MB 以內）。
 - 執行 `java -cp bin com.agridispatch.linebot.RichMenuUploader` 即可自動註冊並設為預設。
+
+### 👨‍🌾 農場主專屬八宮格選單（含「黑轉白」）
+
+共用選單外籍移工也會看到，因此「黑轉白」只放在農場主專屬選單，透過 LINE API 綁定到指定的農場主帳號：
+
+| 上排 | 📋 今日派工單 `今日派工` | 🔄 現有工班黑轉白 `黑轉白` | ⚡ 早鳥工時包 `早鳥工時包` | 🌧️ 暴雨天候避險 `天候避險` |
+| :--- | :--- | :--- | :--- | :--- |
+| **下排** | 🚜 機耕代噴預約 `機耕代噴` | 👤 帳號綁定 `帳號綁定` | 🌐 切換語言 `切換語言` | 🌱 服務導覽 `服務導覽` |
+
+- 結構：`rich_menu/rich_menu_farmer.json`（4 欄 × 2 列，每格 625×843）
+- 底圖：`rich_menu/rich_menu_farmer.svg`（原稿）、`rich_menu/rich_menu_farmer.jpg`（2500×1686、約 270KB，上傳用）
+- 上傳並綁定：`java -cp bin com.agridispatch.linebot.RichMenuUploader farmer <農場主LINE userId> [...]`
+  （userId 格式為 `U` + 32 位十六進位；未列出的使用者維持共用選單）
 
 ---
 

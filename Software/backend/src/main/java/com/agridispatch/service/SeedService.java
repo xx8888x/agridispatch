@@ -52,6 +52,7 @@ public class SeedService {
     private final WeatherStateRepository weatherStateRepository;
     private final AttendanceRepository attendanceRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
+    private final TeamRatingRepository teamRatingRepository;
     private final PasswordHasher passwordHasher;
     private final AgriSettings settings;
 
@@ -68,6 +69,7 @@ public class SeedService {
                        WeatherStateRepository weatherStateRepository,
                        AttendanceRepository attendanceRepository,
                        PaymentTransactionRepository paymentTransactionRepository,
+                       TeamRatingRepository teamRatingRepository,
                        PasswordHasher passwordHasher,
                        AgriSettings settings) {
         this.userRepository = userRepository;
@@ -80,12 +82,14 @@ public class SeedService {
         this.weatherStateRepository = weatherStateRepository;
         this.attendanceRepository = attendanceRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
+        this.teamRatingRepository = teamRatingRepository;
         this.passwordHasher = passwordHasher;
         this.settings = settings;
     }
 
     public void seedAll(boolean cleanFirst) {
         if (cleanFirst) {
+            teamRatingRepository.deleteAll();
             paymentTransactionRepository.deleteAll();
             orderRepository.deleteAll();
             workerRepository.deleteAll();
@@ -103,6 +107,7 @@ public class SeedService {
         seedTeams();
         seedWorkers();
         seedOrders();
+        seedRatings();
         seedTalents();
         seedBrochures();
         seedWeatherStates();
@@ -471,6 +476,32 @@ public class SeedService {
                     .forEach(o -> o.setFarmerId("F001"));
             saveMissing(orderRepository, orders, Order::getId);
         }
+    }
+
+    /** 已出工／完工訂單的歷史評價（ORD-2026-013 留空，供農場主工作台現場示範評價） */
+    private void seedRatings() {
+        Object[][] rows = {
+                {"ORD-2026-002", "team_b", 5, "準時到場,效率高,溝通順暢", "青蔥採收進度超前，班長每天回報很清楚。", "2026-09-21T18:00"},
+                {"ORD-2026-004", "team_a", 4, "做工細心,遵守安全規範", "彩椒引蔓修剪仔細，第一天稍慢但後來跟上。", "2026-09-18T17:30"},
+                {"ORD-2026-006", "team_c", 5, "效率高,遵守安全規範", "曳引機深耕準時完成，田區收拾乾淨。", "2026-09-14T16:00"},
+                {"ORD-2026-011", "team_d", 4, "準時到場,做工細心", "冷鏈截切品質穩定。", "2026-09-22T19:10"},
+                {"ORD-2026-012", "team_c", 4, "效率高,需加強訓練", "整地速度快，作畦間距有兩區需重做。", "2026-09-12T15:20"}
+        };
+        List<TeamRating> ratings = new java.util.ArrayList<>();
+        for (Object[] row : rows) {
+            TeamRating r = new TeamRating();
+            r.setId("RAT-" + row[0]);
+            r.setOrderId((String) row[0]);
+            r.setTeamId((String) row[1]);
+            r.setScore((Integer) row[2]);
+            r.setTags((String) row[3]);
+            r.setComment((String) row[4]);
+            java.time.LocalDateTime at = java.time.LocalDateTime.parse((String) row[5]);
+            r.setCreatedAt(at);
+            r.setUpdatedAt(at);
+            ratings.add(r);
+        }
+        saveMissing(teamRatingRepository, ratings, TeamRating::getId);
     }
 
     private Order createOrder(String id, String farmerName, String phone, String farmLocation,

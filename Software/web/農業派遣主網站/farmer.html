@@ -530,6 +530,7 @@
             <div class="p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700/60 space-y-1.5">
               <span class="text-slate-400 font-semibold block">👷 派遣工班與現場小工頭</span>
               <div class="text-sm font-bold text-emerald-300">外展工班 B 組 (6人)</div>
+              <p class="text-[11px] text-amber-300" data-team-rating="team_b">⭐ 工班評價載入中…</p>
               <div class="flex flex-wrap gap-1">
                 <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">✔️ 履歷認證</span>
                 <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">💪 採收熟手</span>
@@ -579,7 +580,7 @@
             <span class="text-[11px] text-slate-500 font-semibold">合規與評價：</span>
             <button type="button" onclick="farmerDemoNotice('📄 合法用工證明已產生（示範）', '內含出勤人員、工時與合作社雇用紀錄，可提供產銷履歷與通路稽核使用。')" class="px-3 py-1.5 rounded-xl bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 text-xs font-bold border border-blue-500/30 transition flex items-center gap-1">📄 合法用工證明</button>
             <a href="expenses.html" class="px-3 py-1.5 rounded-xl bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 text-xs font-bold border border-purple-500/30 transition flex items-center gap-1">💰 勞務費明細</a>
-            <button type="button" onclick="farmerDemoNotice('⭐ 感謝評價（示範）', '您的評分會回饋到工班履歷，優良工班將優先媒合給您。')" class="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-xs font-bold border border-amber-500/30 transition flex items-center gap-1">⭐ 評價工班</button>
+            <button type="button" id="rateBtn-ORD-2026-013" onclick="openRatingModal('ORD-2026-013', '外展工班 B 組', 'team_b')" class="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-xs font-bold border border-amber-500/30 transition flex items-center gap-1">⭐ 評價工班</button>
           </div>
         </div>
 
@@ -700,6 +701,163 @@
       <p>技術代管：智農科技有限公司 ╳ 外展主體：有限責任智農農業勞務生產合作社</p>
     </div>
   </footer>
+
+  <!-- 評價工班 Modal（PUT /api/ratings/orders/{orderId}） -->
+  <div id="ratingModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4">
+    <div class="w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-amber-500/40 space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-white font-black">⭐ 評價工班</h3>
+          <p id="ratingSubtitle" class="text-[11px] text-slate-400"></p>
+        </div>
+        <button type="button" onclick="closeRatingModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-slate-300 mb-1.5">整體評分</div>
+        <div id="ratingStars" class="flex items-center gap-1"></div>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-slate-300 mb-1.5">評價標籤（可複選）</div>
+        <div id="ratingTags" class="flex flex-wrap gap-1.5"></div>
+      </div>
+      <div>
+        <label for="ratingComment" class="flex justify-between text-xs font-semibold text-slate-300 mb-1.5">
+          <span>留言（選填）</span><span id="ratingCount" class="text-slate-500 font-normal">0 / 300</span>
+        </label>
+        <textarea id="ratingComment" rows="3" maxlength="300" oninput="document.getElementById('ratingCount').textContent = this.value.length + ' / 300'" placeholder="例：準時到場、採收仔細，下次還想找同一班" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white"></textarea>
+      </div>
+      <p class="text-[11px] text-slate-500">評價針對整個工班，不會顯示您的姓名；同一張訂單可再次修改。</p>
+      <p id="ratingError" class="hidden text-xs text-rose-300"></p>
+      <button type="button" id="ratingSubmit" onclick="submitRating()" class="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm transition">送出評價</button>
+    </div>
+  </div>
+
+  <script>
+    // ------------------------------------------------------------------
+    // 評價工班：資料存後端 team_ratings；工班出工後（in_progress / completed）才可評
+    // ------------------------------------------------------------------
+    const RATING_TAGS_FALLBACK = ['準時到場', '做工細心', '效率高', '溝通順暢', '遵守安全規範', '需加強訓練'];
+    const ratingState = { orderId: null, teamName: '', teamId: '', score: 0, tags: new Set(), allTags: RATING_TAGS_FALLBACK };
+
+    function ratingApi(path, options) {
+      const base = (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+      return fetch(`${base}${path}`, options).then(async res => {
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) throw new Error(body.error || body.message || `HTTP ${res.status}`);
+        return body.data;
+      });
+    }
+
+    function renderRatingStars() {
+      document.getElementById('ratingStars').innerHTML = [1, 2, 3, 4, 5].map(n => `
+        <button type="button" onclick="ratingState.score = ${n}; renderRatingStars();" aria-label="${n} 星"
+          class="text-3xl leading-none transition ${n <= ratingState.score ? 'text-amber-400' : 'text-slate-600 hover:text-amber-300'}">★</button>`).join('') +
+        `<span class="ml-2 text-xs text-slate-400">${ratingState.score ? ratingState.score + ' / 5' : '請點選星等'}</span>`;
+    }
+
+    function renderRatingTags() {
+      document.getElementById('ratingTags').innerHTML = ratingState.allTags.map(tag => {
+        const on = ratingState.tags.has(tag);
+        return `<button type="button" data-tag="${tag}" onclick="toggleRatingTag(this.dataset.tag)"
+          class="px-2.5 py-1 rounded-full text-[11px] font-bold border transition ${on ? 'bg-amber-500/20 text-amber-200 border-amber-400/60' : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'}">${on ? '✓ ' : ''}${tag}</button>`;
+      }).join('');
+    }
+
+    function toggleRatingTag(tag) {
+      if (ratingState.tags.has(tag)) ratingState.tags.delete(tag); else ratingState.tags.add(tag);
+      renderRatingTags();
+    }
+
+    function showRatingError(msg) {
+      const el = document.getElementById('ratingError');
+      el.textContent = msg;
+      el.classList.toggle('hidden', !msg);
+    }
+
+    async function openRatingModal(orderId, teamName, teamId) {
+      Object.assign(ratingState, { orderId, teamName, teamId, score: 0, tags: new Set() });
+      document.getElementById('ratingSubtitle').textContent = `${orderId}・${teamName}`;
+      document.getElementById('ratingComment').value = '';
+      document.getElementById('ratingCount').textContent = '0 / 300';
+      showRatingError('');
+      renderRatingStars();
+      renderRatingTags();
+      const m = document.getElementById('ratingModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+      try {
+        ratingState.allTags = await ratingApi('/ratings/tags');
+        const existing = await ratingApi(`/ratings/orders/${encodeURIComponent(orderId)}`);
+        if (existing) {
+          ratingState.score = existing.score;
+          ratingState.tags = new Set(existing.tags);
+          document.getElementById('ratingComment').value = existing.comment || '';
+          document.getElementById('ratingCount').textContent = `${(existing.comment || '').length} / 300`;
+        }
+        renderRatingStars();
+        renderRatingTags();
+      } catch (e) {
+        showRatingError(`無法讀取評價資料：${e.message}`);
+      }
+    }
+
+    function closeRatingModal() {
+      const m = document.getElementById('ratingModal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    async function submitRating() {
+      if (!ratingState.score) { showRatingError('請先點選 1～5 顆星'); return; }
+      const btn = document.getElementById('ratingSubmit');
+      btn.disabled = true;
+      showRatingError('');
+      try {
+        const saved = await ratingApi(`/ratings/orders/${encodeURIComponent(ratingState.orderId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            score: ratingState.score,
+            tags: [...ratingState.tags],
+            comment: document.getElementById('ratingComment').value.trim()
+          })
+        });
+        closeRatingModal();
+        markRated(ratingState.orderId, saved.score);
+        loadTeamRatings();
+        farmerDemoNotice('⭐ 感謝您的評價', `已為${ratingState.teamName}評 ${saved.score} 星，會累計到工班履歷，作為優先媒合的參考。`);
+      } catch (e) {
+        showRatingError(`評價未送出：${e.message}`);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function markRated(orderId, score) {
+      const btn = document.getElementById(`rateBtn-${orderId}`);
+      if (btn) btn.textContent = `⭐ 已評 ${score} 星（可修改）`;
+    }
+
+    // 卡片上的工班平均分數，以及已評過的訂單按鈕文字
+    async function loadTeamRatings() {
+      for (const el of document.querySelectorAll('[data-team-rating]')) {
+        try {
+          const t = await ratingApi(`/ratings/teams/${encodeURIComponent(el.dataset.teamRating)}`);
+          el.textContent = t.count ? `⭐ 工班評價 ${t.average} / 5（${t.count} 則）` : '⭐ 工班尚無評價';
+        } catch (e) {
+          el.textContent = '⭐ 工班評價暫時無法載入';
+        }
+      }
+      for (const btn of document.querySelectorAll('[id^="rateBtn-"]')) {
+        const orderId = btn.id.slice('rateBtn-'.length);
+        try {
+          const r = await ratingApi(`/ratings/orders/${encodeURIComponent(orderId)}`);
+          if (r) markRated(orderId, r.score);
+        } catch (e) {}
+      }
+    }
+    document.addEventListener('DOMContentLoaded', loadTeamRatings);
+  </script>
 
   <script>
     function syncFarmerAsLead() {

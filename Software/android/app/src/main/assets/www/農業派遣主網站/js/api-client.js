@@ -141,6 +141,7 @@
       const url = resolveUrl(input);
       const requestIsApi = isApiRequest(url);
 
+      let sentStoredToken = false;
       if (requestIsApi && !isAuthBootstrapEndpoint(url)) {
         let token = getToken();
         if (!token && MODE === 'demo') {
@@ -151,18 +152,28 @@
           const headers = new Headers(init.headers || (typeof input !== 'string' && input ? input.headers : undefined) || {});
           if (!headers.has('Authorization')) {
             headers.set('Authorization', `Bearer ${token}`);
+            sentStoredToken = true;
           }
           init = Object.assign({}, init, { headers });
         }
       }
 
-      const response = await nativeFetch(input, init);
+      let response = await nativeFetch(input, init);
 
       if (requestIsApi && response.status === 401 && !isAuthBootstrapEndpoint(url)) {
         if (MODE === 'production') {
           goToLogin();
+        } else if (sentStoredToken && typeof input === 'string') {
+          // demo 模式：後端重啟後舊 token 失效（未設定固定密鑰時每次啟動換密鑰），
+          // 清掉舊 token、重新 demo-login 後重送一次；仍失敗則交還呼叫端，沿用既有離線 fallback
+          clearSession();
+          const fresh = await ensureDemoLogin();
+          if (fresh) {
+            const headers = new Headers(init.headers);
+            headers.set('Authorization', `Bearer ${fresh}`);
+            response = await nativeFetch(input, Object.assign({}, init, { headers }));
+          }
         }
-        // demo 模式：401 交還呼叫端處理，沿用既有離線 fallback（避免打斷路演體驗）
       }
 
       return response;

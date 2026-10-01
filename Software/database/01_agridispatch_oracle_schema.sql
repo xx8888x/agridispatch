@@ -17,6 +17,11 @@ ALTER SESSION SET CURRENT_SCHEMA = c##agridispatch;
 
 -- 清理舊有資料表 (若存在)
 BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE team_ratings CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
     EXECUTE IMMEDIATE 'DROP TABLE payment_transactions CASCADE CONSTRAINTS';
 EXCEPTION WHEN OTHERS THEN NULL;
 END;
@@ -452,6 +457,34 @@ COMMENT ON COLUMN users.role IS '角色：admin_tech / farmer / worker_foreign /
 COMMENT ON COLUMN users.ref_id IS '關聯業務實體 ID（如農工 W001、農場主 F001）';
 
 -- ====================================================================
+-- 15. 工班評價表 (TEAM_RATINGS)
+-- ====================================================================
+CREATE TABLE team_ratings (
+    id                 VARCHAR2(50)   NOT NULL,
+    order_id           VARCHAR2(40)   NOT NULL,
+    team_id            VARCHAR2(32)   NOT NULL,
+    farmer_id          VARCHAR2(40),
+    score              NUMBER(1)      NOT NULL,
+    tags               VARCHAR2(200),
+    rating_comment     VARCHAR2(300),
+    created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP,
+    updated_at         TIMESTAMP,
+    CONSTRAINT pk_team_ratings PRIMARY KEY (id),
+    CONSTRAINT uq_team_ratings_order UNIQUE (order_id),
+    CONSTRAINT fk_rating_order FOREIGN KEY (order_id) REFERENCES orders(id),
+    CONSTRAINT fk_rating_team FOREIGN KEY (team_id) REFERENCES dispatch_teams(id),
+    CONSTRAINT chk_rating_score CHECK (score BETWEEN 1 AND 5)
+);
+
+CREATE INDEX idx_team_ratings_team ON team_ratings (team_id, created_at);
+
+COMMENT ON TABLE team_ratings IS '工班評價表：農場主於工班出工後為訂單評分，每張訂單一筆、可修改';
+COMMENT ON COLUMN team_ratings.id IS '評價編號：RAT-<訂單編號>';
+COMMENT ON COLUMN team_ratings.farmer_id IS '評分者（農場主 F001 等；不回傳給前端）';
+COMMENT ON COLUMN team_ratings.score IS '整體評分 1～5';
+COMMENT ON COLUMN team_ratings.tags IS '評價標籤，逗號分隔：準時到場/做工細心/效率高/溝通順暢/遵守安全規範/需加強訓練';
+
+-- ====================================================================
 -- 【初始種子資料 (SEED DATA)】
 -- ====================================================================
 
@@ -577,4 +610,6 @@ SELECT 'financial_ledger', COUNT(*) FROM financial_ledger
 UNION ALL
 SELECT 'line_users', COUNT(*) FROM line_users
 UNION ALL
-SELECT 'line_messages', COUNT(*) FROM line_messages;
+SELECT 'line_messages', COUNT(*) FROM line_messages
+UNION ALL
+SELECT 'team_ratings', COUNT(*) FROM team_ratings;

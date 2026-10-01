@@ -572,6 +572,7 @@
           { cmd: '聯絡工頭', icon: '📞', title: '聯絡專屬工頭', desc: '小工頭/司機專線', bg: 'from-emerald-950 to-slate-900', titleCol: 'text-emerald-300', descCol: 'text-emerald-400/80', border: 'border-emerald-500/40' }
         ],
         chips: [
+          { cmd: '黑轉白', icon: '🔄', text: '現有工班黑轉白', color: 'text-cyan-300' },
           { cmd: '查派工單', icon: '📋', text: '查派工單', color: 'text-emerald-300' },
           { cmd: '早鳥工時包', icon: '⚡', text: '早鳥9折', color: 'text-amber-300' },
           { cmd: '天候避險', icon: '🌧️', text: '暴雨避險', color: 'text-blue-300' },
@@ -758,8 +759,87 @@
         runQuickDispatchDemo();
         return;
       }
+      if (cmd === '黑轉白') {
+        appendUserBubble('現有工班要怎麼黑轉白？');
+        runLegalizeIntro();
+        return;
+      }
+      if (cmd.startsWith('黑轉白:')) {
+        runLegalizeType(cmd.slice(4));
+        return;
+      }
       appendUserBubble(cmd);
       processCommand(cmd);
+    }
+
+    // 農場主「現有工班黑轉白」：依身分分流（與 農業派遣主網站/legalize.html 同一套規則，純前端示範）
+    const LEGALIZE_TYPES = {
+      local:    { label: '本國籍臨時工（未投保）', icon: '🧑‍🌾', path: 'direct',
+                  summary: '可直接轉白：由合作社聘僱為農務士，簽約後依法加保勞保／就保／職災保險並申報薪資。' },
+      spouse:   { label: '新住民（外籍／陸籍配偶）', icon: '🏠', path: 'direct',
+                  summary: '可直接轉白：依親居留之配偶在台工作免申請許可，上傳居留證審核後由合作社聘僱加保。' },
+      student:  { label: '外籍學生／僑生', icon: '🎓', path: 'conditional',
+                  summary: '有條件轉白：須先取得工作許可，學期中每週最多 20 小時；許可前不得排班。【待確認】' },
+      borrowed: { label: '借用他人雇主的合法移工', icon: '🔁', path: 'replace',
+                  summary: '不可就地轉白：移工只能為原雇主工作，請今日起停止使用並結清工資，空缺改由合作社外展工班補位。' },
+      runaway:  { label: '失聯（逃逸）移工', icon: '⚠️', path: 'replace',
+                  summary: '依法無法就地合法化：請停止使用並結清工資，勿扣留證件；本人可洽移民署專勤隊或勞動部 1955 專線了解到案方式【待確認】。系統不記錄其個資，空缺由合法工班補位。' }
+    };
+    const LEGALIZE_BADGE = {
+      direct:      '<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 font-bold">可直接轉白</span>',
+      conditional: '<span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-bold">有條件轉白</span>',
+      replace:     '<span class="px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 font-bold">改派合法工班補位</span>'
+    };
+
+    function appendBotHtml(innerHtml) {
+      const anchor = document.getElementById('dynamic-chat-anchor');
+      const time = getCurrentTimeString();
+      anchor.insertAdjacentHTML('beforebegin', `
+        <div class="flex items-start gap-2 mb-2">
+          <div class="w-7 h-7 rounded-full bg-white text-emerald-700 flex items-center justify-center text-xs shadow flex-shrink-0">🌱</div>
+          <div class="max-w-[82%]">
+            <div class="line-bubble-bot p-3 text-slate-800 text-xs shadow leading-relaxed space-y-1.5">${innerHtml}</div>
+            <span class="text-[9px] text-slate-700 ml-1 mt-0.5 inline-block">${time}</span>
+          </div>
+        </div>
+      `);
+      scrollToBottom();
+    }
+
+    function runLegalizeIntro() {
+      showTypingIndicator();
+      setTimeout(() => {
+        removeTypingIndicator();
+        const typeButtons = Object.entries(LEGALIZE_TYPES).map(([k, t]) => `
+          <button type="button" onclick="handleQuickCmd('黑轉白:${k}')" class="w-full text-left px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 border border-slate-200 text-slate-700 font-bold transition">${t.icon} ${t.label}</button>
+        `).join('');
+        appendBotHtml(`
+          <div class="font-bold text-emerald-700">🔄 現有工班黑轉白</div>
+          <div>請選擇這位工人目前的身分，我告訴您怎麼轉：</div>
+          <div class="space-y-1 pt-0.5">${typeButtons}</div>
+          <a href="../農業派遣主網站/legalize.html" class="block text-center px-2.5 py-1.5 rounded-lg bg-[#06C755] hover:brightness-110 text-white font-bold transition">📋 開啟轉換中心（整班盤點）</a>
+          <div class="text-[10px] text-slate-500">※ 示範流程；法規細節標【待確認】處以律師或主管機關意見為準</div>
+        `);
+      }, 700);
+    }
+
+    function runLegalizeType(key) {
+      const t = LEGALIZE_TYPES[key];
+      if (!t) return;
+      appendUserBubble(`身分：${t.label}`);
+      showTypingIndicator();
+      setTimeout(() => {
+        removeTypingIndicator();
+        const action = t.path === 'replace'
+          ? `<button type="button" onclick="handleQuickCmd('快速叫工')" class="w-full px-2.5 py-1.5 rounded-lg bg-[#06C755] hover:brightness-110 text-white font-bold transition">🚐 改派合法工班補位</button>`
+          : `<a href="../農業派遣主網站/legalize.html" class="block text-center px-2.5 py-1.5 rounded-lg bg-[#06C755] hover:brightness-110 text-white font-bold transition">✅ 到轉換中心開始轉白</a>`;
+        appendBotHtml(`
+          <div class="font-bold text-slate-800">${t.icon} ${t.label}</div>
+          <div>${LEGALIZE_BADGE[t.path]}</div>
+          <div>${t.summary}</div>
+          ${action}
+        `);
+      }, 700);
     }
 
     // 農場主「明日急件叫工」展示：與地下仲介比拼速度，但全程走合作社合法派工（純前端示範，不寫入後端）
@@ -796,6 +876,10 @@
       if (!text) return;
       input.value = '';
       appendUserBubble(text);
+      if (currentRole === 'farmer' && /黑轉白|黑工/.test(text)) {
+        runLegalizeIntro();
+        return;
+      }
       processCommand(text);
     }
 

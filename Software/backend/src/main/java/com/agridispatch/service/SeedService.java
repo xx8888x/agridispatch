@@ -483,7 +483,39 @@ public class SeedService {
             orders.get(0).setFarmerId("F001");
             orders.stream().filter(o -> o.getId().equals("ORD-2026-013") || o.getId().equals("ORD-2026-014"))
                     .forEach(o -> o.setFarmerId("F001"));
+            // 工期：與出勤紀錄、訂單狀態一致（已完工者在今天之前、待付款／已排定者在今天之後）
+            java.util.Map<String, String[]> periods = java.util.Map.ofEntries(
+                    java.util.Map.entry("ORD-2026-001", new String[]{"2026-10-06", "2026-10-08"}),
+                    java.util.Map.entry("ORD-2026-002", new String[]{"2026-09-19", "2026-10-03"}),
+                    java.util.Map.entry("ORD-2026-003", new String[]{"2026-09-22", "2026-10-05"}),
+                    java.util.Map.entry("ORD-2026-004", new String[]{"2026-09-16", "2026-09-18"}),
+                    java.util.Map.entry("ORD-2026-005", new String[]{"2026-10-04", "2026-10-07"}),
+                    java.util.Map.entry("ORD-2026-006", new String[]{"2026-09-13", "2026-09-24"}),
+                    java.util.Map.entry("ORD-2026-007", new String[]{"2026-10-02", "2026-10-08"}),
+                    java.util.Map.entry("ORD-2026-008", new String[]{"2026-10-10", "2026-10-14"}),
+                    java.util.Map.entry("ORD-2026-009", new String[]{"2026-10-03", "2026-10-07"}),
+                    java.util.Map.entry("ORD-2026-010", new String[]{"2026-09-20", "2026-09-24"}),
+                    java.util.Map.entry("ORD-2026-011", new String[]{"2026-09-22", "2026-10-04"}),
+                    java.util.Map.entry("ORD-2026-012", new String[]{"2026-09-10", "2026-09-13"}),
+                    java.util.Map.entry("ORD-2026-013", new String[]{"2026-09-25", "2026-09-28"}),
+                    java.util.Map.entry("ORD-2026-014", new String[]{"2026-10-05", "2026-10-07"}));
+            for (Order o : orders) {
+                String[] p = periods.get(o.getId());
+                if (p != null) {
+                    o.setStartDate(java.time.LocalDate.parse(p[0]));
+                    o.setEndDate(java.time.LocalDate.parse(p[1]));
+                }
+            }
             saveMissing(orderRepository, orders, Order::getId);
+            // 既有資料庫：只替尚未排定工期的種子訂單補上日期，不覆蓋已調整過的工期
+            for (Order o : orders) {
+                if (!o.hasPeriod()) continue;
+                orderRepository.findById(o.getId()).filter(e -> !e.hasPeriod()).ifPresent(e -> {
+                    e.setStartDate(o.getStartDate());
+                    e.setEndDate(o.getEndDate());
+                    orderRepository.save(e);
+                });
+            }
         }
     }
 
@@ -795,10 +827,6 @@ public class SeedService {
             Attendance a4 = new Attendance("W001", today.atTime(6, 50), "八德有機蔬菜專區 (24.9351°N, 121.2842°E)", 2.1);
             Attendance a5 = new Attendance("W026", today.atTime(6, 40), "枋山愛文芒果產區 (22.2612°N, 120.6543°E)", 3.0);
             Attendance a6 = new Attendance("W030", today.atTime(6, 55), "八德有機蔬菜專區 (24.9351°N, 121.2842°E)", 2.5);
-
-            // W026 在枋山芒果產區出勤，屬於 ORD-2026-013（工班 B）
-            a2.setOrderId("ORD-2026-013");
-            a5.setOrderId("ORD-2026-013");
 
             attendanceRepository.saveAll(java.util.List.of(a1, a2, a3, a4, a5, a6));
         }

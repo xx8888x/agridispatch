@@ -977,6 +977,16 @@
         depositPaid: false,
         status: 'pending',
         assignedTeamId: '待分派',
+        // 工期：開工日＋預估天數（含開工當天）；後端用於派工撞期檢查與打卡判斷
+        startDate: document.getElementById('fStartDate').value || null,
+        endDate: (() => {
+          const start = document.getElementById('fStartDate').value;
+          const days = Math.max(1, parseInt(document.getElementById('fDaysCount').value, 10) || 1);
+          if (!start) return null;
+          const d = new Date(start + 'T00:00:00');
+          d.setDate(d.getDate() + days - 1);
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        })(),
         foremanName: document.getElementById('fForemanName').value,
         foremanPhone: document.getElementById('fForemanPhone').value,
         foremanNotes: document.getElementById('fForemanNotes').value,
@@ -1095,7 +1105,7 @@
               <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">剛剛線上送出</span>
             </div>
             <div class="text-xs text-slate-400">
-              預計起工：<strong class="text-white">${ord.createdAt ? ord.createdAt.split('T')[0] : '明日'}</strong> (共 ${ord.totalHours / (ord.suggestedWorkers * 8)} 天・${ord.totalHours} 工時)
+              預計起工：<strong class="text-white">${ord.startDate ? ord.startDate + (ord.endDate && ord.endDate !== ord.startDate ? ' ～ ' + ord.endDate : '') : (ord.createdAt ? ord.createdAt.split('T')[0] : '明日')}</strong> (共 ${ord.totalHours / (ord.suggestedWorkers * 8)} 天・${ord.totalHours} 工時)
             </div>
           </div>
 

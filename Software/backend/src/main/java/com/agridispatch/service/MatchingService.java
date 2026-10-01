@@ -12,7 +12,8 @@ import java.util.*;
  * 派工媒合：依技能標籤、工班評價與負載，為訂單推薦工班與出工名單（管理員確認後儲存）。
  *
  * 工班排序（先過硬性條件：成員皆完整加保、人數足夠）：
- *   該類別有效熟手人數 → 資深熟手人數 → 工班評價平均 → 目前施工中訂單數（少者優先）→ 該類別預設工班
+ *   該類別有效熟手人數 → 資深熟手人數 → 工班評價平均 → 同期間訂單數（少者優先；未排工期時改看施工中訂單數）→ 該類別預設工班
+ * 工期撞期：已排入其他工期重疊訂單出工名單的工人，不列入名單、也不計入合格人數
  * 出工名單（先過硬性條件：工作許可有效、完整加保）：
  *   必含一位領班；其餘依 資深＞熟手＞培養中 → 領班「需加強」比例低 → 「優」比例高 → 該類別時數多
  *   名單 ≥ 4 人時保留至少 1 個「培養中」名額，讓新進工人也能累積經驗（避免熟手壟斷）
@@ -85,10 +86,12 @@ public class MatchingService {
         LocalDate today = LocalDate.now();
         List<InsuranceRecord> records = insuranceRecordRepository.findByWorkerIdIn(members.keySet());
         List<String> problems = new ArrayList<>();
+        Map<String, Order> busy = busyWorkers(order);
         for (String id : crew) {
             Worker w = members.get(id);
             if (w == null) throw ApiException.badRequest(id + " 不是 " + teamId + " 的成員");
             String reason = ineligibleReason(w, records, today);
+            if (reason == null && busy.containsKey(id)) reason = clashText(busy.get(id));
             if (reason != null) problems.add(displayName(w) + "：" + reason);
         }
         if (!problems.isEmpty()) throw ApiException.conflict("出工名單有不符合資格的工人：" + String.join("；", problems));
@@ -109,13 +112,14 @@ public class MatchingService {
         Map<String, Map<String, Object>> ratings = new HashMap<>();
         for (Map<String, Object> r : ratingService.teamSummaries()) ratings.put((String) r.get("teamId"), r);
 
+        Map<String, Order> busy = busyWorkers(order);
         List<Map<String, Object>> out = new ArrayList<>();
         for (DispatchTeam t : teamRepository.findAll()) {
             List<Worker> members = workerRepository.findByTeamId(t.getId());
             List<InsuranceRecord> records = insuranceRecordRepository.findByWorkerIdIn(members.stream().map(Worker::getId).toList());
             int eligibleCount = 0, skilled = 0, senior = 0;
             for (Worker w : members) {
-                if (ineligibleReason(w, records, today) == null) eligibleCount++;
+                if (ineligibleReason(w, records, today) == null && !busy.containsKey(w.getId())) eligibleCount++;
                 Map<String, Object> s = skillOf(w, skill, today);
                 if (s != null && Boolean.TRUE.equals(s.get("active"))) {
                     skilled++;
@@ -123,8 +127,13 @@ public class MatchingService {
                 }
             }
             boolean allInsured = members.stream().allMatch(w -> insuranceService.missingTypes(w, records, today).isEmpty());
+            // 負載：此訂單有工期時算「工期重疊的訂單數」，否則退回「施工中訂單數」
             long load = orderRepository.findByAssignedTeamId(t.getId()).stream()
-                    .filter(o -> OrderService.IN_PROGRESS.equals(o.getStatus()) && !o.getId().equals(order.getId())).count();
+                    .filter(o -> !o.getId().equals(order.getId()))
+                    .filter(o -> order.hasPeriod()
+                            ? ACTIVE_STATUS.contains(o.getStatus()) && o.overlaps(order)
+                            : OrderService.IN_PROGRESS.equals(o.getStatus()))
+                    .count();
             Map<String, Object> rating = ratings.get(t.getId());
             Double avg = rating == null || rating.get("average") == null ? null : ((Number) rating.get("average")).doubleValue();
 
@@ -135,7 +144,7 @@ public class MatchingService {
             if (skill == null) reasons.add("此類別（" + order.getCategoryName() + "）以證照認定，不依經驗標籤排序");
             else reasons.add(SkillService.SKILL_LABELS.get(skill) + " " + skilled + " 人" + (senior > 0 ? "（資深 " + senior + "）" : ""));
             reasons.add(avg == null ? "工班尚無評價" : "工班評價 " + avg + " ★（" + rating.get("count") + " 則）");
-            reasons.add("目前施工中 " + load + " 張訂單");
+            reasons.add(order.hasPeriod() ? "同期間另有 " + load + " 張訂單" : "目前施工中 " + load + " 張訂單（此訂單未排工期）");
             if (t.getId().equals(defaultTeam)) reasons.add("此類別預設工班");
 
             Map<String, Object> m = new LinkedHashMap<>();
@@ -175,11 +184,13 @@ public class MatchingService {
         List<Worker> members = workerRepository.findByTeamId(teamId);
         List<InsuranceRecord> records = insuranceRecordRepository.findByWorkerIdIn(members.stream().map(Worker::getId).toList());
 
+        Map<String, Order> busy = busyWorkers(order);
         List<Map<String, Object>> eligible = new ArrayList<>();
         List<Map<String, Object>> excluded = new ArrayList<>();
         for (Worker w : members) {
             Map<String, Object> c = candidate(w, skill, today);
             String reason = ineligibleReason(w, records, today);
+            if (reason == null && busy.containsKey(w.getId())) reason = clashText(busy.get(w.getId()));
             if (reason == null) eligible.add(c);
             else {
                 c.put("excludedReason", reason);
@@ -232,6 +243,7 @@ public class MatchingService {
         m.put("needed", needed);
         m.put("shortage", Math.max(0, needed - eligible.size()));
         m.put("currentCrew", order.crewList());
+        m.put("periodChecked", order.hasPeriod());
         m.put("candidates", eligible);
         m.put("excluded", excluded);
         return m;
@@ -252,6 +264,28 @@ public class MatchingService {
         c.put("excellentRate", s == null ? 0.0 : ((Number) s.get("excellentRate")).doubleValue());
         c.put("needsImprovementRate", s == null ? 0.0 : ((Number) s.get("needsImprovementRate")).doubleValue());
         return c;
+    }
+
+    /** 會佔用工人的訂單狀態 */
+    private static final Set<String> ACTIVE_STATUS = Set.of(OrderService.PENDING, OrderService.CONFIRMED, OrderService.IN_PROGRESS);
+
+    /** 工期與此訂單重疊、且已排入出工名單的工人 → 撞期的那張訂單（此訂單未排工期則不檢查） */
+    private Map<String, Order> busyWorkers(Order order) {
+        Map<String, Order> busy = new HashMap<>();
+        if (!order.hasPeriod()) return busy;
+        for (Order o : orderRepository.findAll()) {
+            if (o.getId().equals(order.getId()) || !ACTIVE_STATUS.contains(o.getStatus()) || !o.overlaps(order)) continue;
+            for (String id : o.crewList()) busy.putIfAbsent(id, o);
+        }
+        return busy;
+    }
+
+    private static String clashText(Order o) {
+        return "工期撞期：已排入 " + o.getId() + "（" + md(o.getStartDate()) + "–" + md(o.getEndDate()) + "）";
+    }
+
+    private static String md(LocalDate d) {
+        return d.getMonthValue() + "/" + d.getDayOfMonth();
     }
 
     private static boolean isTrainee(Map<String, Object> c) {
@@ -294,6 +328,8 @@ public class MatchingService {
         m.put("skill", skill);
         m.put("skillLabel", skill == null ? null : SkillService.SKILL_LABELS.get(skill));
         m.put("suggestedWorkers", o.getSuggestedWorkers());
+        m.put("startDate", o.getStartDate() == null ? null : o.getStartDate().toString());
+        m.put("endDate", o.getEndDate() == null ? null : o.getEndDate().toString());
         m.put("assignedTeamId", o.getAssignedTeamId());
         m.put("crew", o.crewList());
         return m;

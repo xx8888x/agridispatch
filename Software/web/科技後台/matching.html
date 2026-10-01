@@ -119,6 +119,13 @@
           <span><span class="text-slate-400">需求</span> ${o.suggestedWorkers} 人</span>
           <span><span class="text-slate-400">依據技能</span> ${esc(o.skillLabel || '證照類（不依經驗標籤）')}</span>
           <span><span class="text-slate-400">目前派工</span> ${esc(o.assignedTeamId || '—')}${o.crew.length ? `・名單 ${o.crew.length} 人` : '・尚無出工名單'}</span>
+          <span class="flex items-center gap-1.5"><span class="text-slate-400">工期</span>
+            <input id="pStart" type="date" value="${esc(o.startDate || '')}" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 text-xs text-white">
+            ～
+            <input id="pEnd" type="date" value="${esc(o.endDate || '')}" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 text-xs text-white">
+            <button type="button" onclick="savePeriod()" class="px-2 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-xs text-white">儲存工期</button>
+            <span id="periodMsg" class="text-xs"></span>
+          </span>
         </div>`;
       renderTeams();
       if (rec.crew) { crewTeamId = rec.crew.teamId; crewData = rec.crew; renderCrew(); }
@@ -139,6 +146,22 @@
           <ul class="mt-2 text-[11px] text-slate-300 space-y-0.5">${t.reasons.map(r => `<li>・${esc(r)}</li>`).join('')}</ul>
           ${t.blockers.length ? `<div class="mt-1 text-[11px] text-rose-300">${t.blockers.map(esc).join('；')}</div>` : ''}
         </div>`).join('');
+    }
+
+    async function savePeriod() {
+      const msg = document.getElementById('periodMsg');
+      const startDate = document.getElementById('pStart').value;
+      const endDate = document.getElementById('pEnd').value;
+      if (!startDate || !endDate) { msg.innerHTML = '<span class="text-rose-300">請填開工與完工日</span>'; return; }
+      try {
+        await api(`/orders/${encodeURIComponent(rec.order.orderId)}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ startDate, endDate })
+        });
+        await loadOrder();
+        document.getElementById('periodMsg').innerHTML = '<span class="text-emerald-300">✓ 已更新工期，排序與名單已重新計算</span>';
+      } catch (e) {
+        msg.innerHTML = `<span class="text-rose-300">${esc(e.message)}</span>`;
+      }
     }
 
     async function pickTeam(teamId) {
@@ -163,7 +186,7 @@
 
     function renderCrew() {
       const d = crewData;
-      document.getElementById('crewTeam').textContent = `・${d.teamId}・需求 ${d.needed} 人`;
+      document.getElementById('crewTeam').textContent = `・${d.teamId}・需求 ${d.needed} 人${d.periodChecked ? '・已排除工期撞期者' : ''}`;
       // 已有名單且是同一工班時沿用；否則採用系統建議
       const useCurrent = d.currentCrew.length && rec.order.assignedTeamId === d.teamId;
       const checked = new Set(useCurrent ? d.currentCrew : d.candidates.filter(c => c.recommended).map(c => c.workerId));
@@ -182,7 +205,7 @@
         </div>` : '');
       document.getElementById('crewFooter').innerHTML = `
         <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div class="text-xs"><span id="crewCount" class="font-black text-white"></span>${d.shortage ? `<div class="text-rose-300 mt-0.5">合格人數不足，缺 ${d.shortage} 人</div>` : ''}<div id="saveMsg" class="mt-0.5"></div></div>
+          <div class="text-xs"><span id="crewCount" class="font-black text-white"></span>${d.shortage ? `<div class="text-rose-300 mt-0.5">合格人數不足，缺 ${d.shortage} 人</div>` : ''}${d.periodChecked ? '' : '<div class="text-amber-300 mt-0.5">此訂單尚未排定工期，無法檢查工人是否撞期</div>'}<div id="saveMsg" class="mt-0.5"></div></div>
           <button type="button" id="saveBtn" onclick="saveCrew()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-black">確認派工並儲存名單</button>
         </div>`;
       updateCount();

@@ -211,8 +211,11 @@ CREATE TABLE orders (
     foreman_phone      VARCHAR2(30),
     foreman_notes      VARCHAR2(500),
     crew_worker_ids    VARCHAR2(400),
+    start_date         DATE,
+    end_date           DATE,
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
     CONSTRAINT pk_orders PRIMARY KEY (id),
+    CONSTRAINT chk_orders_period CHECK ((start_date IS NULL AND end_date IS NULL) OR (start_date IS NOT NULL AND end_date IS NOT NULL AND end_date >= start_date)),
     CONSTRAINT fk_orders_crop FOREIGN KEY (crop_id) REFERENCES crops(id),
     CONSTRAINT fk_orders_farmer FOREIGN KEY (farmer_id) REFERENCES farmers(id),
     CONSTRAINT fk_orders_team FOREIGN KEY (assigned_team_id) REFERENCES dispatch_teams(id),
@@ -222,6 +225,8 @@ CREATE TABLE orders (
 COMMENT ON TABLE orders IS '派工訂單表：早鳥工時包預約與出工履約紀錄';
 COMMENT ON COLUMN orders.id IS '訂單流水號 (如 ORD-2026-001)';
 COMMENT ON COLUMN orders.crew_worker_ids IS '出工名單（工號逗號分隔），由派工媒合設定；有名單時派工前加保檢查與打卡連結以名單為準';
+COMMENT ON COLUMN orders.start_date IS '預定開工日（含當日）；與 end_date 須同時有值或同時為 NULL';
+COMMENT ON COLUMN orders.end_date IS '預定完工日（含當日）；派工媒合依工期排除撞期工人、打卡依工期判斷所屬訂單';
 COMMENT ON COLUMN orders.plan IS '商業方案 (early_bird:早鳥9折, hourly_flex:彈性點工, turnkey:成果統包)';
 COMMENT ON COLUMN orders.final_amount IS '折讓後應付總額';
 COMMENT ON COLUMN orders.deposit_amount IS '早鳥 20% 鎖約定金';

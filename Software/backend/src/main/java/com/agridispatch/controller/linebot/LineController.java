@@ -9,6 +9,7 @@ import com.agridispatch.repository.CropRepository;
 import com.agridispatch.common.LaborConstants;
 import com.agridispatch.config.AgriSettings;
 import com.agridispatch.service.CalendarService;
+import com.agridispatch.service.OrderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -361,7 +362,7 @@ public class LineController {
 
         String orderId = target != null ? target.getId() : "ORD-2026-001";
         String cropName = target != null ? target.getCropName() : "枋山愛文芒果 (6.0 分地)";
-        String status = target != null ? target.getStatus() : "已派工 (出勤中)";
+        String status = target != null ? OrderService.statusLabel(target.getStatus()) : "已派工 (出勤中)";
         String foreman = (target != null && target.getForemanName() != null && !target.getForemanName().isBlank())
                 ? target.getForemanName() + " (" + target.getForemanPhone() + ")"
                 : "陳建龍 (農場主本人帶隊 0921-999-888)";

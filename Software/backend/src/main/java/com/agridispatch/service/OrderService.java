@@ -251,6 +251,19 @@ public class OrderService {
             CANCELLED, Set.of()
     );
 
+    /** 狀態代碼轉中文（LINE 卡片等對外顯示用）；未知代碼原樣回傳 */
+    public static String statusLabel(String status) {
+        if (status == null) return "";
+        return switch (status) {
+            case PENDING -> "待付定金";
+            case CONFIRMED -> "已排定";
+            case IN_PROGRESS -> "履約中";
+            case COMPLETED -> "已完工";
+            case CANCELLED -> "已取消";
+            default -> status;
+        };
+    }
+
     public static boolean canTransition(String from, String to) {
         return TRANSITIONS.getOrDefault(from, Set.of()).contains(to);
     }

@@ -61,15 +61,6 @@
           { "type": "text", "text": "適用作物", "color": "#64748B", "size": "xs", "flex": 2 },
           { "type": "text", "text": "芒果、洋蔥、設施彩椒、三星青蔥、茶葉", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
         ]
-      },
-      {
-        "type": "box",
-        "layout": "baseline",
-        "spacing": "sm",
-        "contents": [
-          { "type": "text", "text": "專車接送", "color": "#64748B", "size": "xs", "flex": 2 },
-          { "type": "text", "text": "智農 1~4 號冷氣專車定點接駁", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
-        ]
       }
     ]
   },

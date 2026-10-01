@@ -170,7 +170,7 @@ COMMENT ON COLUMN dispatch_teams.status IS '出勤狀態 (active_field:田間出
 -- ====================================================================
 CREATE TABLE orders (
     id                 VARCHAR2(32)   NOT NULL,
-    farmer_id          VARCHAR2(32)   NOT NULL,
+    farmer_id          VARCHAR2(32),
     farmer_name        VARCHAR2(100)  NOT NULL,
     phone              VARCHAR2(30)   NOT NULL,
     farm_location      VARCHAR2(255)  NOT NULL,
@@ -179,6 +179,10 @@ CREATE TABLE orders (
     area               NUMBER(6,2)    NOT NULL,
     plan               VARCHAR2(30)   DEFAULT 'early_bird' NOT NULL,
     plan_name          VARCHAR2(100)  NOT NULL,
+    dispatch_category  VARCHAR2(50),
+    category_name      VARCHAR2(100),
+    transport_zone     VARCHAR2(50),
+    transport_surcharge NUMBER(8)     DEFAULT 0 NOT NULL,
     total_hours        NUMBER(6)      NOT NULL,
     suggested_workers  NUMBER(4)      NOT NULL,
     unit_rate          NUMBER(8)      NOT NULL,
@@ -188,6 +192,9 @@ CREATE TABLE orders (
     deposit_paid       CHAR(1)        DEFAULT 'Y' NOT NULL,
     status             VARCHAR2(30)   DEFAULT 'confirmed' NOT NULL,
     assigned_team_id   VARCHAR2(32),
+    foreman_name       VARCHAR2(100),
+    foreman_phone      VARCHAR2(30),
+    foreman_notes      VARCHAR2(500),
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
     CONSTRAINT pk_orders PRIMARY KEY (id),
     CONSTRAINT fk_orders_crop FOREIGN KEY (crop_id) REFERENCES crops(id),
@@ -213,9 +220,18 @@ CREATE TABLE workers (
     chinese_name        VARCHAR2(50)  NOT NULL,
     nationality         VARCHAR2(50)  NOT NULL,
     is_leader           CHAR(1)       DEFAULT 'N' NOT NULL,
-    base_salary         NUMBER(8)     DEFAULT 28590 NOT NULL,
+    tier                VARCHAR2(30),
+    base_salary         NUMBER(8)     DEFAULT 29500 NOT NULL,
     agri_bonus          NUMBER(8)     DEFAULT 8800 NOT NULL,
     transport_allowance NUMBER(8)     DEFAULT 2400 NOT NULL,
+    arc_number          VARCHAR2(32),
+    passport_number     VARCHAR2(32),
+    permit_expiry       VARCHAR2(20),
+    insurance_status    VARCHAR2(100),
+    current_task        VARCHAR2(255),
+    dispatch_status     VARCHAR2(30),
+    phone               VARCHAR2(30),
+    password_hash       VARCHAR2(255),
     created_at          TIMESTAMP     DEFAULT SYSTIMESTAMP NOT NULL,
     CONSTRAINT pk_workers PRIMARY KEY (id),
     CONSTRAINT fk_workers_team FOREIGN KEY (team_id) REFERENCES dispatch_teams(id),
@@ -225,7 +241,7 @@ CREATE TABLE workers (
 COMMENT ON TABLE workers IS '在籍外展農工表：外展機構合法聘僱之 20 位外展移工與本國師級人才';
 COMMENT ON COLUMN workers.id IS '移工編號 (如 W001)';
 COMMENT ON COLUMN workers.nationality IS '國籍 (越南, 印尼, 泰國, 本國)';
-COMMENT ON COLUMN workers.base_salary IS '外展保障基本法定底薪 (NT$ 28,590)';
+COMMENT ON COLUMN workers.base_salary IS '外展保障基本法定底薪（2026 年最低工資 NT$ 29,500）';
 COMMENT ON COLUMN workers.agri_bonus IS '中央農業部外展就業獎勵 (最高 NT$ 8,800/月)';
 COMMENT ON COLUMN workers.transport_allowance IS '高溫與專車交通津貼 (NT$ 2,400/月)';
 
@@ -235,11 +251,20 @@ COMMENT ON COLUMN workers.transport_allowance IS '高溫與專車交通津貼 (N
 CREATE TABLE clock_ins (
     id                 VARCHAR2(64)   NOT NULL,
     worker_id          VARCHAR2(32)   NOT NULL,
-    latitude           NUMBER(10,6)   NOT NULL,
-    longitude          NUMBER(10,6)   NOT NULL,
-    location_name      VARCHAR2(255)  NOT NULL,
+    work_date          DATE,
+    latitude           NUMBER(10,6),
+    longitude          NUMBER(10,6),
+    location_name      VARCHAR2(255),
+    location           VARCHAR2(200),
+    gps_accuracy_meters NUMBER(8,2),
     clock_in_time      TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
+    clock_out_time     TIMESTAMP,
     status             VARCHAR2(20)   DEFAULT 'success' NOT NULL,
+    actual_hours       NUMBER(6,2),
+    normal_hours       NUMBER(6,2),
+    overtime_hours     NUMBER(6,2),
+    foreman_signature  VARCHAR2(50),
+    created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP,
     CONSTRAINT pk_clock_ins PRIMARY KEY (id),
     CONSTRAINT fk_clock_ins_worker FOREIGN KEY (worker_id) REFERENCES workers(id)
 );
@@ -257,7 +282,7 @@ CREATE TABLE talents (
     phone              VARCHAR2(30)   NOT NULL,
     experience         VARCHAR2(1000) NOT NULL,
     pdpa_consent       CHAR(1)        DEFAULT 'Y' NOT NULL,
-    registered_at      TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
+    registered_at      TIMESTAMP      DEFAULT SYSTIMESTAMP,
     CONSTRAINT pk_talents PRIMARY KEY (id),
     CONSTRAINT chk_talents_pdpa CHECK (pdpa_consent IN ('Y', 'N'))
 );
@@ -477,34 +502,34 @@ INSERT INTO dispatch_teams VALUES ('team_d', '工班 D 組 (冷鏈常態組)', 5
     '🏢 屏南冷鏈預冷分級場 (室內 A 棟)', '蔬果預冷降溫、外銷精密秤重分級、冷鏈櫃裝櫃', 'hedged_indoor');
 
 -- 4. 派工訂單
-INSERT INTO orders VALUES ('ORD-2026-001', 'F001', '陳建龍 (阿龍班長)', '0912-345-678', '屏東縣枋山鄉加祿段 32 號',
+INSERT INTO orders (id, farmer_id, farmer_name, phone, farm_location, crop_id, crop_name, area, plan, plan_name, total_hours, suggested_workers, unit_rate, standard_amount, final_amount, deposit_amount, deposit_paid, status, assigned_team_id, created_at) VALUES ('ORD-2026-001', 'F001', '陳建龍 (阿龍班長)', '0912-345-678', '屏東縣枋山鄉加祿段 32 號',
     'mango', '愛文芒果 (屏東枋山)', 6.0, 'early_bird', '產季早鳥工時包 (9折保證出工)',
     168, 4, 300, 50400, 45360, 9072, 'Y', 'confirmed', 'team_b', SYSTIMESTAMP);
 
 -- 5. 在籍移工 (20位)
-INSERT INTO workers VALUES ('W001', 'team_a', 'Nguyễn Văn Hùng', '阮文雄', '越南', 'Y', 28590, 8800, 2400, SYSTIMESTAMP);
-INSERT INTO workers VALUES ('W002', 'team_a', 'Trần Văn Bình', '陳文平', '越南', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
-INSERT INTO workers VALUES ('W003', 'team_a', 'Lê Thị Mai', '黎氏梅', '越南', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
-INSERT INTO workers VALUES ('W004', 'team_a', 'Phạm Văn Đức', '范文德', '越南', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
-INSERT INTO workers VALUES ('W005', 'team_a', 'Hoàng Minh Tuấn', '黃明俊', '越南', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W001', 'team_a', 'Nguyễn Văn Hùng', '阮文雄', '越南', 'Y', 29500, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W002', 'team_a', 'Trần Văn Bình', '陳文平', '越南', 'N', 29500, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W003', 'team_a', 'Lê Thị Mai', '黎氏梅', '越南', 'N', 29500, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W004', 'team_a', 'Phạm Văn Đức', '范文德', '越南', 'N', 29500, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W005', 'team_a', 'Hoàng Minh Tuấn', '黃明俊', '越南', 'N', 29500, 8800, 2400, SYSTIMESTAMP);
 
-INSERT INTO workers VALUES ('W006', 'team_b', 'Agus Santoso', '阿迪', '印尼', 'Y', 28590, 8800, 2400, SYSTIMESTAMP);
-INSERT INTO workers VALUES ('W007', 'team_b', 'Budi Setiawan', '布迪', '印尼', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
-INSERT INTO workers VALUES ('W008', 'team_b', 'Dewi Lestari', '蒂薇', '印尼', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
-INSERT INTO workers VALUES ('W009', 'team_b', 'Eko Prasetyo', '艾科', '印尼', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
-INSERT INTO workers VALUES ('W010', 'team_b', 'Fajar Hidayat', '法賈', '印尼', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
-INSERT INTO workers VALUES ('W011', 'team_b', 'Gita Pratama', '吉塔', '印尼', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W006', 'team_b', 'Agus Santoso', '阿迪', '印尼', 'Y', 29500, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W007', 'team_b', 'Budi Setiawan', '布迪', '印尼', 'N', 29500, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W008', 'team_b', 'Dewi Lestari', '蒂薇', '印尼', 'N', 29500, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W009', 'team_b', 'Eko Prasetyo', '艾科', '印尼', 'N', 29500, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W010', 'team_b', 'Fajar Hidayat', '法賈', '印尼', 'N', 29500, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W011', 'team_b', 'Gita Pratama', '吉塔', '印尼', 'N', 29500, 8800, 2400, SYSTIMESTAMP);
 
-INSERT INTO workers VALUES ('W012', 'team_c', '陳建宏', '陳建宏 (機耕師)', '本國', 'Y', 42000, 8800, 3000, SYSTIMESTAMP);
-INSERT INTO workers VALUES ('W013', 'team_c', '林志強', '林志強 (無人機手)', '本國', 'N', 42000, 8800, 3000, SYSTIMESTAMP);
-INSERT INTO workers VALUES ('W014', 'team_c', 'Đặng Văn Lâm', '鄧文林', '越南', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
-INSERT INTO workers VALUES ('W015', 'team_c', 'Hadi Wijaya', '哈迪', '印尼', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W012', 'team_c', '陳建宏', '陳建宏 (機耕師)', '本國', 'Y', 42000, 8800, 3000, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W013', 'team_c', '林志強', '林志強 (無人機手)', '本國', 'N', 42000, 8800, 3000, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W014', 'team_c', 'Đặng Văn Lâm', '鄧文林', '越南', 'N', 29500, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W015', 'team_c', 'Hadi Wijaya', '哈迪', '印尼', 'N', 29500, 8800, 2400, SYSTIMESTAMP);
 
-INSERT INTO workers VALUES ('W016', 'team_d', 'Phạm Thị Hồng', '范氏紅', '越南', 'Y', 28590, 8800, 2400, SYSTIMESTAMP);
-INSERT INTO workers VALUES ('W017', 'team_d', 'Vũ Thị Hương', '武氏香', '越南', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
-INSERT INTO workers VALUES ('W018', 'team_d', 'Siti Rahma', '西蒂', '印尼', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
-INSERT INTO workers VALUES ('W019', 'team_d', 'Nurul Aini', '努魯', '印尼', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
-INSERT INTO workers VALUES ('W020', 'team_d', 'Somchai Prasert', '宋猜', '泰國', 'N', 28590, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W016', 'team_d', 'Phạm Thị Hồng', '范氏紅', '越南', 'Y', 29500, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W017', 'team_d', 'Vũ Thị Hương', '武氏香', '越南', 'N', 29500, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W018', 'team_d', 'Siti Rahma', '西蒂', '印尼', 'N', 29500, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W019', 'team_d', 'Nurul Aini', '努魯', '印尼', 'N', 29500, 8800, 2400, SYSTIMESTAMP);
+INSERT INTO workers (id, team_id, name, chinese_name, nationality, is_leader, base_salary, agri_bonus, transport_allowance, created_at) VALUES ('W020', 'team_d', 'Somchai Prasert', '宋猜', '泰國', 'N', 29500, 8800, 2400, SYSTIMESTAMP);
 
 -- 6. 人才庫
 INSERT INTO talents VALUES ('TAL-001', '陳文義', 'local_driver', '本國大型農機/曳引機駕駛員', '0933-222-111',

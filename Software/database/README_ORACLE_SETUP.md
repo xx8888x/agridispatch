@@ -60,6 +60,12 @@ D:\派遣專案網站(農事及其它)\Software\database\
 ### 步驟 4：一鍵執行腳本
 點擊 SQL 編輯器工具列的 **「以指令碼執行 (Run Script)」** 按鈕（快捷鍵：`F5`），即可自動完成 14 大資料表建立與種子資料匯入！
 
+> ⚠️ 注意：
+> - 腳本開頭會 **DROP 再重建** 全部資料表，既有資料會被清除。
+> - `01_agridispatch_oracle_schema.sql` 已內含精簡種子，**不要接著再執行 `02_agridispatch_universal_seed.sql`**，否則主鍵會重複。
+> - 若要改用 02 的完整種子（26 位農工、12 筆訂單），請只執行 01 的建表部分，再先執行 `ALTER SESSION SET NLS_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH24:MI:SS';`，最後執行 02。
+> - 以上流程已於 2026-10-01 在本機 Oracle 26ai Free（FREEPDB1，臨時 schema）實測，兩種流程皆 0 錯誤。
+
 ---
 
 ## 肆、 若本地電腦尚未安裝 Oracle Database Server 之快速安裝指引

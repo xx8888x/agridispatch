@@ -387,7 +387,7 @@ public class LineController {
         bItems.add(createRowKV("接送專車", "智農 2 號車 (司機: 李大哥 0912-222-444)"));
         bItems.add(createRowKV("現場小工頭", foreman));
         bItems.add(createRowKV("作業手路", "留蒂 0.5cm 護果粉採收 / 完整驗收標準"));
-        bItems.add(createRowKV("合約保障", "SLA 遲到免單、放鳥雙倍賠償、100% 納保"));
+        bItems.add(createRowKV("合約保障", "SLA 遲到免單、放鳥雙倍賠償、依法加保勞健保"));
         bItems.add(createRowKV("總計金額", "NT$ " + String.format("%,.0f", total) + " (定金已收 20%)"));
         body.put("contents", bItems);
         contents.put("body", body);
@@ -506,7 +506,7 @@ public class LineController {
 
         List<Map<String, Object>> hItems = new ArrayList<>();
         hItems.add(createLabel("在籍合法外展工班・即時人力戰情", "#C7D2FE", "xs", "bold"));
-        hItems.add(createLabel("在籍人員 " + totalWorkers + " 名 (100% 納保合規)", "#FFFFFF", "xl", "bold"));
+        hItems.add(createLabel("在籍人員 " + totalWorkers + " 名 (依法加保勞健保)", "#FFFFFF", "xl", "bold"));
         hItems.add(createLabel("合法外展移工 20 名 ╳ 本國機耕師與兼職 5 名", "#E0E7FF", "xs", "regular"));
         header.put("contents", hItems);
         contents.put("header", header);

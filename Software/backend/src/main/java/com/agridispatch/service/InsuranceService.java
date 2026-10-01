@@ -131,7 +131,15 @@ public class InsuranceService {
     /** 派工前檢查：工班任一成員未完整加保即拒絕（OrderService 轉為 in_progress 時呼叫） */
     public void assertTeamInsured(String teamId, LocalDate date) {
         if (teamId == null || !teamRepository.existsById(teamId)) return; // 未分派工班不在此檢查
-        List<Worker> members = workerRepository.findByTeamId(teamId);
+        assertInsured(workerRepository.findByTeamId(teamId), date);
+    }
+
+    /** 派工前檢查：只檢查出工名單上的工人（訂單已排定出工名單時使用） */
+    public void assertWorkersInsured(Collection<String> workerIds, LocalDate date) {
+        assertInsured(workerRepository.findAllById(workerIds), date);
+    }
+
+    private void assertInsured(List<Worker> members, LocalDate date) {
         List<InsuranceRecord> records = recordsOf(members);
         List<String> problems = new ArrayList<>();
         for (Worker w : members) {

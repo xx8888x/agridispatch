@@ -292,8 +292,12 @@ public class OrderService {
             throw ApiException.conflict("訂單尚未收到定金，無法轉為已排定");
         }
         if (IN_PROGRESS.equals(newStatus)) {
-            // 派工前檢查：已分派工班的每位成員都須完整加保才可出工
-            insuranceService.assertTeamInsured(order.getAssignedTeamId(), java.time.LocalDate.now());
+            // 派工前檢查：有出工名單時檢查名單成員，否則檢查已分派工班的每位成員；皆須完整加保才可出工
+            if (!order.crewList().isEmpty()) {
+                insuranceService.assertWorkersInsured(order.crewList(), java.time.LocalDate.now());
+            } else {
+                insuranceService.assertTeamInsured(order.getAssignedTeamId(), java.time.LocalDate.now());
+            }
         }
         order.setStatus(newStatus);
         return orderRepository.save(order);

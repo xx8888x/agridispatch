@@ -39,7 +39,20 @@ public class Order {
     private String foremanNotes; // 現場交辦指示 / 報到須知
     private String createdAt;
 
+    /** 出工名單（工號，逗號分隔）；只由派工媒合 API 設定，建立／修改訂單時不接受前端傳入 */
+    @jakarta.persistence.Column(name = "crew_worker_ids", length = 400)
+    private String crewWorkerIds;
+
     public Order() {}
+
+    public String getCrewWorkerIds() { return crewWorkerIds; }
+    public void setCrewWorkerIds(String crewWorkerIds) { this.crewWorkerIds = crewWorkerIds; }
+
+    /** 出工名單（空名單回傳空集合） */
+    public java.util.List<String> crewList() {
+        if (crewWorkerIds == null || crewWorkerIds.isBlank()) return java.util.List.of();
+        return java.util.Arrays.stream(crewWorkerIds.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
+    }
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }

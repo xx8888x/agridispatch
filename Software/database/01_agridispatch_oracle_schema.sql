@@ -210,6 +210,7 @@ CREATE TABLE orders (
     foreman_name       VARCHAR2(100),
     foreman_phone      VARCHAR2(30),
     foreman_notes      VARCHAR2(500),
+    crew_worker_ids    VARCHAR2(400),
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
     CONSTRAINT pk_orders PRIMARY KEY (id),
     CONSTRAINT fk_orders_crop FOREIGN KEY (crop_id) REFERENCES crops(id),
@@ -220,6 +221,7 @@ CREATE TABLE orders (
 
 COMMENT ON TABLE orders IS '派工訂單表：早鳥工時包預約與出工履約紀錄';
 COMMENT ON COLUMN orders.id IS '訂單流水號 (如 ORD-2026-001)';
+COMMENT ON COLUMN orders.crew_worker_ids IS '出工名單（工號逗號分隔），由派工媒合設定；有名單時派工前加保檢查與打卡連結以名單為準';
 COMMENT ON COLUMN orders.plan IS '商業方案 (early_bird:早鳥工時包 315元/hr 不打折, hourly_flex:彈性點工, turnkey:成果統包)';
 COMMENT ON COLUMN orders.final_amount IS '折讓後應付總額';
 COMMENT ON COLUMN orders.deposit_amount IS '早鳥 20% 鎖約定金';

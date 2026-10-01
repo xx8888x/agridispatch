@@ -89,9 +89,6 @@
         <button onclick="switchUserRole('admin_tech')" id="btn-portal-admin" class="role-portal-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium text-xs transition flex items-center gap-1.5">
           <span>🛰️</span> 科技公司後台
         </button>
-        <button onclick="switchUserRole('showcase')" id="btn-portal-showcase" class="role-portal-btn px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 font-bold text-xs transition flex items-center gap-1.5">
-          <span>🌟</span> 對外展示宣傳
-        </button>
         <a href="login.html" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs transition flex items-center gap-1.5">
           <span>🔑</span> 身分登入
         </a>
@@ -129,7 +126,6 @@
       <button onclick="switchUserRole('worker_foreign')" id="m-btn-foreign" class="m-role-btn px-2 py-1 text-slate-400 font-medium">移工端</button>
       <button onclick="switchUserRole('worker_local')" id="m-btn-local" class="m-role-btn px-2 py-1 text-slate-400 font-medium">本地工</button>
       <button onclick="switchUserRole('admin_tech')" id="m-btn-admin" class="m-role-btn px-2 py-1 text-slate-400 font-medium">科技後台</button>
-      <button onclick="switchUserRole('showcase')" id="m-btn-showcase" class="m-role-btn px-2 py-1 text-amber-300 font-bold">✨展示版</button>
       <a href="../linebot/line.html" class="px-2 py-1 text-emerald-400 font-bold flex items-center gap-0.5"><span>💬</span>LINE</a>
     </div>
   </header>
@@ -702,89 +698,6 @@
       </div>
     </section>
 
-    <!-- ============================================================= -->
-    <!-- ROLE 5: 對外展示宣傳版本 (PUBLIC SHOWCASE & PITCH PORTAL)       -->
-    <!-- ============================================================= -->
-    <section id="portal-showcase" class="space-y-12 hidden">
-      <div class="text-center max-w-3xl mx-auto space-y-4">
-        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold">
-          <span>✨</span> 商業路演 ╳ 產官學加速器 Pitch 專用全景展示
-        </div>
-        <h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight">
-          智農派工全景商業模式展示
-        </h1>
-        <p class="text-slate-400 text-sm sm:text-base leading-relaxed">
-          合法外展農工 ╳ 演算法調度大腦 ╳ 天候避險冷鏈轉運 ╳ 雙軌控制權護城河
-        </p>
-        <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
-          
-          <a href="brochure.html" target="_blank" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1.5">
-            <span>📄</span> 下載產季早鳥保證出工 DM
-          </a>
-        </div>
-      </div>
-
-      <!-- Key Trust Metrics -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="p-5 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-1">
-          <span class="text-xs text-slate-400">私聘黑工違法風險</span>
-          <div class="text-2xl font-black text-red-400">0 罰款</div>
-          <span class="text-[11px] text-slate-500">合作社依法投保</span>
-        </div>
-        <div class="p-5 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-1">
-          <span class="text-xs text-slate-400">產季早鳥預購優惠</span>
-          <div class="text-2xl font-black text-amber-400">9 折優惠</div>
-          <span class="text-[11px] text-slate-500">遲到免單・放鳥雙倍賠償</span>
-        </div>
-        <div class="p-5 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-1">
-          <span class="text-xs text-slate-400">天候暴雨避險成效</span>
-          <div class="text-2xl font-black text-emerald-400">100% 出勤</div>
-          <span class="text-[11px] text-slate-500">改派冷鏈集貨場・保全營收</span>
-        </div>
-        <div class="p-5 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-1">
-          <span class="text-xs text-slate-400">中央就業獎勵津貼</span>
-          <div class="text-2xl font-black text-blue-400">+ 8,800/月</div>
-          <span class="text-[11px] text-slate-500">農業部農業人力團無償補貼</span>
-        </div>
-      </div>
-
-      <!-- Interactive 3-Minute Showcase Tour -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 hover:border-emerald-500/50 transition">
-          <div class="text-3xl">👨‍🌾</div>
-          <h3 class="text-lg font-bold text-white">農場主：10 秒智慧叫工與早鳥防放鳥</h3>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            小農輸入分地自動換算工時與派遣人數，預付 20% 定金享產季保證出工，不再因地下工頭加價被搶工而造成果爛落果。
-          </p>
-          <button onclick="switchUserRole('farmer')" class="text-xs text-emerald-400 font-bold hover:underline flex items-center gap-1">
-            進入農場主試算體驗 ➔
-          </button>
-        </div>
-
-        <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 hover:border-blue-500/50 transition">
-          <div class="text-3xl">🌧️</div>
-          <h3 class="text-lg font-bold text-white">調度大腦：殺手級暴雨冷鏈避險機制</h3>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            氣象警報觸發時專車於 15 分鐘內將工班接駁至「室內冷鏈預冷包裝線」，保全 NT$ 62,500 營收，出勤率維持 100%，消除底薪虧損。
-          </p>
-          <button onclick="switchUserRole('admin_tech')" class="text-xs text-blue-400 font-bold hover:underline flex items-center gap-1">
-            查看戰情大盤與避險演練 ➔
-          </button>
-        </div>
-
-        <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 hover:border-purple-500/50 transition">
-          <div class="text-3xl">👷</div>
-          <h3 class="text-lg font-bold text-white">移工與本國工：三語工單與高尊嚴收入</h3>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            越南語、印尼語與繁中無縫切換，現場 GPS 數位打卡，底薪 + 農業部 8,800 元就業獎勵透明化，落實 ESG 永續人權價值。
-          </p>
-          <button onclick="switchUserRole('worker_foreign')" class="text-xs text-purple-400 font-bold hover:underline flex items-center gap-1">
-            體驗移工三語工單 ➔
-          </button>
-        </div>
-      </div>
-    </section>
-
   </main>
 
   <!-- Login Modal -->
@@ -830,14 +743,6 @@
             <span id="hint-admin-tech" class="text-xs text-slate-400"></span>
           </div>
           <span class="text-xs px-2 py-1 rounded bg-amber-500/20 text-amber-400 font-bold">登入 ➔</span>
-        </button>
-
-        <button onclick="quickLogin('showcase')" class="w-full p-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/50 text-left flex items-center justify-between transition">
-          <div>
-            <strong class="text-amber-300 block text-sm">🌟 對外展示宣傳版本 (路演展示)</strong>
-            <span class="text-xs text-slate-400">全景商業模式 Pitch 展示</span>
-          </div>
-          <span class="text-xs px-2 py-1 rounded bg-amber-500/30 text-amber-300 font-bold">開啟 ➔</span>
         </button>
       </div>
 

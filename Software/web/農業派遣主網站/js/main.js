@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 處理 URL Hash
   const hash = window.location.hash.replace('#', '');
-  if (['farmer', 'worker_foreign', 'worker_local', 'admin_tech', 'showcase'].includes(hash)) {
+  if (['farmer', 'worker_foreign', 'worker_local', 'admin_tech'].includes(hash)) {
     switchUserRole(hash);
   } else {
     switchUserRole('farmer');
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // 1. 切換使用者版本與視圖
 function switchUserRole(role) {
   currentUser.role = role;
-  const portals = ['farmer', 'worker_foreign', 'worker_local', 'admin_tech', 'showcase'];
+  const portals = ['farmer', 'worker_foreign', 'worker_local', 'admin_tech'];
 
   // 切換視圖顯隱
   portals.forEach(p => {
@@ -163,8 +163,7 @@ function switchUserRole(role) {
     farmer: 'btn-portal-farmer',
     worker_foreign: 'btn-portal-foreign',
     worker_local: 'btn-portal-local',
-    admin_tech: 'btn-portal-admin',
-    showcase: 'btn-portal-showcase'
+    admin_tech: 'btn-portal-admin'
   };
   const activeBtn = document.getElementById(activeBtnMap[role]);
   if (activeBtn) {
@@ -179,8 +178,7 @@ function switchUserRole(role) {
     farmer: 'm-btn-farmer',
     worker_foreign: 'm-btn-foreign',
     worker_local: 'm-btn-local',
-    admin_tech: 'm-btn-admin',
-    showcase: 'm-btn-showcase'
+    admin_tech: 'm-btn-admin'
   };
   const mActive = document.getElementById(mActiveMap[role]);
   if (mActive) {
@@ -192,8 +190,7 @@ function switchUserRole(role) {
     farmer: { name: '陳建龍 (阿龍班長)', roleDesc: '農場主 / 桃園八德有機蔬菜產銷班' },
     worker_foreign: { name: 'Nguyễn Văn Hùng (阮文雄)', roleDesc: '外展移工 / 越南 (#001)' },
     worker_local: { name: '陳建宏 (資深機耕技師)', roleDesc: '本國農機領航員 / 雙證照飛手' },
-    admin_tech: { name: '智農科技調度總監', roleDesc: '科技公司後台 / 系統調度戰情室' },
-    showcase: { name: '🌟 全景商業展示 Pitch', roleDesc: '投資人 / 主管機關 / 合作農企業全景體驗' }
+    admin_tech: { name: '智農科技調度總監', roleDesc: '科技公司後台 / 系統調度戰情室' }
   };
 
   const info = roleInfo[role] || roleInfo.farmer;

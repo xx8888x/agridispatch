@@ -305,7 +305,7 @@ erDiagram
 | `farmerName` / `phone` / `farmLocation` | String | 農場主與田區資料 |
 | `cropId` / `cropName` | String | → `crops.id`；不存在時回 400 |
 | `area` | double | 面積（分地），須 > 0 |
-| `plan` / `planName` | String | `early_bird`（9 折、20% 定金）/ `hourly_flex`（310 元/hr、無定金）/ `turnkey`（95 折、30% 定金） |
+| `plan` / `planName` | String | `early_bird`（315 元/hr 不打折、20% 定金）/ `hourly_flex`（310 元/hr、無定金）/ `turnkey`（95 折、30% 定金） |
 | `dispatchCategory` / `categoryName` | String | `harvest_grading` / `tillage_planting` / `pruning_bagging` / `drone_pest_control` / `cold_chain_pack` / `typhoon_emergency` |
 | `transportZone` | String | `core_35km`（不加價）/ `cross_region`（+1,200 元） |
 | `transportSurcharge` | int | 交通加價 |

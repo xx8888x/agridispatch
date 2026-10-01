@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 /**
  * 雙軌利潤分流帳本實體 (對應 DB: financial_ledger 表)
- * 紀錄科技公司 18% 技術服務費與特許合作社 82% 人事成本分流結算
+ * 紀錄科技公司 18% 技術服務費與外展合作社 82% 人事成本分流結算
  */
 @Entity
 @Table(name = "financial_ledger")

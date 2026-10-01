@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
  * 對應 DB: clock_ins 資料表
  *
  * 三層農工模型均適用：
- *   tier1_foreign   → 外籍特許外展移工
+ *   tier1_foreign   → 外籍合法外展移工
  *   tier2_local_flex → 本地帶工領班 / 勞務勞工
  *   tier3_turnkey   → 專業機耕技師
  */

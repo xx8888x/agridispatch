@@ -50,7 +50,7 @@
         "spacing": "sm",
         "contents": [
           { "type": "text", "text": "合法保障", "color": "#64748B", "size": "xs", "flex": 2 },
-          { "type": "text", "text": "合法特許合作社雇主、全額勞健保、合法發票", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+          { "type": "text", "text": "外展合作社合法雇主、全額勞健保、合法發票", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
         ]
       },
       {

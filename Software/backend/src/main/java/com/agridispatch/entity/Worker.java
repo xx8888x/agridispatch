@@ -8,7 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * 農工作業人員實體 (三層勞工模型：外籍特許 / 本地彈性 / 專業機耕包商)
+ * 農工作業人員實體 (三層勞工模型：外籍合法外展 / 本地彈性 / 專業機耕包商)
  */
 @Entity
 @Table(name = "workers")

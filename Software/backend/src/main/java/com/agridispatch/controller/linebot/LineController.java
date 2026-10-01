@@ -460,7 +460,7 @@ public class LineController {
             bItems.add(createRowKV(name, String.format("倒數 %d 天 (%s・%s)", countdown, window, status)));
         }
 
-        bItems.add(createRowKV("出工稼動率", "96.8% (特許外展與本籍機耕雙軌調度)"));
+        bItems.add(createRowKV("出工稼動率", "96.8% (合法外展與本籍機耕雙軌調度)"));
         bItems.add(createRowKV("調度建議", "目前為產季調度關鍵期，建議提前鎖定工班"));
         body.put("contents", bItems);
         contents.put("body", body);
@@ -505,9 +505,9 @@ public class LineController {
         header.put("paddingAll", "20px");
 
         List<Map<String, Object>> hItems = new ArrayList<>();
-        hItems.add(createLabel("在籍特許外展工班・即時人力戰情", "#C7D2FE", "xs", "bold"));
+        hItems.add(createLabel("在籍合法外展工班・即時人力戰情", "#C7D2FE", "xs", "bold"));
         hItems.add(createLabel("在籍人員 " + totalWorkers + " 名 (100% 納保合規)", "#FFFFFF", "xl", "bold"));
-        hItems.add(createLabel("特許外展移工 20 名 ╳ 本國機耕師與兼職 5 名", "#E0E7FF", "xs", "regular"));
+        hItems.add(createLabel("合法外展移工 20 名 ╳ 本國機耕師與兼職 5 名", "#E0E7FF", "xs", "regular"));
         header.put("contents", hItems);
         contents.put("header", header);
 
@@ -679,7 +679,7 @@ public class LineController {
         header.put("paddingAll", "20px");
 
         List<Map<String, Object>> hItems = new ArrayList<>();
-        hItems.add(createLabel("農業部特許外展農工・政府津貼公示", "#E9D5FF", "xs", "bold"));
+        hItems.add(createLabel("合法外展農工・政府津貼公示", "#E9D5FF", "xs", "bold"));
         // TODO 待農業部確認適用對象（就業獎勵金）
         hItems.add(createLabel("就業獎勵金 NT$ " + LaborConstants.formatMoney(LaborConstants.AGRI_EMPLOYMENT_BONUS) + " 已入帳", "#FFFFFF", "xl", "bold"));
         hItems.add(createLabel("工號: W001 阮文雄 ｜ 2026 年 5 月份津貼", "#F3E8FF", "xs", "regular"));
@@ -695,7 +695,7 @@ public class LineController {
         List<Map<String, Object>> bItems = new ArrayList<>();
         bItems.add(createRowKV("基本薪資", "NT$ " + LaborConstants.formatMoney(LaborConstants.MIN_MONTHLY_WAGE) + " (每月 5 日合作社入帳)"));
         bItems.add(createRowKV("就業獎勵金", "NT$ " + LaborConstants.formatMoney(LaborConstants.AGRI_EMPLOYMENT_BONUS) + " (農業部外展留台補助)"));
-        bItems.add(createRowKV("合計入帳", "NT$ " + LaborConstants.formatMoney(LaborConstants.MIN_MONTHLY_WAGE + LaborConstants.AGRI_EMPLOYMENT_BONUS) + " (合法特許・全額勞健保)"));
+        bItems.add(createRowKV("合計入帳", "NT$ " + LaborConstants.formatMoney(LaborConstants.MIN_MONTHLY_WAGE + LaborConstants.AGRI_EMPLOYMENT_BONUS) + " (合法外展・全額勞健保)"));
         body.put("contents", bItems);
         contents.put("body", body);
 

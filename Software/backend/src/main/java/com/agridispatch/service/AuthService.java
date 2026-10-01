@@ -228,7 +228,7 @@ public class AuthService {
 
     private static String workerRoleDesc(Worker w) {
         if (w == null) return "";
-        if ("tier1_foreign".equals(w.getTier())) return "外籍特許外展農工 (Tier 1)";
+        if ("tier1_foreign".equals(w.getTier())) return "外籍合法外展農工 (Tier 1)";
         if ("tier3_turnkey".equals(w.getTier())) return "本國專業機耕師 (Tier 3)";
         if (w.isLeader()) return "本國外展帶隊領班 (Tier 2)";
         if (w.getCurrentTask() != null && w.getCurrentTask().contains("合作社在籍")) {

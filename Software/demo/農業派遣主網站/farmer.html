@@ -578,7 +578,7 @@
           <div class="flex flex-wrap items-center gap-2">
             <span class="text-[11px] text-slate-500 font-semibold">合規與評價：</span>
             <button type="button" onclick="farmerDemoNotice('📄 合法用工證明已產生（示範）', '內含出勤人員、工時與合作社雇用紀錄，可提供產銷履歷與通路稽核使用。')" class="px-3 py-1.5 rounded-xl bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 text-xs font-bold border border-blue-500/30 transition flex items-center gap-1">📄 合法用工證明</button>
-            <button type="button" onclick="farmerDemoNotice('💰 勞務費支出明細已匯出（示範）', '本月派工費用與發票號碼彙整，可交會計師依法列報。')" class="px-3 py-1.5 rounded-xl bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 text-xs font-bold border border-purple-500/30 transition flex items-center gap-1">💰 勞務費明細</button>
+            <a href="expenses.html" class="px-3 py-1.5 rounded-xl bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 text-xs font-bold border border-purple-500/30 transition flex items-center gap-1">💰 勞務費明細</a>
             <button type="button" onclick="farmerDemoNotice('⭐ 感謝評價（示範）', '您的評分會回饋到工班履歷，優良工班將優先媒合給您。')" class="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-xs font-bold border border-amber-500/30 transition flex items-center gap-1">⭐ 評價工班</button>
           </div>
         </div>
@@ -589,6 +589,7 @@
             <div class="flex items-center gap-3">
               <span class="font-mono text-sm font-bold text-amber-400">ORD-2026-014</span>
               <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">🟡 已預約・待付 20% 定金</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-700/40 text-blue-200 border border-blue-500/30 border-dashed">🛡️ 工班分派後由合作社加保</span>
             </div>
             <div class="text-xs text-slate-400">
               預計起工：<strong class="text-white">2026/10/05</strong> (約 3 天・128 工時)
@@ -604,6 +605,10 @@
             <div class="p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700/60 space-y-1.5">
               <span class="text-slate-400 font-semibold block">👷 派遣工班與現場小工頭</span>
               <div class="text-sm font-bold text-slate-300">工班 B 組 (5人待分派)</div>
+              <div class="flex flex-wrap gap-1">
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">✔️ 履歷認證</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">✂️ 修剪熟手</span>
+              </div>
               <p class="text-[11px] text-emerald-300">現場小工頭：<strong>陳建龍 (農場主本人帶隊)</strong></p>
               <p class="text-[10px] text-slate-400">指示：農場主本人親自現場帶隊指揮調度</p>
             </div>
@@ -628,6 +633,14 @@
                 ✏️ 修改預約
               </button>
             </div>
+          </div>
+
+          <!-- 合規文件與評價（尚未出工：證明與評價於完工後開放） -->
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-[11px] text-slate-500 font-semibold">合規與評價：</span>
+            <button type="button" onclick="farmerDemoNotice('📄 合法用工證明（完工後提供）', '此訂單尚未出工；完工後依實際出勤紀錄產生，內含出勤人員、工時與合作社雇用紀錄。')" class="px-3 py-1.5 rounded-xl bg-blue-500/10 text-blue-300/80 hover:bg-blue-500/20 text-xs font-bold border border-blue-500/30 border-dashed transition flex items-center gap-1">📄 合法用工證明</button>
+            <a href="expenses.html" class="px-3 py-1.5 rounded-xl bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 text-xs font-bold border border-purple-500/30 transition flex items-center gap-1">💰 勞務費明細</a>
+            <button type="button" onclick="farmerDemoNotice('⭐ 評價工班（完工後開放）', '此訂單尚未出工；完工驗收後即可為工班評分。')" class="px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-300/80 hover:bg-amber-500/20 text-xs font-bold border border-amber-500/30 border-dashed transition flex items-center gap-1">⭐ 評價工班</button>
           </div>
         </div>
 

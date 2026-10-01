@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 AgriDispatch - 勞務費支出明細</title>
+  <!-- 執行模式設定（demo / production，每份副本各自一份） -->
+  <script src="js/app-config.js"></script>
+  <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
+  <script src="js/api-client.js"></script>
+  <script>
+    // production 模式：無 token 或角色不符則導向登入頁（demo 模式不強制）
+    if (window.AgriAuth) window.AgriAuth.requireRole(['farmer'], 'farmer-login.html');
+  </script>
+  <script>
+    if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode !== 'production') {
+      document.write('<script src="js/demo-accounts.js"><\/script>');
+    }
+  </script>
+  <!-- Tailwind CSS CDN -->
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
+  <!-- Chart.js CDN -->
+  <script src="js/vendor/chart.umd.min.js"></script>
+  <script>
+    if (typeof Chart === 'undefined') {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"><\/script>');
+    }
+  </script>
+  <!-- AgriDocs: Payment & Document Downloader -->
+  <script src="js/agri-docs.js"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <!-- Logo & System Title -->
+      <div class="flex items-center gap-3 shrink-0">
+        <a href="index.html" class="flex items-center gap-2 group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-brand-600/30 shrink-0">
+            <span class="text-xl">👨‍🌾</span>
+          </div>
+          <div class="whitespace-nowrap">
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-lg tracking-tight text-white group-hover:text-brand-400 transition">智農派工</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 font-semibold">農場主專屬工作台</span>
+            </div>
+            <p class="hidden sm:block text-[11px] text-slate-400">早鳥工時包 ╳ 6大派工類別 ╳ 自訂現場小工頭</p>
+          </div>
+        </a>
+      </div>
+
+      <!-- Center Role Switcher Links (Individual HTML Pages) -->
+      <nav class="hidden lg:flex items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700/60 shadow-inner text-xs shrink-0 whitespace-nowrap">
+        <a href="farmer.html" class="px-3 py-1.5 rounded-lg bg-cyan-600 text-white font-bold shadow transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <span>👨‍🌾</span> 農場主
+        </a>
+        <a href="worker-foreign.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <span>👷</span> 外展移工
+        </a>
+        <a href="worker-local.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <span>🚜</span> 本地工/領班
+        </a>
+        <a href="../科技後台/admin.html" class="px-3 py-1.5 rounded-lg bg-indigo-600/80 hover:bg-indigo-600 text-white font-bold transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20 shrink-0 whitespace-nowrap">
+          <span>💻</span> 科技後台
+        </a>
+        <a href="../linebot/line.html" class="px-3 py-1.5 rounded-lg bg-[#06C755]/20 text-cyan-300 hover:bg-[#06C755]/30 border border-cyan-500/40 font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <span>💬</span> LINE Bot
+        </a>
+        <a href="farmers_map.html" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <span>🗺️</span> 產地地圖
+        </a>
+        <a href="brochure.html" class="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <span>📑</span> 產品文宣 DM
+        </a>
+        <a href="../科技後台/admin.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <span>📱</span> 整合戰情
+        </a>
+        
+      </nav>
+
+      <!-- Right User Profile -->
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0 whitespace-nowrap">
+        <div class="hidden sm:flex flex-col text-right shrink-0">
+          <span id="header-user-name" class="text-xs font-bold text-cyan-400 flex items-center justify-end gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> 陳建龍 (阿龍班長)
+          </span>
+          <span id="header-farm-name" class="text-[11px] text-slate-400">屏東枋山愛文芒果合作園</span>
+        </div>
+        <a href="farmer-login.html" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1 shrink-0 whitespace-nowrap">
+          <span>🔑</span> 切換帳號
+        </a>
+        <a href="index.html" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 transition flex items-center gap-1 shrink-0 whitespace-nowrap">
+          <span>🏠</span> 首頁
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile Sub-nav -->
+    <div class="lg:hidden flex items-center justify-around border-t border-slate-800 py-2 px-2 bg-slate-900/95 overflow-x-auto no-scrollbar text-xs whitespace-nowrap gap-1">
+      <a href="farmer.html" class="px-2.5 py-1 text-cyan-400 font-bold border-b-2 border-cyan-400 shrink-0 whitespace-nowrap">👨‍🌾 農場主</a>
+      <a href="worker-foreign.html" class="px-2.5 py-1 text-slate-400 hover:text-white shrink-0 whitespace-nowrap">👷 移工端</a>
+      <a href="worker-local.html" class="px-2.5 py-1 text-slate-400 hover:text-white shrink-0 whitespace-nowrap">🚜 本地工/領班</a>
+      <a href="../科技後台/admin.html" class="px-2.5 py-1 text-indigo-400 hover:text-white shrink-0 whitespace-nowrap">💻 後台</a>
+      <a href="brochure.html" class="px-2.5 py-1 text-amber-300 font-bold shrink-0 whitespace-nowrap">📑 DM</a>
+      <a href="../linebot/line.html" class="px-2.5 py-1 text-cyan-400 font-bold flex items-center gap-0.5 shrink-0 whitespace-nowrap"><span>💬</span>LINE</a>
+    </div>
+  </header>
+
+  <style>
+    @media print {
+      header, footer, .no-print { display: none !important; }
+      body { background: #fff !important; color: #000 !important; }
+      .print-sheet { background: #fff !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+      .print-sheet * { color: #000 !important; border-color: #999 !important; background: transparent !important; }
+      .print-only { display: block !important; }
+    }
+    .print-only { display: none; }
+  </style>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+    <div class="no-print flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800 pb-6">
+      <div class="space-y-2">
+        <a href="farmer.html#orders" class="text-xs text-slate-400 hover:text-cyan-300 transition">← 回我的派工訂單</a>
+        <h1 class="text-2xl sm:text-3xl font-black text-white flex items-center gap-2"><span>💰</span> 勞務費支出明細</h1>
+        <p class="text-sm text-slate-400 max-w-3xl leading-relaxed">
+          彙整向合作社支付的派工勞務費與發票號碼，可依月份篩選後匯出 Excel 或列印成 PDF，交給會計師作為帳務與報稅憑證。
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 shrink-0">
+        <button onclick="resetDemo()" class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">↺ 重設示範資料</button>
+        <button onclick="openForm()" class="px-4 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white shadow-lg shadow-emerald-600/20 transition">＋ 登錄支出</button>
+      </div>
+    </div>
+
+    <!-- 篩選與匯出 -->
+    <div class="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900 border border-slate-800">
+      <div class="flex items-center gap-2 text-xs">
+        <label class="text-slate-400 font-semibold">期間</label>
+        <select id="fYear" onchange="render()" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-white"></select>
+        <select id="fMonth" onchange="render()" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-white"></select>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="exportCsv()" class="px-3 py-2 rounded-xl text-xs font-bold bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30 transition">⬇️ 匯出 Excel (CSV)</button>
+        <button onclick="window.print()" class="px-3 py-2 rounded-xl text-xs font-bold bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 border border-blue-500/30 transition">🖨️ 列印／存成 PDF</button>
+      </div>
+    </div>
+
+    <!-- 列印主體 -->
+    <div class="print-sheet p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+      <div class="print-only">
+        <h2 style="font-size:18px;font-weight:900;">勞務費支出明細</h2>
+        <p id="printMeta" style="font-size:12px;"></p>
+      </div>
+
+      <div id="kpiRow" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs min-w-[760px]">
+          <thead>
+            <tr class="text-left text-slate-400 border-b border-slate-800">
+              <th class="py-2 pr-3">付款日期</th>
+              <th class="py-2 pr-3">訂單／摘要</th>
+              <th class="py-2 pr-3">款項</th>
+              <th class="py-2 pr-3 text-right">未稅金額</th>
+              <th class="py-2 pr-3 text-right">稅額</th>
+              <th class="py-2 pr-3 text-right">含稅金額</th>
+              <th class="py-2 pr-3">發票號碼</th>
+              <th class="py-2 pr-3">狀態</th>
+              <th class="py-2 no-print"></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+
+      <p class="text-[11px] text-amber-300/90 leading-relaxed">
+        【待確認】合作社開立之發票種類與稅率（本頁以 5% 營業稅、含稅金額回推未稅），以及個人農民之農業所得是否課稅、勞務費可否列為費用，依財政部規定為準，請洽會計師。
+        「待開立」「待付款」款項不計入本期已開立合計。
+      </p>
+    </div>
+
+  </main>
+
+  <!-- 登錄 Modal -->
+  <div id="formModal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4">
+    <div class="w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-slate-700 space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 id="formTitle" class="text-white font-black">＋ 登錄支出</h3>
+        <button onclick="closeForm()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">付款日期</label>
+          <input id="eDate" type="date" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">款項</label>
+          <select id="eKind" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white">
+            <option>定金</option><option>尾款</option><option>加派／急件</option><option>其他勞務</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">訂單編號（選填）</label>
+          <input id="eOrder" type="text" placeholder="ORD-2026-015" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white font-mono">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">含稅金額 (NT$)</label>
+          <input id="eAmount" type="number" min="1" step="1" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white font-mono">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 mb-1">摘要</label>
+        <input id="eDesc" type="text" placeholder="例：屏東枋山愛文芒果採收 4 天" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">發票號碼</label>
+          <input id="eInvoice" type="text" placeholder="AB-12345678" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white font-mono uppercase">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">狀態</label>
+          <select id="eStatus" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white">
+            <option value="issued">已付款・已開立</option><option value="pending_invoice">已付款・待開立</option><option value="unpaid">待付款</option>
+          </select>
+        </div>
+      </div>
+      <p id="formError" class="hidden text-xs text-rose-300"></p>
+      <button onclick="submitForm()" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-black text-sm transition">儲存</button>
+    </div>
+  </div>
+
+  <div id="toast" class="no-print fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden px-4 py-3 rounded-2xl bg-slate-800 border border-cyan-500/40 text-sm text-white shadow-2xl max-w-[90vw]"></div>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 bg-slate-950 py-8 text-center text-xs text-slate-500 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 space-y-2">
+      <p>© 2026 智農派工 AgriDispatch. All rights reserved. 雙軌合規農事外展派遣平台</p>
+      <p>技術代管：智農科技有限公司 ╳ 外展主體：有限責任智農農業勞務生產合作社</p>
+    </div>
+  </footer>
+
+  <script>
+    // ------------------------------------------------------------------
+    // 勞務費支出明細（demo：資料存在瀏覽器 localStorage；示範資料對應 farmer.html 兩張訂單）
+    // ------------------------------------------------------------------
+    const STORE_KEY = 'agri.expenses.v1';
+    const TAX_RATE = 0.05;
+    const STATUS = {
+      issued:          { text: '已開立', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40' },
+      pending_invoice: { text: '待開立', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/40' },
+      unpaid:          { text: '待付款', cls: 'bg-slate-700/50 text-slate-300 border-slate-600' }
+    };
+    const DEMO = [
+      { id: 'e1', date: '2026-09-20', order: 'ORD-2026-013', desc: '屏東枋山愛文芒果採收 (6 分地・4 天)', kind: '定金', amount: 9072,  invoice: 'AG-98765432', status: 'issued' },
+      { id: 'e2', date: '2026-09-29', order: 'ORD-2026-013', desc: '屏東枋山愛文芒果採收 (6 分地・4 天)', kind: '尾款', amount: 36288, invoice: '',            status: 'pending_invoice' },
+      { id: 'e3', date: '2026-10-01', order: 'ORD-2026-014', desc: '苗栗卓蘭高接梨修剪 (4 分地・3 天)',   kind: '定金', amount: 6912,  invoice: '',            status: 'unpaid' }
+    ];
+
+    let entries = [];
+    let editingId = null;
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(STORE_KEY);
+        if (raw) { entries = JSON.parse(raw); return; }
+      } catch (e) {}
+      entries = JSON.parse(JSON.stringify(DEMO));
+    }
+    function save() {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(entries)); } catch (e) {}
+    }
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function money(n) { return 'NT$ ' + Math.round(n).toLocaleString(); }
+    function split(amount) {
+      const net = Math.round(amount / (1 + TAX_RATE));
+      return { net, tax: amount - net };
+    }
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => el.classList.add('hidden'), 2600);
+    }
+
+    function buildFilters() {
+      const years = [...new Set(entries.map(e => e.date.slice(0, 4)))].sort().reverse();
+      if (!years.length) years.push(String(new Date().getFullYear()));
+      const ySel = document.getElementById('fYear');
+      const keep = ySel.value;
+      ySel.innerHTML = years.map(y => `<option value="${y}">${y} 年</option>`).join('');
+      if (years.includes(keep)) ySel.value = keep;
+      const mSel = document.getElementById('fMonth');
+      if (!mSel.options.length) {
+        mSel.innerHTML = '<option value="">全年</option>' +
+          Array.from({ length: 12 }, (_, i) => `<option value="${String(i + 1).padStart(2, '0')}">${i + 1} 月</option>`).join('');
+      }
+    }
+
+    function filtered() {
+      const y = document.getElementById('fYear').value;
+      const m = document.getElementById('fMonth').value;
+      const prefix = m ? `${y}-${m}` : y;
+      return entries.filter(e => e.date.startsWith(prefix)).sort((a, b) => a.date.localeCompare(b.date));
+    }
+    function periodLabel() {
+      const y = document.getElementById('fYear').value;
+      const m = document.getElementById('fMonth').value;
+      return m ? `${y} 年 ${parseInt(m, 10)} 月` : `${y} 年全年`;
+    }
+
+    function render() {
+      const list = filtered();
+      const issued = list.filter(e => e.status === 'issued');
+      const issuedSum = issued.reduce((s, e) => s + e.amount, 0);
+      const { net, tax } = split(issuedSum);
+      const pendingSum = list.filter(e => e.status !== 'issued').reduce((s, e) => s + e.amount, 0);
+      const tiles = [
+        ['本期已開立（含稅）', money(issuedSum), 'text-emerald-300'],
+        ['未稅金額', money(net), 'text-white'],
+        ['稅額 5%', money(tax), 'text-white'],
+        ['待開立／待付款', money(pendingSum), 'text-amber-300']
+      ];
+      document.getElementById('kpiRow').innerHTML = tiles.map(([k, v, c]) => `
+        <div class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/60">
+          <div class="text-[11px] text-slate-400">${k}</div>
+          <div class="mt-1 text-lg font-black font-mono ${c}">${v}</div>
+        </div>`).join('');
+
+      document.getElementById('printMeta').textContent =
+        `期間：${periodLabel()}　農場：屏東枋山愛文芒果合作園（陳建龍）　開立單位：有限責任智農農業勞務生產合作社　列印日期：${new Date().toLocaleDateString('zh-TW')}`;
+
+      const tbody = document.getElementById('rows');
+      if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-500">${periodLabel()}沒有支出紀錄</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = list.map(e => {
+        const s = split(e.amount);
+        const st = STATUS[e.status] || STATUS.unpaid;
+        return `
+          <tr class="border-b border-slate-800/70">
+            <td class="py-2.5 pr-3 font-mono text-slate-300">${esc(e.date)}</td>
+            <td class="py-2.5 pr-3"><div class="font-mono text-amber-400">${esc(e.order || '—')}</div><div class="text-slate-400">${esc(e.desc)}</div></td>
+            <td class="py-2.5 pr-3 text-slate-200">${esc(e.kind)}</td>
+            <td class="py-2.5 pr-3 text-right font-mono text-slate-300">${s.net.toLocaleString()}</td>
+            <td class="py-2.5 pr-3 text-right font-mono text-slate-300">${s.tax.toLocaleString()}</td>
+            <td class="py-2.5 pr-3 text-right font-mono font-bold text-white">${e.amount.toLocaleString()}</td>
+            <td class="py-2.5 pr-3 font-mono text-slate-200">${esc(e.invoice || '—')}</td>
+            <td class="py-2.5 pr-3"><span class="px-2 py-0.5 rounded-full border text-[10px] font-bold ${st.cls}">${st.text}</span></td>
+            <td class="py-2.5 no-print whitespace-nowrap text-right">
+              <button onclick="openForm('${e.id}')" class="text-slate-400 hover:text-cyan-300 px-1">編輯</button>
+              <button onclick="removeEntry('${e.id}')" class="text-slate-500 hover:text-rose-300 px-1">刪除</button>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    function openForm(id) {
+      editingId = id || null;
+      const e = id ? entries.find(x => x.id === id) : null;
+      document.getElementById('formTitle').textContent = e ? '✏️ 編輯支出' : '＋ 登錄支出';
+      document.getElementById('eDate').value = e ? e.date : new Date().toISOString().slice(0, 10);
+      document.getElementById('eKind').value = e ? e.kind : '尾款';
+      document.getElementById('eOrder').value = e ? e.order : '';
+      document.getElementById('eAmount').value = e ? e.amount : '';
+      document.getElementById('eDesc').value = e ? e.desc : '';
+      document.getElementById('eInvoice').value = e ? e.invoice : '';
+      document.getElementById('eStatus').value = e ? e.status : 'issued';
+      document.getElementById('formError').classList.add('hidden');
+      const m = document.getElementById('formModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+    function closeForm() {
+      const m = document.getElementById('formModal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+    function formError(msg) {
+      const el = document.getElementById('formError');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+    function submitForm() {
+      const date = document.getElementById('eDate').value;
+      const amount = parseInt(document.getElementById('eAmount').value, 10);
+      const desc = document.getElementById('eDesc').value.trim();
+      const invoice = document.getElementById('eInvoice').value.trim().toUpperCase();
+      const status = document.getElementById('eStatus').value;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return formError('請選擇付款日期');
+      if (!(amount > 0)) return formError('請輸入大於 0 的含稅金額');
+      if (!desc) return formError('請填寫摘要');
+      if (status === 'issued' && !/^[A-Z]{2}-?\d{8}$/.test(invoice)) return formError('已開立的款項請填寫發票號碼（2 碼英文 + 8 碼數字）');
+      const data = {
+        date, amount, desc, status,
+        kind: document.getElementById('eKind').value,
+        order: document.getElementById('eOrder').value.trim().toUpperCase(),
+        invoice: invoice ? invoice.replace(/^([A-Z]{2})-?(\d{8})$/, '$1-$2') : ''
+      };
+      if (editingId) {
+        Object.assign(entries.find(x => x.id === editingId), data);
+      } else {
+        entries.push({ id: 'e' + Date.now(), ...data });
+      }
+      save();
+      closeForm();
+      buildFilters();
+      document.getElementById('fYear').value = date.slice(0, 4);
+      render();
+      toast(editingId ? '已更新支出紀錄' : '已登錄支出');
+    }
+    function removeEntry(id) {
+      if (!confirm('確定刪除這筆支出紀錄？')) return;
+      entries = entries.filter(x => x.id !== id);
+      save();
+      buildFilters();
+      render();
+    }
+    function resetDemo() {
+      try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+      load();
+      buildFilters();
+      render();
+      toast('已重設為示範資料');
+    }
+
+    function exportCsv() {
+      const list = filtered();
+      if (!list.length) { toast('這個期間沒有資料可匯出'); return; }
+      const q = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+      const head = ['付款日期', '訂單編號', '摘要', '款項', '未稅金額', '稅額', '含稅金額', '發票號碼', '狀態', '開立單位'];
+      const lines = [head.map(q).join(',')];
+      list.forEach(e => {
+        const s = split(e.amount);
+        lines.push([e.date, e.order, e.desc, e.kind, s.net, s.tax, e.amount, e.invoice,
+          (STATUS[e.status] || STATUS.unpaid).text, '有限責任智農農業勞務生產合作社'].map(q).join(','));
+      });
+      // 加 BOM，Excel 開啟才不會亂碼
+      const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `勞務費支出明細_${periodLabel().replace(/\s/g, '')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+      toast(`已匯出 ${list.length} 筆`);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      load();
+      buildFilters();
+      render();
+    });
+  </script>
+</body>
+</html>

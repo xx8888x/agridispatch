@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 AgriDispatch - 合法用工證明</title>
+  <!-- 執行模式設定（demo / production，每份副本各自一份） -->
+  <script src="js/app-config.js"></script>
+  <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AgriAuth) window.AgriAuth.requireRole(['farmer', 'admin_tech'], 'farmer-login.html');
+  </script>
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
+  <style>
+    @page { size: A4; margin: 14mm; }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #fff !important; }
+      .sheet { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; max-width: none !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-200 text-slate-900 min-h-screen antialiased">
+
+  <div class="no-print bg-slate-900 text-slate-100">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <a href="farmer.html#orders" class="text-xs text-slate-300 hover:text-white">← 回我的派工訂單</a>
+      <div class="flex items-center gap-3">
+        <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
+          <input id="maskNames" type="checkbox" checked onchange="render()" class="accent-emerald-500"> 遮蔽工人姓名（提供給通路時建議勾選）
+        </label>
+        <button id="printBtn" type="button" onclick="window.print()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">🖨️ 列印／存成 PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet max-w-4xl mx-auto my-6 bg-white shadow-2xl border border-slate-300 p-8 sm:p-10" id="sheet">
+    <p class="text-sm text-slate-500">載入中…</p>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const orderId = params.get('order') || 'ORD-2026-013';
+    let cert = null;
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    // 中文姓名留首尾字（2 字留首字），外文姓名只留各字首字母
+    function maskName(name) {
+      const s = String(name || '');
+      if (/^[一-鿿]+$/.test(s)) return s.length <= 2 ? s[0] + '○' : s[0] + '○'.repeat(s.length - 2) + s[s.length - 1];
+      return s.split(/\s+/).map(p => p ? p[0] + '.' : '').join(' ');
+    }
+    function md(d) { return d ? `${parseInt(d.slice(5, 7), 10)}/${parseInt(d.slice(8, 10), 10)}` : ''; }
+
+    async function load() {
+      const base = (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+      try {
+        const res = await fetch(`${base}/certificates/orders/${encodeURIComponent(orderId)}`);
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) throw new Error(body.error || `HTTP ${res.status}`);
+        cert = body.data;
+        render();
+      } catch (e) {
+        document.getElementById('sheet').innerHTML = `<p class="text-sm text-rose-700">無法取得用工證明：${esc(e.message)}（請確認後端 3000 已啟動）</p>`;
+        document.getElementById('printBtn').disabled = true;
+      }
+    }
+
+    function render() {
+      if (!cert) return;
+      const mask = document.getElementById('maskNames').checked;
+      const o = cert.order;
+      const dates = [...new Set(cert.workers.flatMap(w => w.days.map(d => d.date)))].sort();
+      const verifyUrl = new URL('verify.html', location.href);
+      verifyUrl.search = new URLSearchParams({ no: cert.certificateNo, code: cert.verifyCode || '' }).toString();
+      document.getElementById('printBtn').disabled = !cert.issuable;
+
+      const allPermit = cert.workers.every(w => w.days.every(d => d.permitValid));
+      const allInsured = cert.workers.every(w => w.days.every(d => d.insured));
+      const check = (ok, text) => `<li class="flex items-start gap-2"><span class="${ok ? 'text-emerald-700' : 'text-rose-700'} font-black">${ok ? '✔' : '✘'}</span><span>${text}</span></li>`;
+
+      const rows = cert.workers.map(w => {
+        const byDate = Object.fromEntries(w.days.map(d => [d.date, d]));
+        const cells = dates.map(dt => {
+          const d = byDate[dt];
+          if (!d) return '<td class="border border-slate-300 px-1.5 py-1 text-center text-slate-300">—</td>';
+          const bad = !d.permitValid || !d.insured;
+          const txt = d.hours == null ? '進行中' : `${d.hours}h`;
+          return `<td class="border border-slate-300 px-1.5 py-1 text-center ${bad ? 'bg-rose-50 text-rose-700 font-bold' : ''}">${txt}${bad ? ' ⚠' : ''}</td>`;
+        }).join('');
+        const permit = w.nationality === '本國' ? '免（本國籍）' : esc(w.permitExpiry || '未登錄');
+        return `<tr>
+          <td class="border border-slate-300 px-2 py-1">${esc(mask ? maskName(w.name) : w.name)}<div class="text-[10px] text-slate-500">${esc(w.workerId)}</div></td>
+          <td class="border border-slate-300 px-2 py-1">${esc(w.nationality)}</td>
+          <td class="border border-slate-300 px-2 py-1">${permit}</td>
+          ${cells}
+          <td class="border border-slate-300 px-2 py-1 text-right font-bold">${w.hours}</td>
+        </tr>`;
+      }).join('');
+
+      const problems = cert.issuable ? '' : `
+        <div class="no-print-keep mb-6 p-4 border-2 border-rose-500 bg-rose-50 rounded">
+          <p class="font-black text-rose-800">⛔ 目前不符合開立條件，本頁不可作為證明使用</p>
+          <ul class="mt-2 text-sm text-rose-800 list-disc list-inside">${cert.problems.map(p => `<li>${esc(p)}</li>`).join('')}</ul>
+        </div>`;
+
+      document.getElementById('sheet').innerHTML = `
+        ${problems}
+        <div class="flex items-start justify-between gap-4 border-b-2 border-slate-800 pb-4">
+          <div>
+            <h1 class="text-2xl font-black tracking-wide">合法用工證明書</h1>
+            <p class="text-xs text-slate-500 mt-1">Certificate of Lawful Agricultural Employment（平台示範版）</p>
+          </div>
+          <div class="text-right text-xs leading-relaxed">
+            <div>證明編號：<span class="font-mono font-bold">${esc(cert.certificateNo)}</span></div>
+            <div>產製日期：${esc(cert.issuedAt)}</div>
+          </div>
+        </div>
+
+        <table class="w-full text-sm mt-5">
+          <tr><td class="py-1 w-28 text-slate-500">開立單位</td><td class="py-1 font-bold">${esc(cert.issuer)}（法定雇主）</td></tr>
+          <tr><td class="py-1 text-slate-500">用工單位</td><td class="py-1">${esc(o.farmerName)}・${esc(o.farmLocation)}</td></tr>
+          <tr><td class="py-1 text-slate-500">派工訂單</td><td class="py-1"><span class="font-mono">${esc(o.orderId)}</span>・${esc(o.cropName)}・${esc(o.categoryName)}</td></tr>
+          <tr><td class="py-1 text-slate-500">出勤期間</td><td class="py-1">${esc(cert.periodStart || '—')} 至 ${esc(cert.periodEnd || '—')}（${cert.workDays} 個工作日）</td></tr>
+          <tr><td class="py-1 text-slate-500">出勤人數／工時</td><td class="py-1">${cert.workerCount} 人／合計 ${cert.totalHours} 小時${cert.openShifts ? `（另有 ${cert.openShifts} 班進行中，未計入）` : ''}</td></tr>
+        </table>
+
+        <p class="text-sm leading-relaxed mt-5">
+          茲證明下列人員係由本合作社依法聘僱，並派遣至上開用工單位從事農務工作，其出勤紀錄如下。
+          經系統逐日核對，出勤當日均${allPermit ? '' : '<u>未</u>全數'}持有效工作許可，且${allInsured ? '' : '<u>未</u>全數'}依法加保應加保之社會保險。
+        </p>
+
+        <div class="overflow-x-auto mt-4">
+          <table class="w-full text-xs border-collapse">
+            <thead class="bg-slate-100">
+              <tr>
+                <th class="border border-slate-300 px-2 py-1 text-left">姓名</th>
+                <th class="border border-slate-300 px-2 py-1 text-left">國籍</th>
+                <th class="border border-slate-300 px-2 py-1 text-left">工作許可效期</th>
+                ${dates.map(d => `<th class="border border-slate-300 px-1.5 py-1">${md(d)}</th>`).join('')}
+                <th class="border border-slate-300 px-2 py-1 text-right">工時</th>
+              </tr>
+            </thead>
+            <tbody>${rows || `<tr><td colspan="${4 + dates.length}" class="border border-slate-300 px-2 py-4 text-center text-slate-400">尚無出勤紀錄</td></tr>`}</tbody>
+          </table>
+        </div>
+
+        <ul class="mt-5 text-sm space-y-1">
+          ${check(cert.workerCount > 0, '出勤皆有 GPS 現場打卡紀錄，並由現場領班簽核下班')}
+          ${check(allPermit, '外籍人員於出勤當日皆持有效聘僱許可（本國籍免許可）')}
+          ${check(allInsured, '出勤當日皆已加保：本國籍 勞保／就保／職保／健保；外籍 勞保／職保／健保')}
+        </ul>
+
+        <div class="mt-6 p-4 border border-slate-400 rounded flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="text-xs leading-relaxed">
+            <div class="font-bold">真偽查驗</div>
+            <div>查驗網址：<span class="font-mono break-all">${esc(verifyUrl.origin + verifyUrl.pathname)}</span></div>
+            <div>證明編號 <span class="font-mono font-bold">${esc(cert.certificateNo)}</span>　查驗碼 <span class="font-mono font-bold">${esc(cert.verifyCode || '（不符合開立條件，無查驗碼）')}</span></div>
+          </div>
+          ${cert.verifyCode ? `<a href="${esc(verifyUrl.href)}" class="no-print shrink-0 px-3 py-1.5 rounded bg-slate-800 text-white text-xs font-bold">立即查驗 →</a>` : ''}
+        </div>
+
+        <p class="mt-6 text-[10px] text-slate-500 leading-relaxed">
+          本證明依平台出勤打卡、工作許可效期與加退保紀錄自動產生，供產銷履歷與通路稽核參考；實際聘僱與投保狀態以合作社及主管機關資料為準【待確認】。
+          證明內容如有更新（例如補登出勤），查驗碼會隨之改變，請以最新版本為準。提供工人姓名予第三方前，請確認符合個人資料保護法之告知與同意【待確認】。
+        </p>
+      `;
+    }
+
+    document.addEventListener('DOMContentLoaded', load);
+  </script>
+</body>
+</html>

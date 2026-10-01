@@ -274,12 +274,17 @@ CREATE TABLE clock_ins (
     normal_hours       NUMBER(6,2),
     overtime_hours     NUMBER(6,2),
     foreman_signature  VARCHAR2(50),
+    order_id           VARCHAR2(40),
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP,
     CONSTRAINT pk_clock_ins PRIMARY KEY (id),
-    CONSTRAINT fk_clock_ins_worker FOREIGN KEY (worker_id) REFERENCES workers(id)
+    CONSTRAINT fk_clock_ins_worker FOREIGN KEY (worker_id) REFERENCES workers(id),
+    CONSTRAINT fk_clock_ins_order FOREIGN KEY (order_id) REFERENCES orders(id)
 );
 
+CREATE INDEX idx_clock_ins_order ON clock_ins (order_id, work_date);
+
 COMMENT ON TABLE clock_ins IS 'GPS 現場數位打卡紀錄表：專車抵達田區或冷鏈場打卡';
+COMMENT ON COLUMN clock_ins.order_id IS '本次出勤所屬訂單（合法用工證明依此彙整）；舊資料或無法判定時為 NULL';
 
 -- ====================================================================
 -- 7. 自願登錄人才庫表 (TALENTS)

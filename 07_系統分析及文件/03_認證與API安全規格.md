@@ -46,6 +46,8 @@
 - **farmer**：只能查詢 / 付款自己的訂單（`order.farmerId == token.ref`；舊資料無 farmerId 時 demo 模式放行）。
 - **工班評價 `/api/ratings`**（皆需登入，權限於 Controller/Service 檢查）：`PUT /orders/{orderId}` 限訂單擁有者或 admin，且訂單須為 `in_progress`／`completed`（否則 409）；`GET /orders/{orderId}` 權限同訂單讀取；`GET /teams`、`/teams/{teamId}`、`/tags` 任何登入者。回應不含評分者編號，訂單編號只回給 admin。
 - **保險登錄 `/api/insurance`**（皆需登入，權限於 Controller/Service 檢查）：`GET /workers`、`POST /workers/{id}/enroll`、`POST /records/{id}/withdraw` 僅 admin；`GET /workers/{id}` 本人或 admin；`GET /teams/{teamId}` 任何登入者，但缺保名單 `gaps` 只回給 admin。
+- **合法用工證明**：`GET /api/certificates/orders/{orderId}` 限訂單擁有者或 admin，依該訂單出勤逐日核對工作許可效期與加保，全部符合才附查驗碼；`GET /api/public/certificates/{certificateNo}?code=` 公開查驗（屬 `/api/public/**`），只回摘要、不含工人姓名。查驗碼為 `AGRI_TOKEN_SECRET` 簽出的 HMAC，未固定密鑰時重啟即改變。
+- **打卡連結訂單**：`POST /api/workers/{id}/clock-in`、`POST /api/attendance/clock-in` 可帶 `orderId`（須為施工中且工人屬該訂單工班，否則 409／400）；未帶時，工人所屬工班恰有一張施工中訂單才自動連結。
 - **派工前加保檢查**：`PUT /api/orders/{id}/status` 轉為 `in_progress` 時，已分派工班的每位成員須於當日完整加保（本國：勞保／就保／職保／健保；外籍：勞保／職保／健保【待確認】），否則 409 並列出缺保人員。
 - `/api/dev/**` 另需 demo 模式，否則 404。
 - 未帶或無效 token → 401 `{success:false, error:"UNAUTHORIZED"}`；權限不足 → 403 `{success:false, error:"FORBIDDEN"}`。

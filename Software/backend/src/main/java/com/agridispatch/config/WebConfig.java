@@ -39,10 +39,14 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String currentDir = System.getProperty("user.dir");
-        File softwareDir = new File(currentDir).getParentFile();
-        if (softwareDir == null || !new File(softwareDir, "web").exists()) {
-            softwareDir = new File(currentDir);
+        // 從 user.dir（通常為 Software/backend）往上找含 web/ 或 demo/ 的 Software 目錄
+        File currentDir = new File(System.getProperty("user.dir")).getAbsoluteFile();
+        File softwareDir = currentDir;
+        for (File d = currentDir; d != null; d = d.getParentFile()) {
+            if (new File(d, "web").isDirectory() || new File(d, "demo").isDirectory()) {
+                softwareDir = d;
+                break;
+            }
         }
 
         File webDir = new File(softwareDir, "web");

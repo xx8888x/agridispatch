@@ -835,7 +835,33 @@ public class SeedService {
             Attendance a5 = new Attendance("W026", today.atTime(6, 40), "枋山愛文芒果產區 (22.2612°N, 120.6543°E)", 3.0);
             Attendance a6 = new Attendance("W030", today.atTime(6, 55), "八德有機蔬菜專區 (24.9351°N, 121.2842°E)", 2.5);
 
+            // W026 在枋山芒果產區出勤，屬於 ORD-2026-013（工班 B）
+            a2.setOrderId("ORD-2026-013");
+            a5.setOrderId("ORD-2026-013");
+
             attendanceRepository.saveAll(java.util.List.of(a1, a2, a3, a4, a5, a6));
         }
+        seedOrderAttendance();
+    }
+
+    /** ORD-2026-013（工班 B、枋山愛文芒果）9/25 起 4 天、6 人、每日 7 小時的出勤紀錄，供合法用工證明示範 */
+    private void seedOrderAttendance() {
+        String orderId = "ORD-2026-013";
+        java.time.LocalDate start = java.time.LocalDate.of(2026, 9, 25);
+        // 以「9/25 起始日的紀錄是否存在」判斷，避免被 W026 當日／昨日連到 013 的出勤誤判為已灌過
+        boolean seeded = attendanceRepository.findByOrderIdOrderByWorkDateAscClockInTimeAsc(orderId).stream()
+                .anyMatch(a -> start.equals(a.getWorkDate()));
+        if (seeded) return;
+        List<Attendance> list = new java.util.ArrayList<>();
+        for (int d = 0; d < 4; d++) {
+            java.time.LocalDate day = start.plusDays(d);
+            for (String workerId : List.of("W006", "W007", "W008", "W011", "W023", "W026")) {
+                Attendance a = new Attendance(workerId, day.atTime(7, 0), "枋山愛文芒果合作園區 2 號地 (22.2612°N, 120.6543°E)", 3.0);
+                a.completeShift(day.atTime(14, 0), "林小龍 (副班長)");
+                a.setOrderId(orderId);
+                list.add(a);
+            }
+        }
+        attendanceRepository.saveAll(list);
     }
 }

@@ -31,7 +31,9 @@ public class AttendanceController {
         String location = req.get("location") != null ? req.get("location").toString() : null;
         Double accuracy = req.get("accuracy") != null ? Double.parseDouble(req.get("accuracy").toString()) : null;
 
-        Attendance att = attendanceService.clockIn(workerId, location, accuracy);
+        String orderId = req.get("orderId") != null ? req.get("orderId").toString() : null;
+
+        Attendance att = attendanceService.clockIn(workerId, location, accuracy, orderId);
         Map<String, Object> res = new HashMap<>();
         res.put("success", true);
         res.put("data", att);

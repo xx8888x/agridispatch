@@ -106,6 +106,23 @@ public class TokenService {
         return v == null || v.isNull() ? null : v.asText();
     }
 
+    /**
+     * 以同一把密鑰產生其他用途的簽章（例：合法用工證明查驗碼），回傳大寫十六進位。
+     * 簽章內容一律加上「用途:」前綴，且含 base64url 字元集以外的字元，不可能與 token 簽章混用。
+     */
+    public String signHex(String purpose, String data) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(secret, "HmacSHA256"));
+            byte[] out = mac.doFinal((purpose + ":" + data).getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(out.length * 2);
+            for (byte b : out) sb.append(String.format("%02X", b));
+            return sb.toString();
+        } catch (Exception e) {
+            throw new IllegalStateException("HMAC 計算失敗", e);
+        }
+    }
+
     private byte[] hmac(String data) throws Exception {
         Mac mac = Mac.getInstance("HmacSHA256");
         mac.init(new SecretKeySpec(secret, "HmacSHA256"));

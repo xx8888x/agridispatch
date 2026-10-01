@@ -94,10 +94,13 @@ public class WorkerController {
                 ? Double.parseDouble(req.get("accuracy").toString())
                 : null;
 
-        Attendance record = attendanceService.clockIn(id, location, accuracy);
+        String orderId = req != null && req.get("orderId") != null ? req.get("orderId").toString() : null;
+
+        Attendance record = attendanceService.clockIn(id, location, accuracy, orderId);
 
         Map<String, Object> res = new LinkedHashMap<>();
         res.put("workerId", id);
+        res.put("orderId", record.getOrderId());
         res.put("date", record.getWorkDate().toString());
         res.put("clockInTime", record.getClockInTime().format(HMS));
         res.put("status", record.getStatus());

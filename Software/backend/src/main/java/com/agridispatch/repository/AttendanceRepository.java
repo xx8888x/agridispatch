@@ -34,6 +34,9 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
     /** 查詢指定農工所有尚未下班的紀錄 */
     List<Attendance> findByWorkerIdAndClockOutTimeIsNull(String workerId);
 
+    /** 查詢指定訂單的所有出勤紀錄（合法用工證明） */
+    List<Attendance> findByOrderIdOrderByWorkDateAscClockInTimeAsc(String orderId);
+
     /** 查詢指定農工今日所有打卡記錄 */
     List<Attendance> findByWorkerIdAndWorkDate(String workerId, LocalDate workDate);
 

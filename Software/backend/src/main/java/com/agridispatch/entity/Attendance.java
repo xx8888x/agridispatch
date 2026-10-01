@@ -71,6 +71,10 @@ public class Attendance {
     @Column(name = "foreman_signature", length = 50)
     private String foremanSignature;
 
+    /** 本次出勤所屬訂單（合法用工證明依此彙整）；舊資料或無法判定時為 null */
+    @Column(name = "order_id", length = 40)
+    private String orderId;
+
     /** 記錄建立時間 */
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -133,6 +137,9 @@ public class Attendance {
 
     public String getForemanSignature() { return foremanSignature; }
     public void setForemanSignature(String foremanSignature) { this.foremanSignature = foremanSignature; }
+
+    public String getOrderId() { return orderId; }
+    public void setOrderId(String orderId) { this.orderId = orderId; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
 

@@ -2,7 +2,10 @@ package com.agridispatch.service;
 
 import com.agridispatch.common.ApiException;
 import com.agridispatch.entity.Attendance;
+import com.agridispatch.entity.Order;
+import com.agridispatch.entity.Worker;
 import com.agridispatch.repository.AttendanceRepository;
+import com.agridispatch.repository.OrderRepository;
 import com.agridispatch.repository.WorkerRepository;
 import org.springframework.stereotype.Service;
 
@@ -23,11 +26,38 @@ public class AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
     private final WorkerRepository workerRepository;
+    private final OrderRepository orderRepository;
     private final Object clockLock = new Object();
 
-    public AttendanceService(AttendanceRepository attendanceRepository, WorkerRepository workerRepository) {
+    public AttendanceService(AttendanceRepository attendanceRepository, WorkerRepository workerRepository,
+                             OrderRepository orderRepository) {
         this.attendanceRepository = attendanceRepository;
         this.workerRepository = workerRepository;
+        this.orderRepository = orderRepository;
+    }
+
+    /**
+     * 決定本次出勤所屬訂單：
+     * - 有指定 orderId：須為進行中訂單，且工人屬於該訂單分派的工班，否則 400／409
+     * - 未指定：工人所屬工班恰有一張進行中訂單時自動連結；零張或多張則不連結（null）
+     */
+    private String resolveOrderId(String workerId, String requestedOrderId) {
+        Worker worker = workerRepository.findById(workerId).orElseThrow();
+        if (requestedOrderId != null && !requestedOrderId.isBlank()) {
+            Order order = orderRepository.findById(requestedOrderId.trim())
+                    .orElseThrow(() -> ApiException.notFound("找不到訂單：" + requestedOrderId));
+            if (!OrderService.IN_PROGRESS.equals(order.getStatus())) {
+                throw ApiException.conflict("訂單 " + order.getId() + " 不在施工中，無法打卡");
+            }
+            if (worker.getTeamId() == null || !worker.getTeamId().equals(order.getAssignedTeamId())) {
+                throw ApiException.badRequest("工人不屬於訂單 " + order.getId() + " 分派的工班");
+            }
+            return order.getId();
+        }
+        if (worker.getTeamId() == null) return null;
+        List<Order> active = orderRepository.findByAssignedTeamId(worker.getTeamId()).stream()
+                .filter(o -> OrderService.IN_PROGRESS.equals(o.getStatus())).toList();
+        return active.size() == 1 ? active.get(0).getId() : null;
     }
 
     private void requireWorker(String workerId) {
@@ -44,6 +74,10 @@ public class AttendanceService {
      * @throws ApiException 409：已有未下班的打卡紀錄
      */
     public Attendance clockIn(String workerId, String location, Double gpsAccuracy) {
+        return clockIn(workerId, location, gpsAccuracy, null);
+    }
+
+    public Attendance clockIn(String workerId, String location, Double gpsAccuracy, String orderId) {
         requireWorker(workerId);
         if (location != null && location.length() > 200) {
             throw ApiException.badRequest("打卡位置描述過長（上限 200 字）");
@@ -63,6 +97,7 @@ public class AttendanceService {
                     location != null && !location.isBlank() ? location : "未提供 GPS 位置描述",
                     gpsAccuracy
             );
+            attendance.setOrderId(resolveOrderId(workerId, orderId));
             return attendanceRepository.save(attendance);
         }
     }

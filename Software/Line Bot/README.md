@@ -80,9 +80,9 @@ Invoke-RestMethod -Uri "http://localhost:5000/health"
 ---
 
 ### 方式三：網頁視覺化體驗館（手機擬真介面）
-本專案的 `Software/web/line.html` 內建完整的手機 LINE 聊天室視覺化模擬器：
+本專案的 `Software/web/linebot/line.html`（demo 版：`Software/demo/linebot/line.html`） 內建完整的手機 LINE 聊天室視覺化模擬器：
 1. 使用瀏覽器直接開啟：
-   `D:\派遣專案網站(農事及其它)\Software\web\line.html`
+   `D:\派遣專案網站(農事及其它)\Software\demo\linebot\line.html`（或啟動後端後開 `http://localhost:3000/demo/linebot/line.html`）
 2. 介面具備：
    - 📱 擬真智慧型手機外框與對話氣泡
    - 🎛️ 六宮格圖文選單點擊互動

@@ -1816,9 +1816,9 @@
           <div>
             <label class="text-slate-400 block mb-1">訂單狀態</label>
             <select v-model="orderModal.form.status" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
-              <option value="pending">待確認 (Pending)</option>
-              <option value="confirmed">已確認 (Confirmed)</option>
-              <option value="in_progress">進行中 (In Progress)</option>
+              <option value="pending">待付定金 (Pending)</option>
+              <option value="confirmed">已排定 (Confirmed)</option>
+              <option value="in_progress">履約中 (In Progress)</option>
               <option value="completed">已完工 (Completed)</option>
               <option value="cancelled">已取消 (Cancelled)</option>
             </select>
@@ -3748,9 +3748,9 @@
 
         const orderStatusName = (status) => {
           const m = {
-            pending: '待確認',
-            confirmed: '已確認',
-            in_progress: '作業進行中',
+            pending: '待付定金',
+            confirmed: '已排定',
+            in_progress: '履約中',
             completed: '已完工',
             cancelled: '已取消'
           };

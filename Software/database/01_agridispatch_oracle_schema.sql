@@ -17,6 +17,11 @@ ALTER SESSION SET CURRENT_SCHEMA = c##agridispatch;
 
 -- 清理舊有資料表 (若存在)
 BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE insurance_records CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
     EXECUTE IMMEDIATE 'DROP TABLE team_ratings CASCADE CONSTRAINTS';
 EXCEPTION WHEN OTHERS THEN NULL;
 END;
@@ -485,6 +490,36 @@ COMMENT ON COLUMN team_ratings.score IS '整體評分 1～5';
 COMMENT ON COLUMN team_ratings.tags IS '評價標籤，逗號分隔：準時到場/做工細心/效率高/溝通順暢/遵守安全規範/需加強訓練';
 
 -- ====================================================================
+-- 16. 加退保紀錄表 (INSURANCE_RECORDS)
+-- ====================================================================
+CREATE TABLE insurance_records (
+    id                 VARCHAR2(60)   NOT NULL,
+    worker_id          VARCHAR2(32)   NOT NULL,
+    insurance_type     VARCHAR2(16)   NOT NULL,
+    insured_salary     NUMBER(8)      NOT NULL,
+    enroll_date        DATE           NOT NULL,
+    withdraw_date      DATE,
+    withdraw_reason    VARCHAR2(100),
+    filing_ref         VARCHAR2(40),
+    created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP,
+    updated_at         TIMESTAMP,
+    CONSTRAINT pk_insurance_records PRIMARY KEY (id),
+    CONSTRAINT fk_insurance_worker FOREIGN KEY (worker_id) REFERENCES workers(id),
+    CONSTRAINT chk_insurance_type CHECK (insurance_type IN ('labor', 'employment', 'occupational', 'health')),
+    CONSTRAINT chk_insurance_salary CHECK (insured_salary > 0),
+    CONSTRAINT chk_insurance_dates CHECK (withdraw_date IS NULL OR withdraw_date >= enroll_date)
+);
+
+CREATE INDEX idx_insurance_worker ON insurance_records (worker_id, insurance_type);
+
+COMMENT ON TABLE insurance_records IS '加退保紀錄表：每段投保期間一筆，歷史保留；實際申報由合作社於勞保局／健保署辦理';
+COMMENT ON COLUMN insurance_records.id IS 'INS-<工人編號>-<險種>-<加保日 yyyyMMdd>';
+COMMENT ON COLUMN insurance_records.insurance_type IS '險種：labor 勞保 / employment 就保 / occupational 職保 / health 健保';
+COMMENT ON COLUMN insurance_records.insured_salary IS '月投保薪資（健保為投保金額），新台幣元';
+COMMENT ON COLUMN insurance_records.withdraw_date IS '退保日：自該日起不再承保；NULL 表示仍在保';
+COMMENT ON COLUMN insurance_records.filing_ref IS '勞保局／健保署申報受理編號';
+
+-- ====================================================================
 -- 【初始種子資料 (SEED DATA)】
 -- ====================================================================
 
@@ -612,4 +647,6 @@ SELECT 'line_users', COUNT(*) FROM line_users
 UNION ALL
 SELECT 'line_messages', COUNT(*) FROM line_messages
 UNION ALL
-SELECT 'team_ratings', COUNT(*) FROM team_ratings;
+SELECT 'team_ratings', COUNT(*) FROM team_ratings
+UNION ALL
+SELECT 'insurance_records', COUNT(*) FROM insurance_records;

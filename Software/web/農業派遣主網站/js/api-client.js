@@ -50,6 +50,7 @@
     const file = (global.location.pathname.split('/').pop() || '').toLowerCase();
     if (file.startsWith('admin')) return 'admin_tech';
     if (file.startsWith('vue-crud')) return 'admin_tech'; // 舊版管理頁
+    if (file.startsWith('insurance')) return 'admin_tech'; // 保險登錄（科技後台）
     if (file.startsWith('farmer')) return 'farmer';
     if (file.startsWith('worker-foreign')) return 'worker_foreign';
     if (file.startsWith('worker-local')) return 'worker_local';
@@ -57,7 +58,7 @@
   }
   function detectLoginPage() {
     const file = (global.location.pathname.split('/').pop() || '').toLowerCase();
-    if (file.startsWith('admin') || file.startsWith('vue-crud')) return 'admin-login.html';
+    if (file.startsWith('admin') || file.startsWith('vue-crud') || file.startsWith('insurance')) return 'admin-login.html';
     if (file.startsWith('farmer')) return 'farmer-login.html';
     if (file.startsWith('worker-foreign')) return 'worker-foreign-login.html';
     if (file.startsWith('worker-local')) return 'worker-local-login.html';

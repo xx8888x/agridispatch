@@ -514,7 +514,7 @@
             <div class="flex items-center gap-3">
               <span class="font-mono text-sm font-bold text-amber-400">ORD-2026-013</span>
               <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">🟢 履約作業中・專車已排定</span>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">🛡️ 勞保／職災保險已加保</span>
+              <span data-team-insurance="team_b" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">🛡️ 加保狀態查詢中…</span>
             </div>
             <div class="text-xs text-slate-400">
               起工日期：<strong class="text-white">2026/09/25</strong> (共 4 天・168 工時)
@@ -857,6 +857,22 @@
       }
     }
     document.addEventListener('DOMContentLoaded', loadTeamRatings);
+
+    // 卡片上的工班加保狀態：依後端加退保紀錄即時計算（農場主只看得到人數，看不到缺保名單）
+    async function loadTeamInsurance() {
+      for (const el of document.querySelectorAll('[data-team-insurance]')) {
+        try {
+          const t = await ratingApi(`/insurance/teams/${encodeURIComponent(el.dataset.teamInsurance)}`);
+          el.textContent = t.allInsured
+            ? '🛡️ 工班成員皆已加保（勞保／職保／健保）'
+            : `⚠️ 工班有 ${t.total - t.insured} 人尚未完整加保，合作社補登前暫停出工`;
+          if (!t.allInsured) el.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-200 border border-rose-500/40';
+        } catch (e) {
+          el.textContent = '🛡️ 加保狀態暫時無法查詢';
+        }
+      }
+    }
+    document.addEventListener('DOMContentLoaded', loadTeamInsurance);
   </script>
 
   <script>

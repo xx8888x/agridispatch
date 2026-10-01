@@ -27,12 +27,15 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final CropRepository cropRepository;
     private final AgriSettings settings;
+    private final InsuranceService insuranceService;
     private final Object idLock = new Object();
 
-    public OrderService(OrderRepository orderRepository, CropRepository cropRepository, AgriSettings settings) {
+    public OrderService(OrderRepository orderRepository, CropRepository cropRepository, AgriSettings settings,
+                        InsuranceService insuranceService) {
         this.orderRepository = orderRepository;
         this.cropRepository = cropRepository;
         this.settings = settings;
+        this.insuranceService = insuranceService;
     }
 
     public List<Order> getAllOrders() {
@@ -282,6 +285,10 @@ public class OrderService {
         }
         if (CONFIRMED.equals(newStatus) && order.getDepositAmount() > 0 && !order.isDepositPaid()) {
             throw ApiException.conflict("訂單尚未收到定金，無法轉為已排定");
+        }
+        if (IN_PROGRESS.equals(newStatus)) {
+            // 派工前檢查：已分派工班的每位成員都須完整加保才可出工
+            insuranceService.assertTeamInsured(order.getAssignedTeamId(), java.time.LocalDate.now());
         }
         order.setStatus(newStatus);
         return orderRepository.save(order);

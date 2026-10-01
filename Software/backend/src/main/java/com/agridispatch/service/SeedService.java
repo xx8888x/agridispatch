@@ -53,6 +53,7 @@ public class SeedService {
     private final AttendanceRepository attendanceRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final TeamRatingRepository teamRatingRepository;
+    private final InsuranceRecordRepository insuranceRecordRepository;
     private final PasswordHasher passwordHasher;
     private final AgriSettings settings;
 
@@ -70,6 +71,7 @@ public class SeedService {
                        AttendanceRepository attendanceRepository,
                        PaymentTransactionRepository paymentTransactionRepository,
                        TeamRatingRepository teamRatingRepository,
+                       InsuranceRecordRepository insuranceRecordRepository,
                        PasswordHasher passwordHasher,
                        AgriSettings settings) {
         this.userRepository = userRepository;
@@ -83,6 +85,7 @@ public class SeedService {
         this.attendanceRepository = attendanceRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.teamRatingRepository = teamRatingRepository;
+        this.insuranceRecordRepository = insuranceRecordRepository;
         this.passwordHasher = passwordHasher;
         this.settings = settings;
     }
@@ -90,6 +93,7 @@ public class SeedService {
     public void seedAll(boolean cleanFirst) {
         if (cleanFirst) {
             teamRatingRepository.deleteAll();
+            insuranceRecordRepository.deleteAll();
             paymentTransactionRepository.deleteAll();
             orderRepository.deleteAll();
             workerRepository.deleteAll();
@@ -106,6 +110,7 @@ public class SeedService {
         seedCrops();
         seedTeams();
         seedWorkers();
+        seedInsurance();
         seedOrders();
         seedRatings();
         seedTalents();
@@ -476,6 +481,29 @@ public class SeedService {
                     .forEach(o -> o.setFarmerId("F001"));
             saveMissing(orderRepository, orders, Order::getId);
         }
+    }
+
+    /** 示範工人的加保紀錄：每位工人依身分加保應加險種，投保薪資取月薪與基本工資較高者 */
+    private void seedInsurance() {
+        java.time.LocalDate enrollDate = java.time.LocalDate.of(2026, 3, 1);
+        java.time.LocalDateTime createdAt = enrollDate.atTime(9, 0);
+        List<InsuranceRecord> records = new java.util.ArrayList<>();
+        for (Worker w : workerRepository.findAll()) {
+            int salary = Math.max(w.getBaseSalary(), LaborConstants.MIN_MONTHLY_WAGE);
+            for (String type : InsuranceService.requiredTypes(w)) {
+                InsuranceRecord r = new InsuranceRecord();
+                r.setId("INS-" + w.getId() + "-" + type + "-" + enrollDate.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE));
+                r.setWorkerId(w.getId());
+                r.setType(type);
+                r.setInsuredSalary(salary);
+                r.setEnrollDate(enrollDate);
+                r.setFilingRef("示範資料");
+                r.setCreatedAt(createdAt);
+                r.setUpdatedAt(createdAt);
+                records.add(r);
+            }
+        }
+        saveMissing(insuranceRecordRepository, records, InsuranceRecord::getId);
     }
 
     /** 已出工／完工訂單的歷史評價（ORD-2026-013 留空，供農場主工作台現場示範評價） */

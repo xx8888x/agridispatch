@@ -248,6 +248,8 @@ flowchart TD
 | 10 | 狀態列、手勢列不遮擋網頁與選擇畫面 | ✅（實測發現 targetSdk 35 強制滿版造成遮擋，已以 `SystemBarInsets` 修正） |
 | 11 | WebView 主控台錯誤 | ✅ 無（僅 Tailwind CDN 的既有提示） |
 
+**Release 簽章版 1.0.5 複測（2026-10-02）**：由 1.0.0 覆蓋升級（同一把上傳金鑰），兩支 App 皆非 debuggable、通知權限正常授予；升級後保留原身分（越南）直接進越南語登入頁；上表 2～9 全部重測通過，另確認外籍移工工單頁依國別切換（越南、印尼），以及後台 App 可進入 `admin.html`；全程無閃退。
+
 debug 版已開啟 WebView 遠端偵錯（`WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)`，release 版關閉），可用 `chrome://inspect` 或 `adb forward tcp:9222 localabstract:webview_devtools_remote_<pid>` 檢查頁面。
 
 ### 7.4 Play Console 發佈設定

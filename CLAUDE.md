@@ -11,7 +11,7 @@
 - `Software/Line Bot/`：純 Java LINE Bot（port 5000）。
 - `Software/demo/`：**前端唯一原始碼**（demo 模式，路演用），分三個子資料夾：`農業派遣主網站/`（前台與各角色頁）、`科技後台/`（admin、vue-crud）、`linebot/`（line.html），各自有一份 `css/`、`js/`；根目錄 `index.html`、`_redirects` 轉址到主網站。跨資料夾連結用 `../<資料夾>/`。
 - `Software/web/`：正式版（production 模式），由同步腳本產生。
-- `Software/android/`：WebView 殼，啟動頁 `www/農業派遣主網站/index.html`；`app/src/main/assets/www/` 由同步腳本產生（demo 模式）。
+- `Software/android/`：WebView 殼，分 `client`（農場主／本勞／外勞，原生身分選擇後進對應登入頁）與 `server`（科技後台，僅 Play 內部測試軌）兩個 flavor，見 `文件/07_系統分析及文件/06_Android雙端App規格書.md`；release 版本號由 `version.properties` 自動遞增（建置後須提交），簽章金鑰在 repo 外、設定在已 gitignore 的 `keystore.properties`；`app/src/main/assets/www/` 由同步腳本產生（demo 模式）。
 - `文件/07_系統分析及文件/03_認證與API安全規格.md`：前後端認證與授權約定，改 API 前先讀。
 
 ## 規則

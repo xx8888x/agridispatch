@@ -62,6 +62,8 @@ public final class UserProfile {
         try {
             o.put("side", side.code);
             o.put("role", side == AppSide.SERVER ? "ADMIN" : role.name());
+            // 後端 users.role 代碼 (farmer / worker_local / worker_foreign / admin_tech)
+            o.put("platformRole", side == AppSide.SERVER ? "admin_tech" : role.platformRole);
             o.put("localType", localType == null ? "" : localType.name());
             o.put("localTrack", localType == null ? "" : localType.track);
             o.put("nationality", nationality == null ? "" : nationality.name());

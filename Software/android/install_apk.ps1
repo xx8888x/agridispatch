@@ -1,4 +1,8 @@
-﻿[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+﻿# 用法：install_apk.bat [-Flavor client|server]
+#   client（預設）：客戶端 App（農場主、本勞、外勞）
+#   server        ：Server 端 App（科技後台；只走 Play 內部測試軌，不公開上架）
+param([ValidateSet('client', 'server')][string]$Flavor = 'client')
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Write-Host "======================================================================" -ForegroundColor Cyan
 Write-Host "   🌱 智農派工 (AgriDispatch) - Android App 一鍵安裝部署助手" -ForegroundColor Cyan
 Write-Host "======================================================================" -ForegroundColor Cyan
@@ -12,11 +16,18 @@ if (-not (Test-Path $adbCmd)) {
     }
 }
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$apkPath = Join-Path $scriptDir "app\build\outputs\apk\debug\app-debug.apk"
+$apkPath = Join-Path $scriptDir ("app\build\outputs\apk\{0}\debug\app-{0}-debug.apk" -f $Flavor)
+$flavorTask = "assemble{0}Debug" -f ($Flavor.Substring(0, 1).ToUpper() + $Flavor.Substring(1))
+if ($Flavor -eq 'server') {
+    $launchComponent = "com.agridispatch.app.admin/com.agridispatch.app.MainActivity"
+} else {
+    $launchComponent = "com.agridispatch.app/com.agridispatch.app.RoleSelectActivity"
+}
+Write-Host ("安裝版本：{0}" -f $Flavor) -ForegroundColor Cyan
 Write-Host "[1/3] 檢查 APK 檔案..." -ForegroundColor Yellow
 if (-not (Test-Path $apkPath)) {
     Write-Host "      APK 尚未建置，正在編譯中..." -ForegroundColor Gray
-    & (Join-Path $scriptDir "gradlew.bat") assembleDebug
+    & (Join-Path $scriptDir "gradlew.bat") $flavorTask
 }
 if (-not (Test-Path $apkPath)) {
     Write-Host "❌ [錯誤] APK 建置失敗。" -ForegroundColor Red
@@ -44,7 +55,7 @@ if (-not $deviceLines) {
         Write-Host "======================================================================" -ForegroundColor Green
         Write-Host "   🎉 安裝完成！正在手機上自動啟動 智農派工 App..." -ForegroundColor Green
         Write-Host "======================================================================" -ForegroundColor Green
-        & $adbCmd shell am start -n com.agridispatch.app/.MainActivity
+        & $adbCmd shell am start -n $launchComponent
     } else {
         Write-Host "❌ [警告] 安裝未成功，請確認手機螢幕是否跳出「允許 USB 偵錯」授權提示。" -ForegroundColor Red
     }

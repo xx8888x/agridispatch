@@ -4,6 +4,22 @@
 
 ---
 
+## 🧭 雙端架構：Server 端 / 客戶端（2026-10-02）
+
+同一份程式碼以 Gradle product flavor（dimension `side`）產出兩支 APK，分類依據見 [`docs/角色與人力分類表.md`](docs/角色與人力分類表.md)，規格見 `07_系統分析及文件/06_Android雙端App規格書.md`。
+
+| flavor | App 名稱 | applicationId | 啟動 | 前端資料夾 | 發佈 |
+|---|---|---|---|---|---|
+| `client` | 智農派工 | `com.agridispatch.app` | `RoleSelectActivity`：農場主 / 本勞（類型）/ 外勞（國別）→ 對應登入頁 | 排除 `科技後台/` | Google Play 公開上架 |
+| `server` | 智農派工後台 | `com.agridispatch.app.admin` | `MainActivity` → `科技後台/admin-login.html` | 全部 | 僅 Play 內部測試軌，不公開上架 |
+
+建置指令：`assembleClientDebug`、`assembleServerDebug`（或 `assembleDebug` 一次建兩支）；輸出在 `app/build/outputs/apk/<flavor>/debug/app-<flavor>-debug.apk`。
+安裝：`install_apk.bat`（客戶端，預設）或 `install_apk.bat -Flavor server`。
+
+> FCM：兩支 App 套件名稱不同，`google-services.json` 需在 Firebase 同時註冊 `com.agridispatch.app` 與 `com.agridispatch.app.admin`，否則 google-services 外掛會建置失敗。
+
+---
+
 ## ✅ 建置驗證狀態（2026-09-23）
 
 已在本機實際建置成功：`assembleDebug` → `app/build/outputs/apk/debug/app-debug.apk`（約 7.3 MB）。
@@ -32,7 +48,7 @@
 subst Z: "D:\派遣專案網站(農事及其它)\Software\android"
 set JAVA_HOME=D:\Android\jdk17
 Z:
-gradlew.bat assembleDebug
+gradlew.bat assembleClientDebug assembleServerDebug
 subst Z: /D
 ```
 

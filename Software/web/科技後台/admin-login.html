@@ -98,28 +98,18 @@
               <input id="loginPwd" v-model="form.password" type="password" autocomplete="current-password" placeholder="密碼" class="ad-input">
             </div>
 
-            <!-- 組織與動態碼只影響示範資料，正式版由後端帳號決定 -->
+            <!-- 所屬組織只影響示範資料的顯示名稱，正式版由後端帳號決定。
+                 不放「記住我」與動態驗證碼：後端沒有長效 token 與 2FA，放了會是不實宣稱。 -->
             <div data-demo-only>
-              <div class="ad-form-grid ad-form-grid--2">
-                <div class="ad-field">
-                  <label class="ad-label" for="loginOrg">所屬組織</label>
-                  <select id="loginOrg" v-model="form.org" class="ad-select">
-                    <option value="tech">智農科技代管公司</option>
-                    <option value="coop">外展農業合作社</option>
-                    <option value="moa">農業部法規稽核組</option>
-                  </select>
-                </div>
-                <div class="ad-field">
-                  <label class="ad-label" for="loginOtp">動態驗證碼</label>
-                  <input id="loginOtp" v-model="form.otp" type="text" inputmode="numeric" placeholder="6 碼" class="ad-input ad-num">
-                </div>
+              <div class="ad-field">
+                <label class="ad-label" for="loginOrg">所屬組織</label>
+                <select id="loginOrg" v-model="form.org" class="ad-select">
+                  <option value="tech">智農科技代管公司</option>
+                  <option value="coop">外展農業合作社</option>
+                  <option value="moa">農業部法規稽核組</option>
+                </select>
               </div>
             </div>
-
-            <label class="ad-caption" style="display: flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer;">
-              <input type="checkbox" v-model="form.remember" style="width: 18px; height: 18px; margin: 0; accent-color: var(--ad-primary);">
-              記住我 14 天
-            </label>
 
             <button type="submit" :disabled="loading" class="ad-btn ad-btn--primary ad-btn--lg ad-btn--block">
               {{ loading ? '驗證中…' : '登入' }}

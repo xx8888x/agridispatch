@@ -659,6 +659,80 @@ a.ad-pill { text-decoration: none; }
   font-size: var(--ad-fs-caption);
 }
 
+/* 卡片內的凹陷區塊（資訊格、小表單群組） */
+.ad-card--inset {
+  background: var(--ad-surface-2);
+  border-color: transparent;
+  padding: var(--ad-sp-4);
+}
+
+/* 編號步驟清單：<ol class="ad-steps"><li>… */
+.ad-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-sp-4);
+  counter-reset: ad-step;
+}
+.ad-steps > li { position: relative; padding-left: 40px; counter-increment: ad-step; }
+.ad-steps > li::before {
+  content: counter(ad-step);
+  position: absolute;
+  left: 0; top: 0;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--ad-primary-soft);
+  color: var(--ad-primary-text);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* 履約階段：已完成／進行中／未開始 */
+.ad-stages {
+  display: grid;
+  gap: var(--ad-sp-3);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 640px) { .ad-stages { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.ad-stage {
+  padding: var(--ad-sp-3);
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-sm);
+  background: var(--ad-surface);
+  text-align: center;
+}
+.ad-stage__title { font-size: 14px; font-weight: 600; color: var(--ad-text-2); }
+.ad-stage__sub { font-size: 12px; color: var(--ad-text-3); margin-top: 2px; }
+.ad-stage--done { border-color: var(--ad-primary); }
+.ad-stage--done .ad-stage__title { color: var(--ad-primary-text); }
+.ad-stage--now { border-color: var(--ad-primary); background: var(--ad-primary-soft); }
+.ad-stage--now .ad-stage__title { color: var(--ad-text); }
+
+/* 進度條（不用漸層） */
+.ad-progress { height: 8px; border-radius: var(--ad-radius-pill); background: var(--ad-surface-2); overflow: hidden; }
+.ad-progress__bar { height: 100%; border-radius: var(--ad-radius-pill); background: var(--ad-primary); }
+
+/* 可切換的標籤（評價標籤等多選） */
+.ad-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 var(--ad-sp-3);
+  border: 1px solid var(--ad-border-strong);
+  border-radius: var(--ad-radius-pill);
+  background: var(--ad-surface);
+  color: var(--ad-text-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ad-chip:hover { color: var(--ad-text); }
+.ad-chip.is-on { border-color: var(--ad-primary); background: var(--ad-primary-soft); color: var(--ad-primary-text); }
+
 /* 分隔線 */
 .ad-divider { height: 1px; background: var(--ad-border); border: 0; margin-block: var(--ad-sp-5); }
 

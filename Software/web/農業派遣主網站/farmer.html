@@ -95,250 +95,219 @@
     </div>
 
 
-    <!-- TAB 1: 派工預約與線上試算步驟 -->
+    <!-- TAB 1: 預約派工 -->
     <div id="tabContentBooking" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-      
-      <!-- Left: Comprehensive Booking Form (7 cols) -->
-      <div class="lg:col-span-7 bg-slate-900/90 rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-2xl space-y-6">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-          <h2 class="text-lg font-bold text-white flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-emerald-500"></span> 📝 線上填寫派工預約單
-          </h2>
-          <span class="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
-            早鳥鎖定名額中
-          </span>
+
+      <!-- 左：預約單 -->
+      <div class="lg:col-span-7 ad-card" style="padding: 24px;">
+        <div class="ad-card__head">
+          <h2 class="ad-title">填寫預約單</h2>
+          <span class="ad-pill ad-pill--warn">早鳥鎖定名額中</span>
         </div>
 
-        <form id="farmerBookingForm" onsubmit="submitFarmerBooking(event)" class="space-y-5">
-          <!-- Step 1: 基本資訊 -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-1">農場主 / 班長姓名 <span class="text-red-400">*</span></label>
-              <input type="text" id="fFarmerName" required value="陳建龍 (阿龍班長)" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        <form id="farmerBookingForm" onsubmit="submitFarmerBooking(event)" style="display: flex; flex-direction: column; gap: 20px;">
+          <!-- 基本資訊 -->
+          <div class="ad-form-grid ad-form-grid--2">
+            <div class="ad-field">
+              <label class="ad-label ad-label--req" for="fFarmerName">農場主／班長姓名</label>
+              <input type="text" id="fFarmerName" class="ad-input" required value="陳建龍 (阿龍班長)" autocomplete="name">
             </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-1">聯絡電話 <span class="text-red-400">*</span></label>
-              <input type="tel" id="fFarmerPhone" required value="0912-345-678" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <div class="ad-field">
+              <label class="ad-label ad-label--req" for="fFarmerPhone">聯絡電話</label>
+              <input type="tel" id="fFarmerPhone" class="ad-input" required value="0912-345-678" inputmode="tel" autocomplete="tel">
             </div>
-            <div class="sm:col-span-2">
-              <label class="block text-xs font-semibold text-slate-300 mb-1">作業地點 / 農園地號 <span class="text-red-400">*</span></label>
-              <input type="text" id="fFarmLocation" required value="屏東縣枋山鄉愛文芒果合作園區 2 號地" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <div class="ad-field" style="grid-column: 1 / -1;">
+              <label class="ad-label ad-label--req" for="fFarmLocation">作業地點／農園地號</label>
+              <input type="text" id="fFarmLocation" class="ad-input" required value="屏東縣枋山鄉愛文芒果合作園區 2 號地">
             </div>
           </div>
 
-          <!-- Step 2: 作物與面積 -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-1">主要農作物類別 <span class="text-red-400">*</span></label>
-              <select id="fCropType" onchange="calcFarmerForm()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                <option value="mango" data-rate="2200" selected>🥭 愛文芒果 (枋山/玉井) - 套袋/採收</option>
-                <option value="pineapple" data-rate="2200">🍍 金鑽鳳梨 (高樹/大樹) - 採收裝箱</option>
-                <option value="waxapple" data-rate="2200">🍎 黑珍珠蓮霧 (佳冬/林邊) - 修剪疏果</option>
-                <option value="tea" data-rate="2800">🍵 高山茶 (阿里山/杉林溪) - 人工採茶</option>
-                <option value="pomelo" data-rate="2200">🍐 麻豆文旦 (麻豆/花蓮) - 產季搶收</option>
-                <option value="strawberry" data-rate="2400">🍓 溫室草莓/彩椒 (大湖/彰雲) - 巡檢採收</option>
-                <option value="rice" data-rate="2000">🌾 水稻/雜糧 - 整地輪作</option>
+          <!-- 作物與面積 -->
+          <div class="ad-form-grid ad-form-grid--2">
+            <div class="ad-field">
+              <label class="ad-label ad-label--req" for="fCropType">作物</label>
+              <select id="fCropType" class="ad-select" onchange="calcFarmerForm()">
+                <option value="mango" data-rate="2200" selected>愛文芒果 (枋山/玉井)</option>
+                <option value="pineapple" data-rate="2200">金鑽鳳梨 (高樹/大樹)</option>
+                <option value="waxapple" data-rate="2200">黑珍珠蓮霧 (佳冬/林邊)</option>
+                <option value="tea" data-rate="2800">高山茶 (阿里山/杉林溪)</option>
+                <option value="pomelo" data-rate="2200">麻豆文旦 (麻豆/花蓮)</option>
+                <option value="strawberry" data-rate="2400">溫室草莓／彩椒 (大湖/彰雲)</option>
+                <option value="rice" data-rate="2000">水稻／雜糧</option>
               </select>
             </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-1">耕作作業面積（分地） <span class="text-red-400">*</span></label>
-              <div class="relative">
-                <input id="fAcreage" type="number" min="0.5" max="50" step="0.5" value="5" oninput="calcFarmerForm()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                <span class="absolute right-3.5 top-2.5 text-xs text-slate-400">分地 (約 1,467 坪)</span>
-              </div>
+            <div class="ad-field">
+              <label class="ad-label ad-label--req" for="fAcreage">面積（分地）</label>
+              <input id="fAcreage" class="ad-input ad-num" type="number" inputmode="decimal" min="0.5" max="50" step="0.5" value="5" oninput="calcFarmerForm()">
+              <span class="ad-hint">1 分地 ≈ 293 坪，1 甲 = 10 分地</span>
             </div>
           </div>
 
-          <!-- Step 3: 6大派工類別 -->
-          <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">派工類別 (6大專業農務) <span class="text-red-400">*</span></label>
-            <select id="fCategory" onchange="calcFarmerForm()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
-              <option value="harvest_grading" data-rate="2200" selected>🧺 採收搬運與套袋 (外展農事工・NT$ 2,200/人日)</option>
-              <option value="pruning_bagging" data-rate="2800">✂️ 嫁接與高空修剪 (專業技職工・NT$ 2,800/人日)</option>
-              <option value="tillage_planting" data-rate="2400">🌱 設施溫室精緻管理 (溫室巡檢工・NT$ 2,400/人日)</option>
-              <option value="drone_pest_control" data-rate="3600">🚁 大型無人機精準植保 (無人機專隊・NT$ 3,600/組日)</option>
-              <option value="cold_chain_pack" data-rate="2000">📦 蔬果清洗分級包裝 (採後冷鏈工・NT$ 2,000/人日)</option>
-              <option value="typhoon_emergency" data-rate="2600">⚡ 產銷班應急代工 (機動應急隊・NT$ 2,600/人日)</option>
+          <!-- 派工類別 -->
+          <div class="ad-field">
+            <label class="ad-label ad-label--req" for="fCategory">派工類別</label>
+            <select id="fCategory" class="ad-select" onchange="calcFarmerForm()">
+              <option value="harvest_grading" data-rate="2200" data-hint="外展農事工・NT$ 2,200／人日" selected>採收搬運與套袋</option>
+              <option value="pruning_bagging" data-rate="2800" data-hint="專業技職工・NT$ 2,800／人日">嫁接與高空修剪</option>
+              <option value="tillage_planting" data-rate="2400" data-hint="溫室巡檢工・NT$ 2,400／人日">設施溫室精緻管理</option>
+              <option value="drone_pest_control" data-rate="3600" data-hint="無人機專隊・NT$ 3,600／組日">大型無人機精準植保</option>
+              <option value="cold_chain_pack" data-rate="2000" data-hint="採後冷鏈工・NT$ 2,000／人日">蔬果清洗分級包裝</option>
+              <option value="typhoon_emergency" data-rate="2600" data-hint="機動應急隊・NT$ 2,600／人日">產銷班應急代工</option>
             </select>
+            <span id="fCategoryHint" class="ad-hint"></span>
           </div>
 
-          <!-- Step 4: 服務方案選擇 -->
-          <div class="space-y-2">
-            <label class="block text-xs font-semibold text-slate-300">派工計價方案</label>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <label class="relative flex flex-col p-3.5 rounded-xl border-2 border-emerald-500 bg-emerald-950/30 cursor-pointer transition">
-                <input type="radio" name="fPlan" value="early_bird" checked onchange="calcFarmerForm()" class="sr-only">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs font-black text-emerald-400">★ 推薦早鳥包</span>
-                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950 font-bold">315/hr</span>
-                </div>
-                <span class="text-xs font-bold text-white">產季早鳥工時包</span>
-                <span class="text-[11px] text-slate-400 mt-1">預付 20% 定金，保證產季出工</span>
+          <!-- 計價方案 -->
+          <fieldset class="ad-field" style="border: 0; padding: 0; margin: 0;">
+            <legend class="ad-label" style="margin-bottom: 6px; padding: 0;">計價方案</legend>
+            <div class="ad-form-grid ad-form-grid--3">
+              <label class="ad-choice" style="align-items: flex-start;">
+                <input type="radio" name="fPlan" value="early_bird" checked onchange="calcFarmerForm()" style="margin-top: 3px;">
+                <span>
+                  <span class="ad-heading" style="display: block; font-size: 15px;">早鳥工時包</span>
+                  <span class="ad-hint" style="display: block;">315 元/hr，預付 20% 保證出工</span>
+                </span>
               </label>
+              <label class="ad-choice" style="align-items: flex-start;">
+                <input type="radio" name="fPlan" value="flexible" onchange="calcFarmerForm()" style="margin-top: 3px;">
+                <span>
+                  <span class="ad-heading" style="display: block; font-size: 15px;">彈性計時</span>
+                  <span class="ad-hint" style="display: block;">臨時需求，依牌價計費</span>
+                </span>
+              </label>
+              <label class="ad-choice" style="align-items: flex-start;">
+                <input type="radio" name="fPlan" value="lump_sum" onchange="calcFarmerForm()" style="margin-top: 3px;">
+                <span>
+                  <span class="ad-heading" style="display: block; font-size: 15px;">成果統包</span>
+                  <span class="ad-hint" style="display: block;">驗收合格後一次結清</span>
+                </span>
+              </label>
+            </div>
+          </fieldset>
 
-              <label class="relative flex flex-col p-3.5 rounded-xl border border-slate-700 bg-slate-900/60 cursor-pointer hover:border-slate-600 transition">
-                <input type="radio" name="fPlan" value="flexible" onchange="calcFarmerForm()" class="sr-only">
-                <span class="text-xs font-bold text-slate-400 mb-1">彈性隨叫隨派</span>
-                <span class="text-xs font-bold text-white">標準計時外展</span>
-                <span class="text-[11px] text-slate-400 mt-1">臨時計時需求，牌價計費</span>
-              </label>
-
-              <label class="relative flex flex-col p-3.5 rounded-xl border border-slate-700 bg-slate-900/60 cursor-pointer hover:border-slate-600 transition">
-                <input type="radio" name="fPlan" value="lump_sum" onchange="calcFarmerForm()" class="sr-only">
-                <span class="text-xs font-bold text-amber-400 mb-1">省心全包式</span>
-                <span class="text-xs font-bold text-white">成果驗收統包</span>
-                <span class="text-[11px] text-slate-400 mt-1">驗收合格後一次結清</span>
-              </label>
+          <!-- 工期與人數 -->
+          <div class="ad-form-grid ad-form-grid--3">
+            <div class="ad-field">
+              <label class="ad-label ad-label--req" for="fStartDate">起工日期</label>
+              <input type="date" id="fStartDate" class="ad-input" required>
+            </div>
+            <div class="ad-field">
+              <label class="ad-label ad-label--req" for="fDaysCount">工作天數</label>
+              <input type="number" id="fDaysCount" class="ad-input ad-num" inputmode="numeric" min="1" max="60" value="4" oninput="calcFarmerForm()">
+            </div>
+            <div class="ad-field">
+              <label class="ad-label ad-label--req" for="fWorkersCount">每日工人數</label>
+              <input type="number" id="fWorkersCount" class="ad-input ad-num" inputmode="numeric" min="1" max="30" value="4" oninput="calcFarmerForm()">
             </div>
           </div>
 
-          <!-- Step 5: 工期與人數 -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-1">起工日期 <span class="text-red-400">*</span></label>
-              <input type="date" id="fStartDate" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-1">工作天數 <span class="text-red-400">*</span></label>
-              <input type="number" id="fDaysCount" min="1" max="60" value="4" oninput="calcFarmerForm()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-1">每日工人數 <span class="text-red-400">*</span></label>
-              <input type="number" id="fWorkersCount" min="1" max="30" value="4" oninput="calcFarmerForm()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
-            </div>
-          </div>
-
-          <!-- Step 6: 自訂現場派工小工頭 -->
-          <div class="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/25 space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-                <span>👷‍♂️</span> 自訂現場派工小工頭（現場帶隊交辦對口）
-              </span>
-              <button type="button" onclick="syncFarmerAsLead()" class="px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/30 hover:bg-amber-500/30 transition">
-                ⚡ 一鍵同農場主本人帶隊
-              </button>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- 現場小工頭 -->
+          <div class="ad-card ad-card--inset">
+            <div class="ad-card__head" style="margin-bottom: 12px;">
               <div>
-                <label class="block text-[11px] text-slate-300 mb-1">現場小工頭姓名</label>
-                <input type="text" id="fForemanName" value="陳小龍 (副班長)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white">
+                <h3 class="ad-heading">現場小工頭</h3>
+                <p class="ad-caption">工人報到時會直接聯絡這位對口。</p>
               </div>
-              <div>
-                <label class="block text-[11px] text-slate-300 mb-1">小工頭電話 / LINE</label>
-                <input type="tel" id="fForemanPhone" value="0921-999-888" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white">
+              <button type="button" onclick="syncFarmerAsLead()" class="ad-btn ad-btn--secondary ad-btn--sm">由我帶隊</button>
+            </div>
+            <div class="ad-form-grid ad-form-grid--2">
+              <div class="ad-field">
+                <label class="ad-label" for="fForemanName">姓名</label>
+                <input type="text" id="fForemanName" class="ad-input" value="陳小龍 (副班長)">
               </div>
-              <div class="sm:col-span-2">
-                <label class="block text-[11px] text-slate-300 mb-1">現場指示 / 集合須知</label>
-                <input type="text" id="fForemanNotes" value="早上 06:45 枋山 2 號集貨場集合，請穿著防滑雨鞋自備手套" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white">
+              <div class="ad-field">
+                <label class="ad-label" for="fForemanPhone">電話／LINE</label>
+                <input type="tel" id="fForemanPhone" class="ad-input" inputmode="tel" value="0921-999-888">
+              </div>
+              <div class="ad-field" style="grid-column: 1 / -1;">
+                <label class="ad-label" for="fForemanNotes">現場指示／集合須知</label>
+                <input type="text" id="fForemanNotes" class="ad-input" value="早上 06:45 枋山 2 號集貨場集合，請穿著防滑雨鞋自備手套">
               </div>
             </div>
           </div>
 
-          <!-- Submit Button -->
-          <!-- 合法派工四大保障（黑轉白誘因展示） -->
-          <div id="legalBenefitsBanner" class="p-4 bg-gradient-to-r from-blue-900/50 to-purple-900/50 border border-blue-500/40 rounded-2xl flex items-start gap-3">
-            <div class="text-2xl mt-0.5">🎁</div>
-            <div>
-              <h4 class="text-blue-200 font-black text-sm mb-1.5">現在預約享「黑轉白」四大保障</h4>
-              <ul class="text-xs text-slate-300 space-y-1 list-disc list-inside">
-                <li><span class="text-emerald-400 font-bold">早鳥定價：</span>提前預約鎖定產季名額、優先排班（315 元/hr 不打折）</li>
-                <li><span class="text-emerald-400 font-bold">合法雇用：</span>人員由合作社雇用並依法加保勞保／職災保險，免除非法容留外國人工作之罰鍰風險（就服法每人 15～75 萬）</li>
-                <li><span class="text-emerald-400 font-bold">通路認證：</span>完工可匯出出勤與合法用工證明，供產銷履歷與通路稽核使用</li>
-                <li><span class="text-emerald-400 font-bold">帳務透明：</span>開立合法發票，勞務費支出有憑有據，可交會計師依法列報</li>
-              </ul>
-              <a href="legalize.html" class="inline-block mt-2 text-xs font-bold text-cyan-300 hover:text-white underline underline-offset-2">園區已有未投保的工班？→ 前往「黑轉白轉換中心」逐一轉換</a>
-            </div>
+          <!-- 合法派工四大保障 -->
+          <div id="legalBenefitsBanner" class="ad-notice" style="flex-direction: column; gap: 8px;">
+            <h3 class="ad-heading">預約即享「黑轉白」四大保障</h3>
+            <ul class="ad-caption" style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px;">
+              <li><strong style="color: var(--ad-text);">早鳥定價：</strong>提前預約鎖定產季名額、優先排班（315 元/hr 不打折）</li>
+              <li><strong style="color: var(--ad-text);">合法雇用：</strong>人員由合作社雇用並依法加保勞保／職災保險，免除非法容留外國人工作之罰鍰風險（就服法每人 15～75 萬）</li>
+              <li><strong style="color: var(--ad-text);">通路認證：</strong>完工可匯出出勤與合法用工證明，供產銷履歷與通路稽核使用</li>
+              <li><strong style="color: var(--ad-text);">帳務透明：</strong>開立合法發票，勞務費支出有憑有據，可交會計師依法列報</li>
+            </ul>
+            <a href="legalize.html" class="ad-btn ad-btn--ghost ad-btn--sm" style="align-self: flex-start;">園區有未投保工班？前往轉換</a>
           </div>
 
-          <button type="submit" id="fSubmitBtn" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-brand-600 hover:from-emerald-500 hover:to-brand-500 text-white font-black text-base shadow-lg shadow-emerald-600/30 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
-            <span>🚀</span> 立即送出派工預約（保留早鳥保證出工配額）
-          </button>
+          <div>
+            <button type="submit" id="fSubmitBtn" class="ad-btn ad-btn--primary ad-btn--lg ad-btn--block">送出預約</button>
+            <p class="ad-caption" style="text-align: center; margin-top: 8px;">送出後保留早鳥保證出工配額</p>
+          </div>
         </form>
       </div>
 
-      <!-- Right: Live Quote Card & Process Guidelines (5 cols) -->
-      <div class="lg:col-span-5 space-y-6">
-        
-        <!-- Live Real-Time Quote Card -->
-        <div class="p-6 rounded-3xl bg-slate-900 border border-emerald-500/40 shadow-2xl space-y-4 relative overflow-hidden">
-          <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+      <!-- 右：即時報價與流程 -->
+      <div class="lg:col-span-5" style="display: flex; flex-direction: column; gap: 24px;">
 
-          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">智慧派工試算面板</span>
-            <span id="fOutSavings" class="text-xs font-bold text-emerald-400">早鳥 315 元/hr・鎖定名額・優先排班</span>
+        <div class="ad-card">
+          <div class="ad-card__head">
+            <h2 class="ad-heading">即時報價</h2>
+            <span id="fOutSavings" class="ad-caption" style="color: var(--ad-accent-text);">早鳥 315 元/hr・鎖定名額・優先排班</span>
           </div>
 
-          <div class="grid grid-cols-2 gap-3 text-center">
-            <div class="p-3 rounded-xl bg-slate-800/80">
-              <span class="text-[11px] text-slate-400 block">作業總工時</span>
-              <span id="fOutHours" class="text-lg font-bold text-white font-mono">128 小時</span>
+          <div class="ad-stat-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+            <div class="ad-stat">
+              <div class="ad-stat__label">作業總工時</div>
+              <div id="fOutHours" class="ad-stat__value">128 小時</div>
             </div>
-            <div class="p-3 rounded-xl bg-slate-800/80">
-              <span class="text-[11px] text-slate-400 block">建議工班編制</span>
-              <span id="fOutWorkers" class="text-xs font-bold text-emerald-400">4 人 ╳ 4 天 (5 分地)</span>
+            <div class="ad-stat">
+              <div class="ad-stat__label">建議編制</div>
+              <div id="fOutWorkers" class="ad-stat__value ad-stat--primary" style="font-size: 1rem; color: var(--ad-primary-text);">4 人 × 4 天 (5 分地)</div>
             </div>
-            <div class="p-3 rounded-xl bg-slate-800/80">
-              <span class="text-[11px] text-slate-400 block">牌告標準金額</span>
-              <span id="fOutStandard" class="text-xs line-through text-slate-500 font-mono">NT$ 40,320</span>
+            <div class="ad-stat">
+              <div class="ad-stat__label">牌告金額</div>
+              <div id="fOutStandard" class="ad-stat__value" style="color: var(--ad-text-2);">NT$ 40,320</div>
             </div>
-            <div class="p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/40">
-              <span class="text-[11px] text-emerald-300 block font-semibold">應付總額 (早鳥)</span>
-              <span id="fOutFinal" class="text-lg font-black text-emerald-400 font-mono">NT$ 40,320</span>
+            <div class="ad-stat ad-stat--accent" style="border-color: var(--ad-accent);">
+              <div class="ad-stat__label">應付總額</div>
+              <div id="fOutFinal" class="ad-stat__value">NT$ 40,320</div>
             </div>
           </div>
 
-          <div class="flex items-center justify-between text-xs text-slate-300 pt-2 border-t border-slate-800/80">
-            <span>定金 (20% 鎖約)：<strong id="fOutDeposit" class="text-amber-400 font-mono">NT$ 8,064</strong></span>
-            <span class="text-[11px] text-slate-400">保證產季充足人力</span>
+          <div class="ad-card__foot" style="justify-content: space-between;">
+            <span class="ad-caption">定金 20%（鎖定名額）</span>
+            <strong id="fOutDeposit" class="ad-price ad-price--accent">NT$ 8,064</strong>
           </div>
         </div>
 
-        <!-- Success Toast Alert -->
-        <div id="fSuccessBanner" class="hidden p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/40 text-xs space-y-2">
-          <div class="font-bold text-emerald-400 flex items-center gap-1.5">
-            <span>🎉</span> 派工預約已送出！單號：<span id="fSuccessId" class="font-mono text-amber-300"></span>
-          </div>
-          <p class="text-slate-300">已自動排入產曆調度佇列，合作社將於 2 小時內去電確認田間細節。</p>
-          <div class="pt-1">
-            <button type="button" onclick="switchFarmerTab('orders')" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow transition flex items-center gap-1">
-              <span>📋</span> 前往查看我的訂單進度 ➔
-            </button>
+        <div id="fSuccessBanner" class="hidden" role="status">
+          <div class="ad-notice ad-notice--ok" style="flex-direction: column; align-items: stretch; gap: 8px;">
+            <div style="font-weight: 600;">預約已送出，單號 <span id="fSuccessId" class="ad-num"></span></div>
+            <p class="ad-caption" style="color: inherit;">已排入調度佇列，合作社會在 2 小時內去電確認田間細節。</p>
+            <button type="button" onclick="switchFarmerTab('orders')" class="ad-btn ad-btn--secondary ad-btn--sm" style="align-self: flex-start;">查看我的訂單</button>
           </div>
         </div>
 
-        <!-- Booking SLA & 3-Step Process Card -->
-        <div class="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">派工履約 3 步驟</span>
-            <span class="text-xs text-emerald-400 font-bold">準時率 99.5%</span>
+        <div class="ad-card">
+          <div class="ad-card__head">
+            <h2 class="ad-heading">預約後的三步</h2>
+            <span class="ad-pill ad-pill--ok">準時率 99.5%</span>
           </div>
-          <div class="space-y-3.5 text-xs text-slate-300">
-            <div class="flex items-start gap-3">
-              <div class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold flex-shrink-0">1</div>
-              <div>
-                <strong class="text-white block">線上填單・鎖定早鳥配額</strong>
-                <span class="text-slate-400">填寫作物面積、自訂現場小工頭與需求人數，早鳥 315 元/hr 鎖定名額、優先排班與充足外展工班。</span>
-              </div>
-            </div>
-            <div class="flex items-start gap-3">
-              <div class="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold flex-shrink-0">2</div>
-              <div>
-                <strong class="text-white block">合作社督導 2 小時內電聯確認</strong>
-                <span class="text-slate-400">核對田區地號、集合地點與現場小工頭電話，自動排入產曆調度排程。</span>
-              </div>
-            </div>
-            <div class="flex items-start gap-3">
-              <div class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold flex-shrink-0">3</div>
-              <div>
-                <strong class="text-white block">清晨 07:00 專車準時出工</strong>
-                <span class="text-slate-400">外展農工全員準時送達果園門口，小工頭現場帶隊指揮，外銷良率達標。</span>
-              </div>
-            </div>
-          </div>
-          <div class="pt-2 border-t border-slate-800">
-            <button type="button" onclick="switchFarmerTab('orders')" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5 border border-slate-700">
-              <span>📋</span> 前往「我的派工訂單與履約進度」頁籤 ➔
-            </button>
+          <ol class="ad-steps">
+            <li>
+              <strong class="ad-heading" style="font-size: 15px; display: block;">線上填單，鎖定早鳥配額</strong>
+              <span class="ad-caption">填作物、面積、小工頭與人數，315 元/hr 鎖定名額、優先排班。</span>
+            </li>
+            <li>
+              <strong class="ad-heading" style="font-size: 15px; display: block;">合作社 2 小時內電話確認</strong>
+              <span class="ad-caption">核對地號、集合地點與小工頭電話，排入調度。</span>
+            </li>
+            <li>
+              <strong class="ad-heading" style="font-size: 15px; display: block;">清晨 07:00 專車準時出工</strong>
+              <span class="ad-caption">工班準時到果園門口，小工頭現場帶隊。</span>
+            </li>
+          </ol>
+          <div class="ad-card__foot" style="justify-content: stretch;">
+            <button type="button" onclick="switchFarmerTab('orders')" class="ad-btn ad-btn--secondary ad-btn--block">查看我的訂單</button>
           </div>
         </div>
 
@@ -346,246 +315,177 @@
 
     </div>
 
-    <!-- TAB 2: 我的派工訂單與履約進度 (獨立頁籤) -->
-    <div id="tabContentOrders" class="hidden space-y-6">
-      
-      <!-- Orders Header & Summary -->
-      <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <!-- TAB 2: 我的訂單 -->
+    <div id="tabContentOrders" class="hidden space-y-5">
+
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
+        <p class="ad-caption" style="margin: 0;">掌握工班動態、現場小工頭紀錄與合法發票。</p>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" onclick="renderOrdersList()" class="ad-btn ad-btn--ghost ad-btn--sm">重新整理</button>
+          <button type="button" onclick="switchFarmerTab('booking')" class="ad-btn ad-btn--secondary ad-btn--sm">新增預約</button>
+        </div>
+      </div>
+
+      <!-- 履約五階段 -->
+      <div class="ad-card">
+        <div class="ad-card__head">
+          <h2 class="ad-heading">履約流程</h2>
+          <span class="ad-pill ad-pill--ok">SLA 99.5% 準時出工</span>
+        </div>
+        <div class="ad-stages">
+          <div class="ad-stage ad-stage--done"><div class="ad-stage__title">1 預約送出</div><div class="ad-stage__sub">線上需求鎖約</div></div>
+          <div class="ad-stage ad-stage--done"><div class="ad-stage__title">2 支付定金</div><div class="ad-stage__sub">20% 鎖定名額</div></div>
+          <div class="ad-stage ad-stage--done"><div class="ad-stage__title">3 專車派發</div><div class="ad-stage__sub">清晨 07:00 抵達</div></div>
+          <div class="ad-stage ad-stage--now"><div class="ad-stage__title">4 田間作業</div><div class="ad-stage__sub">外銷留蒂 0.5cm</div></div>
+          <div class="ad-stage"><div class="ad-stage__title">5 驗收與發票</div><div class="ad-stage__sub">100% 開立營業稅</div></div>
+        </div>
+      </div>
+
+      <div id="farmerOrdersListContainer" style="display: flex; flex-direction: column; gap: 16px;">
+
+        <!-- 訂單 1：履約中 -->
+        <div class="ad-card" style="padding: 24px;">
+          <div class="ad-card__head" style="flex-wrap: wrap;">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;">
+              <span class="ad-heading ad-num">ORD-2026-013</span>
+              <span class="ad-pill ad-pill--ok"><span class="ad-pill__dot"></span>履約中・專車已排定</span>
+              <span data-team-insurance="team_b" class="ad-pill">加保狀態查詢中…</span>
+            </div>
+            <div class="ad-caption">起工 <strong class="ad-num" style="color: var(--ad-text);">2026/09/25</strong>（共 4 天・168 工時）</div>
+          </div>
+
+          <div class="ad-form-grid ad-form-grid--3">
+            <div class="ad-card--inset ad-card">
+              <div class="ad-label">作物與面積</div>
+              <div class="ad-heading" style="margin-top: 4px;">屏東枋山愛文芒果（6 分地）</div>
+              <p class="ad-caption">枋山愛文芒果合作園區 2 號地</p>
+            </div>
+            <div class="ad-card--inset ad-card">
+              <div class="ad-label">工班與現場小工頭</div>
+              <div class="ad-heading" style="margin-top: 4px;">外展工班 B 組（6 人）</div>
+              <p class="ad-caption" data-team-rating="team_b">工班評價載入中…</p>
+              <div style="display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0;">
+                <span class="ad-hint" data-team-skills="team_b" data-skill="harvest">技能標籤載入中…</span>
+              </div>
+              <p class="ad-caption">小工頭：<strong style="color: var(--ad-text);">林小龍 (副班長)</strong> 0921-999-888</p>
+              <p class="ad-caption">指示：早上 06:45 枋山 2 號集貨場集合</p>
+            </div>
+            <div class="ad-card--inset ad-card">
+              <div class="ad-label">費用與發票</div>
+              <div class="ad-price ad-price--accent" style="margin-top: 4px; font-size: 1.125rem;">總額 NT$ 52,920</div>
+              <p class="ad-caption">已付 20% 定金：<span class="ad-num" style="color: var(--ad-primary-text);">NT$ 10,584</span></p>
+              <p class="ad-caption">發票號碼：<span class="ad-num" style="color: var(--ad-text);">AG-98765432</span></p>
+            </div>
+          </div>
+
+          <div style="margin-top: 16px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;" class="ad-caption">
+              <span>作業進度（第 3 天／共 4 天）</span>
+              <strong class="ad-num" style="color: var(--ad-primary-text);">75%</strong>
+            </div>
+            <div class="ad-progress" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"><div class="ad-progress__bar" style="width: 75%;"></div></div>
+          </div>
+
+          <div class="ad-card__foot" style="justify-content: space-between; flex-wrap: wrap;">
+            <span class="ad-caption">外銷採收良率 <strong class="ad-num" style="color: var(--ad-primary-text);">96.8%</strong>（留蒂 ≥ 0.5cm）</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+              <button type="button" onclick="AgriDocs.downloadInvoice('ORD-2026-013', { invoiceNo: 'AG-98765432', cropName: '枋山愛文芒果 (6.0 分地)', amount: 52920, deposit: 10584 })" class="ad-btn ad-btn--secondary ad-btn--sm">下載發票</button>
+              <button type="button" onclick="AgriDocs.showGpsLocation('專車 GPS 即時定位', '屏東枋山集貨場專車，預計明日清晨 06:50 抵達果園門口。')" class="ad-btn ad-btn--secondary ad-btn--sm">專車位置</button>
+              <a href="tel:0921999888" class="ad-btn ad-btn--secondary ad-btn--sm">致電小工頭</a>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px;">
+            <span class="ad-caption">合規與評價</span>
+            <a href="farmer-certificate.html?order=ORD-2026-013" class="ad-btn ad-btn--ghost ad-btn--sm">合法用工證明</a>
+            <a href="expenses.html" class="ad-btn ad-btn--ghost ad-btn--sm">勞務費明細</a>
+            <button type="button" id="rateBtn-ORD-2026-013" onclick="openRatingModal('ORD-2026-013', '外展工班 B 組', 'team_b')" class="ad-btn ad-btn--ghost ad-btn--sm">評價工班</button>
+          </div>
+        </div>
+
+        <!-- 訂單 2：待付定金 -->
+        <div class="ad-card" style="padding: 24px;">
+          <div class="ad-card__head" style="flex-wrap: wrap;">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;">
+              <span class="ad-heading ad-num">ORD-2026-014</span>
+              <span class="ad-pill ad-pill--warn">已預約・待付 20% 定金</span>
+              <span class="ad-pill">工班分派後由合作社加保</span>
+            </div>
+            <div class="ad-caption">預計起工 <strong class="ad-num" style="color: var(--ad-text);">2026/10/05</strong>（約 3 天・128 工時）</div>
+          </div>
+
+          <div class="ad-form-grid ad-form-grid--3">
+            <div class="ad-card--inset ad-card">
+              <div class="ad-label">作物與面積</div>
+              <div class="ad-heading" style="margin-top: 4px;">苗栗卓蘭高接梨（4 分地）</div>
+              <p class="ad-caption">卓蘭果園產區・嫁接與高空修剪</p>
+            </div>
+            <div class="ad-card--inset ad-card">
+              <div class="ad-label">工班與現場小工頭</div>
+              <div class="ad-heading" style="margin-top: 4px;">工班 B 組（5 人待分派）</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0;">
+                <span class="ad-hint" data-team-skills="team_b" data-skill="pruning">技能標籤載入中…</span>
+              </div>
+              <p class="ad-caption">小工頭：<strong style="color: var(--ad-text);">陳建龍 (農場主本人帶隊)</strong></p>
+              <p class="ad-caption">指示：農場主本人親自現場帶隊指揮調度</p>
+            </div>
+            <div class="ad-card--inset ad-card">
+              <div class="ad-label">費用</div>
+              <div class="ad-price ad-price--accent" style="margin-top: 4px; font-size: 1.125rem;">總額 NT$ 40,320</div>
+              <p class="ad-caption">待付定金（20%）：<span class="ad-num" style="color: var(--ad-accent-text); font-weight: 700;">NT$ 8,064</span></p>
+              <p class="ad-caption">付定金後啟動專車派遣與早鳥鎖約</p>
+            </div>
+          </div>
+
+          <div class="ad-card__foot" style="justify-content: space-between; flex-wrap: wrap;">
+            <span class="ad-caption">早鳥 315 元/hr：已鎖定產季名額・優先排班</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+              <button type="button" class="ad-btn ad-btn--accent ad-btn--sm" data-pay='{"orderId":"ORD-2026-014","deposit":8064,"crop":"苗栗卓蘭高接梨 (4分地)","location":"卓蘭果園","amount":40320}' onclick="payDeposit(this)">付定金 NT$ 8,064</button>
+              <button type="button" onclick="switchFarmerTab('booking')" class="ad-btn ad-btn--secondary ad-btn--sm">修改預約</button>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px;">
+            <span class="ad-caption">合規與評價</span>
+            <button type="button" onclick="farmerDemoNotice('合法用工證明（完工後提供）', '此訂單尚未出工；完工後依實際出勤紀錄產生，內含出勤人員、工時與合作社雇用紀錄。')" class="ad-btn ad-btn--ghost ad-btn--sm">合法用工證明</button>
+            <a href="expenses.html" class="ad-btn ad-btn--ghost ad-btn--sm">勞務費明細</a>
+            <button type="button" onclick="farmerDemoNotice('評價工班（完工後開放）', '此訂單尚未出工；完工驗收後即可為工班評分。')" class="ad-btn ad-btn--ghost ad-btn--sm">評價工班</button>
+          </div>
+        </div>
+
+        <!-- 剛送出的訂單（由 renderOrdersList 產生） -->
+        <div id="dynamicOrdersBox" style="display: flex; flex-direction: column; gap: 16px;"></div>
+      </div>
+
+    </div>
+
+    <!-- 四個承諾 -->
+    <section style="margin-top: 40px;">
+      <div class="ad-section__head">
         <div>
-          <div class="flex items-center gap-2">
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">履約追蹤</span>
-            <h2 class="text-xl sm:text-2xl font-black text-white">我的派工訂單與履約進度</h2>
-          </div>
-          <p class="text-xs sm:text-sm text-slate-400 mt-1">即時掌握工班派遣動態、現場小工頭帶隊紀錄、外銷採收進度與合法扣抵發票</p>
-        </div>
-        <div class="flex items-center gap-3">
-          <button onclick="renderOrdersList()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 font-bold border border-slate-700 transition flex items-center gap-1.5">
-            <span>🔄</span> 重新整理
-          </button>
-          <button onclick="switchFarmerTab('booking')" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs text-white font-bold shadow-lg shadow-emerald-600/30 transition flex items-center gap-1.5">
-            <span>+</span> 填寫新預約
-          </button>
+          <h2 class="ad-title">四個承諾</h2>
+          <p class="ad-section__sub">SLA 履約保障率 99.5%，100% 開立營業稅發票可抵稅。</p>
         </div>
       </div>
-
-      <!-- SLA Fulfillment Pipeline -->
-      <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-4">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">標準履約流程與 SLA 5 階段</span>
-          <span class="text-xs text-emerald-400 font-bold">SLA 99.5% 準時出工</span>
+      <div class="ad-form-grid ad-form-grid--2" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+        <div class="ad-card">
+          <div style="display: flex; align-items: center; gap: 8px; color: var(--ad-primary-text);"><i data-lucide="check" class="ad-icon ad-icon--sm"></i><h3 class="ad-heading">保證準時出工</h3></div>
+          <p class="ad-caption" style="margin-top: 6px;">專車清晨 07:00 準時送達果園門口，遲到免單，放鳥雙倍賠償。</p>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
-          <div class="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-center space-y-1">
-            <span class="text-base block">📝</span>
-            <strong class="text-emerald-300 block">1. 預約送出</strong>
-            <span class="text-[11px] text-slate-400">線上需求鎖約</span>
-          </div>
-          <div class="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-center space-y-1">
-            <span class="text-base block">💳</span>
-            <strong class="text-emerald-300 block">2. 支付定金</strong>
-            <span class="text-[11px] text-slate-400">20% 鎖定工班名額</span>
-          </div>
-          <div class="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-center space-y-1">
-            <span class="text-base block">🚐</span>
-            <strong class="text-emerald-300 block">3. 專車派發</strong>
-            <span class="text-[11px] text-slate-400">清晨 07:00 抵達</span>
-          </div>
-          <div class="p-3 rounded-xl bg-blue-950/40 border border-blue-500/40 text-center space-y-1">
-            <span class="text-base block">🌿</span>
-            <strong class="text-blue-300 block">4. 田間作業</strong>
-            <span class="text-[11px] text-slate-400">外銷留蒂 0.5cm</span>
-          </div>
-          <div class="p-3 rounded-xl bg-slate-800/60 border border-slate-700 text-center space-y-1">
-            <span class="text-base block">🧾</span>
-            <strong class="text-slate-300 block">5. 驗收與發票</strong>
-            <span class="text-[11px] text-slate-400">100% 開立營業稅</span>
-          </div>
+        <div class="ad-card">
+          <div style="display: flex; align-items: center; gap: 8px; color: var(--ad-primary-text);"><i data-lucide="check" class="ad-icon ad-icon--sm"></i><h3 class="ad-heading">外銷級留蒂採收</h3></div>
+          <p class="ad-caption" style="margin-top: 6px;">嚴格執行「留蒂 0.5cm 護果粉」，日韓外銷良率 ≥ 95%。</p>
+        </div>
+        <div class="ad-card">
+          <div style="display: flex; align-items: center; gap: 8px; color: var(--ad-primary-text);"><i data-lucide="check" class="ad-icon ad-icon--sm"></i><h3 class="ad-heading">天候避險零停工</h3></div>
+          <p class="ad-caption" style="margin-top: 6px;">暴雨泥濘專車自動轉派冷鏈預冷分級場，農主零底薪赤字。</p>
+        </div>
+        <div class="ad-card">
+          <div style="display: flex; align-items: center; gap: 8px; color: var(--ad-primary-text);"><i data-lucide="check" class="ad-icon ad-icon--sm"></i><h3 class="ad-heading">合規發票抵稅</h3></div>
+          <p class="ad-caption" style="margin-top: 6px;">合作社開立 100% 營業稅發票，全聯、好市多稽核無憂。</p>
         </div>
       </div>
-
-      <!-- Orders List Cards -->
-      <div id="farmerOrdersListContainer" class="space-y-4">
-        <!-- Card 1: 進行中訂單 -->
-        <div class="p-6 rounded-3xl bg-slate-900 border border-emerald-500/40 shadow-xl space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800">
-            <div class="flex items-center gap-3">
-              <span class="font-mono text-sm font-bold text-amber-400">ORD-2026-013</span>
-              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">🟢 履約作業中・專車已排定</span>
-              <span data-team-insurance="team_b" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">🛡️ 加保狀態查詢中…</span>
-            </div>
-            <div class="text-xs text-slate-400">
-              起工日期：<strong class="text-white">2026/09/25</strong> (共 4 天・168 工時)
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            <div class="p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700/60 space-y-1.5">
-              <span class="text-slate-400 font-semibold block">🌱 作物與耕作面積</span>
-              <div class="text-sm font-bold text-white">🥭 屏東枋山愛文芒果 (6 分地)</div>
-              <p class="text-[11px] text-slate-400">枋山愛文芒果合作園區 2 號地</p>
-            </div>
-            <div class="p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700/60 space-y-1.5">
-              <span class="text-slate-400 font-semibold block">👷 派遣工班與現場小工頭</span>
-              <div class="text-sm font-bold text-emerald-300">外展工班 B 組 (6人)</div>
-              <p class="text-[11px] text-amber-300" data-team-rating="team_b">⭐ 工班評價載入中…</p>
-              <div class="flex flex-wrap gap-1">
-                <span class="text-[10px] text-slate-500" data-team-skills="team_b" data-skill="harvest">技能標籤載入中…</span>
-              </div>
-              <p class="text-[11px] text-slate-300">現場小工頭：<strong>林小龍 (副班長)</strong> 0921-999-888</p>
-              <p class="text-[10px] text-amber-400">指示：早上 06:45 枋山 2 號集貨場集合</p>
-            </div>
-            <div class="p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700/60 space-y-1.5">
-              <span class="text-slate-400 font-semibold block">💰 費用明細與合規發票</span>
-              <div class="text-sm font-bold text-amber-400 font-mono">總額 NT$ 52,920</div>
-              <p class="text-[11px] text-slate-300">已付 20% 定金：<span class="text-emerald-400 font-mono">NT$ 10,584</span></p>
-              <p class="text-[10px] text-slate-400">發票號碼：<span class="font-mono text-slate-200">AG-98765432</span></p>
-            </div>
-          </div>
-
-          <!-- Progress Bar -->
-          <div class="space-y-1.5">
-            <div class="flex items-center justify-between text-xs">
-              <span class="text-slate-400">作業履約進度 (第 3 天 / 共 4 天)</span>
-              <span class="text-emerald-400 font-bold font-mono">75% 完成</span>
-            </div>
-            <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
-              <div class="h-full bg-gradient-to-r from-emerald-500 to-brand-500 rounded-full" style="width: 75%"></div>
-            </div>
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800">
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-slate-400">外銷採收良率：<strong class="text-emerald-400 font-mono">96.8%</strong> (留蒂 ≥ 0.5cm)</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <button onclick="AgriDocs.downloadInvoice('ORD-2026-013', { invoiceNo: 'AG-98765432', cropName: '枋山愛文芒果 (6.0 分地)', amount: 52920, deposit: 10584 })" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-xs font-bold border border-emerald-500/30 transition flex items-center gap-1 shadow">
-                <span>📄</span> 下載發票 PDF
-              </button>
-              <button onclick="AgriDocs.showGpsLocation('🚐 專車 GPS 即時定位', '屏東枋山集貨場專車，預計明日清晨 06:50 抵達果園門口。')" class="px-3 py-1.5 rounded-xl bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 text-xs font-bold border border-blue-500/30 transition flex items-center gap-1">
-                <span>📍</span> 專車即時 GPS
-              </button>
-              <a href="tel:0921999888" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition flex items-center gap-1">
-                <span>📞</span> 致電小工頭
-              </a>
-            </div>
-          </div>
-
-          <!-- 合規文件與評價（黑轉白誘因展示） -->
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="text-[11px] text-slate-500 font-semibold">合規與評價：</span>
-            <a href="farmer-certificate.html?order=ORD-2026-013" class="px-3 py-1.5 rounded-xl bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 text-xs font-bold border border-blue-500/30 transition flex items-center gap-1">📄 合法用工證明</a>
-            <a href="expenses.html" class="px-3 py-1.5 rounded-xl bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 text-xs font-bold border border-purple-500/30 transition flex items-center gap-1">💰 勞務費明細</a>
-            <button type="button" id="rateBtn-ORD-2026-013" onclick="openRatingModal('ORD-2026-013', '外展工班 B 組', 'team_b')" class="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-xs font-bold border border-amber-500/30 transition flex items-center gap-1">⭐ 評價工班</button>
-          </div>
-        </div>
-
-        <!-- Card 2: 待付定金訂單 -->
-        <div class="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800">
-            <div class="flex items-center gap-3">
-              <span class="font-mono text-sm font-bold text-amber-400">ORD-2026-014</span>
-              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">🟡 已預約・待付 20% 定金</span>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-700/40 text-blue-200 border border-blue-500/30 border-dashed">🛡️ 工班分派後由合作社加保</span>
-            </div>
-            <div class="text-xs text-slate-400">
-              預計起工：<strong class="text-white">2026/10/05</strong> (約 3 天・128 工時)
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            <div class="p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700/60 space-y-1.5">
-              <span class="text-slate-400 font-semibold block">🌱 作物與耕作面積</span>
-              <div class="text-sm font-bold text-white">🍐 苗栗卓蘭高接梨 (4 分地)</div>
-              <p class="text-[11px] text-slate-400">卓蘭果園產區・嫁接與高空修剪</p>
-            </div>
-            <div class="p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700/60 space-y-1.5">
-              <span class="text-slate-400 font-semibold block">👷 派遣工班與現場小工頭</span>
-              <div class="text-sm font-bold text-slate-300">工班 B 組 (5人待分派)</div>
-              <div class="flex flex-wrap gap-1">
-                <span class="text-[10px] text-slate-500" data-team-skills="team_b" data-skill="pruning">技能標籤載入中…</span>
-              </div>
-              <p class="text-[11px] text-emerald-300">現場小工頭：<strong>陳建龍 (農場主本人帶隊)</strong></p>
-              <p class="text-[10px] text-slate-400">指示：農場主本人親自現場帶隊指揮調度</p>
-            </div>
-            <div class="p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700/60 space-y-1.5">
-              <span class="text-slate-400 font-semibold block">💰 費用明細</span>
-              <div class="text-sm font-bold text-amber-400 font-mono">總額 NT$ 40,320</div>
-              <p class="text-[11px] text-slate-300">待付定金 (20%)：<span class="text-amber-300 font-mono font-bold">NT$ 8,064</span></p>
-              <p class="text-[10px] text-slate-400">支付定金後即啟動專車派遣與早鳥鎖約</p>
-            </div>
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800">
-            <div class="text-xs text-slate-400">
-              早鳥 315 元/hr：已鎖定產季名額・優先排班
-            </div>
-            <div class="flex items-center gap-2">
-              <button onclick="const parent = this.parentElement; AgriDocs.openPaymentCashier('ORD-2026-014', 8064, '苗栗卓蘭高接梨 (4分地)', '卓蘭果園', (data) => { parent.innerHTML = '<span class=\'text-emerald-400 font-bold text-xs flex items-center gap-1\'>✓ 定金已付清</span> <button onclick=\'AgriDocs.downloadInvoice(\&quot;ORD-2026-014\&quot;, { invoiceNo: \&quot;' + (data.invoiceNo || 'AG-88192041') + '\&quot;, cropName: \&quot;苗栗卓蘭高接梨 (4分地)\&quot;, amount: 22400, deposit: 4480 })\' class=\'px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-xs font-bold border border-emerald-500/30 transition flex items-center gap-1\'><span>📄</span> 下載發票 PDF</button>'; })" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition flex items-center gap-1.5">
-                <span>💳</span> 線上支付 20% 定金 (NT$ 8,064)
-              </button>
-              <button onclick="switchFarmerTab('booking')" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold border border-slate-700 transition">
-                ✏️ 修改預約
-              </button>
-            </div>
-          </div>
-
-          <!-- 合規文件與評價（尚未出工：證明與評價於完工後開放） -->
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="text-[11px] text-slate-500 font-semibold">合規與評價：</span>
-            <button type="button" onclick="farmerDemoNotice('📄 合法用工證明（完工後提供）', '此訂單尚未出工；完工後依實際出勤紀錄產生，內含出勤人員、工時與合作社雇用紀錄。')" class="px-3 py-1.5 rounded-xl bg-blue-500/10 text-blue-300/80 hover:bg-blue-500/20 text-xs font-bold border border-blue-500/30 border-dashed transition flex items-center gap-1">📄 合法用工證明</button>
-            <a href="expenses.html" class="px-3 py-1.5 rounded-xl bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 text-xs font-bold border border-purple-500/30 transition flex items-center gap-1">💰 勞務費明細</a>
-            <button type="button" onclick="farmerDemoNotice('⭐ 評價工班（完工後開放）', '此訂單尚未出工；完工驗收後即可為工班評分。')" class="px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-300/80 hover:bg-amber-500/20 text-xs font-bold border border-amber-500/30 border-dashed transition flex items-center gap-1">⭐ 評價工班</button>
-          </div>
-        </div>
-
-        <!-- Dynamically Added Orders Container -->
-        <div id="dynamicOrdersBox" class="space-y-4"></div>
-      </div>
-
-    </div>
-
-    <!-- 合規保障：最下方橫列 (Bottom Full-width Horizontal Row) -->
-    <div class="mt-8 p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 shadow-xl space-y-4">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800/80">
-        <div class="flex items-center gap-3">
-          <span class="text-xs px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-bold">合規保障</span>
-          <h3 class="text-base sm:text-lg font-bold text-white">四大鋼鐵承諾與合法發票保障</h3>
-        </div>
-        <div class="flex items-center gap-3 text-xs text-slate-400">
-          <span>🛡️ SLA 履約保障率 99.5%</span>
-          <span class="hidden sm:inline text-slate-600">|</span>
-          <span>📜 100% 開立營業稅發票抵稅</span>
-        </div>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-slate-300">
-        <div class="p-4 rounded-xl bg-slate-800/50 border border-slate-700/60 space-y-1.5">
-          <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-            <span>✓</span> <span>保證準時出工</span>
-          </div>
-          <p class="text-slate-400 text-xs leading-relaxed">專車清晨 07:00 準時送達果園門口，遲到免單，放鳥雙倍賠償。</p>
-        </div>
-        <div class="p-4 rounded-xl bg-slate-800/50 border border-slate-700/60 space-y-1.5">
-          <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-            <span>✓</span> <span>外銷級留蒂採收</span>
-          </div>
-          <p class="text-slate-400 text-xs leading-relaxed">嚴格執行「留蒂 0.5cm 護果粉」，日韓外銷良率 ≥ 95%。</p>
-        </div>
-        <div class="p-4 rounded-xl bg-slate-800/50 border border-slate-700/60 space-y-1.5">
-          <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-            <span>✓</span> <span>天候避險零停工</span>
-          </div>
-          <p class="text-slate-400 text-xs leading-relaxed">暴雨泥濘專車自動轉派冷鏈預冷分級場，農主零底薪赤字。</p>
-        </div>
-        <div class="p-4 rounded-xl bg-slate-800/50 border border-slate-700/60 space-y-1.5">
-          <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-            <span>✓</span> <span>合規發票抵稅</span>
-          </div>
-          <p class="text-slate-400 text-xs leading-relaxed">合作社開立 100% 營業稅發票，全聯、好市多稽核無憂。</p>
-        </div>
-      </div>
-    </div>
+    </section>
 
   </main>
 
@@ -599,32 +499,32 @@
   </script>
 
   <!-- 評價工班 Modal（PUT /api/ratings/orders/{orderId}） -->
-  <div id="ratingModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4">
-    <div class="w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-amber-500/40 space-y-4">
-      <div class="flex items-center justify-between">
+  <div id="ratingModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background: rgba(2, 6, 23, 0.7);">
+    <div class="ad-card w-full" style="max-width: 448px; display: flex; flex-direction: column; gap: 16px;" role="dialog" aria-modal="true" aria-labelledby="ratingTitle">
+      <div class="ad-card__head" style="margin: 0;">
         <div>
-          <h3 class="text-white font-black">⭐ 評價工班</h3>
-          <p id="ratingSubtitle" class="text-[11px] text-slate-400"></p>
+          <h3 id="ratingTitle" class="ad-title">評價工班</h3>
+          <p id="ratingSubtitle" class="ad-caption"></p>
         </div>
-        <button type="button" onclick="closeRatingModal()" class="text-slate-400 hover:text-white">✕</button>
+        <button type="button" onclick="closeRatingModal()" class="ad-btn ad-btn--ghost ad-btn--icon ad-btn--sm" aria-label="關閉"><i data-lucide="x" class="ad-icon"></i></button>
       </div>
       <div>
-        <div class="text-xs font-semibold text-slate-300 mb-1.5">整體評分</div>
-        <div id="ratingStars" class="flex items-center gap-1"></div>
+        <div class="ad-label" style="margin-bottom: 6px;">整體評分</div>
+        <div id="ratingStars" style="display: flex; align-items: center; gap: 4px;"></div>
       </div>
       <div>
-        <div class="text-xs font-semibold text-slate-300 mb-1.5">評價標籤（可複選）</div>
-        <div id="ratingTags" class="flex flex-wrap gap-1.5"></div>
+        <div class="ad-label" style="margin-bottom: 6px;">評價標籤（可複選）</div>
+        <div id="ratingTags" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
       </div>
-      <div>
-        <label for="ratingComment" class="flex justify-between text-xs font-semibold text-slate-300 mb-1.5">
-          <span>留言（選填）</span><span id="ratingCount" class="text-slate-500 font-normal">0 / 300</span>
+      <div class="ad-field">
+        <label for="ratingComment" class="ad-label" style="display: flex; justify-content: space-between;">
+          <span>留言（選填）</span><span id="ratingCount" class="ad-hint">0 / 300</span>
         </label>
-        <textarea id="ratingComment" rows="3" maxlength="300" oninput="document.getElementById('ratingCount').textContent = this.value.length + ' / 300'" placeholder="例：準時到場、採收仔細，下次還想找同一班" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white"></textarea>
+        <textarea id="ratingComment" class="ad-textarea" rows="3" maxlength="300" oninput="document.getElementById('ratingCount').textContent = this.value.length + ' / 300'" placeholder="例：準時到場、採收仔細，下次還想找同一班"></textarea>
       </div>
-      <p class="text-[11px] text-slate-500">評價針對整個工班，不會顯示您的姓名；同一張訂單可再次修改。</p>
-      <p id="ratingError" class="hidden text-xs text-rose-300"></p>
-      <button type="button" id="ratingSubmit" onclick="submitRating()" class="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm transition">送出評價</button>
+      <p class="ad-hint">評價針對整個工班，不會顯示您的姓名；同一張訂單可再次修改。</p>
+      <p id="ratingError" class="hidden ad-error"></p>
+      <button type="button" id="ratingSubmit" onclick="submitRating()" class="ad-btn ad-btn--primary ad-btn--block">送出評價</button>
     </div>
   </div>
 
@@ -647,15 +547,15 @@
     function renderRatingStars() {
       document.getElementById('ratingStars').innerHTML = [1, 2, 3, 4, 5].map(n => `
         <button type="button" onclick="ratingState.score = ${n}; renderRatingStars();" aria-label="${n} 星"
-          class="text-3xl leading-none transition ${n <= ratingState.score ? 'text-amber-400' : 'text-slate-600 hover:text-amber-300'}">★</button>`).join('') +
-        `<span class="ml-2 text-xs text-slate-400">${ratingState.score ? ratingState.score + ' / 5' : '請點選星等'}</span>`;
+          style="min-width: 40px; min-height: 44px; background: none; border: 0; cursor: pointer; font-size: 30px; line-height: 1; color: ${n <= ratingState.score ? 'var(--ad-accent-text)' : 'var(--ad-border-strong)'};">★</button>`).join('') +
+        `<span class="ad-caption" style="margin-left: 8px;">${ratingState.score ? ratingState.score + ' / 5' : '請點選星等'}</span>`;
     }
 
     function renderRatingTags() {
       document.getElementById('ratingTags').innerHTML = ratingState.allTags.map(tag => {
         const on = ratingState.tags.has(tag);
-        return `<button type="button" data-tag="${tag}" onclick="toggleRatingTag(this.dataset.tag)"
-          class="px-2.5 py-1 rounded-full text-[11px] font-bold border transition ${on ? 'bg-amber-500/20 text-amber-200 border-amber-400/60' : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'}">${on ? '✓ ' : ''}${tag}</button>`;
+        return `<button type="button" data-tag="${escHtml(tag)}" onclick="toggleRatingTag(this.dataset.tag)" aria-pressed="${on}"
+          class="ad-chip ${on ? 'is-on' : ''}">${escHtml(tag)}</button>`;
       }).join('');
     }
 
@@ -721,7 +621,7 @@
         closeRatingModal();
         markRated(ratingState.orderId, saved.score);
         loadTeamRatings();
-        farmerDemoNotice('⭐ 感謝您的評價', `已為${ratingState.teamName}評 ${saved.score} 星，會累計到工班履歷，作為優先媒合的參考。`);
+        farmerDemoNotice('感謝您的評價', `已為${ratingState.teamName}評 ${saved.score} 星，會累計到工班履歷，作為優先媒合的參考。`);
       } catch (e) {
         showRatingError(`評價未送出：${e.message}`);
       } finally {
@@ -731,7 +631,7 @@
 
     function markRated(orderId, score) {
       const btn = document.getElementById(`rateBtn-${orderId}`);
-      if (btn) btn.textContent = `⭐ 已評 ${score} 星（可修改）`;
+      if (btn) btn.textContent = `已評 ${score} 星（可修改）`;
     }
 
     // 卡片上的工班平均分數，以及已評過的訂單按鈕文字
@@ -739,9 +639,9 @@
       for (const el of document.querySelectorAll('[data-team-rating]')) {
         try {
           const t = await ratingApi(`/ratings/teams/${encodeURIComponent(el.dataset.teamRating)}`);
-          el.textContent = t.count ? `⭐ 工班評價 ${t.average} / 5（${t.count} 則）` : '⭐ 工班尚無評價';
+          el.textContent = t.count ? `工班評價 ${t.average} / 5（${t.count} 則）` : '工班尚無評價';
         } catch (e) {
-          el.textContent = '⭐ 工班評價暫時無法載入';
+          el.textContent = '工班評價暫時無法載入';
         }
       }
       for (const btn of document.querySelectorAll('[id^="rateBtn-"]')) {
@@ -760,11 +660,11 @@
         try {
           const t = await ratingApi(`/insurance/teams/${encodeURIComponent(el.dataset.teamInsurance)}`);
           el.textContent = t.allInsured
-            ? '🛡️ 工班成員皆已加保（勞保／職保／健保）'
-            : `⚠️ 工班有 ${t.total - t.insured} 人尚未完整加保，合作社補登前暫停出工`;
-          if (!t.allInsured) el.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-200 border border-rose-500/40';
+            ? '工班成員皆已加保（勞保／職保／健保）'
+            : `工班有 ${t.total - t.insured} 人尚未完整加保，合作社補登前暫停出工`;
+          el.className = t.allInsured ? 'ad-pill ad-pill--ok' : 'ad-pill ad-pill--danger';
         } catch (e) {
-          el.textContent = '🛡️ 加保狀態暫時無法查詢';
+          el.textContent = '加保狀態暫時無法查詢';
         }
       }
     }
@@ -772,16 +672,16 @@
 
     // 工班技能標籤：依後端熟手規則即時計算（只顯示人數，不列姓名）；只顯示與該訂單派工類別相符的熟手標籤
     async function loadTeamSkills() {
-      const tagCls = 'px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+      const tagCls = 'ad-pill ad-pill--ok';
       for (const el of document.querySelectorAll('[data-team-skills]')) {
         try {
           const t = await ratingApi(`/skills/teams/${encodeURIComponent(el.dataset.teamSkills)}`);
           const s = t.skills[el.dataset.skill];
-          const tags = [`<span class="${tagCls}" title="工作許可有效、完整加保、無暫停中標籤">✔️ 履歷認證 ×${t.verified}</span>`];
+          const tags = [`<span class="${tagCls}" title="工作許可有效、完整加保、無暫停中標籤">履歷認證 ×${t.verified}</span>`];
           if (s && s.skilled > 0) {
             tags.push(`<span class="${tagCls}" title="同類作業最近 24 個月 ≥ 80 小時、≥ 2 張訂單">${s.label} ×${s.skilled}</span>`);
           } else if (s) {
-            tags.push(`<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-700/40 text-slate-400 border border-slate-600" title="尚無成員達到熟手門檻">${s.label}：培養中</span>`);
+            tags.push(`<span class="ad-pill" title="尚無成員達到熟手門檻">${s.label}：培養中</span>`);
           }
           el.outerHTML = tags.join('');
         } catch (e) {
@@ -793,6 +693,33 @@
   </script>
 
   <script>
+    const BOOK_LABEL = '送出預約';
+    const escHtml = (s) => (window.AgriUtil && AgriUtil.escapeHtml)
+      ? AgriUtil.escapeHtml(String(s ?? ''))
+      : String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    // 付定金：資料放在按鈕的 data-pay（JSON），付款成功後把按鈕換成「已付清＋下載發票」
+    function payDeposit(btn) {
+      let d;
+      try { d = JSON.parse(btn.dataset.pay); } catch (e) { return; }
+      const holder = btn.parentElement;
+      AgriDocs.openPaymentCashier(d.orderId, d.deposit, d.crop, d.location, (data) => {
+        holder.textContent = '';
+        const done = document.createElement('span');
+        done.className = 'ad-pill ad-pill--ok';
+        done.textContent = '定金已付清';
+        const inv = document.createElement('button');
+        inv.type = 'button';
+        inv.className = 'ad-btn ad-btn--secondary ad-btn--sm';
+        inv.textContent = '下載發票';
+        inv.addEventListener('click', () => AgriDocs.downloadInvoice(d.orderId, {
+          invoiceNo: (data && data.invoiceNo) || 'AG-88192041',
+          cropName: d.crop, amount: d.amount, deposit: d.deposit
+        }));
+        holder.append(done, inv);
+      });
+    }
+
     function syncFarmerAsLead() {
       const name = document.getElementById('fFarmerName').value;
       const phone = document.getElementById('fFarmerPhone').value;
@@ -826,7 +753,9 @@
       const depositAmt = Math.round(finalAmt * 0.20);
 
       document.getElementById('fOutHours').innerText = `${totalHours} 小時`;
-      document.getElementById('fOutWorkers').innerText = `${workers} 人 ╳ ${days} 天 (${acreage} 分地)`;
+      document.getElementById('fOutWorkers').innerText = `${workers} 人 × ${days} 天 (${acreage} 分地)`;
+      const hintEl = document.getElementById('fCategoryHint');
+      if (hintEl) hintEl.textContent = catSelect.options[catSelect.selectedIndex].getAttribute('data-hint') || '';
       const stdEl = document.getElementById('fOutStandard');
       stdEl.innerText = `NT$ ${stdAmount.toLocaleString()}`;
       stdEl.classList.toggle('line-through', discountAmt > 0);
@@ -839,7 +768,7 @@
       e.preventDefault();
       const btn = document.getElementById('fSubmitBtn');
       btn.disabled = true;
-      btn.innerHTML = '<span>⏳</span> 處理中...';
+      btn.textContent = '處理中…';
 
       const orderId = 'ORD-2026-' + Math.floor(1000 + Math.random() * 9000);
       const catSelect = document.getElementById('fCategory');
@@ -863,7 +792,7 @@
         phone: document.getElementById('fFarmerPhone').value,
         farmLocation: document.getElementById('fFarmLocation').value,
         cropId: cropSelect.value,
-        cropName: cropSelect.options[cropSelect.selectedIndex].text.split(' ')[1] || cropSelect.value,
+        cropName: cropSelect.options[cropSelect.selectedIndex].text.split(' ')[0] || cropSelect.value,
         area: acreage,
         plan: planVal,
         planName: planVal === 'early_bird' ? '早鳥預購包 (315/hr・鎖定名額)' : (planVal === 'lump_sum' ? '專案統包一口價' : '彈性工時約'),
@@ -909,9 +838,9 @@
         const result = await res.json().catch(() => ({}));
         if (!res.ok || result.success === false) {
           const msg = result.error || result.message || `HTTP ${res.status}`;
-          if (window.AgriDocs) AgriDocs.notify('⚠️ 預約未送出', msg, { channel: 'dispatch' });
+          if (window.AgriDocs) AgriDocs.notify('預約未送出', msg, { channel: 'dispatch' });
           btn.disabled = false;
-          btn.innerHTML = '<span>🚀</span> 立即送出派工預約（保留早鳥保證出工配額）';
+          btn.textContent = BOOK_LABEL;
           return;
         }
         if (result.data) saved = { ...payload, ...result.data };
@@ -920,9 +849,9 @@
         offline = true;
         const isDemo = !window.AGRI_CONFIG || window.AGRI_CONFIG.mode !== 'production';
         if (!isDemo) {
-          if (window.AgriDocs) AgriDocs.notify('⚠️ 預約未送出', '無法連線伺服器，請稍後再試。', { channel: 'dispatch' });
+          if (window.AgriDocs) AgriDocs.notify('預約未送出', '無法連線伺服器，請稍後再試。', { channel: 'dispatch' });
           btn.disabled = false;
-          btn.innerHTML = '<span>🚀</span> 立即送出派工預約（保留早鳥保證出工配額）';
+          btn.textContent = BOOK_LABEL;
           return;
         }
       }
@@ -937,11 +866,9 @@
       document.getElementById('fSuccessBanner').classList.remove('hidden');
       document.getElementById('fSuccessId').innerText = saved.id;
       btn.disabled = false;
-      btn.innerHTML = '<span>✓</span> 預約已送出！';
+      btn.textContent = '已送出';
       renderOrdersList();
-      setTimeout(() => {
-        btn.innerHTML = '<span>🚀</span> 立即送出派工預約（保留早鳥保證出工配額）';
-      }, 3500);
+      setTimeout(() => { btn.textContent = BOOK_LABEL; }, 3500);
     }
 
     // 合規文件／評價按鈕（純前端示範）
@@ -988,51 +915,55 @@
         return;
       }
 
-      box.innerHTML = orders.map(ord => `
-        <div class="p-6 rounded-3xl bg-slate-900 border border-emerald-500/50 shadow-xl space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800">
-            <div class="flex items-center gap-3">
-              <span class="font-mono text-sm font-bold text-amber-400">${ord.id}</span>
-              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">🟡 已預約・待付 20% 定金</span>
-              <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">剛剛線上送出</span>
+      box.innerHTML = orders.map(ord => {
+        const days = ord.suggestedWorkers ? Math.round(ord.totalHours / (ord.suggestedWorkers * 8)) : '';
+        const when = ord.startDate
+          ? ord.startDate + (ord.endDate && ord.endDate !== ord.startDate ? ' ～ ' + ord.endDate : '')
+          : (ord.createdAt ? ord.createdAt.split('T')[0] : '明日');
+        const pay = escHtml(JSON.stringify({
+          orderId: ord.id, deposit: ord.depositAmount || 4480, crop: ord.cropName,
+          location: ord.farmLocation, amount: ord.finalAmount || 22400
+        }));
+        const money = (n) => (n ? Number(n).toLocaleString() : '0');
+        return `
+        <div class="ad-card" style="padding: 24px;">
+          <div class="ad-card__head" style="flex-wrap: wrap;">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;">
+              <span class="ad-heading ad-num">${escHtml(ord.id)}</span>
+              <span class="ad-pill ad-pill--warn">已預約・待付 20% 定金</span>
+              <span class="ad-pill ad-pill--ok">剛剛送出</span>
             </div>
-            <div class="text-xs text-slate-400">
-              預計起工：<strong class="text-white">${ord.startDate ? ord.startDate + (ord.endDate && ord.endDate !== ord.startDate ? ' ～ ' + ord.endDate : '') : (ord.createdAt ? ord.createdAt.split('T')[0] : '明日')}</strong> (共 ${ord.totalHours / (ord.suggestedWorkers * 8)} 天・${ord.totalHours} 工時)
+            <div class="ad-caption">預計起工 <strong class="ad-num" style="color: var(--ad-text);">${escHtml(when)}</strong>（共 ${days} 天・${escHtml(ord.totalHours)} 工時）</div>
+          </div>
+
+          <div class="ad-form-grid ad-form-grid--3">
+            <div class="ad-card--inset ad-card">
+              <div class="ad-label">作物與面積</div>
+              <div class="ad-heading" style="margin-top: 4px;">${escHtml(ord.cropName)}（${escHtml(ord.area)} 分地）</div>
+              <p class="ad-caption">${escHtml(ord.farmLocation)}</p>
+            </div>
+            <div class="ad-card--inset ad-card">
+              <div class="ad-label">工班與現場小工頭</div>
+              <div class="ad-heading" style="margin-top: 4px;">${escHtml(ord.suggestedWorkers)} 人外展專隊</div>
+              <p class="ad-caption">小工頭：<strong style="color: var(--ad-text);">${escHtml(ord.foremanName || '未指定')}</strong> ${escHtml(ord.foremanPhone || '')}</p>
+              <p class="ad-caption">指示：${escHtml(ord.foremanNotes || '無特殊備註')}</p>
+            </div>
+            <div class="ad-card--inset ad-card">
+              <div class="ad-label">費用（${escHtml(ord.planName)}）</div>
+              <div class="ad-price ad-price--accent" style="margin-top: 4px; font-size: 1.125rem;">應付總額 NT$ ${money(ord.finalAmount)}</div>
+              <p class="ad-caption">待付定金（20%）：<span class="ad-num" style="color: var(--ad-accent-text); font-weight: 700;">NT$ ${money(ord.depositAmount)}</span></p>
+              <p class="ad-caption">付定金後啟動專車派遣與早鳥鎖約</p>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            <div class="p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700/60 space-y-1.5">
-              <span class="text-slate-400 font-semibold block">🌱 作物與耕作面積</span>
-              <div class="text-sm font-bold text-white">${ord.cropName} (${ord.area} 分地)</div>
-              <p class="text-[11px] text-slate-400">${ord.farmLocation}</p>
-            </div>
-            <div class="p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700/60 space-y-1.5">
-              <span class="text-slate-400 font-semibold block">👷 派遣工班與現場小工頭</span>
-              <div class="text-sm font-bold text-emerald-300">${ord.suggestedWorkers} 人外展專隊</div>
-              <p class="text-[11px] text-slate-300">現場小工頭：<strong>${ord.foremanName || '未指定'}</strong> (${ord.foremanPhone || ''})</p>
-              <p class="text-[10px] text-amber-400 truncate">指示：${ord.foremanNotes || '無特殊備註'}</p>
-            </div>
-            <div class="p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700/60 space-y-1.5">
-              <span class="text-slate-400 font-semibold block">💰 費用明細 (${ord.planName})</span>
-              <div class="text-sm font-bold text-amber-400 font-mono">應付總額 NT$ ${ord.finalAmount ? ord.finalAmount.toLocaleString() : '0'}</div>
-              <p class="text-[11px] text-slate-300">待付定金 (20%)：<span class="text-amber-300 font-mono font-bold">NT$ ${ord.depositAmount ? ord.depositAmount.toLocaleString() : '0'}</span></p>
-              <p class="text-[10px] text-slate-400">支付定金後即啟動專車派遣與早鳥鎖約</p>
+          <div class="ad-card__foot" style="justify-content: space-between; flex-wrap: wrap;">
+            <span class="ad-caption">派工項目：<span style="color: var(--ad-text);">${escHtml(ord.categoryName)}</span></span>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="ad-btn ad-btn--accent ad-btn--sm" data-pay="${pay}" onclick="payDeposit(this)">付定金 NT$ ${money(ord.depositAmount)}</button>
             </div>
           </div>
-
-          <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800">
-            <div class="text-xs text-slate-400">
-              派工項目：<span class="text-slate-200 font-medium">${ord.categoryName}</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <button onclick="const parent = this.parentElement; AgriDocs.openPaymentCashier('${ord.id}', ${ord.depositAmount || 4480}, '${ord.cropName}', '${ord.farmLocation}', (data) => { parent.innerHTML = '<span class=\\\'text-emerald-400 font-bold text-xs\\\'>✓ 定金已付清</span> <button onclick=\\\'AgriDocs.downloadInvoice(\&quot;${ord.id}\&quot;, { invoiceNo: \&quot;' + (data.invoiceNo || 'AG-88192041') + '\&quot;, cropName: \&quot;${ord.cropName}\&quot;, amount: ${ord.finalAmount || 22400}, deposit: ${ord.depositAmount || 4480} })\\\' class=\\\'px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-xs font-bold border border-emerald-500/30 transition flex items-center gap-1\\\'><span>📄</span> 下載發票 PDF</button>'; })" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition flex items-center gap-1.5">
-                <span>💳</span> 線上支付 20% 定金 (NT$ ${ord.depositAmount ? ord.depositAmount.toLocaleString() : '0'})
-              </button>
-            </div>
-          </div>
-        </div>
-      `).join('');
+        </div>`;
+      }).join('');
     }
 
     document.addEventListener('DOMContentLoaded', () => {

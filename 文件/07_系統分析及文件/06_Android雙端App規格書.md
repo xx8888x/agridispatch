@@ -272,6 +272,8 @@ flowchart TD
 
 **身分選擇改版複測（2026-10-02，release 簽章版）**：第一頁四張卡片（農場主、本國工人、越南、印尼）；本國工人 → 農機操作進 `?role=machinery`、`localTrack` = `machinery`；越南、印尼一次點選即進對應語言登入頁；返回鍵回第一頁；無閃退。
 
+**登入頁改版後複測（2026-10-02，release 1.0.8／1.0.9）**：前端 6 支登入頁改用設計系統（master a882307），網頁 login.html 已對齊原生身分選擇（第一層 農場主／本國工人／越南／印尼，第二層三種軌別）。App 內：worker-foreign-login 只剩 中／VI／ID，App 身分優先於 `?lang=`（越南身分＋`?lang=th` 仍顯示 VI）；點 login.html 改開原生畫面；`?role=foreman` 預選「帶隊領班」；1.0.9 拿掉沒有作用的「記住我」與動態驗證碼後，農場主登入 → farmer.html、後台登入 → admin.html 皆正常；無閃退。
+
 debug 版已開啟 WebView 遠端偵錯（`WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)`，release 版關閉），可用 `chrome://inspect` 或 `adb forward tcp:9222 localabstract:webview_devtools_remote_<pid>` 檢查頁面。
 
 ### 7.4 Play Console 發佈設定

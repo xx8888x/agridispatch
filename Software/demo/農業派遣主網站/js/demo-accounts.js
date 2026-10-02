@@ -49,10 +49,10 @@ window.AGRI_DEMO_ACCOUNTS = {
     pwdPlaceholder: '請輸入密碼 (預設 123456)',
     pwdHint: '預設密碼：123456',
     profiles: [
-      { identifier: '0918-668-999', password: '123456', workerId: 'W026', track: 'foreman', icon: '👨‍💼', name: '林小祥 (外展帶隊領班)', desc: '帶領 6 名外展移工 ╳ 枋山芒果採收 (B組小工頭)', tag: 'Tier 2 帶隊領班', tagColor: 'amber' },
-      { identifier: '0988-333-444', password: '123456', workerId: 'W012', track: 'machinery', icon: '🚜', name: '陳建宏 (專業機耕師)', desc: '大疆 T50 巡檢代噴 ╳ 溫室曳引機 (C組)', tag: 'Tier 3 專業代耕', tagColor: 'blue' },
-      { identifier: '0933-555-666', password: '123456', workerId: 'W025', track: 'machinery', icon: '🚜', name: '林志成 (資深機耕師)', desc: '80 馬力曳引機 ╳ 深耕整地輪作 (C組)', tag: 'Tier 3 專業代耕', tagColor: 'cyan' },
-      { identifier: '0912-345-678', password: '123456', workerId: 'W030', track: 'labor', icon: '🧑‍🌾', name: '張志明 (農業勞務工)', desc: '屏東枋山芒果採收 ╳ 合作社在籍農業勞務員', tag: '農業勞務員', tagColor: 'green' }
+      { identifier: '0918-668-999', password: '123456', workerId: 'W026', track: 'foreman', name: '林小祥 (外展帶隊領班)', desc: '帶領 6 名外展移工，枋山芒果採收 (B組小工頭)', tag: 'Tier 2 帶隊領班' },
+      { identifier: '0988-333-444', password: '123456', workerId: 'W012', track: 'machinery', name: '陳建宏 (專業機耕師)', desc: '大疆 T50 巡檢代噴，溫室曳引機 (C組)', tag: 'Tier 3 專業代耕' },
+      { identifier: '0933-555-666', password: '123456', workerId: 'W025', track: 'machinery', name: '林志成 (資深機耕師)', desc: '80 馬力曳引機，深耕整地輪作 (C組)', tag: 'Tier 3 專業代耕' },
+      { identifier: '0912-345-678', password: '123456', workerId: 'W030', track: 'labor', name: '張志明 (農業勞務工)', desc: '屏東枋山芒果採收，合作社在籍農業勞務員', tag: '農業勞務員' }
     ]
   },
   // app.html / vue-crud.html（舊版全景展示頁）沿用的極簡帳密清單

@@ -89,6 +89,16 @@ subst Z: /D
 
 ---
 
+## 🔢 版本號（自動遞增）
+
+`version.properties`（已提交進 git）記錄最後一次 release 建置的 `VERSION_CODE`：
+
+- 執行任何 release 任務（`assemble…Release`、`bundle…Release`、`install…Release`，或不指定 flavor 的 `assemble`／`bundle`／`build`）時自動 **+1** 並寫回；同一次建置的兩個 flavor 共用同一個號碼。
+- debug 建置與 Android Studio 同步不遞增，沿用目前值。
+- `versionName` = `VERSION_NAME_BASE`.`VERSION_CODE`（例如 `1.0.5`；後台另加 `-admin`）；改版時手動修改 `VERSION_NAME_BASE`（例如 1.0 → 1.1）。
+- **每次 release 建置後請提交 `version.properties`**，否則下一台電腦會用到重複的號碼（Google Play 拒收重複或較小的 versionCode）。建置失敗也會用掉一號，號碼跳號無妨。
+- CI 可用 `-PversionCode=N` 指定，此時不讀寫檔案。
+
 ## 🔑 Release 簽章設定
 
 > **目前狀態（2026-10-02）**：已產生上傳金鑰 `D:\AgriDispatch-keys\agridispatch-upload.jks`（PKCS12、RSA 2048、效期 30 年、別名 `agridispatch-upload`，憑證 `CN=AgriDispatch, O=AgriDispatch, C=TW`），放在 repo 外；密碼只存在本目錄的 `keystore.properties`（已 gitignore）。

@@ -11,6 +11,29 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
+// 版本號自動遞增：version.properties 記錄最後一次 release 建置的 VERSION_CODE (此檔要提交進 git)。
+// 執行任何 release 任務 (assemble/bundle/install…Release，或不指定 flavor 的 assemble、bundle、build) 時 +1 並寫回；
+// debug 建置與 Android Studio 同步沿用目前值、不遞增。versionName = VERSION_NAME_BASE.VERSION_CODE (例如 1.0.2)。
+// CI 可用 -PversionCode=N 指定，此時不讀寫檔案。
+def versionPropsFile = rootProject.file('version.properties')
+def versionProps = new Properties()
+versionPropsFile.withInputStream { versionProps.load(it) }
+def releaseTaskRequested = gradle.startParameter.taskNames.any { name ->
+    def task = name.substring(name.lastIndexOf(':') + 1)
+    task.toLowerCase().contains('release') || task in ['assemble', 'bundle', 'build']
+}
+def appVersionCode = versionProps['VERSION_CODE'] as int
+if (project.hasProperty('versionCode')) {
+    appVersionCode = project.property('versionCode') as int
+} else if (releaseTaskRequested) {
+    appVersionCode += 1
+    // 只替換 VERSION_CODE 那一行，保留檔案內的說明註解
+    versionPropsFile.setText(versionPropsFile.getText('UTF-8')
+            .replaceFirst(/(?m)^VERSION_CODE=\d+/, "VERSION_CODE=${appVersionCode}"), 'UTF-8')
+    logger.lifecycle("[AgriDispatch] release 建置：versionCode 遞增為 ${appVersionCode}，請提交 version.properties")
+}
+def appVersionName = "${versionProps['VERSION_NAME_BASE']}.${appVersionCode}"
+
 android {
     namespace 'com.agridispatch.app'
     // Google Play 新上架 App 自 2025/8 起要求 targetSdk 35 以上；
@@ -21,8 +44,8 @@ android {
         applicationId "com.agridispatch.app"
         minSdk 24
         targetSdk 35
-        versionCode 1
-        versionName "1.0.0"
+        versionCode appVersionCode
+        versionName appVersionName
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

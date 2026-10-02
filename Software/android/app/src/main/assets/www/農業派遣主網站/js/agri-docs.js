@@ -200,6 +200,27 @@ const AgriDocs = (function () {
     let totalDeduction = laborIns + healthIns + dormFee;
     let netPay = grossPay - totalDeduction;
 
+    // 有帶後端試算（slip）就以它為準：金額、發薪日、帳戶與頁面上看到的完全相同。
+    // 後端沒有「宿舍費代扣」這一項，所以不列【待確認：外籍移工住宿費可否代扣、上限，依勞動部規定】。
+    const slip = customData.slip || null;
+    let payDate = '2026/09/05 (電匯入帳)';
+    let bankLine = '電匯帳號：中華郵政 (700) 帳號末五碼 56789 ╳ 匯入完成';
+    if (slip) {
+      baseSalary = slip.baseSalary;
+      agriBonus = slip.agriSubsidy || 0;
+      transportAllowance = slip.transportHeatAllowance || 0;
+      overtimePay = slip.overtimePay || 0;
+      foremanAllowance = 0;
+      laborIns = slip.laborInsuranceDeduction;
+      healthIns = slip.healthInsuranceDeduction;
+      dormFee = 0;
+      grossPay = slip.grossPay;
+      totalDeduction = slip.totalDeductions;
+      netPay = slip.netPay;
+      payDate = slip.payDate || '依合作社薪資系統為準';
+      bankLine = `薪轉帳戶：${slip.bankAccount || '（尚未登錄薪轉帳戶）'}`;
+    }
+
     const html = `<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -242,13 +263,14 @@ const AgriDocs = (function () {
       <h1>有限責任台灣智慧農業勞務生產合作社</h1>
       <p>外展農務就業人員個人工資清冊明細 (符合勞動基準法第 23 條規範)</p>
       <div class="badge">薪資核發月份：${month}</div>
+      ${slip ? '<div style="margin-top:8px; font-size:11px; color:#fbbf24;">試算薪資單：依底薪、津貼與出勤計算，勞健保自付額為概估值，實際以合作社薪資系統為準。</div>' : ''}
     </div>
 
     <div class="info-grid">
       <div><strong>農工姓名：</strong>${workerName}</div>
       <div><strong>員工工號：</strong><span style="font-family:monospace;">${workerId}</span></div>
       <div><strong>職責身分：</strong>${isForeman ? '本國帶工領班 (小工頭)' : (isLabor ? '合作社在籍農業勞務員' : '外籍外展農工')}</div>
-      <div><strong>發薪日期：</strong>2026/09/05 (電匯入帳)</div>
+      <div><strong>發薪日期：</strong>${payDate}</div>
       <div><strong>所屬調度工班：</strong>工班 A 組 (桃園八德 / 屏東枋山)</div>
       <div><strong>勞健保與職災：</strong>100% 依法足額提繳</div>
     </div>
@@ -284,7 +306,7 @@ const AgriDocs = (function () {
           <td style="font-size:10px; color:#94a3b8;">Trợ cấp đi lại / Tunjangan Transport</td>
         </tr>
         <tr>
-          <td>延長工作時間加班費 (12小時)</td>
+          <td>延長工作時間加班費${slip && slip.overtimeHours != null ? ` (${slip.overtimeHours} 小時)` : ' (12小時)'}</td>
           <td style="text-align:right; font-family:monospace; font-weight:bold;">+$${overtimePay.toLocaleString()}</td>
           <td style="font-size:10px; color:#94a3b8;">Tiền làm thêm giờ / Uang Lembur</td>
         </tr>
@@ -330,9 +352,9 @@ const AgriDocs = (function () {
     </table>
 
     <div class="total-box">
-      <div class="total-title">本月銀行實撥淨額 (NET SALARY TRANSFERRED)</div>
+      <div class="total-title">${slip ? '實發淨額試算 (ESTIMATED NET SALARY)' : '本月銀行實撥淨額 (NET SALARY TRANSFERRED)'}</div>
       <div class="total-amount">NT$ ${netPay.toLocaleString()}</div>
-      <div style="font-size:11px; color:#94a3b8;">電匯帳號：中華郵政 (700) 帳號末五碼 56789 ╳ 匯入完成</div>
+      <div style="font-size:11px; color:#94a3b8;">${bankLine}</div>
     </div>
 
     <div class="multilingual-note">
@@ -341,7 +363,7 @@ const AgriDocs = (function () {
     </div>
 
     <div class="footer">
-      合作社出納印鑑：[ 台灣智農合作社核訖 ] ╳ 合作社立案字號：農授糧字第 1150092300 號
+      ${slip ? '試算文件，非正式薪資單 ╳ 合作社立案字號：【待確認】（依外展農務制度申請中，尚未取得外展資格）' : '合作社出納印鑑：[ 台灣智農合作社核訖 ] ╳ 合作社立案字號：農授糧字第 1150092300 號'}
     </div>
   </div>
 

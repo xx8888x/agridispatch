@@ -166,11 +166,13 @@ public class WorkerService {
         List<Map<String, Object>> pastSlips = new ArrayList<>();
         for (int i = 1; i <= 3; i++) {
             YearMonth past = ym.minusMonths(i);
-            Map<String, Object> slip = buildSlip(w, 0);
-            Map<String, Object> brief = new LinkedHashMap<>();
+            // 歷月薪資單也依該月實際出勤的加班時數試算（與本月同一套 buildSlip），前端不需自備數字
+            List<Attendance> pastRecords = attendanceService.getAttendanceByMonth(workerId, past.getYear(), past.getMonthValue());
+            double pastOvertime = pastRecords.stream().mapToDouble(a -> a.getOvertimeHours() != null ? a.getOvertimeHours() : 0).sum();
+            Map<String, Object> brief = buildSlip(w, pastOvertime);
             brief.put("period", past.getYear() + "年" + String.format("%02d", past.getMonthValue()) + "月");
-            brief.put("netPay", slip.get("netPay"));
-            brief.put("status", "試算（未含加班）");
+            brief.put("overtimeHours", Math.round(pastOvertime * 10.0) / 10.0);
+            brief.put("status", "試算");
             brief.put("slipId", "SIM-" + past.toString().replace("-", "") + "-" + w.getId());
             brief.put("simulated", true);
             pastSlips.add(brief);

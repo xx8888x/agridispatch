@@ -180,13 +180,13 @@
                 <h3 id="txt-att-title" class="ad-heading">本月出勤與打卡紀錄</h3>
                 <p id="txt-att-sub" class="ad-caption">GPS 現場打卡・8 小時標準工時・依勞基法核算加班費</p>
               </div>
-              <span class="ad-pill ad-pill--ok">出勤率 100%</span>
+              <span id="attMonthPill" class="ad-pill ad-num">本月</span>
             </div>
 
             <div class="ad-stat-grid">
-              <div class="ad-stat"><div class="ad-stat__label">本月出勤</div><div class="ad-stat__value">22<small>天</small></div></div>
-              <div class="ad-stat"><div class="ad-stat__label">正常工時</div><div class="ad-stat__value">176.0<small>小時</small></div></div>
-              <div class="ad-stat"><div class="ad-stat__label">累計加班</div><div class="ad-stat__value">6.5<small>小時</small></div></div>
+              <div class="ad-stat"><div class="ad-stat__label">本月出勤</div><div id="attDays" class="ad-stat__value">—<small>天</small></div></div>
+              <div class="ad-stat"><div class="ad-stat__label">正常工時</div><div id="attNormal" class="ad-stat__value">—<small>小時</small></div></div>
+              <div class="ad-stat"><div class="ad-stat__label">累計加班</div><div id="attOvertime" class="ad-stat__value">—<small>小時</small></div></div>
               <div class="ad-stat ad-stat--primary"><div class="ad-stat__label">打卡異常</div><div class="ad-stat__value">0<small>次</small></div></div>
             </div>
 
@@ -195,7 +195,7 @@
               <div class="ad-list">
                 <div class="ad-row">
                   <div class="ad-row__main">
-                    <div class="ad-row__title ad-num">2026-09-23（今日）</div>
+                    <div id="row-today-date" class="ad-row__title ad-num">今日</div>
                     <div class="ad-row__meta">屏東高樹洋蔥試驗田・小工頭：林小祥</div>
                   </div>
                   <div class="ad-row__aside">
@@ -203,26 +203,7 @@
                     <div class="ad-caption">預計 16:00 下班</div>
                   </div>
                 </div>
-                <div class="ad-row">
-                  <div class="ad-row__main">
-                    <div class="ad-row__title ad-num">2026-09-22（昨日）</div>
-                    <div class="ad-row__meta">屏東枋山愛文芒果園・小工頭：林小龍</div>
-                  </div>
-                  <div class="ad-row__aside">
-                    <div class="ad-num" style="font-weight: 600;">06:50 ~ 16:00（8.0h）</div>
-                    <div class="ad-caption" style="color: var(--ad-primary-text);">林小龍已簽核</div>
-                  </div>
-                </div>
-                <div class="ad-row">
-                  <div class="ad-row__main">
-                    <div class="ad-row__title ad-num">2026-09-21</div>
-                    <div class="ad-row__meta">屏東枋山愛文芒果園・小工頭：林小龍</div>
-                  </div>
-                  <div class="ad-row__aside">
-                    <div class="ad-num" style="font-weight: 600;">06:40 ~ 16:10（8.5h・加班 0.5h）</div>
-                    <div class="ad-caption" style="color: var(--ad-primary-text);">林小龍已簽核</div>
-                  </div>
-                </div>
+                <div id="attRecent" style="display: contents;"></div>
               </div>
             </div>
           </div>
@@ -264,57 +245,32 @@
 
       <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
         <p id="txt-pay-sub-title" class="ad-caption" style="margin: 0;">底薪保障・農業部 $8,800 就業獎勵・加班費透明計發・歷月薪資條下載</p>
-        <button type="button" onclick="AgriDocs.downloadPayslip('2026年09月 (預估結算)', 'foreign', { id: 'W001', name: '阮文雄 (Nguyễn Văn Hùng)' })" class="ad-btn ad-btn--primary">下載本月薪資單</button>
+        <button type="button" onclick="downloadSlip(-1)" class="ad-btn ad-btn--primary">下載本月薪資單</button>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-        <!-- 左：薪資明細 -->
+        <!-- 左：薪資明細（數字全部來自後端 /workers/{id}/payroll，離線 demo 才用前端複本） -->
         <div class="lg:col-span-7 ad-card" style="padding: 24px;">
           <div class="ad-card__head">
-            <h3 class="ad-heading">2026 年 09 月薪資核算明細（預估結算）</h3>
-            <span class="ad-caption ad-num">預定發放日 2026/10/05</span>
+            <h3 id="payMonthTitle" class="ad-heading">本月薪資核算明細（預估結算）</h3>
+            <span id="payDate" class="ad-caption ad-num"></span>
           </div>
 
           <div class="ad-label" style="margin-bottom: 8px;">應發項目</div>
-          <div class="ad-list">
-            <div class="ad-row">
-              <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal;">外展保障基本底薪</div><div class="ad-row__meta">法定最低月薪（全額保障出工）</div></div>
-              <strong class="ad-num">NT$ 29,500</strong>
-            </div>
-            <div class="ad-row" style="border-color: var(--ad-primary); background: var(--ad-primary-soft);">
-              <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal; color: var(--ad-primary-text);">農業部外展就業獎勵津貼</div><div class="ad-row__meta">中央政府獎勵農事勞動（連續出勤第 3 個月）</div></div>
-              <strong class="ad-num" style="color: var(--ad-primary-text);">+ NT$ 8,800</strong>
-            </div>
-            <div class="ad-row">
-              <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal;">平日與產季超時加班費</div><div class="ad-row__meta">本月累計 6.5 小時（以 1.34x／1.67x 計發）</div></div>
-              <strong class="ad-num">+ NT$ 1,650</strong>
-            </div>
-            <div class="ad-row">
-              <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal;">高溫防暑與田間交通補助</div><div class="ad-row__meta">合作社全勤防暑補貼</div></div>
-              <strong class="ad-num">+ NT$ 2,400</strong>
-            </div>
-          </div>
+          <div id="payEarnings" class="ad-list"></div>
 
           <div class="ad-label" style="margin: 16px 0 8px;">法定應扣項目</div>
-          <div class="ad-list">
-            <div class="ad-row">
-              <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal;">勞工保險自付額</div><div class="ad-row__meta">保障職災與生育老年給付</div></div>
-              <strong class="ad-num" style="color: var(--ad-danger-text);">- NT$ 629</strong>
-            </div>
-            <div class="ad-row">
-              <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal;">全民健康保險自付額</div><div class="ad-row__meta">在台就醫 100% 健保平權</div></div>
-              <strong class="ad-num" style="color: var(--ad-danger-text);">- NT$ 444</strong>
-            </div>
-          </div>
+          <div id="payDeductions" class="ad-list"></div>
 
           <div class="ad-card ad-card--accent" style="margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
             <div>
-              <div class="ad-heading">本月實發淨所得</div>
-              <div class="ad-caption">合作金庫帳戶自動轉帳入帳（合作金庫 006 ****-5889）</div>
+              <div class="ad-heading">本月預估淨所得</div>
+              <div id="payBank" class="ad-caption"></div>
             </div>
-            <strong class="ad-price ad-price--lg ad-price--accent">NT$ 40,367</strong>
+            <strong id="payNet" class="ad-price ad-price--lg ad-price--accent">—</strong>
           </div>
+          <p id="payNote" class="ad-caption" style="margin-top: 12px;"></p>
         </div>
 
         <!-- 右：獎勵進度與歷史薪資單 -->
@@ -323,20 +279,20 @@
           <div class="ad-card">
             <div class="ad-card__head">
               <h4 class="ad-heading">農業部 8,800 就業獎勵撥款進度</h4>
-              <span class="ad-pill ad-pill--ok">審核通過</span>
+              <span class="ad-pill ad-pill--warn">試算中</span>
             </div>
             <ol class="ad-steps">
               <li>
                 <strong class="ad-heading" style="font-size: 15px; display: block;">合作社出勤申報</strong>
-                <span class="ad-caption">本月出勤滿 20 天，符合外展農工獎勵標準。</span>
+                <span class="ad-caption">依合作社出勤紀錄申報，適用對象與條件【待確認】農業部規定。</span>
               </li>
               <li>
                 <strong class="ad-heading" style="font-size: 15px; display: block;">農業部跨部會審核</strong>
-                <span class="ad-caption">核對居留證與聘僱合約，資格符合。</span>
+                <span class="ad-caption">核對居留證與聘僱合約。</span>
               </li>
               <li>
                 <strong class="ad-heading" style="font-size: 15px; display: block; color: var(--ad-accent-text);">國庫撥付入個人帳戶</strong>
-                <span class="ad-caption">預計 10 月 5 日撥入合作金庫帳戶。</span>
+                <span id="payBonusDate" class="ad-caption">依合作社薪資系統發放日撥入個人帳戶。</span>
               </li>
             </ol>
           </div>
@@ -346,20 +302,7 @@
               <h4 class="ad-heading">歷史薪資單</h4>
               <span class="ad-caption">近 3 個月</span>
             </div>
-            <div class="ad-list">
-              <div class="ad-row">
-                <div class="ad-row__main"><div class="ad-row__title ad-num">2026 年 08 月</div><div class="ad-row__meta">實領 NT$ 40,250（已入帳）</div></div>
-                <button type="button" onclick="AgriDocs.downloadPayslip('2026年08月', 'foreign', { id: 'W001', name: '阮文雄 (Nguyễn Văn Hùng)' })" class="ad-btn ad-btn--secondary ad-btn--sm">下載 PDF</button>
-              </div>
-              <div class="ad-row">
-                <div class="ad-row__main"><div class="ad-row__title ad-num">2026 年 07 月</div><div class="ad-row__meta">實領 NT$ 39,800（已入帳）</div></div>
-                <button type="button" onclick="AgriDocs.downloadPayslip('2026年07月', 'foreign', { id: 'W001', name: '阮文雄 (Nguyễn Văn Hùng)' })" class="ad-btn ad-btn--secondary ad-btn--sm">下載 PDF</button>
-              </div>
-              <div class="ad-row">
-                <div class="ad-row__main"><div class="ad-row__title ad-num">2026 年 06 月</div><div class="ad-row__meta">實領 NT$ 41,100（已入帳）</div></div>
-                <button type="button" onclick="AgriDocs.downloadPayslip('2026年06月', 'foreign', { id: 'W001', name: '阮文雄 (Nguyễn Văn Hùng)' })" class="ad-btn ad-btn--secondary ad-btn--sm">下載 PDF</button>
-              </div>
-            </div>
+            <div id="payHistory" class="ad-list"></div>
           </div>
 
         </div>
@@ -650,7 +593,7 @@
     async function handleClockIn() {
       // 先向後端打卡，成功才更新畫面；後端拒絕（如重複打卡）時由 clockAction 顯示原因
       const punch = window.AgriDocs
-        ? await AgriDocs.clockAction('clock-in', { workerId: 'W001', locationLabel: '屏東縣高樹鄉金牌洋蔥試驗田', silent: true })
+        ? await AgriDocs.clockAction('clock-in', { workerId: currentWorkerId(), locationLabel: '屏東縣高樹鄉金牌洋蔥試驗田', silent: true })
         : { success: true };
       if (!punch.success) return;
 
@@ -665,7 +608,7 @@
 
     async function handleClockOut() {
       const punch = window.AgriDocs
-        ? await AgriDocs.clockAction('clock-out', { workerId: 'W001', locationLabel: '屏東縣高樹鄉金牌洋蔥試驗田', silent: true })
+        ? await AgriDocs.clockAction('clock-out', { workerId: currentWorkerId(), locationLabel: '屏東縣高樹鄉金牌洋蔥試驗田', silent: true })
         : { success: true };
       if (!punch.success) return;
 
@@ -678,11 +621,133 @@
       }
     }
 
+    // ===== 薪資與出勤：數字一律來自後端（薪資試算 /workers/{id}/payroll、出勤 /workers/{id}/attendance）=====
+    // 只有連不上後端的 demo 離線展示才用 localSlip（鏡像 WorkerService.buildSlip：W001 底薪 29,500、
+    // 獎勵 8,800、津貼 1,200，勞保 12.5%×20%、健保 5.17%×30%，加班費 = 時數 × 時薪 × 4/3；後端公式改了要同步改）。
+    const money = (n) => `NT$ ${Number(n).toLocaleString()}`;
+
+    function currentWorkerId() {
+      const u = (window.AgriAuth && window.AgriAuth.getUser && window.AgriAuth.getUser()) || null;
+      return (u && u.role === 'worker_foreign' && u.refId) ? u.refId : 'W001';
+    }
+
+    function localSlip(overtimeHours) {
+      const base = 29500, agri = 8800, transport = 1200;
+      const hourly = Math.max(base / 240, 196);
+      const ot = Math.round(overtimeHours * hourly * 4 / 3);
+      const labor = Math.round(base * 0.125 * 0.2), health = Math.round(base * 0.0517 * 0.3);
+      const gross = base + agri + transport + ot;
+      return { baseSalary: base, agriSubsidy: agri, transportHeatAllowance: transport, overtimePay: ot,
+        laborInsuranceDeduction: labor, healthInsuranceDeduction: health, grossPay: gross,
+        totalDeductions: labor + health, netPay: gross - labor - health, overtimeHours };
+    }
+
+    function localPayroll() {
+      const now = new Date();
+      const ymLabel = (d) => `${d.getFullYear()}年${String(d.getMonth() + 1).padStart(2, '0')}月`;
+      const next5 = new Date(now.getFullYear(), now.getMonth() + 1, 5);
+      const cur = { ...localSlip(0), month: `${ymLabel(now)} (預估結算)`, payDate: `${next5.getFullYear()}-${String(next5.getMonth() + 1).padStart(2, '0')}-05 (預定入帳)`,
+        bankAccount: '（尚未登錄薪轉帳戶）', workedHours: 0, overtimeHours: 0 };
+      const past = [1, 2, 3].map((i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        return { ...localSlip(0), period: ymLabel(d), status: '離線試算', slipId: 'SIM-OFFLINE-' + i, simulated: true };
+      });
+      return { simulated: true, offline: true, currentMonth: cur, historicalSlips: past,
+        note: '離線示範：未連上伺服器，金額依示範底薪與津貼試算，僅供參考。' };
+    }
+
+    async function fetchPayroll(workerId) {
+      try {
+        const res = await fetch(`${API_BASE}/workers/${encodeURIComponent(workerId)}/payroll`);
+        const body = await res.json().catch(() => ({}));
+        if (res.ok && body.success && body.data) return body.data;
+      } catch (e) { /* 連不上後端：走離線複本 */ }
+      return localPayroll();
+    }
+
+    function payRow(title, meta, amount, cls) {
+      const color = cls === 'plus' ? ' style="color: var(--ad-primary-text);"' : (cls === 'minus' ? ' style="color: var(--ad-danger-text);"' : '');
+      return `<div class="ad-row"><div class="ad-row__main"><div class="ad-row__title" style="white-space: normal;">${title}</div><div class="ad-row__meta">${meta}</div></div><strong class="ad-num"${color}>${amount}</strong></div>`;
+    }
+
+    let payrollData = null;
+
+    function renderPayroll(p) {
+      payrollData = p;
+      const c = p.currentMonth;
+      document.getElementById('payMonthTitle').textContent = `薪資核算明細・${c.month || '本月'}`;
+      document.getElementById('payDate').textContent = c.payDate ? `預定發放 ${c.payDate.replace(' (預定入帳)', '')}` : '';
+      document.getElementById('payEarnings').innerHTML = [
+        payRow('外展保障基本底薪', '法定最低月薪（全額保障出工）', money(c.baseSalary)),
+        payRow('農業部外展就業獎勵津貼', '適用對象與條件【待確認】農業部規定', `+ ${money(c.agriSubsidy)}`, 'plus'),
+        payRow('平日與產季超時加班費', `本月累計 ${c.overtimeHours != null ? c.overtimeHours : 0} 小時，依勞基法加班費率試算`, `+ ${money(c.overtimePay)}`),
+        payRow('高溫防暑與田間交通補助', '合作社全勤防暑補貼', `+ ${money(c.transportHeatAllowance)}`)
+      ].join('');
+      document.getElementById('payDeductions').innerHTML = [
+        payRow('勞工保險自付額', '保障職災與生育老年給付（概估）', `- ${money(c.laborInsuranceDeduction)}`, 'minus'),
+        payRow('全民健康保險自付額', '在台就醫健保平權（概估）', `- ${money(c.healthInsuranceDeduction)}`, 'minus')
+      ].join('');
+      document.getElementById('payNet').textContent = money(c.netPay);
+      document.getElementById('payBank').textContent = `薪轉帳戶：${c.bankAccount || '（尚未登錄薪轉帳戶）'}`;
+      document.getElementById('payNote').textContent = p.note || '依底薪、津貼與出勤試算，勞健保自付額為概估值，實際以合作社薪資系統為準。';
+      const bonusDate = document.getElementById('payBonusDate');
+      if (bonusDate && c.payDate) bonusDate.textContent = `預計 ${c.payDate.replace(' (預定入帳)', '')} 撥入個人帳戶。`;
+
+      document.getElementById('payHistory').innerHTML = (p.historicalSlips || []).map((s, i) => `
+        <div class="ad-row">
+          <div class="ad-row__main"><div class="ad-row__title ad-num">${s.period.replace('年', ' 年 ').replace('月', ' 月')}</div><div class="ad-row__meta">試算實領 ${money(s.netPay)}${s.overtimeHours ? `（含加班 ${s.overtimeHours} 小時）` : ''}</div></div>
+          <button type="button" onclick="downloadSlip(${i})" class="ad-btn ad-btn--secondary ad-btn--sm">下載 PDF</button>
+        </div>`).join('');
+    }
+
+    function downloadSlip(i) {
+      if (!payrollData) return;
+      const user = (window.AgriAuth && window.AgriAuth.getUser && window.AgriAuth.getUser()) || null;
+      const isCurrent = i == null || i < 0;
+      const slip = isCurrent ? payrollData.currentMonth : payrollData.historicalSlips[i];
+      AgriDocs.downloadPayslip(isCurrent ? slip.month : slip.period, 'foreign', {
+        id: currentWorkerId(), name: (user && user.role === 'worker_foreign' && user.name) || '阮文雄 (Nguyễn Văn Hùng)', slip
+      });
+    }
+
+    async function loadAttendanceSummary(workerId) {
+      const now = new Date();
+      document.getElementById('attMonthPill').textContent = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const setStat = (id, v) => { document.getElementById(id).firstChild.textContent = v; };
+      const d = now.getDate();
+      document.getElementById('row-today-date').textContent = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}（今日）`;
+      try {
+        const res = await fetch(`${API_BASE}/workers/${encodeURIComponent(workerId)}/attendance?year=${now.getFullYear()}&month=${now.getMonth() + 1}`);
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || !body.success) throw new Error('no data');
+        const s = body.data;
+        setStat('attDays', s.daysWorked);
+        setStat('attNormal', Number(s.normalHours).toFixed(1));
+        setStat('attOvertime', Number(s.overtimeHours).toFixed(1));
+      } catch (e) {
+        setStat('attDays', '—'); setStat('attNormal', '—'); setStat('attOvertime', '—');
+      }
+    }
+
+    function renderRecentRecords(records) {
+      const done = (records || []).filter((r) => r.status === 'completed' && r.clockOutTime).slice(0, 2);
+      document.getElementById('attRecent').innerHTML = done.map((r) => {
+        const t = (iso) => String(iso).split('T')[1].slice(0, 5);
+        const ot = r.overtimeHours ? `・加班 ${Math.round(r.overtimeHours * 10) / 10}h` : '';
+        return `<div class="ad-row">
+          <div class="ad-row__main"><div class="ad-row__title ad-num">${r.workDate}</div><div class="ad-row__meta">${(r.location || '').replace(/ \(.*$/, '')}</div></div>
+          <div class="ad-row__aside"><div class="ad-num" style="font-weight: 600;">${t(r.clockInTime)} ~ ${t(r.clockOutTime)}（${Math.round(r.actualHours * 10) / 10}h${ot}）</div>
+          <div class="ad-caption" style="color: ${r.foremanSignature ? 'var(--ad-primary-text)' : 'var(--ad-text-3)'};">${r.foremanSignature ? '小工頭已簽核' : '待簽核'}</div></div>
+        </div>`;
+      }).join('');
+    }
+
     async function loadAttendanceHistory(workerId = 'W001') {
       try {
         const res = await fetch(`${API_BASE}/attendance/history/${workerId}`);
         if (!res.ok) return;
         const result = await res.json();
+        if (result.success && result.data) renderRecentRecords(result.data);
         if (result.success && result.data && result.data.length > 0) {
           const latest = result.data[0];
           if (latest.status === 'working') {
@@ -696,7 +761,10 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       renderPunchUI();
-      loadAttendanceHistory('W001');
+      const wid = currentWorkerId();
+      loadAttendanceHistory(wid);
+      loadAttendanceSummary(wid);
+      fetchPayroll(wid).then(renderPayroll);
     });
   </script>
 </body>

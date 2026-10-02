@@ -100,6 +100,11 @@
       { root: 'tech', href: 'admin.html', title: '科技營運後台', meta: '天候戰情、派工調度、營收' },
       { root: 'tech', href: 'vue-crud.html', title: '訂單總台', meta: '訂單新增、編輯、狀態追蹤' }
     ] },
+    { group: '營運工具', items: [
+      { root: 'tech', href: 'insurance.html', title: '保險登錄與加保檢查', meta: '勞健保、職災險' },
+      { root: 'tech', href: 'skills.html', title: '技能標籤與複核', meta: '熟手判定與審核' },
+      { root: 'tech', href: 'matching.html', title: '派工媒合與出工名單', meta: '撞期排除、人選建議' }
+    ] },
     { group: '介紹與工具', items: [
       { root: 'main', href: 'index.html', title: '首頁', meta: '農民入口' },
       { root: 'main', href: 'pitch.html', title: '產品介紹', meta: '痛點、雙軌架構、52 週產曆' },

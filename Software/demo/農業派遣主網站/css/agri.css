@@ -108,6 +108,9 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* 不依賴 Tailwind preflight 也能正確計算寬度（verify.html 等不載入 Tailwind 的頁面） */
+.ad-body *, .ad-body *::before, .ad-body *::after { box-sizing: border-box; }
+
 .ad-container {
   width: 100%;
   max-width: var(--ad-container);
@@ -626,6 +629,17 @@ a.ad-pill { text-decoration: none; }
 .ad-row__title { font-weight: 600; color: var(--ad-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ad-row__meta { font-size: var(--ad-fs-caption); color: var(--ad-text-2); }
 .ad-row__aside { text-align: right; flex-shrink: 0; }
+
+/* 可點擊的列（按鈕或連結形式的 .ad-row） */
+a.ad-row, button.ad-row { text-decoration: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+button.ad-row { width: 100%; }
+a.ad-row:hover, button.ad-row:hover { border-color: var(--ad-primary); }
+a.ad-row:focus-visible, button.ad-row:focus-visible { outline: none; box-shadow: var(--ad-ring); }
+
+/* 登入頁：置中的單張卡片 */
+.ad-auth { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px var(--ad-sp-4); }
+.ad-auth__card { width: 100%; max-width: 440px; padding: 28px; }
+.ad-auth__card--wide { max-width: 960px; }
 
 .ad-table { width: 100%; border-collapse: collapse; font-size: var(--ad-fs-body); }
 .ad-table th {

@@ -287,9 +287,10 @@
 .ad-card--accent { border-color: var(--ad-accent); }
 .ad-card__head {
   display: flex;
+  flex-wrap: wrap; /* 手機上標題與狀態標籤擠不下時，標籤換到下一行 */
   align-items: center;
   justify-content: space-between;
-  gap: var(--ad-sp-3);
+  gap: var(--ad-sp-2) var(--ad-sp-3);
   margin-bottom: var(--ad-sp-4);
 }
 .ad-card__foot {
@@ -578,7 +579,7 @@ a.ad-pill { text-decoration: none; }
 }
 .ad-seg__btn {
   min-width: 36px;
-  height: 30px;
+  height: 36px;
   padding: 0 10px;
   border: 0;
   border-radius: 6px;
@@ -606,6 +607,7 @@ a.ad-pill { text-decoration: none; }
   font-size: 13px;
   font-weight: 700;
   display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
 
 /* ---------- 12. 列表與表格 ---------- */

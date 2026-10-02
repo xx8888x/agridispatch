@@ -20,62 +20,38 @@
       document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
     }
   </script>
+  <!-- 設計系統：共用 tailwind.config、demo 模式標記、抽屜 -->
+  <script src="js/agri-theme.js"></script>
+  <script src="js/vendor/lucide.min.js"></script>
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              500: '#10b981',
-              600: '#059669',
-              700: '#047857',
-              900: '#064e3b',
-            }
-          }
-        }
-      }
-    }
-  </script>
+  <link rel="stylesheet" href="css/agri.css">
 </head>
-<body class="bg-slate-950 text-slate-100 antialiased selection:bg-brand-500 selection:text-white">
+<body class="ad-body">
 
-  <!-- Navigation Bar -->
-  <nav class="sticky top-0 z-50 bg-slate-950/95 backdrop-blur-md border-b border-slate-800">
-    <div class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4 relative">
-      
-      <!-- Brand Logo & Title -->
-      <div class="flex items-center gap-3 shrink-0">
-        <a href="index.html" class="flex items-center gap-2.5 group">
-          <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-brand-600/30 group-hover:scale-105 transition shrink-0">
-            <span class="text-xl sm:text-2xl">🌱</span>
-          </div>
-          <div class="whitespace-nowrap">
-            <div class="flex items-center gap-1.5">
-              <span class="text-lg sm:text-xl font-black tracking-tight text-white group-hover:text-emerald-400 transition">智農派工</span>
-              <span class="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 font-semibold">AgriDispatch</span>
-            </div>
-            <p class="hidden sm:block text-[11px] text-slate-400">合法外展農務移工 ╳ 雙軌智慧派遣體系</p>
-          </div>
-        </a>
+  <!-- 表頭：簡報頁（公開） -->
+  <header class="ad-header" style="position: sticky; top: 0;">
+    <div class="ad-container ad-header__inner" style="max-width: 1280px;">
+      <a href="index.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">產品介紹</span>
+      </a>
+      <nav class="ad-nav" aria-label="簡報章節">
+        <a class="ad-nav__link" href="#solutions">痛點與解法</a>
+        <a class="ad-nav__link" href="#dual-track">雙軌模式</a>
+        <a class="ad-nav__link" href="#calendar">全台產曆</a>
+        <a class="ad-nav__link" href="#enterprise">契作大戶</a>
+      </nav>
+      <div class="ad-header__actions">
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()" aria-label="示範導覽"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span></button>
+        <a href="farmer.html" class="ad-btn ad-btn--primary ad-btn--sm">預約派工</a>
       </div>
-
-      <!-- Center Anchor Links (Large Screens: 2xl:flex) -->
-      <div class="hidden 2xl:flex absolute left-1/2 -translate-x-1/2 items-center gap-6 text-sm font-medium text-slate-300 whitespace-nowrap shrink-0">
-        <a href="farmer.html" class="text-amber-400 hover:text-amber-300 font-bold transition flex items-center gap-1"><span>📝</span> 派工預約</a>
-        <a href="#solutions" class="hover:text-emerald-400 transition">痛點與解法</a>
-        <a href="#dual-track" class="hover:text-emerald-400 transition">雙軌商業模式</a>
-        <a href="#calendar" class="hover:text-emerald-400 transition">全台產曆調度</a>
-        <a href="#enterprise" class="hover:text-emerald-400 transition">契作大戶 SLA</a>
-      </div>
-
-          </div>
-  </nav>
+    </div>
+  </header>
 
   <!-- Hero Section -->
   <section class="relative overflow-hidden pt-16 pb-24 lg:pt-28 lg:pb-36 border-b border-slate-900">
-    <div class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-950/40 via-slate-950 to-slate-950"></div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
       
@@ -88,7 +64,7 @@
       <!-- Main Headline -->
       <h1 class="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight leading-tight">
         告別農村缺工搶工<br/>
-        <span class="bg-gradient-to-r from-emerald-400 via-teal-300 to-brand-500 bg-clip-text text-transparent">
+        <span class="text-emerald-400">
           合法外展移工 ╳ 智慧農事調度大腦
         </span>
       </h1>
@@ -99,14 +75,14 @@
 
       <!-- CTA Buttons -->
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-        <a href="farmer.html" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-black text-lg shadow-xl shadow-amber-500/30 transition transform hover:-translate-y-1 flex items-center justify-center gap-2">
-          <span>📝</span> 線上派工預約
+        <a href="farmer.html" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-lg transition transform hover:-translate-y-1 flex items-center justify-center gap-2">
+          線上派工預約
         </a>
-        <a href="login.html" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-lg shadow-xl shadow-emerald-600/40 transition transform hover:-translate-y-1 flex items-center justify-center gap-2">
-          <span>🔑</span> 四大身分登入門戶
+        <a href="login.html" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-black text-lg transition transform hover:-translate-y-1 flex items-center justify-center gap-2">
+          四大身分登入門戶
         </a>
-        <a href="../科技後台/admin.html" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black text-lg shadow-xl shadow-indigo-600/40 transition transform hover:-translate-y-1 flex items-center justify-center gap-2">
-          <span>💻</span> 科技營運後台
+        <a href="../科技後台/admin.html" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-black text-lg transition transform hover:-translate-y-1 flex items-center justify-center gap-2">
+          科技營運後台
         </a>
       </div>
 
@@ -119,7 +95,6 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
             <div>
               <div class="flex items-center gap-2">
-                <span class="text-xl">📑</span>
                 <h3 class="text-base sm:text-lg font-extrabold text-white">熱門產品文宣 DM 精選（全台 4 大主力農務保證工時包）</h3>
                 <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-1">
                   <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span> 旋轉木馬即時選購
@@ -139,8 +114,8 @@
                   ❯
                 </button>
               </div>
-              <a href="brochure.html" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black text-xs shadow transition flex items-center gap-1">
-                <span>🚀</span> 完整館 ➔
+              <a href="brochure.html" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition flex items-center gap-1">
+                完整館 ➔
               </a>
             </div>
           </div>
@@ -155,7 +130,6 @@
                   <div class="space-y-2">
                     <div class="flex items-center justify-between">
                       <div class="flex items-center gap-1.5">
-                        <span class="text-2xl group-hover:scale-110 transition">🥭</span>
                         <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">採收早鳥・315/hr</span>
                       </div>
                       <span class="text-[10px] text-slate-400 font-mono">屏東枋山/玉井</span>
@@ -181,11 +155,11 @@
                       </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2" onclick="event.stopPropagation()">
-                      <button type="button" onclick="openDmPurchase('dm-mango-2026')" class="w-full py-2 px-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-1 cursor-pointer">
-                        <span>🛒</span> 點擊購買
+                      <button type="button" onclick="openDmPurchase('dm-mango-2026')" class="w-full py-2 px-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-1 cursor-pointer">
+                        點擊購買
                       </button>
                       <a href="brochure.html?id=dm-mango-2026" class="w-full py-2 px-2 rounded-xl bg-slate-700/70 hover:bg-slate-700 text-slate-200 border border-slate-600/80 font-bold text-xs transition flex items-center justify-center gap-1">
-                        <span>📑</span> 看完整 DM
+                        看完整 DM
                       </a>
                     </div>
                   </div>
@@ -198,7 +172,6 @@
                   <div class="space-y-2">
                     <div class="flex items-center justify-between">
                       <div class="flex items-center gap-1.5">
-                        <span class="text-2xl group-hover:scale-110 transition">🥬</span>
                         <span class="text-[10px] px-2 py-0.5 rounded-full bg-lime-500/20 text-lime-300 border border-lime-500/40 font-bold">設施溫室・315/hr</span>
                       </div>
                       <span class="text-[10px] text-slate-400 font-mono">桃園八德/雲林西螺</span>
@@ -224,11 +197,11 @@
                       </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2" onclick="event.stopPropagation()">
-                      <button type="button" onclick="openDmPurchase('dm-greenhouse-2026')" class="w-full py-2 px-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-1 cursor-pointer">
-                        <span>🛒</span> 點擊購買
+                      <button type="button" onclick="openDmPurchase('dm-greenhouse-2026')" class="w-full py-2 px-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-1 cursor-pointer">
+                        點擊購買
                       </button>
                       <a href="brochure.html?id=dm-greenhouse-2026" class="w-full py-2 px-2 rounded-xl bg-slate-700/70 hover:bg-slate-700 text-slate-200 border border-slate-600/80 font-bold text-xs transition flex items-center justify-center gap-1">
-                        <span>📑</span> 看完整 DM
+                        看完整 DM
                       </a>
                     </div>
                   </div>
@@ -241,7 +214,6 @@
                   <div class="space-y-2">
                     <div class="flex items-center justify-between">
                       <div class="flex items-center gap-1.5">
-                        <span class="text-2xl group-hover:scale-110 transition">🛸</span>
                         <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold">智慧機耕 88 折</span>
                       </div>
                       <span class="text-[10px] text-slate-400 font-mono">嘉南平原/雲嘉南</span>
@@ -267,11 +239,11 @@
                       </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2" onclick="event.stopPropagation()">
-                      <button type="button" onclick="openDmPurchase('dm-drone-2026')" class="w-full py-2 px-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-1 cursor-pointer">
-                        <span>🛒</span> 點擊購買
+                      <button type="button" onclick="openDmPurchase('dm-drone-2026')" class="w-full py-2 px-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-1 cursor-pointer">
+                        點擊購買
                       </button>
                       <a href="brochure.html?id=dm-drone-2026" class="w-full py-2 px-2 rounded-xl bg-slate-700/70 hover:bg-slate-700 text-slate-200 border border-slate-600/80 font-bold text-xs transition flex items-center justify-center gap-1">
-                        <span>📑</span> 看完整 DM
+                        看完整 DM
                       </a>
                     </div>
                   </div>
@@ -284,7 +256,6 @@
                   <div class="space-y-2">
                     <div class="flex items-center justify-between">
                       <div class="flex items-center gap-1.5">
-                        <span class="text-2xl group-hover:scale-110 transition">❄️</span>
                         <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold">冷鏈防汛・315/hr</span>
                       </div>
                       <span class="text-[10px] text-slate-400 font-mono">高雄旗山/屏東高樹</span>
@@ -310,11 +281,11 @@
                       </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2" onclick="event.stopPropagation()">
-                      <button type="button" onclick="openDmPurchase('dm-coldchain-2026')" class="w-full py-2 px-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-1 cursor-pointer">
-                        <span>🛒</span> 點擊購買
+                      <button type="button" onclick="openDmPurchase('dm-coldchain-2026')" class="w-full py-2 px-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-1 cursor-pointer">
+                        點擊購買
                       </button>
                       <a href="brochure.html?id=dm-coldchain-2026" class="w-full py-2 px-2 rounded-xl bg-slate-700/70 hover:bg-slate-700 text-slate-200 border border-slate-600/80 font-bold text-xs transition flex items-center justify-center gap-1">
-                        <span>📑</span> 看完整 DM
+                        看完整 DM
                       </a>
                     </div>
                   </div>
@@ -327,7 +298,7 @@
           <!-- Bottom Assurance Bar -->
           <div class="flex flex-wrap items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/80 gap-2">
             <div class="flex items-center gap-2">
-              <span class="text-emerald-400 font-bold flex items-center gap-1"><span>⚡</span> 點擊任一卡片或「購買」鈕立即開啟快速下單結帳</span>
+              <span class="text-emerald-400 font-bold flex items-center gap-1">點擊任一卡片或「購買」鈕立即開啟快速下單結帳</span>
               <span class="text-slate-600 hidden sm:inline">•</span>
               <span class="text-slate-400 hidden sm:inline">可直接自動轉入下方派工表單預填</span>
             </div>
@@ -377,45 +348,39 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <!-- Card 1 -->
         <div class="p-8 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4 hover:border-emerald-500/50 transition">
-          <div class="w-12 h-12 rounded-2xl bg-red-500/20 text-red-400 flex items-center justify-center text-2xl font-bold">
-            ⚠️
-          </div>
+          <div class="w-12 h-12 rounded-2xl bg-slate-800 text-slate-300 flex items-center justify-center text-xl font-bold">1</div>
           <h3 class="text-xl font-bold text-white">痛點一：私僱黑工面臨 75 萬重罰</h3>
           <p class="text-sm text-slate-400 leading-relaxed">
             農忙找不到工，不少農民冒險任用地下販仔或逃逸移工，遭勞工局查獲每案重罰 15～75 萬元，甚至面臨刑事起訴。
           </p>
           <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-emerald-400 font-semibold space-y-1">
-            <strong>✅ 智農解法：</strong>
+            <strong>智農解法：</strong>
             <p class="text-slate-300 font-normal">成立「外展農業合作社」依法申請外展移工配額，勞健退全保，農友要派安心無憂。</p>
           </div>
         </div>
 
         <!-- Card 2 -->
         <div class="p-8 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4 hover:border-emerald-500/50 transition">
-          <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl font-bold">
-            🌧️
-          </div>
+          <div class="w-12 h-12 rounded-2xl bg-slate-800 text-slate-300 flex items-center justify-center text-xl font-bold">2</div>
           <h3 class="text-xl font-bold text-white">痛點二：梅雨降雨移工閒置底薪赤字</h3>
           <p class="text-sm text-slate-400 leading-relaxed">
             傳統雇主僱用外展移工需支付按月基本工資，遇到雨季連日無法下田，造成嚴重空轉赤字。
           </p>
           <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-emerald-400 font-semibold space-y-1">
-            <strong>✅ 智農解法：</strong>
+            <strong>智農解法：</strong>
             <p class="text-slate-300 font-normal">雨天啟動演算法天候避險，即時轉派室內蔬果冷鏈預冷包裝線，維持 100% 出勤率。</p>
           </div>
         </div>
 
         <!-- Card 3 -->
         <div class="p-8 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4 hover:border-emerald-500/50 transition">
-          <div class="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-2xl font-bold">
-            🤝
-          </div>
+          <div class="w-12 h-12 rounded-2xl bg-slate-800 text-slate-300 flex items-center justify-center text-xl font-bold">3</div>
           <h3 class="text-xl font-bold text-white">痛點三：旺季搶工撞期・被加價截工</h3>
           <p class="text-sm text-slate-400 leading-relaxed">
             產季集中時工頭常被鄰近農場加價放鳥，造成熟果過熟腐爛，損失慘重。
           </p>
           <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-emerald-400 font-semibold space-y-1">
-            <strong>✅ 智農解法：</strong>
+            <strong>智農解法：</strong>
             <p class="text-slate-300 font-normal">產季前推出「早鳥保證工時包」，每小時 315 元不打折，20% 定金鎖定產季名額、優先排班，遲到免單、放鳥雙倍賠。</p>
           </div>
         </div>
@@ -435,7 +400,6 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
         <div class="p-8 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-6">
           <div class="flex items-center gap-3">
-            <span class="text-3xl">🏛️</span>
             <div>
               <h3 class="text-xl font-bold text-white">有限責任智農農業勞務生產合作社</h3>
               <span class="text-xs text-emerald-400 font-medium">外展法人主體・合法外展機構</span>
@@ -459,7 +423,6 @@
 
         <div class="p-8 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-6">
           <div class="flex items-center gap-3">
-            <span class="text-3xl">💻</span>
             <div>
               <h3 class="text-xl font-bold text-white">智農科技有限公司</h3>
               <span class="text-xs text-brand-400 font-medium">創業者 100% 控股・核心技術代管</span>
@@ -489,7 +452,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
       <div class="text-center max-w-3xl mx-auto space-y-3">
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
-          <span>🚜</span> 農場主多元派工服務 ╳ 現場帶隊精準對接
+          農場主多元派工服務 ╳ 現場帶隊精準對接
         </div>
         <h2 class="text-3xl sm:text-4xl font-black text-white">六大標準農事派工類別 ╳ 自訂現場派工小工頭</h2>
         <p class="text-slate-400 text-sm leading-relaxed">
@@ -502,7 +465,6 @@
         <!-- Cat 1 -->
         <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 transition space-y-4 shadow-xl">
           <div class="flex items-center justify-between">
-            <span class="text-3xl">🥬</span>
             <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">工班 A/B 熟手採收</span>
           </div>
           <h3 class="text-lg font-extrabold text-white">【採收分級】田間採收與外銷分級</h3>
@@ -518,7 +480,6 @@
         <!-- Cat 2 -->
         <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 transition space-y-4 shadow-xl">
           <div class="flex items-center justify-between">
-            <span class="text-3xl">🌱</span>
             <span class="text-xs px-2.5 py-1 rounded-full bg-lime-500/20 text-lime-300 font-semibold border border-lime-500/30">工班 C 組 (機耕隊)</span>
           </div>
           <h3 class="text-lg font-extrabold text-white">【整地種植】曳引機深耕與定植</h3>
@@ -534,7 +495,6 @@
         <!-- Cat 3 -->
         <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 transition space-y-4 shadow-xl">
           <div class="flex items-center justify-between">
-            <span class="text-3xl">✂️</span>
             <span class="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30">工班 B 組 (跨區專線)</span>
           </div>
           <h3 class="text-lg font-extrabold text-white">【田間管理】修枝疏果與引蔓套袋</h3>
@@ -550,7 +510,6 @@
         <!-- Cat 4 -->
         <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 transition space-y-4 shadow-xl">
           <div class="flex items-center justify-between">
-            <span class="text-3xl">🛸</span>
             <span class="text-xs px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-300 font-semibold border border-purple-500/30">工班 C 組 (大疆 T50)</span>
           </div>
           <h3 class="text-lg font-extrabold text-white">【科技植保】無人機精準噴藥施肥</h3>
@@ -566,7 +525,6 @@
         <!-- Cat 5 -->
         <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 transition space-y-4 shadow-xl">
           <div class="flex items-center justify-between">
-            <span class="text-3xl">❄️</span>
             <span class="text-xs px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/30">工班 D 組 (冷鏈常態)</span>
           </div>
           <h3 class="text-lg font-extrabold text-white">【冷鏈包裝】室內預冷與生鮮截切</h3>
@@ -582,7 +540,6 @@
         <!-- Cat 6 -->
         <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 transition space-y-4 shadow-xl">
           <div class="flex items-center justify-between">
-            <span class="text-3xl">🚨</span>
             <span class="text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-300 font-semibold border border-rose-500/30 animate-pulse">全工班跨區馳援</span>
           </div>
           <h3 class="text-lg font-extrabold text-white">【緊急救火】防颱搶收 24H 馳援</h3>
@@ -597,11 +554,11 @@
       </div>
 
       <!-- Field Sub-Foreman Showcase Banner -->
-      <div class="p-8 rounded-3xl bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-900 border border-amber-500/40 shadow-2xl space-y-6">
+      <div class="p-8 rounded-3xl bg-slate-900 border border-amber-500/40 shadow-2xl space-y-6">
         <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div class="space-y-3 max-w-2xl">
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold">
-              <span>👷‍♂️</span> 農事現場無縫銜接關鍵
+              農事現場無縫銜接關鍵
             </div>
             <h3 class="text-2xl font-black text-white">農場主可自訂「現場派工小工頭」</h3>
             <p class="text-xs text-slate-300 leading-relaxed">
@@ -610,11 +567,11 @@
           </div>
 
           <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-            <a href="farmer-login.html" class="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2">
-              <span>👨‍🌾</span> 農場主立即下單
+            <a href="farmer-login.html" class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition flex items-center justify-center gap-2">
+              農場主立即下單
             </a>
             <a href="../科技後台/admin.html" class="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs transition flex items-center justify-center gap-2">
-              <span>⚡</span> 派工總台管理訂單
+              派工總台管理訂單
             </a>
           </div>
         </div>
@@ -630,7 +587,7 @@
       <!-- Section Header -->
       <div class="text-center max-w-3xl mx-auto space-y-3">
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
-          <span>📅</span> 全台 52 週動態農產曆 ╳ 跨產區平滑化輪轉大腦
+          全台 52 週動態農產曆 ╳ 跨產區平滑化輪轉大腦
         </div>
         <h2 class="text-3xl sm:text-4xl font-black text-white">掌握全台 64 處產區時序・達成移工 95% 全年在工率</h2>
         <p class="text-slate-400 text-sm leading-relaxed">
@@ -691,7 +648,7 @@
           <div>
             <div class="flex items-center gap-2 flex-wrap">
               <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                <span>🌾</span> 全台農事產曆動態雷達
+                全台農事產曆動態雷達
               </h3>
               <!-- Real-Time Indicator Badge -->
               <div id="real-time-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-mono font-bold">
@@ -711,18 +668,18 @@
           <div class="flex items-center gap-2 flex-wrap">
             <!-- Reset to Current Real Time Button -->
             <button onclick="resetToRealTime()" class="px-3 py-2 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1.5 shadow">
-              <span>⏱️</span> 回到目前現實時間
+              回到目前現實時間
             </button>
             <!-- Auto-Cycle Toggle -->
             <button id="auto-cycle-btn" onclick="toggleAutoCycle()" class="px-3 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 text-xs font-bold transition flex items-center gap-1.5">
-              <span id="auto-cycle-icon">🔄</span>
+              <span id="auto-cycle-icon" class="inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg></span>
               <span id="auto-cycle-text">啟動自動輪播</span>
             </button>
             <a href="farmers_map.html" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold transition flex items-center gap-1.5">
-              <span>🗺️</span> 64 處農會地圖
+              64 處農會地圖
             </a>
-            <a href="../科技後台/admin.html" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/30 transition flex items-center gap-1.5">
-              <span>⚡</span> 進入完整管理後台
+            <a href="../科技後台/admin.html" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1.5">
+              進入完整管理後台
             </a>
           </div>
         </div>
@@ -751,7 +708,7 @@
             <p id="md-regions" class="text-slate-400">高雄大樹、屏東枋山、台南玉井、雲林二崙、彰化大村</p>
           </div>
           <div class="space-y-2 md:border-r border-slate-800 pr-4">
-            <span class="text-slate-400 font-semibold block">🌱 52 週主力盛產作物：</span>
+            <span class="text-slate-400 font-semibold block">52 週主力盛產作物：</span>
             <p id="md-crops" class="text-slate-200 text-sm font-bold">大樹玉荷包荔枝、枋山愛文芒果、二崙西瓜、大村葡萄</p>
             <div id="md-sop" class="text-[11px] text-slate-400 mt-2">
               SOP：熟度 8 分採摘、低溫預冷防褐變、保濕包裝、日韓檢疫外銷裝箱。
@@ -759,12 +716,12 @@
           </div>
           <div class="space-y-3 flex flex-col justify-between">
             <div>
-              <span class="text-slate-400 font-semibold block">🚜 系統推薦調度派遣工班：</span>
+              <span class="text-slate-400 font-semibold block">系統推薦調度派遣工班：</span>
               <p id="md-team" class="text-emerald-400 text-sm font-bold">工班 B 組 (跨區專線) + 工班 A 組</p>
             </div>
             <div class="flex gap-2">
-              <a href="../科技後台/admin.html" class="w-full text-center py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-1.5">
-                <span>⚡</span> 依此產曆直接派工下單
+              <a href="../科技後台/admin.html" class="w-full text-center py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition flex items-center justify-center gap-1.5">
+                依此產曆直接派工下單
               </a>
             </div>
           </div>
@@ -775,7 +732,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h4 class="text-base font-extrabold text-white flex items-center gap-2">
-                <span>🚨</span> 要到來的收穫日・全台搶工倒數雷達
+                要到來的收穫日・全台搶工倒數雷達
                 <span id="harvest-calendar-badge" class="text-[10px] px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-mono font-bold">依 2026年 5月 時序即時計算</span>
               </h4>
               <p class="text-xs text-slate-400 mt-0.5">系統依據選定月份，自動推算全台關鍵高價值作物即將到來的收穫期、倒數天數與緊急度！</p>
@@ -822,18 +779,18 @@
     ];
 
     const rawHarvests = [
-      { id: "H01", cropName: "大樹玉荷包荔枝", icon: "🍇", region: "高雄市大樹區", month: 5, day: 20, window: "5月20日 ~ 6月05日", task: "🔥 3週黃金搶收期！延誤即落果變質！集中搶收、剪葉分級、低溫冷藏", team: "工班 B 組 (跨區專線)", workers: 15, cropId: "mango" },
-      { id: "H02", cropName: "枋山愛文芒果 (日韓外銷)", icon: "🥭", region: "屏東縣枋山鄉", month: 5, day: 10, window: "5月10日 ~ 6月25日", task: "⚡ 早鳥預約外銷高峰！留蒂 0.5cm 護果粉、重量光波選果、外銷裝箱", team: "工班 B 組 (跨區專線)", workers: 20, cropId: "mango" },
-      { id: "H03", cropName: "拉拉山水蜜桃", icon: "🍑", region: "桃園市復興區", month: 6, day: 25, window: "6月20日 ~ 7月25日", task: "🔥 高山搶收大尖峰！高海拔手採防碰傷、海綿網套防撞、清晨低溫採摘", team: "工班 A 組 (桃園溫室)", workers: 10, cropId: "taoyuan_veg" },
-      { id: "H04", cropName: "東勢寄接梨 / 卓蘭高接梨", icon: "🍐", region: "台中東勢 / 苗栗卓蘭", month: 7, day: 15, window: "7月10日 ~ 8月20日", task: "⚡ 產季早鳥搶工期！套袋果摘除、冷藏預冷保鮮、自動重量分級", team: "工班 B 組 (跨區專線)", workers: 12, cropId: "taoyuan_veg" },
-      { id: "H05", cropName: "麻豆老欉文旦柚 (中秋禮盒)", icon: "🍈", region: "台南市麻豆區", month: 8, day: 28, window: "8月20日 ~ 9月10日", task: "🔥 白露前10天徹夜搶收！搶收消水、外觀修整、中秋禮盒排裝、颱風防搶", team: "工班 B 組 (跨區專線)", workers: 25, cropId: "taoyuan_veg" },
-      { id: "H06", cropName: "新埔九降風牛心柿餅", icon: "🍊", region: "新竹縣新埔鎮", month: 9, day: 25, window: "9月20日 ~ 11月15日", task: "🌿 穩定加工出勤期！人工削皮、圓盤日曬、九降風天然風乾、手工捏壓成形", team: "工班 A 組 (桃園溫室)", workers: 8, cropId: "xinpu_citrus" },
-      { id: "H07", cropName: "坪林包種 / 阿里山高山冬茶", icon: "🍵", region: "新北坪林 / 嘉義梅山", month: 10, day: 20, window: "10月15日 ~ 11月10日", task: "🔥 冬茶黃金嫩芽期！一心二葉精緻手採、防日曬萎凋、茶菁即時送廠", team: "工班 C 組 (機耕無人機)", workers: 18, cropId: "hsinchu_tea" },
-      { id: "H08", cropName: "美濃白玉蘿蔔", icon: "🥕", region: "高雄美濃區", month: 11, day: 15, window: "11月10日 ~ 12月20日", task: "⚡ 在地觀光與契作搶收！田間人工拔取、整修泥根、生鮮分級裝箱裝車", team: "工班 C 組 (機耕無人機)", workers: 8, cropId: "taoyuan_veg" },
-      { id: "H09", cropName: "大湖香水草莓第一期花", icon: "🍓", region: "苗栗縣大湖鄉", month: 12, day: 5, window: "12月01日 ~ 1月15日", task: "⚡ 冬季草莓季盛大開幕！高架草莓紅熟採收、防碰傷盒裝、冷鏈預冷直配", team: "工班 A 組 (桃園溫室)", workers: 15, cropId: "strawberry" },
-      { id: "H10", cropName: "車城黃金洋蔥 / 恆春洋蔥", icon: "🧅", region: "屏東車城 / 恆春鎮", month: 2, day: 20, window: "2月10日 ~ 3月31日", task: "🌿 落山風拔蔥採收期！拔蔥、剪根剪葉、田間裝袋(每袋20kg)、搬運上埂", team: "工班 B 組 (跨區專線)", workers: 16, cropId: "onion" },
-      { id: "H11", cropName: "關廟金鑽鳳梨", icon: "🍍", region: "台南市關廟區", month: 3, day: 20, window: "3月15日 ~ 5月10日", task: "⚡ 早春外銷大採收！防曬套袋摘除、果目熟度檢定、去冠芽或帶冠裝箱", team: "工班 B 組 (跨區專線)", workers: 14, cropId: "mango" },
-      { id: "H12", cropName: "基隆/士林/大溪綠竹筍", icon: "🎋", region: "北部丘陵產區", month: 6, day: 10, window: "5月25日 ~ 7月10日", task: "🔥 清晨破曉掘筍！清晨 04:00 摸黑掘筍防出青、冰水預冷鎖甜、生鮮冷藏", team: "工班 A 組 (桃園溫室)", workers: 10, cropId: "taoyuan_veg" }
+      { id: "H01", cropName: "大樹玉荷包荔枝", icon: "", region: "高雄市大樹區", month: 5, day: 20, window: "5月20日 ~ 6月05日", task: "3週黃金搶收期！延誤即落果變質！集中搶收、剪葉分級、低溫冷藏", team: "工班 B 組 (跨區專線)", workers: 15, cropId: "mango" },
+      { id: "H02", cropName: "枋山愛文芒果 (日韓外銷)", icon: "", region: "屏東縣枋山鄉", month: 5, day: 10, window: "5月10日 ~ 6月25日", task: "早鳥預約外銷高峰！留蒂 0.5cm 護果粉、重量光波選果、外銷裝箱", team: "工班 B 組 (跨區專線)", workers: 20, cropId: "mango" },
+      { id: "H03", cropName: "拉拉山水蜜桃", icon: "", region: "桃園市復興區", month: 6, day: 25, window: "6月20日 ~ 7月25日", task: "高山搶收大尖峰！高海拔手採防碰傷、海綿網套防撞、清晨低溫採摘", team: "工班 A 組 (桃園溫室)", workers: 10, cropId: "taoyuan_veg" },
+      { id: "H04", cropName: "東勢寄接梨 / 卓蘭高接梨", icon: "", region: "台中東勢 / 苗栗卓蘭", month: 7, day: 15, window: "7月10日 ~ 8月20日", task: "產季早鳥搶工期！套袋果摘除、冷藏預冷保鮮、自動重量分級", team: "工班 B 組 (跨區專線)", workers: 12, cropId: "taoyuan_veg" },
+      { id: "H05", cropName: "麻豆老欉文旦柚 (中秋禮盒)", icon: "", region: "台南市麻豆區", month: 8, day: 28, window: "8月20日 ~ 9月10日", task: "白露前10天徹夜搶收！搶收消水、外觀修整、中秋禮盒排裝、颱風防搶", team: "工班 B 組 (跨區專線)", workers: 25, cropId: "taoyuan_veg" },
+      { id: "H06", cropName: "新埔九降風牛心柿餅", icon: "", region: "新竹縣新埔鎮", month: 9, day: 25, window: "9月20日 ~ 11月15日", task: "穩定加工出勤期！人工削皮、圓盤日曬、九降風天然風乾、手工捏壓成形", team: "工班 A 組 (桃園溫室)", workers: 8, cropId: "xinpu_citrus" },
+      { id: "H07", cropName: "坪林包種 / 阿里山高山冬茶", icon: "", region: "新北坪林 / 嘉義梅山", month: 10, day: 20, window: "10月15日 ~ 11月10日", task: "冬茶黃金嫩芽期！一心二葉精緻手採、防日曬萎凋、茶菁即時送廠", team: "工班 C 組 (機耕無人機)", workers: 18, cropId: "hsinchu_tea" },
+      { id: "H08", cropName: "美濃白玉蘿蔔", icon: "", region: "高雄美濃區", month: 11, day: 15, window: "11月10日 ~ 12月20日", task: "在地觀光與契作搶收！田間人工拔取、整修泥根、生鮮分級裝箱裝車", team: "工班 C 組 (機耕無人機)", workers: 8, cropId: "taoyuan_veg" },
+      { id: "H09", cropName: "大湖香水草莓第一期花", icon: "", region: "苗栗縣大湖鄉", month: 12, day: 5, window: "12月01日 ~ 1月15日", task: "冬季草莓季盛大開幕！高架草莓紅熟採收、防碰傷盒裝、冷鏈預冷直配", team: "工班 A 組 (桃園溫室)", workers: 15, cropId: "strawberry" },
+      { id: "H10", cropName: "車城黃金洋蔥 / 恆春洋蔥", icon: "", region: "屏東車城 / 恆春鎮", month: 2, day: 20, window: "2月10日 ~ 3月31日", task: "落山風拔蔥採收期！拔蔥、剪根剪葉、田間裝袋(每袋20kg)、搬運上埂", team: "工班 B 組 (跨區專線)", workers: 16, cropId: "onion" },
+      { id: "H11", cropName: "關廟金鑽鳳梨", icon: "", region: "台南市關廟區", month: 3, day: 20, window: "3月15日 ~ 5月10日", task: "早春外銷大採收！防曬套袋摘除、果目熟度檢定、去冠芽或帶冠裝箱", team: "工班 B 組 (跨區專線)", workers: 14, cropId: "mango" },
+      { id: "H12", cropName: "基隆/士林/大溪綠竹筍", icon: "", region: "北部丘陵產區", month: 6, day: 10, window: "5月25日 ~ 7月10日", task: "清晨破曉掘筍！清晨 04:00 摸黑掘筍防出青、冰水預冷鎖甜、生鮮冷藏", team: "工班 A 組 (桃園溫室)", workers: 10, cropId: "taoyuan_veg" }
     ];
 
     function calculateHarvests(year, month) {
@@ -855,13 +812,13 @@
         const diffTime = harvestDate.getTime() - viewDate.getTime();
         const countdownDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
 
-        let statusLabel = "🌱 生長監測中";
+        let statusLabel = "生長監測中";
         let statusBadgeClass = "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
         if (countdownDays === 0) {
-          statusLabel = "🎉 今日盛產採收日";
+          statusLabel = "今日盛產採收日";
           statusBadgeClass = "bg-red-500/30 text-red-200 border-red-500/50 animate-bounce";
         } else if (countdownDays <= 15) {
-          statusLabel = "🚨 採收倒數中";
+          statusLabel = "採收倒數中";
           statusBadgeClass = "bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse";
         } else if (countdownDays <= 45) {
           statusLabel = "⏳ 預約搶工中";
@@ -891,16 +848,16 @@
       if (badge) {
         if (isCurrentRealMonth) {
           badge.className = "text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-bold";
-          badge.innerText = `🟢 對應目前現實時間 (${realYear}年${realMonth}月${realDay}日) 即時推算`;
+          badge.innerText = `對應目前現實時間 (${realYear}年${realMonth}月${realDay}日) 即時推算`;
         } else {
           badge.className = "text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold";
-          badge.innerText = `🗓️ 依 ${currentYear}年 ${currentMonth}月 時序模擬推算`;
+          badge.innerText = `依 ${currentYear}年 ${currentMonth}月 時序模擬推算`;
         }
       }
 
       if (!grid) return;
       grid.innerHTML = list.map(item => `
-        <div class="bg-slate-950/80 p-4 rounded-2xl border ${item.countdownDays <= 15 ? 'border-rose-500/50 shadow-lg shadow-rose-950/30' : 'border-slate-800'} space-y-3 flex flex-col justify-between hover:border-emerald-500/50 transition">
+        <div class="bg-slate-950/80 p-4 rounded-2xl border ${item.countdownDays <= 15 ? 'border-rose-500/50' : 'border-slate-800'} space-y-3 flex flex-col justify-between hover:border-emerald-500/50 transition">
           <div class="space-y-2">
             <div class="flex items-center justify-between gap-1">
               <span class="text-[11px] px-2 py-0.5 rounded-full border font-bold font-mono ${item.statusBadgeClass}">
@@ -910,12 +867,12 @@
             </div>
 
             <h5 class="text-sm font-extrabold text-white flex items-center gap-1.5">
-              <span>${item.icon}</span> ${item.cropName}
+              ${item.cropName}
             </h5>
 
             <div class="text-[11px] space-y-1 text-slate-300 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
               <div class="flex items-center justify-between text-slate-400">
-                <span>📍 ${item.region}</span>
+                <span>${item.region}</span>
                 <span class="font-mono text-emerald-400 font-bold">${item.window}</span>
               </div>
               <div class="text-[10px] text-slate-400 mt-1">${item.task}</div>
@@ -924,11 +881,11 @@
 
           <div class="space-y-2 pt-2 border-t border-slate-800">
             <div class="flex items-center justify-between text-[11px]">
-              <span class="text-slate-400 font-medium">🚜 建議工班：</span>
+              <span class="text-slate-400 font-medium">建議工班：</span>
               <span class="text-emerald-300 font-semibold">${item.team} (需 ${item.workers} 人)</span>
             </div>
-            <button onclick="onHarvestClick('${item.cropName}', ${item.countdownDays}, '${item.cropId}')" class="w-full py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-1">
-              <span>⚡</span> 預約此產季搶工 (早鳥鎖定名額)
+            <button onclick="onHarvestClick('${item.cropName}', ${item.countdownDays}, '${item.cropId}')" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs transition flex items-center justify-center gap-1">
+              預約此產季搶工 (早鳥鎖定名額)
             </button>
           </div>
         </div>
@@ -1004,7 +961,7 @@
       selectMonth(realMonth);
 
       if (window.AgriNativeBridge && typeof window.AgriNativeBridge.showToast === 'function') {
-        window.AgriNativeBridge.showToast(`⏱️ 已回到目前現實時間：${realYear}年${realMonth}月${realDay}日`);
+        window.AgriNativeBridge.showToast(`已回到目前現實時間：${realYear}年${realMonth}月${realDay}日`);
       }
     }
 
@@ -1064,7 +1021,7 @@
         if (typeof window.AgriNativeBridge.alertHarvest === 'function') {
           window.AgriNativeBridge.alertHarvest(cropName, days);
         } else if (typeof window.AgriNativeBridge.showToast === 'function') {
-          window.AgriNativeBridge.showToast(`🚨 【${cropName}】距離採收尚有 ${days} 天，請儘速安排工班！`);
+          window.AgriNativeBridge.showToast(`【${cropName}】距離採收尚有 ${days} 天，請儘速安排工班！`);
         }
         if (typeof window.AgriNativeBridge.vibrate === 'function') {
           window.AgriNativeBridge.vibrate(200);
@@ -1098,7 +1055,7 @@
       'dm-mango-2026': {
         id: 'dm-mango-2026',
         title: '枋山愛文芒果 60 工時早鳥包',
-        icon: '🥭',
+        icon: '',
         category: '採收早鳥・315/hr',
         region: '屏東枋山 / 台南玉井',
         badge: '產銷班長指名款',
@@ -1117,7 +1074,7 @@
       'dm-greenhouse-2026': {
         id: 'dm-greenhouse-2026',
         title: '八德設施有機溫室 120 工時包',
-        icon: '🥬',
+        icon: '',
         category: '設施溫室・315/hr',
         region: '桃園八德 / 雲林西螺',
         badge: '常態合作滿意度 99.8%',
@@ -1136,7 +1093,7 @@
       'dm-drone-2026': {
         id: 'dm-drone-2026',
         title: 'T50 無人機與機耕深耕包',
-        icon: '🛸',
+        icon: '',
         category: '智慧機耕 88 折',
         region: '嘉南平原 / 雲嘉南',
         badge: '科技代噴良率達標保證',
@@ -1155,7 +1112,7 @@
       'dm-coldchain-2026': {
         id: 'dm-coldchain-2026',
         title: '旗山高樹採後冷鏈 80 工時包',
-        icon: '❄️',
+        icon: '',
         category: '冷鏈防汛・315/hr',
         region: '高雄旗山 / 屏東高樹',
         badge: '防汛搶收 24H 馳援',
@@ -1244,7 +1201,6 @@
     function openDmPurchase(dmId) {
       const pkg = dmPackagesData[dmId] || dmPackagesData['dm-mango-2026'];
       document.getElementById('dmModalPkgId').value = pkg.id;
-      document.getElementById('dmModalIcon').innerText = pkg.icon;
       document.getElementById('dmModalBadge').innerText = pkg.badge || pkg.category;
       document.getElementById('dmModalRegion').innerText = pkg.region;
       document.getElementById('dmModalTitle').innerText = pkg.title;
@@ -1403,7 +1359,7 @@
       <!-- Modal Header -->
       <div class="p-5 border-b border-slate-800 bg-slate-900/95 flex items-center justify-between">
         <div class="flex items-center gap-2.5">
-          <span class="text-2xl" id="dmModalIcon">🥭</span>
+          
           <div>
             <div class="flex items-center gap-1.5">
               <h3 class="text-base sm:text-lg font-black text-white">工時包專案線上預約購買</h3>
@@ -1452,7 +1408,7 @@
 
             <div class="space-y-3">
               <div class="flex items-center gap-1.5 font-bold text-white text-xs">
-                <span>👤</span> 預約農場主資訊
+                預約農場主資訊
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -1483,23 +1439,23 @@
               <div class="grid grid-cols-2 gap-2">
                 <label class="flex items-center gap-2 p-2.5 rounded-xl border border-emerald-500/60 bg-emerald-950/20 cursor-pointer">
                   <input type="radio" name="dmPaymentMethod" value="農會虛擬帳號轉帳" checked class="accent-emerald-500">
-                  <span class="text-[11px] text-white font-medium">🏦 農會專用帳號轉帳</span>
+                  <span class="text-[11px] text-white font-medium">農會專用帳號轉帳</span>
                 </label>
                 <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-700 bg-slate-850 cursor-pointer hover:border-slate-600">
                   <input type="radio" name="dmPaymentMethod" value="信用卡 / LINE Pay" class="accent-emerald-500">
-                  <span class="text-[11px] text-white font-medium">💳 信用卡 / LINE Pay</span>
+                  <span class="text-[11px] text-white font-medium">信用卡 / LINE Pay</span>
                 </label>
               </div>
             </div>
 
             <!-- Submit CTA -->
             <div class="pt-2 space-y-2">
-              <button type="submit" id="dmSubmitBtn" class="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm shadow-xl shadow-amber-500/25 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer">
-                <span>🚀</span> 確認購買並送出訂單（即刻鎖單）
+              <button type="submit" id="dmSubmitBtn" class="w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer">
+                確認購買並送出訂單（即刻鎖單）
               </button>
               
               <button type="button" onclick="prefillAndScrollToBooking()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
-                <span>📝</span> 或前往完整客製化派工表單自訂細節 ➔
+                或前往完整客製化派工表單自訂細節 ➔
               </button>
             </div>
           </form>
@@ -1511,7 +1467,7 @@
             ✓
           </div>
           <div>
-            <h4 class="text-base sm:text-lg font-black text-white">🎉 恭喜！工時包專案預約購買成功</h4>
+            <h4 class="text-base sm:text-lg font-black text-white">恭喜！工時包專案預約購買成功</h4>
             <p class="text-xs text-slate-400 mt-1">訂單已即時同步至總台調度庫與專屬帶班小工頭！</p>
           </div>
 
@@ -1529,7 +1485,7 @@
               <span id="dmSuccessDeposit" class="font-mono font-bold text-emerald-400 text-sm">NT$ 3,780</span>
             </div>
             <div class="pt-1 text-[11px] text-slate-300 space-y-1">
-              <p class="font-semibold text-amber-300">🏦 農會專屬繳費虛擬帳號：</p>
+              <p class="font-semibold text-amber-300">農會專屬繳費虛擬帳號：</p>
               <div class="p-2.5 rounded-xl bg-slate-900 font-mono text-emerald-400 text-xs tracking-wider flex items-center justify-between">
                 <span>95102-000-88234567</span>
                 <span class="text-[10px] text-slate-400">(枋山地區農會 951)</span>
@@ -1542,8 +1498,8 @@
             <button type="button" onclick="closeDmPurchase()" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition cursor-pointer">
               完成關閉
             </button>
-            <button type="button" onclick="viewOrdersFromDm()" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-lg shadow-emerald-600/30 transition cursor-pointer">
-              📋 查看我的訂單
+            <button type="button" onclick="viewOrdersFromDm()" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition cursor-pointer">
+              查看我的訂單
             </button>
           </div>
         </div>
@@ -1561,5 +1517,9 @@
     </div>
   </footer>
 
+  <script>
+    var demoNav = AgriTheme.demoNav();
+    if (window.lucide) lucide.createIcons();
+  </script>
 </body>
 </html>

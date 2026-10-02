@@ -9,7 +9,7 @@
     "contents": [
       {
         "type": "text",
-        "text": "⚡ 天候避險大腦啟動",
+        "text": "天候避險大腦啟動",
         "color": "#93C5FD",
         "size": "xs",
         "weight": "bold"
@@ -53,7 +53,7 @@
         "spacing": "sm",
         "contents": [
           { "type": "text", "text": "轉移據點", "color": "#64748B", "size": "xs", "flex": 2 },
-          { "type": "text", "text": "🏢 屏南生鮮冷鏈分級包裝中心 (A/B棟)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+          { "type": "text", "text": "屏南生鮮冷鏈分級包裝中心 (A/B棟)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
         ]
       },
       {
@@ -80,7 +80,7 @@
         "height": "sm",
         "action": {
           "type": "uri",
-          "label": "📊 查看避險調度即時戰情",
+          "label": "查看避險調度即時戰情",
           "uri": "https://agridispatch.tw/web/app.html#admin_tech"
         }
       }

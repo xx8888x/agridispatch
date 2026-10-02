@@ -9,7 +9,7 @@
     "contents": [
       {
         "type": "text",
-        "text": "☀️ 正常出勤・專車接送",
+        "text": "正常出勤・專車接送",
         "color": "#A7F3D0",
         "size": "xs",
         "weight": "bold"
@@ -50,7 +50,7 @@
         "spacing": "sm",
         "contents": [
           { "type": "text", "text": "作業地點", "color": "#64748B", "size": "xs", "flex": 2 },
-          { "type": "text", "text": "🌾 枋山愛文芒果產銷專區 (第 2 田區)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+          { "type": "text", "text": "枋山愛文芒果產銷專區 (第 2 田區)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
         ]
       },
       {
@@ -95,7 +95,7 @@
         "height": "sm",
         "action": {
           "type": "uri",
-          "label": "📍 GPS 抵達現場數位打卡",
+          "label": "GPS 抵達現場數位打卡",
           "uri": "https://agridispatch.tw/clockin?w=W001"
         }
       }

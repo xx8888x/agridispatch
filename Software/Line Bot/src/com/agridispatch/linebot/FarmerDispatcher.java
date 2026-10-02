@@ -28,9 +28,9 @@ final class FarmerDispatcher {
         return switch (ev.type()) {
             case UNFOLLOW -> List.of();
             case FOLLOW -> me.isFarmer()
-                    ? List.of(FlexMessageBuilder.wrapText("👨‍🌾 歡迎回來！請點下方選單查看訂單與派工確認單。"),
+                    ? List.of(FlexMessageBuilder.wrapText("歡迎回來！請點下方選單查看訂單與派工確認單。"),
                               FlexMessageBuilder.getFarmerHelpFlex())
-                    : List.of(FlexMessageBuilder.wrapText("👨‍🌾 歡迎加入「" + CH.displayName + "」！完成帳號綁定後即可查看您的訂單與派工確認單。"),
+                    : List.of(FlexMessageBuilder.wrapText("歡迎加入「" + CH.displayName + "」！完成帳號綁定後即可查看您的訂單與派工確認單。"),
                               FlexMessageBuilder.getFarmerBindingFlex(ev.userId()));
             case OTHER_MESSAGE -> List.of(FlexMessageBuilder.wrapText("目前只看得懂文字訊息，請點下方選單或輸入文字。"),
                     FlexMessageBuilder.getFarmerHelpFlex());
@@ -99,7 +99,7 @@ final class FarmerDispatcher {
                 return List.of(FlexMessageBuilder.getFarmerHelpFlex());
             default:
                 RichMenus.UNKNOWN_ACTIONS.incrementAndGet();
-                System.err.println("⚠️ [farmer] 未知的 postback 動作: " + action);
+                System.err.println("[farmer] 未知的 postback 動作: " + action);
                 return List.of(FlexMessageBuilder.getFarmerHelpFlex());
         }
     }

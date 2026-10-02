@@ -104,7 +104,7 @@
         "height": "sm",
         "action": {
           "type": "uri",
-          "label": "📍 查看工班 GPS 即時位置",
+          "label": "查看工班 GPS 即時位置",
           "uri": "https://agridispatch.tw/track/ORD-2026-001"
         }
       },
@@ -115,7 +115,7 @@
         "height": "sm",
         "action": {
           "type": "uri",
-          "label": "📞 聯絡調度專車司機",
+          "label": "聯絡調度專車司機",
           "uri": "tel:0912222444"
         }
       }

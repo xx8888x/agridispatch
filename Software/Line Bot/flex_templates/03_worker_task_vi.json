@@ -9,7 +9,7 @@
     "contents": [
       {
         "type": "text",
-        "text": "☀️ Đi Làm Bình Thường・Xe Đưa Đón",
+        "text": "Đi Làm Bình Thường・Xe Đưa Đón",
         "color": "#A7F3D0",
         "size": "xs",
         "weight": "bold"
@@ -50,7 +50,7 @@
         "spacing": "sm",
         "contents": [
           { "type": "text", "text": "Địa Điểm", "color": "#64748B", "size": "xs", "flex": 2 },
-          { "type": "text", "text": "🌾 Vùng trồng xoài Ái Văn Phường Sơn (Khu 2)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+          { "type": "text", "text": "Vùng trồng xoài Ái Văn Phường Sơn (Khu 2)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
         ]
       },
       {
@@ -95,7 +95,7 @@
         "height": "sm",
         "action": {
           "type": "uri",
-          "label": "📍 Điểm danh GPS hiện trường",
+          "label": "Điểm danh GPS hiện trường",
           "uri": "https://agridispatch.tw/clockin?w=W001"
         }
       }

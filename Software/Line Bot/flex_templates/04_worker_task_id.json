@@ -9,7 +9,7 @@
     "contents": [
       {
         "type": "text",
-        "text": "☀️ Masuk Kerja・Dijemput Armada",
+        "text": "Masuk Kerja・Dijemput Armada",
         "color": "#A7F3D0",
         "size": "xs",
         "weight": "bold"
@@ -50,7 +50,7 @@
         "spacing": "sm",
         "contents": [
           { "type": "text", "text": "Lokasi", "color": "#64748B", "size": "xs", "flex": 2 },
-          { "type": "text", "text": "🌾 Kebun Mangga Fangshan (Lahan No. 2)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+          { "type": "text", "text": "Kebun Mangga Fangshan (Lahan No. 2)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
         ]
       },
       {
@@ -95,7 +95,7 @@
         "height": "sm",
         "action": {
           "type": "uri",
-          "label": "📍 Presensi Digital GPS",
+          "label": "Presensi Digital GPS",
           "uri": "https://agridispatch.tw/clockin?w=W006"
         }
       }

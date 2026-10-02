@@ -84,7 +84,7 @@
         "color": "#1F2937",
         "action": {
           "type": "uri",
-          "label": "🚜 檢視農機履歷與保養卡",
+          "label": "檢視農機履歷與保養卡",
           "uri": "https://agridispatch.tw/web/app.html#worker_local"
         }
       }

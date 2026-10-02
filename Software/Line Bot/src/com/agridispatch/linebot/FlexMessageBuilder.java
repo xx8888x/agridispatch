@@ -33,7 +33,7 @@ public class FlexMessageBuilder {
      * 1. 農場主履約派工單
      */
     public static String getFarmerOrderFlex() {
-        return wrapFlex("📋 智農派工 - 枋山愛文芒果派工確認單", 
+        return wrapFlex("智農派工 - 枋山愛文芒果派工確認單", 
                 loadTemplateOrFallback("01_farmer_order.json", """
                 {
                   "type": "bubble",
@@ -47,13 +47,13 @@ public class FlexMessageBuilder {
      */
     public static String getWorkerTaskFlex(String lang) {
         if ("vi".equalsIgnoreCase(lang)) {
-            return wrapFlex("📋 Thẻ Nhiệm Vụ Hôm Nay - W001 Nguyễn Văn Hùng", 
+            return wrapFlex("Thẻ Nhiệm Vụ Hôm Nay - W001 Nguyễn Văn Hùng", 
                     loadTemplateOrFallback("03_worker_task_vi.json", "{}"));
         } else if ("id".equalsIgnoreCase(lang)) {
-            return wrapFlex("📋 Kartu Tugas Hari Ini - W006 Agus Santoso", 
+            return wrapFlex("Kartu Tugas Hari Ini - W006 Agus Santoso", 
                     loadTemplateOrFallback("04_worker_task_id.json", "{}"));
         } else {
-            return wrapFlex("📋 今日派工任務卡 - W001 阮文雄", 
+            return wrapFlex("今日派工任務卡 - W001 阮文雄", 
                     loadTemplateOrFallback("02_worker_task_zh.json", "{}"));
         }
     }
@@ -62,7 +62,7 @@ public class FlexMessageBuilder {
      * 3. 突發暴雨天候避險快訊
      */
     public static String getWeatherHedgeFlex() {
-        return wrapFlex("🌧️ 突發暴雨避險快訊 - 全體轉移室內冷鏈", 
+        return wrapFlex("突發暴雨避險快訊 - 全體轉移室內冷鏈", 
                 loadTemplateOrFallback("05_weather_hedge.json", "{}"));
     }
 
@@ -70,7 +70,7 @@ public class FlexMessageBuilder {
      * 4. 產季早鳥保證工時包
      */
     public static String getEarlyBirdFlex() {
-        return wrapFlex("⚡ 2026 產季早鳥保證工時包 - 315元/hr・鎖定名額・優先排班", 
+        return wrapFlex("2026 產季早鳥保證工時包 - 315元/hr・鎖定名額・優先排班", 
                 loadTemplateOrFallback("06_early_bird.json", "{}"));
     }
 
@@ -78,7 +78,7 @@ public class FlexMessageBuilder {
      * 5. 本國機耕師與無人機代噴工單
      */
     public static String getMachineryTaskFlex() {
-        return wrapFlex("🚜 本國專業農機與大疆 T50 代噴任務卡", 
+        return wrapFlex("本國專業農機與大疆 T50 代噴任務卡", 
                 loadTemplateOrFallback("07_machinery_task.json", "{}"));
     }
 
@@ -86,7 +86,7 @@ public class FlexMessageBuilder {
      * 6. 農業部就業獎勵與薪資津貼明細
      */
     public static String getSalaryBonusFlex() {
-        return wrapFlex("💰 薪資明細與中央就業獎勵津貼 ($8,800)", 
+        return wrapFlex("薪資明細與中央就業獎勵津貼 ($8,800)", 
                 loadTemplateOrFallback("08_salary_bonus.json", "{}"));
     }
 
@@ -114,9 +114,9 @@ public class FlexMessageBuilder {
 
     /** F-07 農場主帳號綁定卡（不顯示 LINE userId） */
     public static String getFarmerBindingFlex(String userId) {
-        return wrapFlex("🔗 智農派工 - 農場主帳號綁定", simpleBubble("#0F766E", "智農派工（農場主）", "🔗 帳號綁定",
+        return wrapFlex("智農派工 - 農場主帳號綁定", simpleBubble("#0F766E", "智農派工（農場主）", "帳號綁定",
                 List.of("綁定後可查看您的訂單與派工確認單、天候對訂單的影響，並使用黑轉白服務。"),
-                List.of(uriButton("👨‍🌾 農場主帳號綁定", bindUrl(Channel.FARMER, Identity.FARMER, null, userId), "#059669"))));
+                List.of(uriButton("農場主帳號綁定", bindUrl(Channel.FARMER, Identity.FARMER, null, userId), "#059669"))));
     }
 
     /** W-07 工作者帳號綁定卡：本勞、外勞兩種入口 */
@@ -129,7 +129,7 @@ public class FlexMessageBuilder {
 
     /** F-08 農場主服務導覽（只列農場主功能） */
     public static String getFarmerHelpFlex() {
-        return wrapFlex("🌱 智農派工（農場主）- 服務導覽", simpleBubble("#047857", "智農派工（農場主）", "🌱 服務導覽",
+        return wrapFlex("智農派工（農場主）- 服務導覽", simpleBubble("#047857", "智農派工（農場主）", "服務導覽",
                 List.of("請點下方選單，或輸入下列文字：",
                         "• 「派工」「訂單」：我的訂單與派工確認單",
                         "• 「黑轉白」：現有工班依身分轉為合法聘僱",
@@ -167,13 +167,13 @@ public class FlexMessageBuilder {
         }
         String url = to.addFriendUrl();
         List<String> buttons = url == null ? List.of() : List.of(uriButton(label, url, "#06C755"));
-        return wrapFlex(title, simpleBubble("#475569", from.displayName, "ℹ️ " + title, List.of(body), buttons));
+        return wrapFlex(title, simpleBubble("#475569", from.displayName, title, List.of(body), buttons));
     }
 
     /** W-06 語言選擇（三語並列；按鈕送出語言名稱，與選單 postback a=lang 效果相同） */
     public static String getLanguageSelectFlex() {
-        return wrapFlex("🌐 請選擇語言 / Chọn ngôn ngữ / Pilih bahasa", simpleBubble("#4338CA", "智農派工（工作者）",
-                "🌐 請選擇語言 / Chọn ngôn ngữ / Pilih bahasa", List.of(),
+        return wrapFlex("請選擇語言 / Chọn ngôn ngữ / Pilih bahasa", simpleBubble("#4338CA", "智農派工（工作者）",
+                "請選擇語言 / Chọn ngôn ngữ / Pilih bahasa", List.of(),
                 List.of(messageButton("繁體中文", "繁體中文"),
                         messageButton("Tiếng Việt", "Tiếng Việt"),
                         messageButton("Bahasa Indonesia", "Bahasa Indonesia"))));
@@ -181,11 +181,11 @@ public class FlexMessageBuilder {
 
     /** F-05 機耕代噴預約（農場主視角；機耕師的工單見 getMachineryTaskFlex） */
     public static String getMachineryBookingFlex() {
-        return wrapFlex("🚜 機耕代噴預約", simpleBubble("#334155", "智農派工（農場主）", "🚜 機耕代噴預約",
+        return wrapFlex("機耕代噴預約", simpleBubble("#334155", "智農派工（農場主）", "機耕代噴預約",
                 List.of("• 大疆 T50 植保機代噴（雙證照機耕師）",
                         "• 曳引機整地、深耕",
                         "線上填寫田區、作物與希望日期，由合作社排程後回覆。"),
-                List.of(uriButton("📅 前往預約", webPageUrl("farmer.html"), "#06C755"))));
+                List.of(uriButton("前往預約", webPageUrl("farmer.html"), "#06C755"))));
     }
 
     /** W-03 天候與集合通知（工人視角，依語言；P1 為示範資料，P2 起取本人當日班次） */
@@ -293,18 +293,18 @@ public class FlexMessageBuilder {
 
     /**
      * 9. 現有工班「黑轉白」身分分流（規則與前端 農業派遣主網站/legalize.html 一致）
-     * 欄位：指令關鍵字, 圖示, 身分, 轉換路徑, 路徑色, 是否改派補位, 說明
+     * 欄位：指令關鍵字, （保留欄位，原為 emoji 圖示，已不顯示）, 身分, 轉換路徑, 路徑色, 是否改派補位, 說明
      */
     private static final String[][] LEGALIZE_TYPES = {
-        {"本國臨時工", "🧑‍🌾", "本國籍臨時工（未投保）", "可直接轉白", "#059669", "N",
+        {"本國臨時工", "", "本國籍臨時工（未投保）", "可直接轉白", "#059669", "N",
             "由合作社聘僱為農務士，簽約後依法加保勞保／就保／職災保險並申報薪資所得。"},
-        {"新住民", "🏠", "新住民（外籍／陸籍配偶）", "可直接轉白", "#059669", "N",
+        {"新住民", "", "新住民（外籍／陸籍配偶）", "可直接轉白", "#059669", "N",
             "依親居留之配偶在台工作免申請許可，上傳居留證審核後由合作社聘僱加保。陸籍配偶居留類別與工作資格【待確認】。"},
-        {"外籍學生", "🎓", "外籍學生／僑生", "有條件轉白", "#D97706", "N",
+        {"外籍學生", "", "外籍學生／僑生", "有條件轉白", "#D97706", "N",
             "須先取得工作許可，學期中每週最多 20 小時；許可前不得排班。農業勞務是否適用【待確認】。"},
-        {"借用移工", "🔁", "借用他人雇主的合法移工", "改派合法工班補位", "#E11D48", "Y",
+        {"借用移工", "", "借用他人雇主的合法移工", "改派合法工班補位", "#E11D48", "Y",
             "移工只能為申請許可的原雇主工作，借用即違法。請今日起停止使用並結清工資，空缺改由合作社外展工班補位。"},
-        {"失聯移工", "⚠️", "失聯（逃逸）移工", "改派合法工班補位", "#E11D48", "Y",
+        {"失聯移工", "", "失聯（逃逸）移工", "改派合法工班補位", "#E11D48", "Y",
             "依法無法就地合法化。請停止使用並結清工資，勿扣留證件；本人可洽移民署專勤隊或勞動部 1955 專線了解到案方式【待確認】。本系統不記錄其個資。"}
     };
 
@@ -341,9 +341,9 @@ public class FlexMessageBuilder {
     private static String getLegalizeIntroFlex() {
         StringBuilder buttons = new StringBuilder();
         for (String[] t : LEGALIZE_TYPES) {
-            buttons.append(messageButton(t[1] + " " + t[2], "黑轉白：" + t[0])).append(",\n");
+            buttons.append(messageButton(t[2], "黑轉白：" + t[0])).append(",\n");
         }
-        buttons.append(uriButton("📋 開啟轉換中心（整班盤點）", webPageUrl("legalize.html"), "#06C755"));
+        buttons.append(uriButton("開啟轉換中心（整班盤點）", webPageUrl("legalize.html"), "#06C755"));
 
         String bubble = """
         {
@@ -355,7 +355,7 @@ public class FlexMessageBuilder {
             "paddingAll": "20px",
             "contents": [
               { "type": "text", "text": "智農派工 AgriDispatch", "color": "#A5F3FC", "size": "xs", "weight": "bold" },
-              { "type": "text", "text": "🔄 現有工班黑轉白", "color": "#FFFFFF", "size": "lg", "weight": "bold" }
+              { "type": "text", "text": "現有工班黑轉白", "color": "#FFFFFF", "size": "lg", "weight": "bold" }
             ]
           },
           "body": {
@@ -379,14 +379,14 @@ public class FlexMessageBuilder {
           }
         }
         """.formatted(buttons);
-        return wrapFlex("🔄 現有工班黑轉白 - 請選擇工人身分", bubble);
+        return wrapFlex("現有工班黑轉白 - 請選擇工人身分", bubble);
     }
 
     private static String getLegalizeTypeFlex(String[] t) {
         boolean replace = "Y".equals(t[5]);
         String action = replace
-                ? uriButton("🚐 改派合法工班補位", webPageUrl("farmer.html?workers=1&from=legalize"), "#06C755")
-                : uriButton("✅ 到轉換中心開始轉白", webPageUrl("legalize.html"), "#06C755");
+                ? uriButton("改派合法工班補位", webPageUrl("farmer.html?workers=1&from=legalize"), "#06C755")
+                : uriButton("到轉換中心開始轉白", webPageUrl("legalize.html"), "#06C755");
 
         String bubble = """
         {
@@ -398,7 +398,7 @@ public class FlexMessageBuilder {
             "paddingAll": "20px",
             "contents": [
               { "type": "text", "text": "現有工班黑轉白", "color": "#FFFFFF", "size": "xs", "weight": "bold" },
-              { "type": "text", "text": "%s %s", "color": "#FFFFFF", "size": "lg", "weight": "bold", "wrap": true }
+              { "type": "text", "text": "%s", "color": "#FFFFFF", "size": "lg", "weight": "bold", "wrap": true }
             ]
           },
           "body": {
@@ -425,9 +425,9 @@ public class FlexMessageBuilder {
             ]
           }
         }
-        """.formatted(t[4], t[1], escapeJson(t[2]), escapeJson(t[3]), t[4], escapeJson(t[6]),
-                action, messageButton("↩ 選擇其他身分", "黑轉白"));
-        return wrapFlex("🔄 黑轉白：" + t[2] + "（" + t[3] + "）", bubble);
+        """.formatted(t[4], escapeJson(t[2]), escapeJson(t[3]), t[4], escapeJson(t[6]),
+                action, messageButton("選擇其他身分", "黑轉白"));
+        return wrapFlex("黑轉白：" + t[2] + "（" + t[3] + "）", bubble);
     }
 
     /**

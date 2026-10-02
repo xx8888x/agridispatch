@@ -206,7 +206,7 @@ Body 欄位（JSON）：`channel`（`farmer` 預設／`worker`）、`userId`、`
 | `worker_guest`（帳號預設） | 工作者 | 未綁定 | 3×2（三語） | 繁體中文、Tiếng Việt、Bahasa Indonesia、帳號綁定、使用說明、聯絡合作社 |
 | `worker_main_zh`／`_vi`／`_id` | 工作者 | 已綁定（依語言） | 3×2 | 今日任務、上下班打卡、天候與集合、薪資明細、我的出勤、語言・說明（越、印尼語版附中文小字） |
 
-- **原始定義**：`tools/make_rich_menus.py`（一份定義同時產生 `rich_menu/<代碼>.json` 與 `.jpg`）。改按鈕或文字只改這支，執行 `python tools/make_rich_menus.py`（需 Pillow，使用 Windows 內建的微軟正黑體、Segoe UI、Segoe UI Emoji）。
+- **原始定義**：`tools/make_rich_menus.py`（一份定義同時產生 `rich_menu/<代碼>.json` 與 `.jpg`）。改按鈕或文字只改這支，執行 `python tools/make_rich_menus.py`（需 Pillow，使用 Windows 內建的微軟正黑體、Segoe UI）。格子圖示是 lucide 線條圖示（`tools/lucide_icons.py`，與前端設計系統同一套，不用 emoji），顏色依 04_UI設計系統規範：綠＝主要動作、灰＝資訊與設定、琥珀＝錢、藍＝天候、玫瑰＝求助。
 - **檢核**：`java -cp bin com.agridispatch.linebot.RichMenuUploader --check`（JSON 結構、按鈕鋪滿不重疊、動作都在分派器支援清單、底圖 2500×1686 且 ≤1MB）；`TestSimulator --check` 也會跑這項，並實際送出每個按鈕的 postback。
 - **上傳**：`java -cp bin com.agridispatch.linebot.RichMenuUploader farmer|worker|all [--delete-old]`
   - 該帳號須已填真實 channel access token（Mock 模式只檢核）。

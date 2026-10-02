@@ -40,20 +40,20 @@ public final class NotifyMessages {
                     default -> "";
                 };
                 if (!hint.isEmpty()) lines.add(hint);
-                return List.of(FlexMessageBuilder.notifyBubble("📋 訂單 " + s(p, "orderId") + " 狀態更新：" + s(p, "statusLabel"),
-                        "#047857", "智農派工（農場主）", "📋 訂單狀態更新", lines,
+                return List.of(FlexMessageBuilder.notifyBubble("訂單 " + s(p, "orderId") + " 狀態更新：" + s(p, "statusLabel"),
+                        "#047857", "智農派工（農場主）", "訂單狀態更新", lines,
                         FlexMessageBuilder.notifyUriButton("查看訂單", orderUrl)));
             }
             case "deposit_paid":
-                return List.of(FlexMessageBuilder.notifyBubble("✅ 已收到訂單 " + s(p, "orderId") + " 定金",
-                        "#047857", "智農派工（農場主）", "✅ 已收到定金",
+                return List.of(FlexMessageBuilder.notifyBubble("已收到訂單 " + s(p, "orderId") + " 定金",
+                        "#047857", "智農派工（農場主）", "已收到定金",
                         List.of("訂單 " + s(p, "orderId") + (s(p, "crop").isEmpty() ? "" : "（" + s(p, "crop") + "）"),
                                 "定金 NT$ " + money(p.get("amount")) + " 已入帳",
                                 "目前狀態：" + s(p, "statusLabel")),
                         FlexMessageBuilder.notifyUriButton("查看訂單", orderUrl)));
             case "weather_farmer":
-                return List.of(FlexMessageBuilder.notifyBubble("🌧️ 天候警戒：" + s(p, "weather"),
-                        "#1D4ED8", "智農派工（農場主）", "🌧️ 天候警戒通知",
+                return List.of(FlexMessageBuilder.notifyBubble("天候警戒：" + s(p, "weather"),
+                        "#1D4ED8", "智農派工（農場主）", "天候警戒通知",
                         List.of(s(p, "weather"),
                                 "您施工中的訂單 " + list(p.get("orders")) + " 可能受影響。",
                                 "合作社正依天候調度工班；若需改期或改到室內作業，會再個別通知您。"),

@@ -9,7 +9,7 @@
     "contents": [
       {
         "type": "text",
-        "text": "🏛️ 農業部外展農務津貼透明看板",
+        "text": "農業部外展農務津貼透明看板",
         "color": "#A7F3D0",
         "size": "xs",
         "weight": "bold"
@@ -78,7 +78,7 @@
         "color": "#065F46",
         "action": {
           "type": "uri",
-          "label": "💰 查詢個人薪資與津貼帳本",
+          "label": "查詢個人薪資與津貼帳本",
           "uri": "https://agridispatch.tw/web/app.html#worker_foreign"
         }
       }

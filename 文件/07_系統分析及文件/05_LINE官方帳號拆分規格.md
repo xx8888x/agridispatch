@@ -414,7 +414,7 @@ LINE 官方帳號依「每月主動推播則數」計費，**回覆訊息（Repl
 
 - 按鈕動作：**一律 `postback`**（5.2）。原規劃開網頁的按鈕（W-02 打卡、F-05 預約、綁定）也改為 postback，由回覆的卡片提供連結：打卡頁依本勞／外勞不同、綁定頁本勞外勞入口不同，選單是靜態圖無法依人變換網址（P3 實作時調整）。
 - 新增動作：`farmer_main`「費率與產曆」＝`a=rates_calendar`（兩張卡一起回）；`worker_guest`「聯絡合作社」＝`a=contact`（帶班師傅、合作社專線 `COOP_CONTACT_PHONE`、勞動部 1955 專線）；`worker_main_*`「語言・說明」＝`a=lang_help`（語言卡＋說明卡）。
-- 原始定義：`Software/Line Bot/tools/make_rich_menus.py` 同時產生 `rich_menu/<代碼>.json` 與 `.jpg`；`RichMenuUploader --check` 檢核。
+- 原始定義：`Software/Line Bot/tools/make_rich_menus.py` 同時產生 `rich_menu/<代碼>.json` 與 `.jpg`；`RichMenuUploader --check` 檢核。格子圖示用 lucide 線條圖示（`tools/lucide_icons.py`，與前端同一套）而非 emoji；`chatBarText`、Flex 文案、i18n 文字一律不含 emoji（2026-10-02 起，與 04_UI設計系統規範一致）。
 - 連結時機：每次互動時依目前身分與語言確認個人選單（記憶體快取），後端綁定／解除時另呼叫 `/internal/richmenu/link` 立即切換；重新上傳選單後，使用者下一次互動時自動補連結。
 - 現行共用六宮格 `rich_menu.json` 在拆分後移除。
 - `RichMenuUploader` 改為一次上傳全部 6 份選單、記錄各選單 ID 與代碼的對照（`rich_menu/richmenu_ids.properties`，不進版控），並分別設定兩帳號的預設選單；舊選單預設保留，加 `--delete-old` 才刪。

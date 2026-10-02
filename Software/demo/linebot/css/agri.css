@@ -548,6 +548,35 @@ a.ad-pill { text-decoration: none; }
 .ad-has-tabbar { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 @media (min-width: 768px) { .ad-has-tabbar { padding-bottom: 0; } }
 
+/* 語言／模式切換（segmented control）：外展移工頁的 中／VI／ID */
+.ad-seg {
+  display: inline-flex;
+  padding: 2px;
+  background: var(--ad-surface-2);
+  border: 1px solid var(--ad-border-strong);
+  border-radius: var(--ad-radius-sm);
+}
+.ad-seg__btn {
+  min-width: 36px;
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ad-text-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ad-seg__btn:hover { color: var(--ad-text); }
+.ad-seg__btn.is-active { background: var(--ad-primary); color: var(--ad-on-primary); }
+@media (max-width: 480px) {
+  .ad-hide-sm { display: none !important; }
+  .ad-header__brand { gap: 8px; }
+  .ad-header__actions { gap: 6px; }
+}
+
 /* 使用者選單（右上角頭像） */
 .ad-avatar {
   width: 32px; height: 32px;

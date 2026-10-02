@@ -24,154 +24,70 @@
       document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
     }
   </script>
+  <!-- 設計系統：共用 tailwind.config、demo 模式標記、圖示、抽屜 -->
+  <script src="js/agri-theme.js"></script>
+  <!-- Lucide 圖示：本機 vendor 優先，CDN 備援 -->
+  <script src="js/vendor/lucide.min.js"></script>
+  <script>
+    if (typeof lucide === 'undefined') {
+      document.write('<script src="https://unpkg.com/lucide@1.47.0"><\/script>');
+    }
+  </script>
   <!-- AgriDocs: Document & Payslip Downloader -->
   <script src="js/agri-docs.js"></script>
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#ecfdf5',
-              100: '#d1fae5',
-              500: '#10b981',
-              600: '#059669',
-              700: '#047857',
-              800: '#065f46',
-              900: '#064e3b',
-            }
-          }
-        }
-      }
-    }
-  </script>
+  <link rel="stylesheet" href="css/agri.css">
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+<body class="ad-body ad-has-tabbar min-h-screen flex flex-col">
 
-  <!-- Top Navigation Header -->
-  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-      <!-- Logo & System Title -->
-      <div class="flex items-center gap-3 shrink-0">
-        <a href="index.html" class="flex items-center gap-2 group">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-purple-600/30 shrink-0">
-            <span class="text-xl">👷</span>
-          </div>
-          <div class="whitespace-nowrap">
-            <div class="flex items-center gap-2">
-              <span class="font-extrabold text-lg tracking-tight text-white group-hover:text-purple-400 transition">智農派工</span>
-              <span class="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 font-semibold">外展移工工作台</span>
-            </div>
-            <p class="hidden sm:block text-[11px] text-slate-400">多語系智慧任務卡 ╳ 8,800 就業獎勵 ╳ 專車接送</p>
-          </div>
-        </a>
-      </div>
-
-      <!-- Center Role Switcher Links (Individual HTML Pages) -->
-      <nav class="hidden lg:flex items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700/60 shadow-inner text-xs shrink-0 whitespace-nowrap">
-        <a href="farmer.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-          <span>👨‍🌾</span> 農場主
-        </a>
-        <a href="worker-foreign.html" class="px-3 py-1.5 rounded-lg bg-purple-600 text-white font-bold shadow transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-          <span>👷</span> 外展移工
-        </a>
-        <a href="worker-local.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-          <span>🚜</span> 本地工/領班
-        </a>
-        <a href="../科技後台/admin.html" class="px-3 py-1.5 rounded-lg bg-indigo-600/80 hover:bg-indigo-600 text-white font-bold transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20 shrink-0 whitespace-nowrap">
-          <span>💻</span> 科技後台
-        </a>
-        <a href="../linebot/line.html" class="px-3 py-1.5 rounded-lg bg-[#06C755]/20 text-emerald-300 hover:bg-[#06C755]/30 border border-emerald-500/40 font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-          <span>💬</span> LINE Bot
-        </a>
-        <a href="../科技後台/admin.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-          <span>📱</span> 整合戰情
-        </a>
+  <!-- 表頭：一條 56px，導覽按角色（外展移工）。語言切換用 中／VI／ID。跨角色連結只在 demo 抽屜。 -->
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner">
+      <a href="index.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">外展移工</span>
+      </a>
+      <nav class="ad-nav" aria-label="外展移工導覽">
+        <button type="button" id="tabBtnTask" class="ad-nav__link is-active" data-tab="task" onclick="switchWorkerTab('task')"><span id="txt-tab-task" data-i18n="navTask">今日任務</span></button>
+        <button type="button" id="tabBtnPayroll" class="ad-nav__link" data-tab="payroll" onclick="switchWorkerTab('payroll')"><span id="txt-tab-payroll" data-i18n="navPayroll">薪資</span></button>
+        <a class="ad-nav__link" href="worker-skills.html"><span data-i18n="navSkills">技能進度</span></a>
       </nav>
-
-      <!-- Language Selector & Actions -->
-      <div class="flex items-center gap-2 shrink-0 whitespace-nowrap">
-        <div class="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700 text-xs shrink-0 whitespace-nowrap">
-          <button id="lang-zh" onclick="setLang('zh')" class="px-2.5 py-1 rounded-lg bg-purple-600 text-white font-bold shadow transition shrink-0 whitespace-nowrap">中文</button>
-          <button id="lang-vi" onclick="setLang('vi')" class="px-2.5 py-1 rounded-lg text-slate-300 hover:text-white transition shrink-0 whitespace-nowrap">Tiếng Việt</button>
-          <button id="lang-id" onclick="setLang('id')" class="px-2.5 py-1 rounded-lg text-slate-300 hover:text-white transition shrink-0 whitespace-nowrap">Indonesia</button>
+      <div class="ad-header__actions">
+        <div class="ad-seg" role="group" aria-label="Language">
+          <button type="button" id="lang-zh" class="ad-seg__btn is-active" onclick="setLang('zh')">中</button>
+          <button type="button" id="lang-vi" class="ad-seg__btn" onclick="setLang('vi')" title="Tiếng Việt">VI</button>
+          <button type="button" id="lang-id" class="ad-seg__btn" onclick="setLang('id')" title="Bahasa Indonesia">ID</button>
         </div>
-        <a href="worker-skills.html" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/30 transition flex items-center gap-1 shrink-0 whitespace-nowrap">
-          <span>📈</span> 技能進度
-        </a>
-        <a href="index.html" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1 shrink-0 whitespace-nowrap">
-          <span>🏠</span> 首頁
-        </a>
+        <a href="../linebot/line.html" class="ad-pill ad-pill--ok" title="LINE 已綁定，出勤車號與天候通知會推播給你"><span class="ad-pill__dot"></span>LINE</a>
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()" aria-label="示範導覽"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span></button>
+        <a href="worker-foreign-login.html" class="ad-btn ad-btn--ghost ad-btn--sm ad-btn--icon" title="切換帳號" aria-label="切換帳號"><span class="ad-avatar">雄</span></a>
       </div>
-    </div>
-
-    <!-- Mobile Sub-nav -->
-    <div class="lg:hidden flex items-center justify-around border-t border-slate-800 py-2 px-2 bg-slate-900/95 overflow-x-auto no-scrollbar text-xs whitespace-nowrap gap-1">
-      <a href="farmer.html" class="px-2.5 py-1 text-slate-400 hover:text-white shrink-0 whitespace-nowrap">👨‍🌾 農場主</a>
-      <a href="worker-foreign.html" class="px-2.5 py-1 text-purple-400 font-bold border-b-2 border-purple-400 shrink-0 whitespace-nowrap">👷 移工端</a>
-      <a href="worker-local.html" class="px-2.5 py-1 text-slate-400 hover:text-white shrink-0 whitespace-nowrap">🚜 本地工/領班</a>
-      <a href="../科技後台/admin.html" class="px-2.5 py-1 text-indigo-400 hover:text-white shrink-0 whitespace-nowrap">💻 後台</a>
-      <a href="../linebot/line.html" class="px-2.5 py-1 text-emerald-400 font-bold flex items-center gap-0.5 shrink-0 whitespace-nowrap"><span>💬</span>LINE</a>
     </div>
   </header>
 
+  <!-- 手機底部導覽（桌機隱藏） -->
+  <nav class="ad-tabbar" aria-label="外展移工導覽">
+    <button type="button" class="ad-tabbar__item is-active" data-tab="task" onclick="switchWorkerTab('task')"><i data-lucide="clipboard-check" class="ad-icon"></i><span data-i18n="navTask">今日任務</span></button>
+    <button type="button" class="ad-tabbar__item" data-tab="payroll" onclick="switchWorkerTab('payroll')"><i data-lucide="wallet" class="ad-icon"></i><span data-i18n="navPayroll">薪資</span></button>
+    <a class="ad-tabbar__item" href="worker-skills.html"><i data-lucide="trending-up" class="ad-icon"></i><span data-i18n="navSkills">技能進度</span></a>
+  </nav>
+
   <!-- Main Container -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-    
-    <!-- Title & Value Prop -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+  <main class="flex-1 ad-container w-full" style="padding-block: 24px 40px;">
+
+    <!-- 頁面標題列：標題與狀態由 setLang 多語切換 -->
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; margin-bottom: 24px;">
       <div>
-        <div class="flex items-center gap-2">
-          <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">外展在籍農工</span>
-          <h1 id="txt-main-title" class="text-2xl sm:text-3xl font-black text-white">外展移工每日智慧任務卡</h1>
-        </div>
-        <p id="txt-sub-title" class="text-slate-400 text-sm mt-1">支持越南語、印尼語與中文即時切換，薪資與農業部 8,800 就業獎勵清晰透明</p>
+        <h1 id="txt-main-title" class="ad-display">今日任務</h1>
+        <p id="txt-sub-title" class="ad-caption" style="margin-top: 6px;">薪資與農業部 8,800 就業獎勵清楚透明</p>
       </div>
-      <div class="flex items-center gap-3">
-        <div class="px-4 py-2 rounded-xl bg-slate-800/80 border border-slate-700 text-right">
-          <span id="txt-status-label" class="text-xs text-slate-400 block">今日出勤狀態</span>
-          <span id="txt-status-val" class="text-sm font-bold text-emerald-400">● 已派工・專車接送中</span>
-        </div>
-      </div>
+      <p class="ad-caption" style="margin: 0;">
+        <span id="txt-status-label">今日出勤狀態</span>：<strong id="txt-status-val" style="color: var(--ad-primary-text);">已派工・專車接送中</strong>
+      </p>
     </div>
 
-    <!-- Multi-Language LINE Bot Connectivity Banner -->
-    <div class="p-4 rounded-2xl bg-gradient-to-r from-purple-950/80 to-slate-900 border border-purple-500/40 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-[#06C755] text-white flex items-center justify-center text-xl font-bold shadow flex-shrink-0">
-          💬
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h3 id="txt-line-title" class="text-sm font-black text-white">LINE 官方帳號已綁定任務通知</h3>
-            <span class="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold">W001 阮文雄</span>
-          </div>
-          <p id="txt-line-desc" class="text-xs text-purple-200 mt-0.5">每日出勤車號、田間小工頭聯絡方式、午後暴雨冷鏈避險轉移均自動發送至 LINE。</p>
-        </div>
-      </div>
-      <a href="../linebot/line.html" class="px-4 py-2 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs shadow flex items-center gap-1.5 transition flex-shrink-0">
-        <span>📱</span> <span id="txt-open-line">開啟 LINE 助理</span>
-      </a>
-    </div>
-
-    <!-- 頁籤切換列 (Two Main Tabs: Tasks & Clock-In/Out vs Payroll System) -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-3">
-      <div class="flex items-center gap-2 sm:gap-3">
-        <button id="tabBtnTask" onclick="switchWorkerTab('task')" class="px-5 py-3 rounded-2xl font-bold text-sm sm:text-base transition flex items-center gap-2 bg-purple-600 text-white shadow-lg shadow-purple-600/30">
-          <span>📱</span> <span id="txt-tab-task">每日任務與上下班打卡</span>
-        </button>
-        <button id="tabBtnPayroll" onclick="switchWorkerTab('payroll')" class="px-5 py-3 rounded-2xl font-bold text-sm sm:text-base transition flex items-center gap-2 bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800">
-          <span>💰</span> <span id="txt-tab-payroll">薪資系統與薪資單明細</span>
-          <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">+8,800 獎勵</span>
-        </button>
-      </div>
-      <div class="hidden sm:flex items-center gap-2 text-xs text-slate-400">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span id="txt-live-clock">即時定位：GPS 衛星訊號良好 (誤差 < 3m)</span>
-      </div>
-    </div>
 
     <!-- TAB 1: 每日任務與上下班打卡系統 -->
     <div id="tabContentTask" class="space-y-8">
@@ -578,24 +494,25 @@
 
   </main>
 
-  <!-- Footer -->
-  <footer class="border-t border-slate-800 bg-slate-950 py-8 text-center text-xs text-slate-500 mt-auto">
-    <div class="max-w-7xl mx-auto px-4 space-y-2">
-      <p>© 2026 智農派工 AgriDispatch. All rights reserved. 雙軌合規農事外展派遣平台</p>
-      <p>技術代管：智農科技有限公司 ╳ 外展主體：有限責任智農農業勞務生產合作社</p>
-    </div>
+  <footer class="ad-caption" style="border-top: 1px solid var(--ad-border); padding: 20px 16px; text-align: center;">
+    © 2026 智農派工 AgriDispatch · 技術代管：智農科技有限公司 · 外展主體：有限責任智農農業勞務生產合作社
   </footer>
+
+  <script>
+    // 示範導覽抽屜（demo 模式才會出現）
+    var demoNav = AgriTheme.demoNav();
+  </script>
 
   <script>
     const translations = {
       zh: {
-        mainTitle: "外展移工每日智慧任務卡",
-        subTitle: "支持越南語、印尼語與中文即時切換，薪資與農業部 8,800 就業獎勵清晰透明",
+        navTask: "今日任務",
+        navPayroll: "薪資",
+        navSkills: "技能進度",
+        mainTitle: "今日任務",
+        subTitle: "薪資與農業部 8,800 就業獎勵清楚透明",
         statusLabel: "今日出勤狀態",
-        statusVal: "● 已派工・專車接送中",
-        lineTitle: "LINE 官方帳號已綁定任務通知",
-        lineDesc: "每日出勤車號、田間小工頭聯絡方式、午後暴雨冷鏈避險轉移均自動發送至 LINE。",
-        openLine: "開啟 LINE 助理",
+        statusVal: "已派工・專車接送中",
         cardTitle: "今日派工任務卡",
         shiftTime: "出勤時間",
         valShift: "06:30 集合上車 / 07:00 ~ 16:00 作業",
@@ -617,13 +534,13 @@
         scheduleTitle: "本週出勤與接送班表"
       },
       vi: {
-        mainTitle: "Thẻ Nhiệm Vụ Thông Minh Hàng Ngày",
-        subTitle: "Hỗ trợ Tiếng Việt, Tiếng Indonesia và Tiếng Trung. Lương và thưởng 8.800 NTD minh bạch",
+        navTask: "Nhiệm vụ",
+        navPayroll: "Lương",
+        navSkills: "Kỹ năng",
+        mainTitle: "Nhiệm vụ hôm nay",
+        subTitle: "Lương và thưởng 8.800 NTD minh bạch",
         statusLabel: "Trạng thái hôm nay",
-        statusVal: "● Đã phân công・Xe đưa đón",
-        lineTitle: "LINE Đã Kết Nối Thông Báo Nhiệm Vụ",
-        lineDesc: "Biển số xe, liên hệ đội trưởng, thông báo chuyển sang xưởng lạnh khi trời mưa.",
-        openLine: "Mở LINE",
+        statusVal: "Đã phân công・Xe đưa đón",
         cardTitle: "Thẻ Nhiệm Vụ Hôm Nay",
         shiftTime: "Thời gian làm việc",
         valShift: "06:30 Tập trung lên xe / 07:00 ~ 16:00 Làm việc",
@@ -645,13 +562,13 @@
         scheduleTitle: "Lịch Trình Làm Việc & Xe Đưa Đón Tuần Này"
       },
       id: {
-        mainTitle: "Kartu Tugas Harian Pekerja Pertanian",
-        subTitle: "Dukungan Bahasa Indonesia, Vietnam, Mandarin. Gaji & subsidi NT$ 8.800 transparan",
+        navTask: "Tugas",
+        navPayroll: "Gaji",
+        navSkills: "Keterampilan",
+        mainTitle: "Tugas hari ini",
+        subTitle: "Gaji & subsidi NT$ 8.800 transparan",
         statusLabel: "Status Hari Ini",
-        statusVal: "● Ditugaskan・Mobil jemputan",
-        lineTitle: "LINE Terhubung dengan Notifikasi Tugas",
-        lineDesc: "Nomor mobil jemputan, kontak mandor lapangan, notifikasi ruang pendingin saat hujan.",
-        openLine: "Buka LINE",
+        statusVal: "Ditugaskan・Mobil jemputan",
         cardTitle: "Kartu Tugas Hari Ini",
         shiftTime: "Waktu Kerja",
         valShift: "06:30 Kumpul naik mobil / 07:00 ~ 16:00 Kerja",
@@ -674,70 +591,48 @@
       }
     };
 
+    // 對照表鍵 → 元素 id；缺少的元素直接略過，避免表頭改版後的 null 錯誤
+    const I18N_TARGETS = {
+      mainTitle: 'txt-main-title', subTitle: 'txt-sub-title',
+      statusLabel: 'txt-status-label', statusVal: 'txt-status-val',
+      cardTitle: 'txt-card-title', shiftTime: 'lbl-shift-time', valShift: 'val-shift-time',
+      van: 'lbl-van', valVan: 'val-van', location: 'lbl-location', valLoc: 'val-location',
+      foreman: 'lbl-foreman', tasks: 'lbl-tasks', valTasks: 'val-tasks',
+      safety: 'lbl-safety', valSafety: 'val-safety', btnClockin: 'txt-btn-clockin',
+      salaryTitle: 'txt-salary-title', basePay: 'lbl-base-pay', bonusAgri: 'lbl-bonus-agri',
+      transportSub: 'lbl-transport-sub', totalEst: 'lbl-total-est', scheduleTitle: 'txt-schedule-title'
+    };
+
     function setLang(lang) {
       const t = translations[lang] || translations.zh;
       ['zh', 'vi', 'id'].forEach(k => {
         const btn = document.getElementById('lang-' + k);
-        if (k === lang) {
-          btn.className = "px-2.5 py-1 rounded-lg bg-purple-600 text-white font-bold shadow transition";
-        } else {
-          btn.className = "px-2.5 py-1 rounded-lg text-slate-300 hover:text-white transition";
-        }
+        if (btn) btn.classList.toggle('is-active', k === lang);
       });
+      document.documentElement.lang = lang === 'zh' ? 'zh-TW' : lang;
 
-      document.getElementById('txt-main-title').innerText = t.mainTitle;
-      document.getElementById('txt-sub-title').innerText = t.subTitle;
-      document.getElementById('txt-status-label').innerText = t.statusLabel;
-      document.getElementById('txt-status-val').innerText = t.statusVal;
-      document.getElementById('txt-line-title').innerText = t.lineTitle;
-      document.getElementById('txt-line-desc').innerText = t.lineDesc;
-      document.getElementById('txt-open-line').innerText = t.openLine;
-      document.getElementById('txt-card-title').innerText = t.cardTitle;
-      document.getElementById('lbl-shift-time').innerText = t.shiftTime;
-      document.getElementById('val-shift-time').innerText = t.valShift;
-      document.getElementById('lbl-van').innerText = t.van;
-      document.getElementById('val-van').innerText = t.valVan;
-      document.getElementById('lbl-location').innerText = t.location;
-      document.getElementById('val-location').innerText = t.valLoc;
-      document.getElementById('lbl-foreman').innerText = t.foreman;
-      document.getElementById('lbl-tasks').innerText = t.tasks;
-      document.getElementById('val-tasks').innerText = t.valTasks;
-      document.getElementById('lbl-safety').innerText = t.safety;
-      document.getElementById('val-safety').innerText = t.valSafety;
-      document.getElementById('txt-btn-clockin').innerText = t.btnClockin;
-      document.getElementById('txt-salary-title').innerText = t.salaryTitle;
-      document.getElementById('lbl-base-pay').innerText = t.basePay;
-      document.getElementById('lbl-bonus-agri').innerText = t.bonusAgri;
-      document.getElementById('lbl-transport-sub').innerText = t.transportSub;
-      document.getElementById('lbl-total-est').innerText = t.totalEst;
-      document.getElementById('txt-schedule-title').innerText = t.scheduleTitle;
+      Object.keys(I18N_TARGETS).forEach(key => {
+        const el = document.getElementById(I18N_TARGETS[key]);
+        if (el && t[key] !== undefined) el.innerText = t[key];
+      });
+      // 導覽列與底部 tabbar 的標籤
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const v = t[el.dataset.i18n];
+        if (v !== undefined) el.textContent = v;
+      });
     }
 
+    // 頁籤切換：桌機導覽與手機 tabbar 上所有 [data-tab] 一起更新
     function switchWorkerTab(tab) {
+      const isTask = (tab === 'task');
       const tabTask = document.getElementById('tabContentTask');
       const tabPayroll = document.getElementById('tabContentPayroll');
-      const btnTask = document.getElementById('tabBtnTask');
-      const btnPayroll = document.getElementById('tabBtnPayroll');
-
-      if (tab === 'task') {
-        if (tabTask) tabTask.classList.remove('hidden');
-        if (tabPayroll) tabPayroll.classList.add('hidden');
-        if (btnTask) {
-          btnTask.className = "px-5 py-3 rounded-2xl font-bold text-sm sm:text-base transition flex items-center gap-2 bg-purple-600 text-white shadow-lg shadow-purple-600/30";
-        }
-        if (btnPayroll) {
-          btnPayroll.className = "px-5 py-3 rounded-2xl font-bold text-sm sm:text-base transition flex items-center gap-2 bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800";
-        }
-      } else {
-        if (tabTask) tabTask.classList.add('hidden');
-        if (tabPayroll) tabPayroll.classList.remove('hidden');
-        if (btnPayroll) {
-          btnPayroll.className = "px-5 py-3 rounded-2xl font-bold text-sm sm:text-base transition flex items-center gap-2 bg-purple-600 text-white shadow-lg shadow-purple-600/30";
-        }
-        if (btnTask) {
-          btnTask.className = "px-5 py-3 rounded-2xl font-bold text-sm sm:text-base transition flex items-center gap-2 bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800";
-        }
-      }
+      if (tabTask) tabTask.classList.toggle('hidden', !isTask);
+      if (tabPayroll) tabPayroll.classList.toggle('hidden', isTask);
+      document.querySelectorAll('[data-tab]').forEach(el => {
+        el.classList.toggle('is-active', el.dataset.tab === (isTask ? 'task' : 'payroll'));
+      });
+      if (window.scrollY > 200) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     const API_BASE = window.location.origin.startsWith('http')

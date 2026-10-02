@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>智農派工 AgriDispatch - LINE Bot 智慧農務助理體驗館</title>
+  <title>智農派工 AgriDispatch - LINE 官方帳號體驗</title>
   <!-- 執行模式設定（demo / production，每份副本各自一份） -->
   <script src="js/app-config.js"></script>
   <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
@@ -13,7 +13,7 @@
       document.write('<script src="js/demo-accounts.js"><\/script>');
     }
   </script>
-  <!-- Tailwind CSS CDN -->
+  <!-- Tailwind CSS CDN（只用版面工具類；顏色、字級、元件一律用 css/agri.css） -->
   <script src="js/vendor/tailwindcss-3.4.17.js"></script>
   <script>
     if (typeof tailwind === 'undefined') {
@@ -22,538 +22,370 @@
   </script>
   <!-- AgriDocs：通知 toast 等共用元件（頁面內 window.AgriDocs.notify 需要它） -->
   <script src="js/agri-docs.js"></script>
-  <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
+  <!-- 設計系統：共用 tailwind.config、demo 模式標記、圖示、抽屜 -->
+  <script src="js/agri-theme.js"></script>
+  <!-- Lucide 圖示：本機 vendor 優先，CDN 備援 -->
+  <script src="js/vendor/lucide.min.js"></script>
   <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            line: {
-              50: '#ecfdf5',
-              100: '#d1fae5',
-              500: '#06C755',
-              600: '#05b34c',
-              700: '#049740',
-              800: '#037a34',
-              900: '#025223',
-            },
-            brand: {
-              500: '#10b981',
-              600: '#059669',
-              700: '#047857',
-              900: '#064e3b',
-            }
-          }
-        }
-      }
+    if (typeof lucide === 'undefined') {
+      document.write('<script src="https://unpkg.com/lucide@1.47.0"><\/script>');
     }
   </script>
+  <link rel="stylesheet" href="css/agri.css">
   <style>
-    .line-chat-bg {
-      background-color: #8CABD9;
-      background-image: radial-gradient(#9bb8e3 1px, transparent 1px);
-      background-size: 16px 16px;
-    }
-    .line-bubble-user {
-      background-color: #85E249;
-      border-radius: 18px 18px 4px 18px;
-    }
-    .line-bubble-bot {
-      background-color: #FFFFFF;
-      border-radius: 18px 18px 18px 4px;
-    }
+    /* 手機裡的 LINE 畫面沿用 LINE 本身的配色（綠色標題列、綠白對話泡泡），讓人一眼認出是 LINE；
+       手機以外的介面才是本站設計系統。lc- = LINE chat，只在這一頁使用。 */
+    .lc-phone { width: 100%; max-width: 420px; height: 740px; display: flex; flex-direction: column; overflow: hidden;
+      background: var(--ad-surface); border: 1px solid var(--ad-border-strong); border-radius: 32px; padding: 10px; }
+    .lc-screen { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; border-radius: 22px; background: #fff; color: #0f172a; }
+    .lc-bar { background: #06c755; color: #fff; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .lc-bar__name { font-weight: 700; font-size: 15px; line-height: 1.3; min-width: 0; }
+    .lc-bar__name span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lc-bar__sub { font-size: 13px; color: rgba(255, 255, 255, .85); }
+    .lc-bar__btn { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; color: #fff; background: transparent; border: 0; cursor: pointer; flex-shrink: 0; }
+    .lc-bar__btn:hover { background: rgba(255, 255, 255, .15); }
+    .lc-oa { width: 32px; height: 32px; border-radius: 50%; background: #fff; color: #047857; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .lc-chat { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 12px; background: #8cabd9; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+    .lc-date, .lc-notice { align-self: center; max-width: 92%; text-align: center; padding: 3px 12px; border-radius: 9999px; background: rgba(15, 23, 42, .4); color: #fff; font-size: 13px; }
+    .lc-msg { display: flex; align-items: flex-start; gap: 8px; }
+    .lc-msg--me { justify-content: flex-end; align-items: flex-end; gap: 6px; }
+    .lc-avatar { width: 28px; height: 28px; border-radius: 50%; background: #fff; color: #047857; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .lc-avatar .ad-icon { width: 16px; height: 16px; }
+    .lc-msg__body { max-width: 84%; min-width: 0; }
+    .lc-msg__body--wide { max-width: 92%; width: 100%; }
+    .lc-bubble { padding: 10px 12px; line-height: 1.5; color: #0f172a; word-break: break-word; white-space: pre-line; }
+    .lc-bubble--bot { background: #fff; border-radius: 18px 18px 18px 4px; display: flex; flex-direction: column; gap: 6px; }
+    .lc-bubble--me { background: #85e249; border-radius: 18px 18px 4px 18px; max-width: 75%; }
+    .lc-bubble p, .lc-bubble ul { margin: 0; }
+    .lc-bubble ul { padding-left: 18px; list-style: disc; }
+    .lc-time { display: inline-block; margin: 2px 0 0 4px; font-size: 13px; color: #334155; }
+    .lc-msg--me .lc-time { margin: 0 0 2px; }
+    .lc-tag { display: inline-block; padding: 1px 6px; border-radius: 6px; font-weight: 700; font-size: 13px; }
+    .lc-tag--ok { background: #d1fae5; color: #047857; }
+    .lc-tag--warn { background: #fef3c7; color: #b45309; }
+    .lc-tag--danger { background: #ffe4e6; color: #9f1239; }
+    /* Flex Message 卡片（真 Bot 回覆與離線示範卡共用同一個渲染器） */
+    .lc-flex { background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; color: #0f172a; }
+    .lc-flex__head { padding: 12px 14px; background: #047857; color: #fff; }
+    .lc-flex__title { font-size: 16px; font-weight: 700; margin-top: 2px; }
+    .lc-flex__body { padding: 12px 14px; background: #f8fafc; display: flex; flex-direction: column; gap: 8px; }
+    .lc-flex__row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .lc-flex__row span:first-child { color: #64748b; flex-shrink: 0; }
+    .lc-flex__row span:last-child { font-weight: 700; text-align: right; }
+    .lc-flex__foot { padding: 10px; background: #fff; border-top: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 6px; }
+    .lc-flex__foot--row { flex-direction: row; }
+    .lc-flex__btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 36px; padding: 6px 10px; border-radius: 8px; border: 1px solid #e2e8f0; background: #f1f5f9; color: #334155; font: inherit; font-weight: 700; font-size: 13px; line-height: 1.3; text-align: center; text-decoration: none; cursor: pointer; }
+    .lc-flex__btn:hover { background: #e2e8f0; }
+    .lc-flex__btn--line { background: #06c755; border-color: #06c755; color: #fff; }
+    .lc-flex__btn--line:hover { background: #05b34c; }
+    .lc-flex__btn--solid { color: #fff; border-color: transparent; }
+    .lc-flex__btn--solid:hover { filter: brightness(.95); }
+    .lc-typing { display: flex; align-items: center; gap: 4px; margin-left: 36px; color: #334155; font-size: 13px; }
+    .lc-typing i { width: 6px; height: 6px; border-radius: 50%; background: #047857; animation: lc-bounce 1s infinite; }
+    .lc-typing i:nth-child(2) { animation-delay: .15s; }
+    .lc-typing i:nth-child(3) { animation-delay: .3s; }
+    .lc-typing span { margin-left: 4px; }
+    @keyframes lc-bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-4px); } }
+    /* 圖文選單：LINE 實際上是一張圖，離線時用等格子的淺色按鈕模擬 */
+    .lc-menu { background: #fff; border-top: 1px solid #e2e8f0; }
+    .lc-menu__bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 6px 4px 12px; font-size: 13px; color: #475569; background: #f8fafc; }
+    .lc-menu__toggle { display: inline-flex; align-items: center; gap: 2px; background: none; border: 0; color: #475569; font: inherit; font-size: 13px; cursor: pointer; min-height: 32px; padding: 0 6px; border-radius: 6px; flex-shrink: 0; }
+    .lc-menu__toggle:hover { background: #e2e8f0; }
+    .lc-menu__toggle .ad-icon { transition: transform .2s ease; }
+    .lc-menu__toggle.is-up .ad-icon { transform: rotate(180deg); }
+    .lc-grid { display: grid; gap: 1px; background: #e2e8f0; border-top: 1px solid #e2e8f0; }
+    .lc-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .lc-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .lc-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 72px; padding: 8px 4px; background: #fff; border: 0; color: #0f172a; font: inherit; font-size: 13px; font-weight: 700; line-height: 1.25; text-align: center; cursor: pointer; min-width: 0; }
+    .lc-cell:hover { background: #ecfdf5; }
+    .lc-cell .ad-icon { color: #047857; }
+    .lc-cell small { font-weight: 400; color: #64748b; font-size: 13px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lc-grid--4 .lc-cell small { display: none; } /* 四欄太擠，只留標題 */
+    .lc-chips { display: flex; align-items: center; gap: 6px; padding: 8px 12px; overflow-x: auto; white-space: nowrap; background: #fff; border-top: 1px solid #e2e8f0; }
+    .lc-chips__label { color: #64748b; font-size: 13px; flex-shrink: 0; }
+    .lc-chip { flex-shrink: 0; min-height: 32px; padding: 4px 12px; border-radius: 9999px; border: 1px solid #cbd5e1; background: #fff; color: #334155; font: inherit; font-size: 13px; cursor: pointer; }
+    .lc-chip:hover { border-color: #06c755; color: #047857; }
+    .lc-input { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #fff; border-top: 1px solid #e2e8f0; }
+    .lc-input input { flex: 1; min-width: 0; min-height: 36px; padding: 6px 12px; border-radius: 9999px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font: inherit; font-size: 13px; }
+    .lc-input input:focus { outline: none; border-color: #06c755; }
+    .lc-send { width: 36px; height: 36px; border-radius: 50%; border: 0; background: #06c755; color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+    .lc-send:hover { background: #05b34c; }
+    .lc-real-menu { width: 100%; cursor: pointer; user-select: none; display: block; }
+    /* 右欄：進階設定摺疊 */
+    details.ad-card > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    details.ad-card > summary::-webkit-details-marker { display: none; }
+    details.ad-card > summary .lc-caret { transition: transform .2s ease; }
+    details.ad-card[open] > summary .lc-caret { transform: rotate(180deg); }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-line-500 selection:text-white">
+<!--
+  LINE 官方帳號體驗（路演用）
+  左：手機裡的 LINE 畫面（農場主／工作者兩個官方帳號、圖文選單、Flex 卡片）
+  右：切換身分、推播到手機、進階的 LINE Developers 串接
+  資料：LINE Bot 服務 POST /mock/chat、/rich_menu/<代碼>.json|.jpg、/health（port 5000）；離線時用本頁示範卡片
+  規格：文件/07_系統分析及文件/05_LINE官方帳號拆分規格.md
+-->
+<body class="ad-body min-h-screen flex flex-col">
 
-  <!-- Top Sticky Header -->
-  <nav class="sticky top-0 z-50 bg-slate-950/95 backdrop-blur-md border-b border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-      <div class="flex items-center gap-3 shrink-0">
-        <a href="../農業派遣主網站/index.html" class="flex items-center gap-2">
-          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-line-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-line-600/30 shrink-0">
-            <span class="text-xl">💬</span>
-          </div>
-          <div class="whitespace-nowrap">
-            <div class="flex items-center gap-2">
-              <span class="text-base font-black tracking-tight text-white">智農派工</span>
-              <span class="text-[11px] px-2 py-0.5 rounded-full bg-line-500/20 text-line-400 border border-line-500/40 font-bold flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-line-400 animate-pulse"></span> LINE Bot 體驗館
-              </span>
-            </div>
-            <p class="hidden sm:block text-[10px] text-slate-400">免安裝 App ╳ 6宮格圖文選單 ╳ 移工三語工單</p>
-          </div>
-        </a>
-      </div>
-
-      <div class="hidden md:flex items-center gap-4 text-xs font-semibold text-slate-300 whitespace-nowrap shrink-0">
-        <a href="../農業派遣主網站/farmer.html" class="hover:text-emerald-400 transition whitespace-nowrap shrink-0">👨‍🌾 農場主視角</a>
-        <a href="../農業派遣主網站/worker-foreign.html" class="hover:text-purple-400 transition whitespace-nowrap shrink-0">🇻🇳 外籍移工</a>
-        <a href="../農業派遣主網站/worker-local.html" class="hover:text-blue-400 transition whitespace-nowrap shrink-0">🚜 本地工/領班</a>
-      </div>
-
-      <div class="flex items-center gap-2 shrink-0 whitespace-nowrap">
-        <a href="../農業派遣主網站/index.html" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition whitespace-nowrap shrink-0">
-          <span>🏠</span> 首頁
-        </a>
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner">
+      <a href="../農業派遣主網站/index.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">LINE 體驗</span>
+      </a>
+      <nav class="ad-nav" aria-label="其他視角">
+        <a class="ad-nav__link" href="../農業派遣主網站/farmer.html">農場主工作台</a>
+        <a class="ad-nav__link" href="../農業派遣主網站/worker-foreign.html">外籍工人</a>
+        <a class="ad-nav__link" href="../農業派遣主網站/worker-local.html">本國工人</a>
+      </nav>
+      <div class="ad-header__actions">
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()" aria-label="示範導覽"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span></button>
+        <a href="../農業派遣主網站/index.html" class="ad-btn ad-btn--secondary ad-btn--sm">首頁</a>
       </div>
     </div>
-  </nav>
+  </header>
 
-  <!-- Main Content Layout -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+  <main class="ad-container flex-1 w-full" style="padding-top: 24px; padding-bottom: 40px;">
+    <div style="margin-bottom: 20px;">
+      <h1 class="ad-display" style="margin-bottom: 8px;">LINE 官方帳號體驗</h1>
+      <p class="ad-caption">左邊是手機裡的 LINE 畫面，直接點圖文選單或輸入文字；右邊可以換身分、推播訊息到手機。LINE Bot 服務在線時，回覆與圖文選單都是正式版的那一份。</p>
+    </div>
 
-    <!-- Left Column: LINE Smartphone Chat Simulator (7 Cols) -->
-    <section class="lg:col-span-7 flex flex-col items-center">
-      
-      <!-- Phone Mockup Frame -->
-      <div class="w-full max-w-md bg-slate-900 rounded-[38px] p-3 shadow-2xl border-4 border-slate-800 flex flex-col h-[740px] relative overflow-hidden">
-        
-        <!-- Phone Speaker & Camera Notch -->
-        <div class="w-32 h-4 bg-slate-950 rounded-full mx-auto mb-2 flex items-center justify-center">
-          <div class="w-2 h-2 rounded-full bg-slate-800 mr-2"></div>
-          <div class="w-8 h-1 rounded-full bg-slate-800"></div>
-        </div>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6" style="align-items: start;">
 
-        <!-- LINE App Top Bar -->
-        <div class="bg-[#06C755] text-white px-4 py-2.5 rounded-t-2xl flex items-center justify-between shadow">
-          <div class="flex items-center gap-2.5">
-            <button class="text-white hover:opacity-80 text-lg">‹</button>
-            <div class="w-8 h-8 rounded-full bg-white text-emerald-700 font-black flex items-center justify-center text-sm shadow">
-              🌱
-            </div>
-            <div>
-              <div class="flex items-center gap-1">
-                <span class="font-bold text-sm tracking-tight" id="line-account-name">智農派工（農場主）</span>
-                <!-- LINE Green Shield Verified Badge -->
-                <span class="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-white text-line-600 text-[9px] font-black" title="LINE 官方認證盾牌">✓</span>
-              </div>
-              <p class="text-[10px] text-emerald-100 flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-200"></span> <span id="line-account-sub">農場主官方帳號</span>
-              </p>
-            </div>
-          </div>
-          <div class="flex items-center gap-3 text-white text-sm">
-            <button title="智慧查詢中心" onclick="handleQuickCmd('查詢功能')" class="hover:opacity-80 transition p-1 hover:bg-emerald-600/40 rounded-lg">🔍</button>
-            <button title="選單" onclick="toggleRichMenu()" class="hover:opacity-80 transition p-1 hover:bg-emerald-600/40 rounded-lg">☰</button>
-          </div>
-        </div>
-
-        <!-- Chat Area (Scrollable) -->
-        <div id="line-chat-box" class="flex-1 line-chat-bg p-3.5 overflow-y-auto space-y-3">
-          
-          <!-- System Timestamp -->
-          <div class="text-center my-1">
-            <span class="px-2.5 py-0.5 rounded-full bg-slate-900/30 text-white/80 text-[10px]">
-              2026/05/20 星期三
-            </span>
-          </div>
-
-          <!-- Welcome Message from Bot -->
-          <div class="flex items-start gap-2">
-            <div class="w-7 h-7 rounded-full bg-white text-emerald-700 flex items-center justify-center text-xs shadow flex-shrink-0">
-              🌱
-            </div>
-            <div class="max-w-[82%]">
-              <div class="line-bubble-bot p-3 text-slate-800 text-xs shadow space-y-1.5 leading-relaxed">
-                <p class="font-bold text-emerald-800 flex items-center gap-1">
-                  <span>👋</span> 歡迎加入智農派工官方助理！
-                </p>
-                <p>我們是台灣領先的外展農務移工智慧調度體系。免安裝 App，您可透過下方 <b>6宮格圖文選單</b> 體驗：</p>
-                <ul class="list-disc list-inside text-[11px] text-slate-600 space-y-0.5">
-                  <li>📋 查閱今日出工與專車司機</li>
-                  <li>🌧️ 突發暴雨室內冷鏈避險通報</li>
-                  <li>⚡ 產季早鳥保證工時包試算 (315 元/hr)</li>
-                  <li>🇻🇳/🇮🇩 移工母語工單切換</li>
-                </ul>
-              </div>
-              <span class="text-[9px] text-slate-700 ml-1 mt-0.5 inline-block">08:00</span>
-            </div>
-          </div>
-
-          <!-- Initial Flex Message Demo (Farmer Dispatch Card) -->
-          <div class="flex items-start gap-2">
-            <div class="w-7 h-7 rounded-full bg-white text-emerald-700 flex items-center justify-center text-xs shadow flex-shrink-0">
-              🌱
-            </div>
-            <div class="max-w-[88%] w-full">
-              <!-- Flex Card: Farmer Order -->
-              <div class="bg-white rounded-2xl overflow-hidden shadow-lg border border-slate-200 text-slate-800 text-xs">
-                <div class="bg-emerald-800 text-white p-3.5">
-                  <span class="px-1.5 py-0.5 rounded bg-emerald-600/80 text-emerald-100 font-bold text-[10px]">履約派遣單</span>
-                  <h4 class="text-sm font-black mt-1">枋山愛文芒果 (6.0分地)</h4>
-                  <p class="text-[10px] text-emerald-200">單號: ORD-2026-001 ｜ 早鳥保證出工</p>
-                </div>
-                <div class="p-3.5 space-y-2 bg-slate-50">
-                  <div class="flex justify-between items-center text-[11px]">
-                    <span class="text-slate-500">出工時間</span>
-                    <span class="font-bold text-slate-800">明日 07:00 ~ 16:00</span>
-                  </div>
-                  <div class="flex justify-between items-center text-[11px]">
-                    <span class="text-slate-500">指派工班</span>
-                    <span class="font-bold text-slate-800">工班 B 組 (6人，領班: 阿迪)</span>
-                  </div>
-                  <div class="flex justify-between items-center text-[11px]">
-                    <span class="text-slate-500">接送專車</span>
-                    <span class="font-bold text-slate-800">智農 2 號車 (司機: 李大哥)</span>
-                  </div>
-                  <div class="flex justify-between items-center text-[11px]">
-                    <span class="text-slate-500">作業手路</span>
-                    <span class="font-bold text-emerald-700">留蒂 0.5cm 護果粉採收</span>
-                  </div>
-                  <div class="flex justify-between items-center text-[11px] pt-1 border-t border-slate-200">
-                    <span class="text-slate-500">應付金額</span>
-                    <span class="font-extrabold text-emerald-600 text-xs">NT$ 52,920 (定金已收 20%)</span>
-                  </div>
-                </div>
-                <div class="p-2 bg-white flex gap-1.5 border-t border-slate-100">
-                  <button onclick="handleQuickCmd('工班位置')" class="flex-1 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-[11px] hover:bg-emerald-500 transition">
-                    📍 工班 GPS
-                  </button>
-                  <button onclick="handleQuickCmd('撥打司機')" class="flex-1 py-1.5 rounded-lg bg-blue-600 text-white font-bold text-[11px] hover:bg-blue-500 transition">
-                    📞 聯絡司機
-                  </button>
+      <!-- 左：手機裡的 LINE -->
+      <section class="lg:col-span-7 flex flex-col items-center">
+        <div class="lc-phone">
+          <div class="lc-screen">
+            <div class="lc-bar">
+              <div class="flex items-center gap-2 min-w-0">
+                <button type="button" class="lc-bar__btn" aria-label="返回"><i data-lucide="chevron-left" class="ad-icon"></i></button>
+                <span class="lc-oa"><i data-lucide="sprout" class="ad-icon ad-icon--sm"></i></span>
+                <div class="min-w-0">
+                  <div class="lc-bar__name flex items-center gap-1"><span id="line-account-name">智農派工（農場主）</span><i data-lucide="badge-check" class="ad-icon ad-icon--sm" aria-label="官方認證"></i></div>
+                  <div class="lc-bar__sub truncate" id="line-account-sub">農場主官方帳號</div>
                 </div>
               </div>
-              <span class="text-[9px] text-slate-700 ml-1 mt-0.5 inline-block">08:01</span>
-            </div>
-          </div>
-
-          <!-- Dynamic messages injected here -->
-          <div id="dynamic-chat-anchor"></div>
-        </div>
-
-        <!-- LINE Rich Menu (Dynamic Multi-Persona Rich Menu) -->
-        <div id="line-rich-menu" class="bg-slate-900 border-t border-slate-700 transition-all duration-300">
-          <div class="flex items-center justify-between px-3 py-1 bg-slate-800 text-[10px] text-slate-300">
-            <span class="font-bold flex items-center gap-1.5 truncate">
-              <span class="text-line-400">❖</span>
-              <span id="rich-menu-title"><span class="font-extrabold text-emerald-400">👨‍🌾 農場主模式</span>・圖文選單 (派工與訂單)</span>
-            </span>
-            <button onclick="toggleRichMenu()" class="text-slate-400 hover:text-white flex items-center gap-1 shrink-0 ml-2">
-              <span id="rich-menu-arrow">▼</span> 收合選單
-            </button>
-          </div>
-
-          <!-- LINE Bot 在線時顯示真正的圖文選單（rich_menu/<代碼>.jpg），點格子送 postback；離線時用下方 HTML 選單 -->
-          <img id="real-rich-menu" alt="圖文選單" class="w-full cursor-pointer select-none" draggable="false" hidden>
-
-          <!-- 6 Grid Buttons (Dynamically Injected based on Persona) -->
-          <div id="rich-menu-grid" class="grid grid-cols-3 gap-1 p-1 bg-slate-950 transition-all duration-200">
-            <!-- Grid 1 -->
-            <button onclick="handleQuickCmd('查派工單')" class="p-2.5 rounded-lg bg-gradient-to-b from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-center transition flex flex-col items-center justify-center gap-1 group border border-slate-800 cursor-pointer">
-              <span class="text-lg group-hover:scale-110 transition-transform">📋</span>
-              <span class="text-[11px] font-bold text-white">我的派工單</span>
-              <span class="text-[9px] text-slate-400">ORD-001/車號/進度</span>
-            </button>
-            <!-- Grid 2 -->
-            <button onclick="handleQuickCmd('早鳥工時包')" class="p-2.5 rounded-lg bg-gradient-to-b from-amber-950 to-slate-900 hover:from-amber-900 hover:to-slate-800 text-center transition flex flex-col items-center justify-center gap-1 group border border-amber-900/40 cursor-pointer">
-              <span class="text-lg group-hover:scale-110 transition-transform">⚡</span>
-              <span class="text-[11px] font-bold text-amber-300">早鳥工時包</span>
-              <span class="text-[9px] text-amber-400/80">鎖定名額・優先排班</span>
-            </button>
-            <!-- Grid 3 -->
-            <button onclick="handleQuickCmd('天候避險')" class="p-2.5 rounded-lg bg-gradient-to-b from-blue-950 to-slate-900 hover:from-blue-900 hover:to-slate-800 text-center transition flex flex-col items-center justify-center gap-1 group border border-blue-900/40 cursor-pointer">
-              <span class="text-lg group-hover:scale-110 transition-transform">🌧️</span>
-              <span class="text-[11px] font-bold text-blue-300">暴雨天候避險</span>
-              <span class="text-[9px] text-blue-400/80">冷鏈轉移通報</span>
-            </button>
-            <!-- Grid 4 -->
-            <button onclick="handleQuickCmd('機耕代噴')" class="p-2.5 rounded-lg bg-gradient-to-b from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-center transition flex flex-col items-center justify-center gap-1 group border border-slate-800 cursor-pointer">
-              <span class="text-lg group-hover:scale-110 transition-transform">🚜</span>
-              <span class="text-[11px] font-bold text-white">預約專業機耕</span>
-              <span class="text-[9px] text-slate-400">T50植保/80hp深耕</span>
-            </button>
-            <!-- Grid 5 -->
-            <button onclick="handleQuickCmd('查產曆')" class="p-2.5 rounded-lg bg-gradient-to-b from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-center transition flex flex-col items-center justify-center gap-1 group border border-slate-800 cursor-pointer">
-              <span class="text-lg group-hover:scale-110 transition-transform">📅</span>
-              <span class="text-[11px] font-bold text-white">全台產曆查詢</span>
-              <span class="text-[9px] text-slate-400">採收倒數雷達</span>
-            </button>
-            <!-- Grid 6 -->
-            <button onclick="handleQuickCmd('聯絡工頭')" class="p-2.5 rounded-lg bg-gradient-to-b from-emerald-950 to-slate-900 hover:from-emerald-900 hover:to-slate-800 text-center transition flex flex-col items-center justify-center gap-1 group border border-emerald-500/40 cursor-pointer">
-              <span class="text-lg group-hover:scale-110 transition-transform">📞</span>
-              <span class="text-[11px] font-bold text-emerald-300">聯絡專屬工頭</span>
-              <span class="text-[9px] text-emerald-400/80">小工頭/司機專線</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Quick Reply Query Chips Bar -->
-        <div id="quick-chips-bar" class="bg-slate-900/95 border-t border-slate-800 px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[11px] whitespace-nowrap">
-          <span class="text-slate-400 text-[10px] font-bold flex items-center gap-0.5 shrink-0">
-            <span>⚡</span> 查詢：
-          </span>
-          <button onclick="handleQuickCmd('查派工單')" class="px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/30 font-medium transition flex items-center gap-1 shrink-0 cursor-pointer">
-            <span>📋</span> 查派工單
-          </button>
-          <button onclick="handleQuickCmd('早鳥工時包')" class="px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-medium transition flex items-center gap-1 shrink-0 cursor-pointer">
-            <span>⚡</span> 早鳥工時包
-          </button>
-          <button onclick="handleQuickCmd('天候避險')" class="px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-blue-300 border border-blue-500/30 font-medium transition flex items-center gap-1 shrink-0 cursor-pointer">
-            <span>🌧️</span> 暴雨避險
-          </button>
-          <button onclick="handleQuickCmd('查產曆')" class="px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-sky-300 border border-blue-500/30 font-medium transition flex items-center gap-1 shrink-0 cursor-pointer">
-            <span>📅</span> 查全台產曆
-          </button>
-          <button onclick="handleQuickCmd('查費率')" class="px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-medium transition flex items-center gap-1 shrink-0 cursor-pointer">
-            <span>💰</span> 查服務費率
-          </button>
-        </div>
-
-        <!-- Chat Input Bar -->
-        <div class="bg-slate-900 px-3 py-2 border-t border-slate-800 flex items-center gap-2">
-          <button onclick="toggleRichMenu()" class="text-slate-400 hover:text-line-400 text-lg" title="開啟/收合圖文選單">
-            ⌨️
-          </button>
-          <input id="line-input" type="text" placeholder="輸入關鍵字 (如: 查訂單, 查產曆, 查工班, 查費率)..." 
-                 class="flex-1 bg-slate-800 text-white placeholder-slate-500 text-xs px-3 py-2 rounded-full border border-slate-700 focus:outline-none focus:border-line-500"
-                 onkeydown="if(event.key==='Enter') sendUserMessage()">
-          <button onclick="sendUserMessage()" class="w-8 h-8 rounded-full bg-line-500 hover:bg-line-600 text-white flex items-center justify-center text-xs shadow transition">
-            ➤
-          </button>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- Right Column: Push Control Console & Official Account Setup (5 Cols) -->
-    <section class="lg:col-span-5 space-y-6">
-
-      <!-- Panel 1: Multi-Persona Role Simulator -->
-      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-base font-black text-white flex items-center gap-2">
-            <span>🎭</span> 模擬使用者身分切換
-          </h3>
-          <span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-            自動連動專屬圖文選單 ╳ LINE ID
-          </span>
-        </div>
-        <p class="text-xs text-slate-400">
-          點擊下方不同使用者身分，體驗 LINE Bot 如何依據身分自動切換為對應的**專屬圖文選單 (Rich Menu)** 與 **專屬 Flex Message**（農場主派工、外籍移工母語、機耕領班、科技總台戰情）：
-        </p>
-
-        <div class="grid grid-cols-2 gap-2.5 pt-1 [&>button:last-child]:col-span-2">
-          <button onclick="selectPersona('farmer', 'U1001_FARMER', '陳建龍 (阿龍班長)')" id="persona-btn-farmer" 
-                  class="persona-btn p-3 rounded-xl bg-emerald-600 text-white font-bold text-xs flex flex-col text-left border border-emerald-500 shadow">
-            <span class="flex items-center gap-1.5 text-white">
-              <span>👨‍🌾</span> 農場主
-            </span>
-            <span class="text-[10px] text-emerald-100 font-normal mt-0.5">陳建龍 (枋山芒果)</span>
-          </button>
-
-          <button onclick="selectPersona('worker_foreign', 'U2001_WORKER_VN', 'Nguyễn Văn Hùng')" id="persona-btn-worker_foreign" 
-                  class="persona-btn p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex flex-col text-left border border-slate-700">
-            <span class="flex items-center gap-1.5 text-white">
-              <span>🇻🇳</span> 外籍移工
-            </span>
-            <span class="text-[10px] text-slate-400 font-normal mt-0.5">阮文雄 (越南籍 #001)</span>
-          </button>
-
-          <button onclick="selectPersona('worker_local', 'U3001_WORKER_TW', '林小祥 (帶工領班) / 陳建宏')" id="persona-btn-worker_local" 
-                  class="persona-btn p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex flex-col text-left border border-slate-700">
-            <span class="flex items-center gap-1.5 text-white">
-              <span>👨‍💼</span> 本國帶工領班/機耕
-            </span>
-            <span class="text-[10px] text-slate-400 font-normal mt-0.5">林小祥 (帶隊工頭) / 陳建宏</span>
-          </button>
-        </div>
-
-        <!-- 雙帳號：農場主走「智農派工（農場主）」，工人走「智農派工（工作者）」 -->
-        <div class="pt-2 space-y-2 text-xs border-t border-slate-800">
-          <div id="persona-sub-wrap" class="flex items-center gap-2" hidden>
-            <label for="persona-sub" class="text-slate-400 font-bold shrink-0 w-16">細分身分</label>
-            <select id="persona-sub" onchange="onPersonaDetailChange()" class="flex-1 bg-slate-950 border border-slate-700 text-slate-200 px-2 py-1.5 rounded-lg"></select>
-          </div>
-          <div class="flex items-center gap-3">
-            <span class="text-slate-400 font-bold shrink-0 w-16">身分來源</span>
-            <label class="flex items-center gap-1 text-slate-300"><input type="radio" name="identity-mode" value="demo" checked onchange="onPersonaDetailChange()"> 示範身分</label>
-            <label class="flex items-center gap-1 text-slate-300"><input type="radio" name="identity-mode" value="bound" onchange="onPersonaDetailChange()"> 實際綁定</label>
-          </div>
-          <p id="identity-mode-hint" class="text-[11px] text-slate-500">示範身分：不必綁定，直接以上方身分回覆。</p>
-          <div class="flex items-center gap-2 flex-wrap">
-            <button type="button" onclick="simulateFollow()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700">模擬加好友</button>
-            <a id="open-bind-page" href="../農業派遣主網站/line-bind.html" target="_blank" rel="noopener" hidden
-               class="px-3 py-1.5 rounded-lg bg-[#06C755] hover:opacity-90 text-white font-bold">開啟綁定頁</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- Panel 2: Live Push Notification Simulator -->
-      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-base font-black text-white flex items-center gap-2">
-            <span>📢</span> LINE 即時推播控制台
-          </h3>
-          <span class="text-[11px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
-            Messaging API Push
-          </span>
-        </div>
-        <p class="text-xs text-slate-400">
-          模擬科技公司後台或天候監測大腦，向已綁定 LINE 的使用者主動發送緊急快訊：
-        </p>
-
-        <div class="space-y-2.5">
-          <!-- Push 1: Weather Alert -->
-          <button onclick="triggerSimulatedPush('weather_alert', 'all')" 
-                  class="w-full p-3 rounded-xl bg-gradient-to-r from-blue-900/80 to-indigo-900/80 hover:from-blue-800 hover:to-indigo-800 border border-blue-500/40 text-left transition flex items-center justify-between group">
-            <div class="flex items-center gap-2.5">
-              <span class="text-2xl group-hover:scale-110 transition-transform">🌧️</span>
-              <div>
-                <div class="font-bold text-xs text-white">午後暴雨避險・專車轉移冷鏈警報</div>
-                <div class="text-[10px] text-blue-200">廣播全體工班安全接駁至室內預冷包裝線</div>
+              <div class="flex items-center">
+                <button type="button" class="lc-bar__btn" title="查詢功能" onclick="handleQuickCmd('查詢功能')"><i data-lucide="search" class="ad-icon"></i></button>
+                <button type="button" class="lc-bar__btn" title="圖文選單" onclick="toggleRichMenu()"><i data-lucide="menu" class="ad-icon"></i></button>
               </div>
             </div>
-            <span class="px-2 py-1 rounded bg-blue-600 text-white text-[10px] font-bold">推播發送</span>
-          </button>
 
-          <!-- Push 2: Daily Task -->
-          <button onclick="triggerSimulatedPush('daily_task', 'worker_foreign')" 
-                  class="w-full p-3 rounded-xl bg-gradient-to-r from-emerald-900/80 to-teal-900/80 hover:from-emerald-800 hover:to-teal-800 border border-emerald-500/40 text-left transition flex items-center justify-between group">
-            <div class="flex items-center gap-2.5">
-              <span class="text-2xl group-hover:scale-110 transition-transform">📋</span>
-              <div>
-                <div class="font-bold text-xs text-white">明日出工派工單與專車通知</div>
-                <div class="text-[10px] text-emerald-200">包含集合時間 06:30、司機電話與留蒂採收標準</div>
-              </div>
-            </div>
-            <span class="px-2 py-1 rounded bg-emerald-600 text-white text-[10px] font-bold">推播發送</span>
-          </button>
+            <div id="line-chat-box" class="lc-chat">
+              <div class="lc-date">2026/05/20 星期三</div>
 
-          <!-- Push 3: Early Bird Package -->
-          <button onclick="triggerSimulatedPush('early_bird', 'farmer')" 
-                  class="w-full p-3 rounded-xl bg-gradient-to-r from-amber-900/80 to-orange-900/80 hover:from-amber-800 hover:to-orange-800 border border-amber-500/40 text-left transition flex items-center justify-between group">
-            <div class="flex items-center gap-2.5">
-              <span class="text-2xl group-hover:scale-110 transition-transform">⚡</span>
-              <div>
-                <div class="font-bold text-xs text-white">2026 產季早鳥保證工時包促銷</div>
-                <div class="text-[10px] text-amber-200">315 元/hr・預付 20% 定金鎖定名額，承諾「遲到免單、放鳥雙倍賠」</div>
+              <div class="lc-msg">
+                <span class="lc-avatar"><i data-lucide="sprout" class="ad-icon"></i></span>
+                <div class="lc-msg__body">
+                  <div class="lc-bubble lc-bubble--bot">
+                    <p><b>歡迎加入智農派工官方帳號</b></p>
+                    <p>不用安裝 App，從下方圖文選單就能：</p>
+                    <ul>
+                      <li>查今天的出工與專車司機</li>
+                      <li>暴雨時通報改到室內冷鏈作業</li>
+                      <li>試算早鳥工時包（315 元／小時）</li>
+                      <li>工人端切換越南語、印尼語工單</li>
+                    </ul>
+                  </div>
+                  <span class="lc-time">08:00</span>
+                </div>
               </div>
-            </div>
-            <span class="px-2 py-1 rounded bg-amber-600 text-white text-[10px] font-bold">推播發送</span>
-          </button>
 
-          <!-- Push 4: Agri Subsidy -->
-          <button onclick="triggerSimulatedPush('salary_bonus', 'worker_foreign')" 
-                  class="w-full p-3 rounded-xl bg-gradient-to-r from-purple-900/80 to-pink-900/80 hover:from-purple-800 hover:to-pink-800 border border-purple-500/40 text-left transition flex items-center justify-between group">
-            <div class="flex items-center gap-2.5">
-              <span class="text-2xl group-hover:scale-110 transition-transform">💰</span>
-              <div>
-                <div class="font-bold text-xs text-white">農業部 8,800 元就業獎勵入帳通知</div>
-                <div class="text-[10px] text-purple-200">外展津貼透明公示，安定移工留台心願</div>
+              <div class="lc-msg">
+                <span class="lc-avatar"><i data-lucide="sprout" class="ad-icon"></i></span>
+                <div class="lc-msg__body lc-msg__body--wide">
+                  <div class="lc-flex">
+                    <div class="lc-flex__head">
+                      <span class="lc-tag" style="background: rgba(255, 255, 255, .18); color: #fff;">派工單</span>
+                      <div class="lc-flex__title">枋山愛文芒果（6.0 分地）</div>
+                      <div style="color: rgba(255, 255, 255, .85);">單號 ORD-2026-001・早鳥工時包</div>
+                    </div>
+                    <div class="lc-flex__body">
+                      <div class="lc-flex__row"><span>出工時間</span><span>明日 07:00～16:00</span></div>
+                      <div class="lc-flex__row"><span>指派工班</span><span>B 組 6 人，領班阿迪</span></div>
+                      <div class="lc-flex__row"><span>接送專車</span><span>智農 2 號車，司機李大哥</span></div>
+                      <div class="lc-flex__row"><span>作業手路</span><span>留蒂 0.5cm、護果粉採收</span></div>
+                      <div class="lc-flex__row" style="border-top: 1px solid #e2e8f0; padding-top: 6px;"><span>應付金額</span><span class="ad-num" style="color: #047857;">NT$ 52,920（定金已收 20%）</span></div>
+                    </div>
+                    <div class="lc-flex__foot lc-flex__foot--row">
+                      <button type="button" class="lc-flex__btn lc-flex__btn--line" onclick="handleQuickCmd('工班位置')">工班位置</button>
+                      <button type="button" class="lc-flex__btn" onclick="handleQuickCmd('撥打司機')">聯絡司機</button>
+                    </div>
+                  </div>
+                  <span class="lc-time">08:01</span>
+                </div>
               </div>
-            </div>
-            <span class="px-2 py-1 rounded bg-purple-600 text-white text-[10px] font-bold">推播發送</span>
-          </button>
 
-          <!-- Push 5: Order Query Result -->
-          <button onclick="triggerSimulatedPush('order_query', 'farmer')" 
-                  class="w-full p-3 rounded-xl bg-gradient-to-r from-emerald-950/80 to-teal-950/80 hover:from-emerald-900 hover:to-teal-900 border border-emerald-500/40 text-left transition flex items-center justify-between group">
-            <div class="flex items-center gap-2.5">
-              <span class="text-2xl group-hover:scale-110 transition-transform">📋</span>
-              <div>
-                <div class="font-bold text-xs text-white">派工訂單即時查詢卡片推播</div>
-                <div class="text-[10px] text-emerald-200">含單號 ORD-2026-001、現場小工頭與專車司機聯絡</div>
-              </div>
+              <!-- 動態訊息插在這之前 -->
+              <div id="dynamic-chat-anchor"></div>
             </div>
-            <span class="px-2 py-1 rounded bg-emerald-600 text-white text-[10px] font-bold">推播發送</span>
-          </button>
 
-          <!-- Push 6: Calendar Harvest Radar -->
-          <button onclick="triggerSimulatedPush('calendar_query', 'farmer')" 
-                  class="w-full p-3 rounded-xl bg-gradient-to-r from-blue-950/80 to-indigo-950/80 hover:from-blue-900 hover:to-indigo-900 border border-blue-500/40 text-left transition flex items-center justify-between group">
-            <div class="flex items-center gap-2.5">
-              <span class="text-2xl group-hover:scale-110 transition-transform">📅</span>
-              <div>
-                <div class="font-bold text-xs text-white">全台產曆收穫倒數雷達推播</div>
-                <div class="text-[10px] text-blue-200">含枋山芒果 10 天、民雄鳳梨 25 天採收緊急搶工提醒</div>
+            <!-- 圖文選單：LINE Bot 在線時顯示真正的選單圖（rich_menu/<代碼>.jpg，點格子送 postback）；離線用 HTML 格子 -->
+            <div id="line-rich-menu" class="lc-menu">
+              <div class="lc-menu__bar">
+                <span class="truncate" id="rich-menu-title">農場主・圖文選單</span>
+                <button type="button" class="lc-menu__toggle" id="rich-menu-arrow" onclick="toggleRichMenu()"><span id="rich-menu-toggle-text">收合</span><i data-lucide="chevron-down" class="ad-icon ad-icon--sm"></i></button>
               </div>
+              <img id="real-rich-menu" class="lc-real-menu" alt="圖文選單" draggable="false" hidden>
+              <div id="rich-menu-grid" class="lc-grid lc-grid--3"></div>
             </div>
-            <span class="px-2 py-1 rounded bg-blue-600 text-white text-[10px] font-bold">推播發送</span>
-          </button>
+
+            <div id="quick-chips-bar" class="lc-chips no-scrollbar"></div>
+
+            <div class="lc-input">
+              <button type="button" class="lc-bar__btn" style="color: #64748b;" title="開啟／收合圖文選單" onclick="toggleRichMenu()"><i data-lucide="keyboard" class="ad-icon"></i></button>
+              <input id="line-input" type="text" placeholder="輸入文字，例如：查訂單、查產曆、查費率" onkeydown="if(event.key==='Enter') sendUserMessage()">
+              <button type="button" class="lc-send" onclick="sendUserMessage()" aria-label="送出"><i data-lucide="send" class="ad-icon ad-icon--sm"></i></button>
+            </div>
+          </div>
         </div>
-      </div>
+        <p class="ad-caption" style="margin-top: 12px; text-align: center;">手機裡的畫面沿用 LINE 的配色，模擬農場主或工人在 LINE 上看到的樣子。</p>
+      </section>
 
-      <!-- Panel 3: Real LINE Messaging API Credentials & Webhook Tunnel -->
-      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3.5">
-        <div class="flex items-center justify-between">
-          <h3 class="text-base font-black text-white flex items-center gap-2">
-            <span>⚙️</span> LINE Developers 實機串接
-          </h3>
-          <span id="line-server-status-badge" class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1 font-bold">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span id="line-server-status-text">Port 5000 在線中</span>
-          </span>
-        </div>
-        <p class="text-xs text-slate-400">
-          如需串接真實 LINE 官方帳號，請將下方公開 HTTPS Webhook 填入 LINE Developers 後台（可透過執行根目錄 <code class="text-amber-400 font-mono">start_line_tunnel.bat</code> 免費穿透）：
-        </p>
+      <!-- 右：控制台 -->
+      <section class="lg:col-span-5 flex flex-col gap-4">
 
-        <div class="space-y-2.5 text-xs">
-          <!-- Webhook Tunnel Domain Switcher -->
-          <div>
-            <label class="text-[11px] text-slate-300 font-bold block mb-1">外網 HTTPS 穿透網址 (由 localtunnel / ngrok 產生)</label>
-            <input type="text" id="tunnel-domain-input" placeholder="例如：https://agridispatch.loca.lt" oninput="updateWebhookUrlDisplay()"
-                   class="w-full bg-slate-950 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-mono focus:border-line-500">
+        <!-- 1. 身分 -->
+        <div class="ad-card">
+          <div class="ad-card__head" style="margin-bottom: 12px;">
+            <h2 class="ad-heading">用誰的身分看</h2>
+            <span class="ad-caption">農場主與工人是兩個官方帳號</span>
           </div>
-
-          <div>
-            <div class="flex items-center justify-between">
-              <label class="text-[11px] text-slate-400 font-bold">LINE 後台 Webhook URL（農場主帳號；工作者帳號把結尾改成 /callback/worker）</label>
-              <span id="copy-status-tip" class="text-[10px] text-emerald-400 hidden font-bold">✅ 已複製！</span>
-            </div>
-            <div class="flex items-center gap-1.5 mt-1">
-              <input type="text" readonly value="http://localhost:5000/callback/farmer" id="webhook-url-input"
-                     class="flex-1 bg-slate-950 border border-slate-700 text-emerald-400 px-3 py-1.5 rounded-lg text-xs font-mono">
-              <button onclick="copyWebhookUrl()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition">
-                複製
-              </button>
-            </div>
-          </div>
-
-          <div class="pt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <div class="sm:col-span-2">
-              <label class="text-[11px] text-slate-400 font-bold" for="cfg-channel">要設定的官方帳號</label>
-              <select id="cfg-channel" class="w-full bg-slate-950 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs mt-1">
-                <option value="farmer">智農派工（農場主）</option>
-                <option value="worker">智農派工（工作者）</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-[11px] text-slate-400 font-bold">Channel Secret (簽章校驗金鑰)</label>
-              <input type="text" id="cfg-channel-secret" placeholder="填入 LINE Channel Secret" value="mock_secret_88888888"
-                     class="w-full bg-slate-950 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs mt-1 font-mono">
-            </div>
-            <div>
-              <label class="text-[11px] text-slate-400 font-bold">Channel Access Token (長期權杖)</label>
-              <input type="password" id="cfg-access-token" placeholder="填入 Long-lived Access Token" value="mock_token_agridispatch_line_bot"
-                     class="w-full bg-slate-950 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs mt-1 font-mono">
-            </div>
-            <div class="sm:col-span-2">
-              <label class="text-[11px] text-slate-400 font-bold">管理金鑰 (X-Admin-Key，呼叫 LINE Bot /api/config 所需)</label>
-              <input type="password" id="cfg-admin-key" placeholder="填入 LINE Bot 服務端設定的管理金鑰"
-                     class="w-full bg-slate-950 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs mt-1 font-mono">
-            </div>
-          </div>
-
-          <div class="pt-2 flex items-center justify-between gap-2">
-            <button onclick="testWebhookPing()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition flex items-center gap-1.5">
-              <span>🧪</span>
-              <span>測試 Webhook Ping</span>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button type="button" id="persona-btn-farmer" class="persona-btn ad-card ad-card--interactive is-selected" aria-pressed="true" style="padding: 12px 14px;" onclick="selectPersona('farmer', 'U1001_FARMER', '陳建龍 (阿龍班長)')">
+              <div class="ad-heading" style="font-size: 15px;">農場主</div>
+              <div class="ad-caption">陳建龍・枋山芒果</div>
             </button>
-            <button onclick="saveLineConfig()" class="px-4 py-2 rounded-xl bg-line-600 hover:bg-line-500 text-white font-black text-xs shadow-lg shadow-line-600/30 transition flex items-center gap-1.5">
-              <span>💾</span>
-              <span>儲存 LINE 官方憑證</span>
+            <button type="button" id="persona-btn-worker_foreign" class="persona-btn ad-card ad-card--interactive" aria-pressed="false" style="padding: 12px 14px;" onclick="selectPersona('worker_foreign', 'U2001_WORKER_VN', 'Nguyễn Văn Hùng')">
+              <div class="ad-heading" style="font-size: 15px;">外籍工人</div>
+              <div class="ad-caption">阮文雄・越南籍</div>
+            </button>
+            <button type="button" id="persona-btn-worker_local" class="persona-btn ad-card ad-card--interactive" aria-pressed="false" style="padding: 12px 14px;" onclick="selectPersona('worker_local', 'U3001_WORKER_TW', '林小祥 (帶工領班) / 陳建宏')">
+              <div class="ad-heading" style="font-size: 15px;">本國領班／機耕</div>
+              <div class="ad-caption">林小祥・陳建宏</div>
             </button>
           </div>
+
+          <div class="flex flex-col gap-3" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--ad-border);">
+            <div class="ad-field" id="persona-sub-wrap" hidden>
+              <label class="ad-label" for="persona-sub">細分身分</label>
+              <select id="persona-sub" class="ad-select" onchange="onPersonaDetailChange()"></select>
+            </div>
+            <div class="ad-field">
+              <span class="ad-label">身分來源</span>
+              <div class="ad-seg" id="identity-mode-seg" role="radiogroup" aria-label="身分來源">
+                <label class="ad-seg__btn is-active"><input type="radio" name="identity-mode" value="demo" checked onchange="onPersonaDetailChange()">示範身分</label>
+                <label class="ad-seg__btn"><input type="radio" name="identity-mode" value="bound" onchange="onPersonaDetailChange()">實際綁定</label>
+              </div>
+              <span class="ad-hint" id="identity-mode-hint">示範身分：不必綁定，直接以上方身分回覆。</span>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" onclick="simulateFollow()"><i data-lucide="user-plus" class="ad-icon ad-icon--sm"></i>模擬加好友</button>
+              <a id="open-bind-page" class="ad-btn ad-btn--line ad-btn--sm" href="../農業派遣主網站/line-bind.html" target="_blank" rel="noopener" hidden>開啟綁定頁</a>
+            </div>
+          </div>
         </div>
-      </div>
 
-    </section>
+        <!-- 2. 推播 -->
+        <div class="ad-card">
+          <div class="ad-card__head" style="margin-bottom: 12px;">
+            <h2 class="ad-heading">推播到這支手機</h2>
+            <span class="ad-caption">模擬後台或天候監測主動發送</span>
+          </div>
+          <div class="ad-list">
+            <div class="ad-row">
+              <div class="ad-row__main"><div class="ad-row__title">午後暴雨避險</div><div class="ad-row__meta">全體工班改到室內預冷包裝線，專車轉移</div></div>
+              <div class="ad-row__aside"><button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" onclick="triggerSimulatedPush('weather_alert', 'all')">推播</button></div>
+            </div>
+            <div class="ad-row">
+              <div class="ad-row__main"><div class="ad-row__title">明日出工派工單（工人端）</div><div class="ad-row__meta">集合 06:30、司機電話、留蒂採收標準</div></div>
+              <div class="ad-row__aside"><button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" onclick="triggerSimulatedPush('daily_task', 'worker_foreign')">推播</button></div>
+            </div>
+            <div class="ad-row">
+              <div class="ad-row__main"><div class="ad-row__title">早鳥工時包開放預約（農場主端）</div><div class="ad-row__meta">315 元／小時，預付 20% 定金鎖定名額</div></div>
+              <div class="ad-row__aside"><button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" onclick="triggerSimulatedPush('early_bird', 'farmer')">推播</button></div>
+            </div>
+            <div class="ad-row">
+              <div class="ad-row__main"><div class="ad-row__title">就業獎勵 8,800 元入帳（工人端）</div><div class="ad-row__meta">農業部津貼入帳通知</div></div>
+              <div class="ad-row__aside"><button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" onclick="triggerSimulatedPush('salary_bonus', 'worker_foreign')">推播</button></div>
+            </div>
+            <div class="ad-row">
+              <div class="ad-row__main"><div class="ad-row__title">派工單進度（農場主端）</div><div class="ad-row__meta">ORD-2026-001 的工班、司機聯絡方式</div></div>
+              <div class="ad-row__aside"><button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" onclick="triggerSimulatedPush('order_query', 'farmer')">推播</button></div>
+            </div>
+            <div class="ad-row">
+              <div class="ad-row__main"><div class="ad-row__title">產曆採收倒數（農場主端）</div><div class="ad-row__meta">枋山芒果 10 天、民雄鳳梨 25 天</div></div>
+              <div class="ad-row__aside"><button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" onclick="triggerSimulatedPush('calendar_query', 'farmer')">推播</button></div>
+            </div>
+          </div>
+        </div>
 
+        <!-- 3. 進階：接真正的 LINE 官方帳號才需要 -->
+        <details class="ad-card" id="dev-panel">
+          <summary>
+            <div class="flex items-center gap-3 min-w-0 flex-wrap">
+              <h2 class="ad-heading">LINE Developers 串接</h2>
+              <span id="line-server-status-badge" class="ad-pill"><span class="ad-pill__dot"></span><span id="line-server-status-text">檢查中</span></span>
+            </div>
+            <i data-lucide="chevron-down" class="ad-icon lc-caret ad-text-3"></i>
+          </summary>
+          <div class="flex flex-col gap-4" style="margin-top: 16px;">
+            <p class="ad-caption">要接真正的 LINE 官方帳號時才需要這一段：把下方 Webhook 網址填進 LINE Developers 後台。本機測試可執行根目錄的 <code>start_line_tunnel.bat</code> 取得外網網址。</p>
+            <div class="ad-field">
+              <label class="ad-label" for="tunnel-domain-input">外網 HTTPS 網址（localtunnel／ngrok 產生）</label>
+              <input type="text" id="tunnel-domain-input" class="ad-input" placeholder="例如：https://agridispatch.loca.lt" oninput="updateWebhookUrlDisplay()">
+            </div>
+            <div class="ad-field">
+              <label class="ad-label" for="webhook-url-input">Webhook URL（農場主帳號；工作者帳號把結尾改成 /callback/worker）</label>
+              <div class="flex items-center gap-2">
+                <input type="text" id="webhook-url-input" class="ad-input" readonly value="http://localhost:5000/callback/farmer" style="font-family: ui-monospace, monospace;">
+                <button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" onclick="copyWebhookUrl()">複製</button>
+              </div>
+              <span class="ad-hint" id="copy-status-tip" hidden>已複製</span>
+            </div>
+            <div class="ad-form-grid ad-form-grid--2">
+              <div class="ad-field sm:col-span-2">
+                <label class="ad-label" for="cfg-channel">要設定的官方帳號</label>
+                <select id="cfg-channel" class="ad-select">
+                  <option value="farmer">智農派工（農場主）</option>
+                  <option value="worker">智農派工（工作者）</option>
+                </select>
+              </div>
+              <div class="ad-field">
+                <label class="ad-label" for="cfg-channel-secret">Channel Secret</label>
+                <input type="text" id="cfg-channel-secret" class="ad-input" placeholder="填入 LINE Channel Secret" value="mock_secret_88888888">
+              </div>
+              <div class="ad-field">
+                <label class="ad-label" for="cfg-access-token">Channel Access Token</label>
+                <input type="password" id="cfg-access-token" class="ad-input" placeholder="填入 Long-lived Access Token" value="mock_token_agridispatch_line_bot">
+              </div>
+              <div class="ad-field sm:col-span-2">
+                <label class="ad-label" for="cfg-admin-key">管理金鑰（X-Admin-Key，呼叫 LINE Bot /api/config 用）</label>
+                <input type="password" id="cfg-admin-key" class="ad-input" placeholder="LINE Bot 服務端設定的管理金鑰">
+              </div>
+            </div>
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" onclick="testWebhookPing()">測試 Webhook</button>
+              <button type="button" class="ad-btn ad-btn--primary ad-btn--sm" onclick="saveLineConfig()">儲存憑證</button>
+            </div>
+          </div>
+        </details>
+
+      </section>
+    </div>
   </main>
+
+  <footer class="ad-caption" style="border-top: 1px solid var(--ad-border); padding: 20px 16px; text-align: center;">
+    © 2026 智農派工 AgriDispatch · 技術代管：智農科技有限公司 · 外展主體：有限責任智農農業勞務生產合作社
+  </footer>
+
+  <script>
+    // 示範導覽抽屜：頁面清單集中在 agri-theme.js，demo 模式才會注入
+    var demoNav = AgriTheme.demoNav({ main: '../農業派遣主網站/', tech: '../科技後台/', line: '' });
+  </script>
 
   <!-- Interactive JavaScript -->
   <script>
@@ -638,9 +470,13 @@
       const img = document.getElementById('real-rich-menu');
       img.src = `${LINEBOT_BASE}/rich_menu/${key}.jpg`;
       img.hidden = !isRichMenuOpen;
-      document.getElementById('rich-menu-grid').classList.add('hidden');
+      document.getElementById('rich-menu-grid').hidden = true;
+      // 選單列只顯示選單名稱（LINE 的 chatBarText 可能帶 emoji，進畫面前濾掉）；選單代碼放 tooltip 供驗收
       const title = document.getElementById('rich-menu-title');
-      if (title) title.textContent = `${realMenu.chatBarText}・${key}`;
+      if (title) {
+        title.textContent = plainText(realMenu.chatBarText || '圖文選單');
+        title.title = key;
+      }
     }
 
     function updateAccountUi() {
@@ -668,8 +504,14 @@
     }
 
     function onPersonaDetailChange() {
+      document.querySelectorAll('#identity-mode-seg .ad-seg__btn').forEach(lab => {
+        const input = lab.querySelector('input');
+        lab.classList.toggle('is-active', !!(input && input.checked));
+      });
       updateAccountUi();
       realMenu = null;
+      document.getElementById('real-rich-menu').hidden = true;
+      document.getElementById('rich-menu-grid').hidden = !isRichMenuOpen;
       askLineBot({ event: 'menu' });
     }
 
@@ -698,123 +540,80 @@
     });
 
     // =========================================================================
-    // 依身分切換圖文選單 (Dynamic Multi-Persona Rich Menu System)
+    // 依身分切換圖文選單：離線時用 HTML 格子模擬；LINE Bot 在線時改顯示真正的選單圖（showRealRichMenu）
+    // 圖示用 lucide 名稱，顏色一律由 .lc-cell 決定，文字不帶 emoji
     // =========================================================================
     const roleRichMenus = {
       farmer: {
-        title: '圖文選單 (派工與訂單)',
-        badge: '👨‍🌾 農場主模式',
-        badgeColor: 'text-emerald-400',
-        gridClass: 'border-emerald-500/40',
-        gridCols: 'grid-cols-4',
+        title: '農場主・圖文選單',
+        cols: 4,
         buttons: [
-          { cmd: '查派工單', icon: '📋', title: '我的派工單', desc: 'ORD-001/車號/進度', bg: 'from-slate-800 to-slate-900', titleCol: 'text-white', descCol: 'text-slate-400', border: 'border-slate-800' },
-          { cmd: '黑轉白', icon: '🔄', title: '現有工班黑轉白', desc: '依身分合法轉換', bg: 'from-cyan-950 to-slate-900', titleCol: 'text-cyan-300', descCol: 'text-cyan-400/80', border: 'border-cyan-500/40' },
-          { cmd: '早鳥工時包', icon: '⚡', title: '早鳥工時包', desc: '鎖定名額・優先排班', bg: 'from-amber-950 to-slate-900', titleCol: 'text-amber-300', descCol: 'text-amber-400/80', border: 'border-amber-900/40' },
-          { cmd: '天候避險', icon: '🌧️', title: '暴雨天候避險', desc: '冷鏈轉移通報', bg: 'from-blue-950 to-slate-900', titleCol: 'text-blue-300', descCol: 'text-blue-400/80', border: 'border-blue-900/40' },
-          { cmd: '機耕代噴', icon: '🚜', title: '預約專業機耕', desc: 'T50植保/80hp深耕', bg: 'from-slate-800 to-slate-900', titleCol: 'text-white', descCol: 'text-slate-400', border: 'border-slate-800' },
-          { cmd: '快速叫工', icon: '⚡', title: '明日急件叫工', desc: '一鍵叫合法工班', bg: 'from-purple-950 to-slate-900', titleCol: 'text-purple-300', descCol: 'text-purple-400/80', border: 'border-purple-500/40' },
-          { cmd: '聯絡工頭', icon: '📞', title: '聯絡專屬工頭', desc: '小工頭/司機專線', bg: 'from-emerald-950 to-slate-900', titleCol: 'text-emerald-300', descCol: 'text-emerald-400/80', border: 'border-emerald-500/40' },
-          { cmd: '查費率', icon: '💰', title: '查服務費率', desc: '時薪/日薪/包工', bg: 'from-amber-950 to-slate-900', titleCol: 'text-amber-300', descCol: 'text-amber-400/80', border: 'border-amber-900/40' }
+          { cmd: '查派工單', icon: 'clipboard-list', title: '我的派工單', desc: '單號／車號／進度' },
+          { cmd: '黑轉白', icon: 'refresh-cw', title: '工班黑轉白', desc: '依身分合法轉換' },
+          { cmd: '早鳥工時包', icon: 'zap', title: '早鳥工時包', desc: '鎖定名額・優先排班' },
+          { cmd: '天候避險', icon: 'cloud-rain', title: '暴雨避險', desc: '冷鏈轉移通報' },
+          { cmd: '機耕代噴', icon: 'tractor', title: '預約機耕', desc: '植保／深耕' },
+          { cmd: '快速叫工', icon: 'users', title: '急件叫工', desc: '明日一鍵叫合法工班' },
+          { cmd: '聯絡工頭', icon: 'phone-call', title: '聯絡工頭', desc: '小工頭／司機專線' },
+          { cmd: '查費率', icon: 'coins', title: '查費率', desc: '時薪／包工' }
         ],
-        chips: [
-          { cmd: '黑轉白', icon: '🔄', text: '現有工班黑轉白', color: 'text-cyan-300' },
-          { cmd: '查派工單', icon: '📋', text: '查派工單', color: 'text-emerald-300' },
-          { cmd: '早鳥工時包', icon: '⚡', text: '早鳥工時包', color: 'text-amber-300' },
-          { cmd: '天候避險', icon: '🌧️', text: '暴雨避險', color: 'text-blue-300' },
-          { cmd: '查產曆', icon: '📅', text: '查全台產曆', color: 'text-sky-300' },
-          { cmd: '查費率', icon: '💰', text: '查服務費率', color: 'text-amber-300' }
-        ]
+        chips: ['黑轉白', '查派工單', '早鳥工時包', '天候避險', '查產曆', '查費率']
       },
       worker_foreign: {
-        title: 'Menu Rich (Lao động Ngoại quốc)',
-        badge: '🇻🇳 移工母語模式',
-        badgeColor: 'text-purple-400',
-        gridClass: 'border-purple-500/40',
+        title: '工作者・圖文選單（越南語）',
+        cols: 3,
         buttons: [
-          { cmd: '今日任務卡', icon: '📋', title: '今日任務卡', desc: 'Lịch hôm nay / SOP', bg: 'from-purple-950 to-slate-900', titleCol: 'text-purple-300', descCol: 'text-purple-400/80', border: 'border-purple-500/40' },
-          { cmd: '接送專車', icon: '🚐', title: '接送專車時間', desc: 'Xe đưa đón / 司機李大哥', bg: 'from-slate-800 to-slate-900', titleCol: 'text-white', descCol: 'text-slate-400', border: 'border-slate-800' },
-          { cmd: '薪資津貼', icon: '💰', title: '薪資與8800津貼', desc: 'Tiền lương / 就業獎勵', bg: 'from-amber-950 to-slate-900', titleCol: 'text-amber-300', descCol: 'text-amber-400/80', border: 'border-amber-900/40' },
-          { cmd: '田間打卡', icon: '⏱️', title: '田間出勤打卡', desc: 'Chấm công / GPS打卡', bg: 'from-emerald-950 to-slate-900', titleCol: 'text-emerald-300', descCol: 'text-emerald-400/80', border: 'border-emerald-500/40' },
-          { cmd: '切換母語', icon: '🌐', title: '切換母語模式', desc: 'Tiếng Việt / 中文 / Indo', bg: 'from-slate-800 to-slate-900', titleCol: 'text-white', descCol: 'text-slate-400', border: 'border-slate-800' },
-          { cmd: '雙語求助', icon: '🆘', title: '雙語求助督導', desc: 'Hỗ trợ khẩn cấp / 生活求助', bg: 'from-rose-950 to-slate-900', titleCol: 'text-rose-300', descCol: 'text-rose-400/80', border: 'border-rose-900/40' }
+          { cmd: '今日任務卡', icon: 'clipboard-list', title: '今日任務卡', desc: 'Lịch hôm nay' },
+          { cmd: '接送專車', icon: 'bus', title: '接送專車', desc: 'Xe đưa đón' },
+          { cmd: '薪資津貼', icon: 'coins', title: '薪資與津貼', desc: 'Tiền lương' },
+          { cmd: '田間打卡', icon: 'clock', title: '出勤打卡', desc: 'Chấm công' },
+          { cmd: '切換母語', icon: 'languages', title: '切換語言', desc: 'Tiếng Việt／中文／Indo' },
+          { cmd: '雙語求助', icon: 'life-buoy', title: '雙語求助', desc: 'Hỗ trợ khẩn cấp' }
         ],
         chips: [
-          { cmd: '今日任務卡', icon: '📋', text: 'Lịch làm việc (任務)', color: 'text-purple-300' },
-          { cmd: '接送專車', icon: '🚐', text: 'Xe đưa đón (專車)', color: 'text-blue-300' },
-          { cmd: '薪資津貼', icon: '💰', text: '8,800 津貼', color: 'text-amber-300' },
-          { cmd: '田間打卡', icon: '⏱️', text: 'Chấm công (打卡)', color: 'text-emerald-300' },
-          { cmd: '雙語求助', icon: '🆘', text: 'Hỗ trợ (求助)', color: 'text-rose-300' }
+          { cmd: '今日任務卡', text: 'Lịch làm việc（任務）' }, { cmd: '接送專車', text: 'Xe đưa đón（專車）' },
+          { cmd: '薪資津貼', text: '8,800 津貼' }, { cmd: '田間打卡', text: 'Chấm công（打卡）' }, { cmd: '雙語求助', text: 'Hỗ trợ（求助）' }
         ]
       },
       worker_local: {
-        title: '圖文選單 (現場指揮與機耕隊)',
-        badge: '🚜 帶工領班模式',
-        badgeColor: 'text-blue-400',
-        gridClass: 'border-blue-500/40',
+        title: '領班・圖文選單',
+        cols: 3,
         buttons: [
-          { cmd: '工班點名', icon: '👷', title: '工班點名出勤', desc: '工班B組6人 / 實名驗證', bg: 'from-blue-950 to-slate-900', titleCol: 'text-blue-300', descCol: 'text-blue-400/80', border: 'border-blue-500/40' },
-          { cmd: '機耕航跡', icon: '🚁', title: '機耕飛行航跡', desc: '大疆T50 / 80hp深耕', bg: 'from-indigo-950 to-slate-900', titleCol: 'text-indigo-300', descCol: 'text-indigo-400/80', border: 'border-indigo-500/40' },
-          { cmd: '完工簽核', icon: '✍️', title: '完工驗收簽核', desc: '農友手路驗收 / 發票憑證', bg: 'from-emerald-950 to-slate-900', titleCol: 'text-emerald-300', descCol: 'text-emerald-400/80', border: 'border-emerald-500/40' },
-          { cmd: '車隊調度', icon: '🚐', title: '接駁車隊調度', desc: '智農1~4號車 / 冷鏈轉運', bg: 'from-slate-800 to-slate-900', titleCol: 'text-white', descCol: 'text-slate-400', border: 'border-slate-800' },
-          { cmd: '領班分紅', icon: '💵', title: '領班加給分紅', desc: '帶工津貼 / 本月分紅累計', bg: 'from-amber-950 to-slate-900', titleCol: 'text-amber-300', descCol: 'text-amber-400/80', border: 'border-amber-900/40' },
-          { cmd: '異常回報', icon: '🚨', title: '現場異常回報', desc: '天候突發 / 設備障礙', bg: 'from-rose-950 to-slate-900', titleCol: 'text-rose-300', descCol: 'text-rose-400/80', border: 'border-rose-900/40' }
+          { cmd: '工班點名', icon: 'users', title: '工班點名', desc: 'B 組 6 人／實名' },
+          { cmd: '機耕航跡', icon: 'navigation', title: '機耕航跡', desc: 'T50／80hp 深耕' },
+          { cmd: '完工簽核', icon: 'clipboard-check', title: '完工簽核', desc: '驗收／憑證' },
+          { cmd: '車隊調度', icon: 'bus', title: '車隊調度', desc: '1～4 號車／冷鏈' },
+          { cmd: '領班分紅', icon: 'coins', title: '領班分紅', desc: '帶工津貼／本月累計' },
+          { cmd: '異常回報', icon: 'triangle-alert', title: '異常回報', desc: '天候／設備' }
         ],
-        chips: [
-          { cmd: '工班點名', icon: '👷', text: '工班點名', color: 'text-blue-300' },
-          { cmd: '機耕航跡', icon: '🚁', text: 'T50航跡圖資', color: 'text-indigo-300' },
-          { cmd: '完工簽核', icon: '✍️', text: '完工簽核', color: 'text-emerald-300' },
-          { cmd: '車隊調度', icon: '🚐', text: '接駁車隊', color: 'text-sky-300' },
-          { cmd: '領班分紅', icon: '💵', text: '帶工分紅', color: 'text-amber-300' }
-        ]
+        chips: ['工班點名', '機耕航跡', '完工簽核', '車隊調度', '領班分紅']
       }
     };
 
     function renderRichMenuForPersona(role) {
       const menuConfig = roleRichMenus[role] || roleRichMenus.farmer;
-
-      // 1. 更新選單上方標籤列
       const titleEl = document.getElementById('rich-menu-title');
-      if (titleEl) {
-        titleEl.innerHTML = `<span class="font-extrabold ${menuConfig.badgeColor}">${menuConfig.badge}</span>・${menuConfig.title}`;
-      }
+      if (titleEl) titleEl.textContent = menuConfig.title;
 
-      // 2. 動態渲染 6 宮格按鈕
       const gridEl = document.getElementById('rich-menu-grid');
       if (gridEl) {
-        gridEl.classList.remove('grid-cols-3', 'grid-cols-4');
-        gridEl.classList.add(menuConfig.gridCols || 'grid-cols-3');
+        gridEl.className = 'lc-grid lc-grid--' + (menuConfig.cols || 3);
         gridEl.innerHTML = menuConfig.buttons.map(btn => `
-          <button type="button" onclick="handleQuickCmd('${btn.cmd}')" class="p-2.5 rounded-lg bg-gradient-to-b ${btn.bg} hover:brightness-125 text-center transition-all duration-200 flex flex-col items-center justify-center gap-1 group border ${btn.border} cursor-pointer shadow-sm">
-            <span class="text-lg group-hover:scale-110 transition-transform">${btn.icon}</span>
-            <span class="text-[11px] font-bold ${btn.titleCol} leading-tight">${btn.title}</span>
-            <span class="text-[9px] ${btn.descCol} truncate max-w-full">${btn.desc}</span>
-          </button>
-        `).join('');
+          <button type="button" class="lc-cell" onclick="handleQuickCmd('${btn.cmd}')">
+            <i data-lucide="${btn.icon}" class="ad-icon"></i>
+            <span>${escapeHtml(btn.title)}</span>
+            <small>${escapeHtml(btn.desc)}</small>
+          </button>`).join('');
+        gridEl.hidden = !isRichMenuOpen || !!realMenu;
+        AgriTheme.icons(gridEl);
       }
 
-      // 3. 動態更新快捷標籤列
       const chipsEl = document.getElementById('quick-chips-bar');
       if (chipsEl) {
-        chipsEl.innerHTML = `
-          <span class="text-slate-400 text-[10px] font-bold flex items-center gap-0.5 shrink-0">
-            <span>⚡</span> 查詢：
-          </span>
-          ${menuConfig.chips.map(chip => `
-            <button type="button" onclick="handleQuickCmd('${chip.cmd}')" class="px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 ${chip.color} border border-slate-700 font-medium transition flex items-center gap-1 shrink-0 cursor-pointer text-xs">
-              <span>${chip.icon}</span> ${chip.text}
-            </button>
-          `).join('')}
-        `;
-      }
-
-      // 4. 選單邊框閃爍動效
-      const menuContainer = document.getElementById('line-rich-menu');
-      if (menuContainer) {
-        menuContainer.classList.add('ring-2', 'ring-emerald-400/60');
-        setTimeout(() => {
-          menuContainer.classList.remove('ring-2', 'ring-emerald-400/60');
-        }, 1200);
+        chipsEl.innerHTML = '<span class="lc-chips__label">常用：</span>' + menuConfig.chips.map(chip => {
+          const c = typeof chip === 'string' ? { cmd: chip, text: chip } : chip;
+          return `<button type="button" class="lc-chip" onclick="handleQuickCmd('${c.cmd}')">${escapeHtml(c.text)}</button>`;
+        }).join('');
       }
     }
 
@@ -825,60 +624,43 @@
       currentUserName = name;
 
       document.querySelectorAll('.persona-btn').forEach(b => {
-        b.className = 'persona-btn p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex flex-col text-left border border-slate-700';
+        const on = b.id === `persona-btn-${role}`;
+        b.classList.toggle('is-selected', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
       });
 
-      const activeBtn = document.getElementById(`persona-btn-${role}`);
-      if (activeBtn) {
-        if (role === 'farmer') {
-          activeBtn.className = 'persona-btn p-3 rounded-xl bg-emerald-600 text-white font-bold text-xs flex flex-col text-left border border-emerald-500 shadow ring-2 ring-emerald-400/40';
-        } else if (role === 'worker_foreign') {
-          activeBtn.className = 'persona-btn p-3 rounded-xl bg-purple-700 text-white font-bold text-xs flex flex-col text-left border border-purple-500 shadow ring-2 ring-purple-400/40';
-        } else if (role === 'worker_local') {
-          activeBtn.className = 'persona-btn p-3 rounded-xl bg-blue-700 text-white font-bold text-xs flex flex-col text-left border border-blue-500 shadow ring-2 ring-blue-400/40';
-        }
-      }
-
-      // 動態更新圖文選單（LINE Bot 在線時改顯示該帳號與身分的真正選單）
-      renderRichMenuForPersona(role);
+      // 先回到 HTML 模擬選單；LINE Bot 在線時 askLineBot 會再換成該帳號與身分的真正選單圖
       realMenu = null;
       document.getElementById('real-rich-menu').hidden = true;
+      renderRichMenuForPersona(role);
       updateAccountUi();
       askLineBot({ event: 'menu' });
 
-      appendSystemNotice(`已切換身分至【${name}】(LINE ID: ${lineId})，圖文選單已動態更換為專屬項目！`);
-      
-      // 自動推播對應該身分的迎賓卡片
+      appendSystemNotice(`已切換為 ${name}，圖文選單同步更換`);
       sendPersonaWelcomeFlex(role);
     }
 
     function sendPersonaWelcomeFlex(role) {
       if (role === 'worker_foreign') {
-        appendBotText("🇻🇳 Xin chào Nguyễn Văn Hùng! LINE Bot đã tự động liên kết Menu tiếng Việt (外籍移工專屬圖文選單已載入)。");
+        appendBotText("Xin chào Nguyễn Văn Hùng! LINE Bot đã tự động liên kết Menu tiếng Việt (外籍移工專屬圖文選單已載入)。");
         renderFlexCard(buildForeignWorkerTaskFlex());
       } else if (role === 'worker_local') {
-        appendBotText("🚜 林小祥 帶隊工頭您好！LINE Bot 已為您載入【本國帶工領班與機耕】專屬指揮圖文選單。");
+        appendBotText("林小祥 帶隊工頭您好！LINE Bot 已為您載入【本國帶工領班與機耕】專屬指揮圖文選單。");
         renderFlexCard(buildForemanRollCallFlex());
       } else {
-        appendBotText("👨‍🌾 陳建龍 班長您好！LINE Bot 已為您載入【農場主專屬】派工單與早鳥選購圖文選單。");
+        appendBotText("陳建龍 班長您好！LINE Bot 已為您載入【農場主專屬】派工單與早鳥選購圖文選單。");
         renderFlexCard(buildMockOrderQueryFlex('ORD-2026-001'));
       }
     }
 
     // 2. 收合/展開圖文選單
     function toggleRichMenu() {
-      const grid = document.getElementById('rich-menu-grid');
-      const arrow = document.getElementById('rich-menu-arrow');
       isRichMenuOpen = !isRichMenuOpen;
+      const grid = document.getElementById('rich-menu-grid');
       const real = document.getElementById('real-rich-menu');
-      if (realMenu) real.hidden = !isRichMenuOpen;
-      if (isRichMenuOpen) {
-        if (!realMenu) grid.classList.remove('hidden');
-        arrow.innerText = '▼';
-      } else {
-        grid.classList.add('hidden');
-        arrow.innerText = '▲';
-      }
+      if (realMenu) real.hidden = !isRichMenuOpen; else grid.hidden = !isRichMenuOpen;
+      document.getElementById('rich-menu-arrow').classList.toggle('is-up', !isRichMenuOpen);
+      document.getElementById('rich-menu-toggle-text').textContent = isRichMenuOpen ? '收合' : '展開';
     }
 
     // 3. 點擊快捷按鈕
@@ -927,63 +709,51 @@
 
     // short 須與 Java FlexMessageBuilder.LEGALIZE_TYPES 的指令關鍵字一致
     const LEGALIZE_TYPES = {
-      local:    { short: '本國臨時工', label: '本國籍臨時工（未投保）', icon: '🧑‍🌾', path: 'direct',
+      local:    { short: '本國臨時工', label: '本國籍臨時工（未投保）', path: 'direct',
                   summary: '可直接轉白：由合作社聘僱為農務士，簽約後依法加保勞保／就保／職災保險並申報薪資。' },
-      spouse:   { short: '新住民', label: '新住民（外籍／陸籍配偶）', icon: '🏠', path: 'direct',
+      spouse:   { short: '新住民', label: '新住民（外籍／陸籍配偶）', path: 'direct',
                   summary: '可直接轉白：依親居留之配偶在台工作免申請許可，上傳居留證審核後由合作社聘僱加保。' },
-      student:  { short: '外籍學生', label: '外籍學生／僑生', icon: '🎓', path: 'conditional',
+      student:  { short: '外籍學生', label: '外籍學生／僑生', path: 'conditional',
                   summary: '有條件轉白：須先取得工作許可，學期中每週最多 20 小時；許可前不得排班。【待確認】' },
-      borrowed: { short: '借用移工', label: '借用他人雇主的合法移工', icon: '🔁', path: 'replace',
+      borrowed: { short: '借用移工', label: '借用他人雇主的合法移工', path: 'replace',
                   summary: '不可就地轉白：移工只能為原雇主工作，請今日起停止使用並結清工資，空缺改由合作社外展工班補位。' },
-      runaway:  { short: '失聯移工', label: '失聯（逃逸）移工', icon: '⚠️', path: 'replace',
+      runaway:  { short: '失聯移工', label: '失聯（逃逸）移工', path: 'replace',
                   summary: '依法無法就地合法化：請停止使用並結清工資，勿扣留證件；本人可洽移民署專勤隊或勞動部 1955 專線了解到案方式【待確認】。系統不記錄其個資，空缺由合法工班補位。' }
     };
     const LEGALIZE_BADGE = {
-      direct:      '<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 font-bold">可直接轉白</span>',
-      conditional: '<span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-bold">有條件轉白</span>',
-      replace:     '<span class="px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 font-bold">改派合法工班補位</span>'
+      direct:      '<span class="lc-tag lc-tag--ok">可直接轉白</span>',
+      conditional: '<span class="lc-tag lc-tag--warn">有條件轉白</span>',
+      replace:     '<span class="lc-tag lc-tag--danger">改派合法工班補位</span>'
     };
 
     function appendBotHtml(innerHtml) {
-      const anchor = document.getElementById('dynamic-chat-anchor');
-      const time = getCurrentTimeString();
-      anchor.insertAdjacentHTML('beforebegin', `
-        <div class="flex items-start gap-2 mb-2">
-          <div class="w-7 h-7 rounded-full bg-white text-emerald-700 flex items-center justify-center text-xs shadow flex-shrink-0">🌱</div>
-          <div class="max-w-[82%]">
-            <div class="line-bubble-bot p-3 text-slate-800 text-xs shadow leading-relaxed space-y-1.5">${innerHtml}</div>
-            <span class="text-[9px] text-slate-700 ml-1 mt-0.5 inline-block">${time}</span>
-          </div>
-        </div>
-      `);
-      scrollToBottom();
+      pushBotHtml(`<div class="lc-bubble lc-bubble--bot">${innerHtml}</div>`);
     }
 
     function renderLocalLegalizeIntro() {
-        const typeButtons = Object.values(LEGALIZE_TYPES).map(t => `
-          <button type="button" data-line-msg="黑轉白：${t.short}" class="w-full text-left px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 border border-slate-200 text-slate-700 font-bold transition">${t.icon} ${t.label}</button>
-        `).join('');
-        appendBotHtml(`
-          <div class="font-bold text-emerald-700">🔄 現有工班黑轉白</div>
-          <div>請選擇這位工人目前的身分，我告訴您怎麼轉：</div>
-          <div class="space-y-1 pt-0.5">${typeButtons}</div>
-          <a href="../農業派遣主網站/legalize.html" class="block text-center px-2.5 py-1.5 rounded-lg bg-[#06C755] hover:brightness-110 text-white font-bold transition">📋 開啟轉換中心（整班盤點）</a>
-          <div class="text-[10px] text-slate-500">※ 離線示範（LINE Bot 後端未啟動）；法規細節標【待確認】處以律師或主管機關意見為準</div>
-        `);
+      const typeButtons = Object.values(LEGALIZE_TYPES).map(t => `
+        <button type="button" data-line-msg="黑轉白：${t.short}" class="lc-flex__btn" style="justify-content: flex-start; text-align: left;">${t.label}</button>`).join('');
+      appendBotHtml(`
+        <div style="font-weight: 700; color: #047857;">現有工班黑轉白</div>
+        <div>請選擇這位工人目前的身分，我告訴您怎麼轉：</div>
+        ${typeButtons}
+        <a href="../農業派遣主網站/legalize.html" class="lc-flex__btn lc-flex__btn--line">開啟轉換中心（整班盤點）</a>
+        <div style="color: #64748b;">離線示範（LINE Bot 後端未啟動）；法規細節標【待確認】處以律師或主管機關意見為準</div>
+      `);
     }
 
     function renderLocalLegalizeType(key) {
-        const t = LEGALIZE_TYPES[key];
-        const action = t.path === 'replace'
-          ? `<button type="button" onclick="handleQuickCmd('快速叫工')" class="w-full px-2.5 py-1.5 rounded-lg bg-[#06C755] hover:brightness-110 text-white font-bold transition">🚐 改派合法工班補位</button>`
-          : `<a href="../農業派遣主網站/legalize.html" class="block text-center px-2.5 py-1.5 rounded-lg bg-[#06C755] hover:brightness-110 text-white font-bold transition">✅ 到轉換中心開始轉白</a>`;
-        appendBotHtml(`
-          <div class="font-bold text-slate-800">${t.icon} ${t.label}</div>
-          <div>${LEGALIZE_BADGE[t.path]}</div>
-          <div>${t.summary}</div>
-          ${action}
-          <button type="button" data-line-msg="黑轉白" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-bold transition">↩ 選擇其他身分</button>
-        `);
+      const t = LEGALIZE_TYPES[key];
+      const action = t.path === 'replace'
+        ? `<button type="button" onclick="handleQuickCmd('快速叫工')" class="lc-flex__btn lc-flex__btn--line">改派合法工班補位</button>`
+        : `<a href="../農業派遣主網站/legalize.html" class="lc-flex__btn lc-flex__btn--line">到轉換中心開始轉白</a>`;
+      appendBotHtml(`
+        <div style="font-weight: 700;">${t.label}</div>
+        <div>${LEGALIZE_BADGE[t.path]}</div>
+        <div>${t.summary}</div>
+        ${action}
+        <button type="button" data-line-msg="黑轉白" class="lc-flex__btn">選擇其他身分</button>
+      `);
     }
 
     // 農場主「明日急件叫工」展示：與地下仲介比拼速度，但全程走合作社合法派工（純前端示範，不寫入後端）
@@ -992,24 +762,13 @@
       showTypingIndicator();
       setTimeout(() => {
         removeTypingIndicator();
-        const anchor = document.getElementById('dynamic-chat-anchor');
-        const time = getCurrentTimeString();
-        anchor.insertAdjacentHTML('beforebegin', `
-          <div class="flex items-start gap-2 mb-2">
-            <div class="w-7 h-7 rounded-full bg-white text-emerald-700 flex items-center justify-center text-xs shadow flex-shrink-0">🌱</div>
-            <div class="max-w-[82%]">
-              <div class="line-bubble-bot p-3 text-slate-800 text-xs shadow leading-relaxed space-y-1">
-                <div class="font-bold text-emerald-700">✅ 已啟動明日急件調度（合法派工）</div>
-                <div>👷 媒合「履歷認證工班」5 人，班長確認後回傳集合時間</div>
-                <div>🛡️ 人員由合作社雇用，依法加保勞保／職災保險</div>
-                <div>🧾 完工後可下載出勤紀錄與勞務費明細</div>
-                <div class="text-[10px] text-slate-500">※ 示範流程；急件費用與可派人數依實際排班為準</div>
-              </div>
-              <span class="text-[9px] text-slate-700 ml-1 mt-0.5 inline-block">${time}</span>
-            </div>
-          </div>
+        appendBotHtml(`
+          <div style="font-weight: 700; color: #047857;">已啟動明日急件調度（合法派工）</div>
+          <div>媒合履歷認證工班 5 人，班長確認後回傳集合時間</div>
+          <div>人員由合作社雇用，依法加保勞保／職災保險</div>
+          <div>完工後可下載出勤紀錄與勞務費明細</div>
+          <div style="color: #64748b;">示範流程；急件費用與可派人數依實際排班為準</div>
         `);
-        scrollToBottom();
       }, 900);
     }
 
@@ -1095,11 +854,11 @@
       navigator.clipboard.writeText(input.value).then(() => {
         const tip = document.getElementById('copy-status-tip');
         if (tip) {
-          tip.classList.remove('hidden');
-          setTimeout(() => tip.classList.add('hidden'), 2500);
+          tip.hidden = false;
+          setTimeout(() => { tip.hidden = true; }, 2500);
         }
         if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
-          window.AgriDocs.notify('📋 Webhook URL 已複製', `已成功複製：${input.value}\n請前往 LINE Developers 後台貼上！`);
+          window.AgriDocs.notify('Webhook URL 已複製', `已成功複製：${input.value}\n請前往 LINE Developers 後台貼上！`);
         }
       }).catch(() => {
         document.execCommand('copy');
@@ -1108,7 +867,7 @@
 
     async function testWebhookPing() {
       if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
-        window.AgriDocs.notify('🧪 發送 Webhook 測試封包', '正在向 LINE Bot 伺服器傳送 HMAC-SHA256 簽章驗證測試...');
+        window.AgriDocs.notify('發送 Webhook 測試封包', '正在向 LINE Bot 伺服器傳送 HMAC-SHA256 簽章驗證測試...');
       }
       try {
         const res = await fetch(`${LINEBOT_BASE}/mock/chat`, {
@@ -1121,7 +880,7 @@
           const data = await res.json();
           renderFlexOrText(data);
           if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
-            window.AgriDocs.notify('✅ Webhook 簽章與事件解析成功', 'LINE Bot 核心已成功回傳 Flex 卡片！');
+            window.AgriDocs.notify('Webhook 簽章與事件解析成功', 'LINE Bot 核心已成功回傳 Flex 卡片！');
           }
         } else {
           throw new Error('HTTP ' + res.status);
@@ -1136,11 +895,11 @@
           const data = await res.json();
           if (data.replies && data.replies[0]) renderFlexOrText(data.replies[0]);
           if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
-            window.AgriDocs.notify('✅ Webhook 備援成功', '後端伺服器 (Port 3000) 成功處理 Webhook 請求！');
+            window.AgriDocs.notify('Webhook 備援成功', '後端伺服器 (Port 3000) 成功處理 Webhook 請求！');
           }
         } catch (err) {
           if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
-            window.AgriDocs.notify('⚠️ 伺服器連線失敗', '請確認已執行 start_all.bat 或 start_line_tunnel.bat', { isAlert: true });
+            window.AgriDocs.notify('伺服器連線失敗', '請確認已執行 start_all.bat 或 start_line_tunnel.bat', { isAlert: true });
           }
         }
       }
@@ -1173,12 +932,12 @@
         const modeDesc = isReal ? '正式生產模式 (Production 具備真實推播能力)' : '本地模擬模式 (Mock Mode)';
 
         if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
-          window.AgriDocs.notify('💾 LINE 官方憑證已更新', `雙端核心已更新完畢！目前模式：【${modeDesc}】。`);
+          window.AgriDocs.notify('LINE 官方憑證已更新', `雙端核心已更新完畢！目前模式：【${modeDesc}】。`);
         }
         checkLineServerStatus();
       } catch (e) {
         if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
-          window.AgriDocs.notify('💾 設定已暫存於瀏覽器', '重啟伺服器後將自動讀取新設定。');
+          window.AgriDocs.notify('設定已暫存於瀏覽器', '重啟伺服器後將自動讀取新設定。');
         }
       }
     }
@@ -1193,21 +952,21 @@
         const res = await fetch(`${LINEBOT_BASE}/health`, { signal: AbortSignal.timeout(2000) });
         if (res.ok) {
           const cfg = await res.json();
-          text.innerText = cfg.mode === 'PRODUCTION' ? '正式生產 (Port 5000)'
-            : (cfg.mode === 'MIXED' ? '部分正式 (Port 5000)' : '模擬模式 (Port 5000)');
-          badge.className = 'text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1 font-bold';
+          text.innerText = cfg.mode === 'PRODUCTION' ? 'LINE Bot 在線・正式'
+            : (cfg.mode === 'MIXED' ? 'LINE Bot 在線・部分正式' : 'LINE Bot 在線・模擬');
+          badge.className = 'ad-pill ad-pill--ok';
           return;
         }
       } catch (e) {}
 
       // Fallback
-      text.innerText = 'Port 3000 備援';
-      badge.className = 'text-[11px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40 flex items-center gap-1 font-bold';
+      text.innerText = 'LINE Bot 離線，改用後端備援';
+      badge.className = 'ad-pill';
     }
 
     // 6. 觸發模擬推播
     async function triggerSimulatedPush(type, target) {
-      appendSystemNotice(`正在透過 Messaging API 推播【${type}】至 ${target}...`);
+      appendSystemNotice(`透過 Messaging API 推播給 ${target}（${type}）`);
 
       try {
         const res = await fetch(`${API_BASE}/line/simulate-push`, {
@@ -1252,26 +1011,18 @@
     }
 
     function renderFlexCard(flex) {
-      const anchor = document.getElementById('dynamic-chat-anchor');
-      const time = getCurrentTimeString();
       const bubble = flex.contents;
-
-      const headerBg = bubble.header ? (bubble.header.backgroundColor || '#047857') : '#047857';
-      const headerTexts = bubble.header ? bubble.header.contents.map(c => `<div style="color:${c.color||'#fff'}; font-size:${c.size==='xl'?'15px':'11px'}; font-weight:${c.weight||'normal'}">${c.text}</div>`).join('') : '';
+      const headerBg = (bubble.header && bubble.header.backgroundColor) || '#047857';
+      const headerTexts = bubble.header ? bubble.header.contents.map(c =>
+        `<div style="color:${c.color || '#fff'}; font-size:${c.size === 'xl' ? '16px' : '13px'}; font-weight:${c.weight || 'normal'}">${c.text}</div>`).join('') : '';
 
       let bodyHtml = '';
       if (bubble.body && bubble.body.contents) {
         bodyHtml = bubble.body.contents.map(c => {
           if (c.layout === 'baseline') {
-            const k = c.contents[0].text;
-            const v = c.contents[1].text;
-            return `<div class="flex justify-between items-start text-[11px] gap-2">
-              <span class="text-slate-500 flex-shrink-0">${k}</span>
-              <span class="font-bold text-slate-800 text-right">${v}</span>
-            </div>`;
-          } else {
-            return `<div style="color:${c.color||'#333'}; font-size:${c.size==='lg'?'14px':'11px'}; font-weight:${c.weight||'normal'}">${c.text}</div>`;
+            return `<div class="lc-flex__row"><span>${c.contents[0].text}</span><span>${c.contents[1].text}</span></div>`;
           }
+          return `<div style="color:${c.color || '#334155'}; font-size:${c.size === 'lg' ? '15px' : '13px'}; font-weight:${c.weight || 'normal'}">${c.text}</div>`;
         }).join('');
       }
 
@@ -1280,103 +1031,54 @@
         footerHtml = bubble.footer.contents.map(btn => {
           if (btn.action && btn.action.type === 'message') {
             const msg = escapeHtml(btn.action.text || btn.action.label).replace(/"/g, '&quot;');
-            return `<button type="button" data-line-msg="${msg}" class="block w-full text-center py-2 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-bold text-xs transition">
-              ${escapeHtml(btn.action.label)}
-            </button>`;
+            return `<button type="button" data-line-msg="${msg}" class="lc-flex__btn">${escapeHtml(btn.action.label)}</button>`;
           }
           const color = btn.color || '#059669';
           const isJs = btn.action.uri && btn.action.uri.startsWith('javascript:');
           const targetAttr = isJs ? '' : 'target="_blank" rel="noopener"';
-          return `<a href="${btn.action.uri}" ${targetAttr} class="block w-full text-center py-2 rounded-lg text-white font-bold text-xs shadow hover:opacity-90 transition" style="background-color:${color}">
-            ${btn.action.label}
-          </a>`;
+          return `<a href="${btn.action.uri}" ${targetAttr} class="lc-flex__btn lc-flex__btn--solid" style="background-color:${color}">${btn.action.label}</a>`;
         }).join('');
       }
 
-      const html = `
-        <div class="flex items-start gap-2 mb-3">
-          <div class="w-7 h-7 rounded-full bg-white text-emerald-700 flex items-center justify-center text-xs shadow flex-shrink-0">
-            🌱
-          </div>
-          <div class="max-w-[88%] w-full">
-            <div class="bg-white rounded-2xl overflow-hidden shadow-lg border border-slate-200 text-slate-800 text-xs">
-              <div class="p-3.5" style="background-color: ${headerBg};">
-                ${headerTexts}
-              </div>
-              <div class="p-3.5 space-y-2 bg-slate-50">
-                ${bodyHtml}
-              </div>
-              ${footerHtml ? `<div class="p-2.5 bg-white border-t border-slate-100 space-y-1.5">${footerHtml}</div>` : ''}
-            </div>
-            <span class="text-[9px] text-slate-700 ml-1 mt-0.5 inline-block">${time}</span>
-          </div>
-        </div>
-      `;
+      pushBotHtml(`<div class="lc-flex">
+            <div class="lc-flex__head" style="background-color:${headerBg};">${headerTexts}</div>
+            <div class="lc-flex__body">${bodyHtml}</div>
+            ${footerHtml ? `<div class="lc-flex__foot">${footerHtml}</div>` : ''}
+          </div>`, true);
+    }
 
-      anchor.insertAdjacentHTML('beforebegin', html);
+    // 8. 介面輔助函式：所有機器人訊息都走 pushBotHtml（頭像 + 內容 + 時間）
+    const BOT_AVATAR = '<span class="lc-avatar"><i data-lucide="sprout" class="ad-icon"></i></span>';
+    function pushBotHtml(innerHtml, wide) {
+      const anchor = document.getElementById('dynamic-chat-anchor');
+      anchor.insertAdjacentHTML('beforebegin', `
+        <div class="lc-msg">${BOT_AVATAR}
+          <div class="lc-msg__body${wide ? ' lc-msg__body--wide' : ''}">${innerHtml}<span class="lc-time">${getCurrentTimeString()}</span></div>
+        </div>`);
+      AgriTheme.icons(document.getElementById('line-chat-box'));
       scrollToBottom();
     }
 
-    // 8. 介面輔助函式
     function appendUserBubble(text) {
       const anchor = document.getElementById('dynamic-chat-anchor');
-      const time = getCurrentTimeString();
-      const html = `
-        <div class="flex items-end justify-end gap-1.5 mb-2">
-          <span class="text-[9px] text-slate-700">${time}</span>
-          <div class="line-bubble-user px-3.5 py-2 text-slate-900 text-xs font-medium shadow max-w-[75%] leading-relaxed">
-            ${escapeHtml(text)}
-          </div>
-        </div>
-      `;
-      anchor.insertAdjacentHTML('beforebegin', html);
+      anchor.insertAdjacentHTML('beforebegin', `
+        <div class="lc-msg lc-msg--me"><span class="lc-time">${getCurrentTimeString()}</span><div class="lc-bubble lc-bubble--me">${escapeHtml(text)}</div></div>`);
       scrollToBottom();
     }
 
     function appendBotText(text) {
-      const anchor = document.getElementById('dynamic-chat-anchor');
-      const time = getCurrentTimeString();
-      const html = `
-        <div class="flex items-start gap-2 mb-2">
-          <div class="w-7 h-7 rounded-full bg-white text-emerald-700 flex items-center justify-center text-xs shadow flex-shrink-0">
-            🌱
-          </div>
-          <div class="max-w-[82%]">
-            <div class="line-bubble-bot p-3 text-slate-800 text-xs shadow leading-relaxed">
-              ${escapeHtml(text)}
-            </div>
-            <span class="text-[9px] text-slate-700 ml-1 mt-0.5 inline-block">${time}</span>
-          </div>
-        </div>
-      `;
-      anchor.insertAdjacentHTML('beforebegin', html);
-      scrollToBottom();
+      appendBotHtml(escapeHtml(text));
     }
 
     function appendSystemNotice(text) {
       const anchor = document.getElementById('dynamic-chat-anchor');
-      const html = `
-        <div class="text-center my-2">
-          <span class="px-3 py-1 rounded-full bg-slate-950/40 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">
-            ⚡ ${escapeHtml(text)}
-          </span>
-        </div>
-      `;
-      anchor.insertAdjacentHTML('beforebegin', html);
+      anchor.insertAdjacentHTML('beforebegin', `<div class="lc-notice">${escapeHtml(text)}</div>`);
       scrollToBottom();
     }
 
     function showTypingIndicator() {
       const anchor = document.getElementById('dynamic-chat-anchor');
-      const html = `
-        <div id="typing-indicator" class="flex items-center gap-1 text-[11px] text-slate-600 ml-9 my-1">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce"></span>
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce" style="animation-delay: 0.15s"></span>
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce" style="animation-delay: 0.3s"></span>
-          <span class="ml-1 text-[10px]">智農助理正在輸入...</span>
-        </div>
-      `;
-      anchor.insertAdjacentHTML('beforebegin', html);
+      anchor.insertAdjacentHTML('beforebegin', `<div id="typing-indicator" class="lc-typing"><i></i><i></i><i></i><span>智農助理輸入中</span></div>`);
       scrollToBottom();
     }
 
@@ -1399,16 +1101,9 @@
       return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    // LINE Bot 模擬對話框內「快速回覆」按鈕的假動作提示（取代 alert，避免打斷體驗）
-    function lineBotToast(msg) {
-      (window.AgriUtil ? window.AgriUtil.toast : (t, m) => alert(`${t}\n${m}`))('💬 LINE Bot', msg);
-    }
-
-    function copyWebhookUrl() {
-      const input = document.getElementById('webhook-url-input');
-      input.select();
-      document.execCommand('copy');
-      lineBotToast('✅ Webhook URL 已複製到剪貼簿！可貼入 LINE Developers 後台。');
+    // 介面文字（選單列、提示）去 emoji；對話泡泡裡的訊息內容照 LINE Bot 原樣顯示
+    function plainText(str) {
+      return String(str == null ? '' : str).replace(/[\u{1F1E6}-\u{1F1FF}\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B50}\u{2764}\u{200D}\u{FE0F}]/gu, '').replace(/\s{2,}/g, ' ').trim();
     }
 
     function mockLocalResponse(text) {
@@ -1481,17 +1176,17 @@
           body: {
             contents: [
               { text: '請點選下方快捷功能，或直接輸入關鍵字查詢：', color: '#475569', size: 'xs', weight: 'normal' },
-              { layout: 'baseline', contents: [{ text: '📋 訂單進度', color: '#64748B' }, { text: '輸入「查訂單」或「ORD-2026-001」', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '📅 全台產曆', color: '#64748B' }, { text: '輸入「查產曆」、「芒果產季」、「洋蔥」', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '👷 工班人力', color: '#64748B' }, { text: '輸入「查工班」、「工班B組」、「外展移工」', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '💰 服務費率', color: '#64748B' }, { text: '輸入「查費率」、「早鳥」、「防颱搶收」', color: '#0F172A' }] }
+              { layout: 'baseline', contents: [{ text: '訂單進度', color: '#64748B' }, { text: '輸入「查訂單」或「ORD-2026-001」', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '全台產曆', color: '#64748B' }, { text: '輸入「查產曆」、「芒果產季」、「洋蔥」', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '工班人力', color: '#64748B' }, { text: '輸入「查工班」、「工班B組」、「外展移工」', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '服務費率', color: '#64748B' }, { text: '輸入「查費率」、「早鳥」、「防颱搶收」', color: '#0F172A' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '📋 立即查詢派工單進度', uri: 'javascript:handleQuickCmd("查訂單")' }, color: '#059669' },
-              { action: { label: '📅 查詢全台產曆與收穫倒數', uri: 'javascript:handleQuickCmd("查產曆")' }, color: '#3B82F6' },
-              { action: { label: '💰 查詢早鳥與派工費率', uri: 'javascript:handleQuickCmd("查費率")' }, color: '#D97706' }
+              { action: { label: '立即查詢派工單進度', uri: 'javascript:handleQuickCmd("查訂單")' }, color: '#059669' },
+              { action: { label: '查詢全台產曆與收穫倒數', uri: 'javascript:handleQuickCmd("查產曆")' }, color: '#3B82F6' },
+              { action: { label: '查詢早鳥與派工費率', uri: 'javascript:handleQuickCmd("查費率")' }, color: '#D97706' }
             ]
           }
         }
@@ -1523,8 +1218,8 @@
           },
           footer: {
             contents: [
-              { action: { label: '📍 查看工班 GPS 即時座標', uri: 'https://agridispatch.tw/track/ORD-2026-001' }, color: '#059669' },
-              { action: { label: '📞 撥打現場專車司機電話', uri: 'tel:0912222444' }, color: '#3B82F6' }
+              { action: { label: '查看工班 GPS 即時座標', uri: 'https://agridispatch.tw/track/ORD-2026-001' }, color: '#059669' },
+              { action: { label: '撥打現場專車司機電話', uri: 'tel:0912222444' }, color: '#3B82F6' }
             ]
           }
         }
@@ -1545,18 +1240,18 @@
           },
           body: {
             contents: [
-              { text: '🔥 近期關鍵作物採收日倒數：', color: '#1E293B', size: 'xs', weight: 'bold' },
-              { layout: 'baseline', contents: [{ text: '🥭 屏東枋山愛文芒果', color: '#64748B' }, { text: '倒數 10 天 (5/30 盛產・日韓外銷)', color: '#DC2626' }] },
-              { layout: 'baseline', contents: [{ text: '🍍 嘉義民雄金鑽鳳梨', color: '#64748B' }, { text: '倒數 25 天 (6/15 採收分級)', color: '#D97706' }] },
-              { layout: 'baseline', contents: [{ text: '🍉 雲林二崙大西瓜', color: '#64748B' }, { text: '倒數 35 天 (6/25 搶收出貨)', color: '#047857' }] },
+              { text: '近期關鍵作物採收日倒數：', color: '#1E293B', size: 'xs', weight: 'bold' },
+              { layout: 'baseline', contents: [{ text: '屏東枋山愛文芒果', color: '#64748B' }, { text: '倒數 10 天 (5/30 盛產・日韓外銷)', color: '#E11D48' }] },
+              { layout: 'baseline', contents: [{ text: '嘉義民雄金鑽鳳梨', color: '#64748B' }, { text: '倒數 25 天 (6/15 採收分級)', color: '#D97706' }] },
+              { layout: 'baseline', contents: [{ text: '雲林二崙大西瓜', color: '#64748B' }, { text: '倒數 35 天 (6/25 搶收出貨)', color: '#047857' }] },
               { layout: 'baseline', contents: [{ text: '出工稼動率', color: '#64748B' }, { text: '98.5% (全台搶工高峰・日薪破 $3,500)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '調度建議', color: '#64748B' }, { text: '立即鎖定早鳥工時包，保證外展移工出工', color: '#2563EB' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '⚡ 預購產季早鳥保證工時包 (鎖定名額・優先排班)', uri: '../農業派遣主網站/farmer-login.html' }, color: '#D97706' },
-              { action: { label: '🗓️ 瀏覽 52 週完整產曆動態輪播', uri: '../農業派遣主網站/pitch.html#calendar' }, color: '#2563EB' }
+              { action: { label: '預購產季早鳥保證工時包 (鎖定名額・優先排班)', uri: '../農業派遣主網站/farmer-login.html' }, color: '#D97706' },
+              { action: { label: '瀏覽 52 週完整產曆動態輪播', uri: '../農業派遣主網站/pitch.html#calendar' }, color: '#2563EB' }
             ]
           }
         }
@@ -1568,11 +1263,11 @@
         type: 'flex',
         contents: {
           header: {
-            backgroundColor: '#312E81',
+            backgroundColor: '#1E3A8A',
             contents: [
-              { text: '在籍外展工班・即時人力戰情', color: '#C7D2FE', size: 'xs', weight: 'bold' },
+              { text: '在籍外展工班・即時人力戰情', color: '#BFDBFE', size: 'xs', weight: 'bold' },
               { text: '在籍人員 25 名 (依法加保勞健保)', color: '#FFFFFF', size: 'xl', weight: 'bold' },
-              { text: '外展移工 20 名 ╳ 本國機耕師與兼職 5 名', color: '#E0E7FF', size: 'xs', weight: 'normal' }
+              { text: '外展移工 20 名 ╳ 本國機耕師與兼職 5 名', color: '#DBEAFE', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
@@ -1586,7 +1281,7 @@
           },
           footer: {
             contents: [
-              { action: { label: '📋 查詢派工單進度', uri: 'javascript:handleQuickCmd("查訂單")' }, color: '#4F46E5' }
+              { action: { label: '查詢派工單進度', uri: 'javascript:handleQuickCmd("查訂單")' }, color: '#2563EB' }
             ]
           }
         }
@@ -1607,9 +1302,9 @@
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '田間標準採收', color: '#64748B' }, { text: 'NT$ 300 / 小時 (基本工時)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '彈性計時派工', color: '#64748B' }, { text: 'NT$ 310 / 小時 (依作物基準工時)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '產季早鳥保證包', color: '#64748B' }, { text: 'NT$ 315 / 小時 (鎖定名額・優先排班，定金 20%)', color: '#D97706' }] },
-              { layout: 'baseline', contents: [{ text: '防颱搶收馳援', color: '#64748B' }, { text: 'NT$ 360 / 小時 (24H 優先調度加乘)', color: '#DC2626' }] },
+              { layout: 'baseline', contents: [{ text: '防颱搶收馳援', color: '#64748B' }, { text: 'NT$ 360 / 小時 (24H 優先調度加乘)', color: '#E11D48' }] },
               { layout: 'baseline', contents: [{ text: '大型曳引機整地', color: '#64748B' }, { text: 'NT$ 310 / 小時 (80hp 機具另計)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '無人機精準代噴', color: '#64748B' }, { text: 'NT$ 250 / 分地 (大疆 T50 植保機)', color: '#047857' }] },
               { layout: 'baseline', contents: [{ text: '暴雨避險條款', color: '#64748B' }, { text: '室內冷鏈預冷分級場替代，免停工損失', color: '#2563EB' }] }
@@ -1617,7 +1312,7 @@
           },
           footer: {
             contents: [
-              { action: { label: '⚡ 立即線上派工試算 (農場主專區)', uri: '../農業派遣主網站/farmer-login.html' }, color: '#D97706' }
+              { action: { label: '立即線上派工試算 (農場主專區)', uri: '../農業派遣主網站/farmer-login.html' }, color: '#D97706' }
             ]
           }
         }
@@ -1631,14 +1326,14 @@
           header: {
             backgroundColor: '#1E3A8A',
             contents: [
-              { text: '🌧️ 突發暴雨避險機制啟動', color: '#93C5FD', size: 'xs', weight: 'bold' },
+              { text: '突發暴雨避險機制啟動', color: '#93C5FD', size: 'xs', weight: 'bold' },
               { text: '全體專車轉移至冷鏈集貨場', color: '#FFFFFF', size: 'xl', weight: 'bold' },
               { text: '屏東枋山/高樹午後強降雨・演算法避險大腦運作', color: '#BFDBFE', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '轉移地點', color: '#64748B' }, { text: '🏢 屏南冷鏈預冷分級場 (B棟 室內分級線)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '轉移地點', color: '#64748B' }, { text: '屏南冷鏈預冷分級場 (B棟 室內分級線)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '作業內容', color: '#64748B' }, { text: '芒果低溫預冷、外銷秤重、洋蔥乾燥裝箱', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '接駁專車', color: '#64748B' }, { text: '智農 1、2 號車已抵達各田區載運工班', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '出勤保全', color: '#64748B' }, { text: '100% 正常出勤，零工時浪費，保全 $62,500 產值', color: '#047857' }] }
@@ -1646,7 +1341,7 @@
           },
           footer: {
             contents: [
-              { action: { label: '📍 查看冷鏈接送專車即時車隊', uri: 'https://agridispatch.tw/track/fleet' }, color: '#2563EB' }
+              { action: { label: '查看冷鏈接送專車即時車隊', uri: 'https://agridispatch.tw/track/fleet' }, color: '#2563EB' }
             ]
           }
         }
@@ -1665,24 +1360,24 @@
           header: {
             backgroundColor: '#78350F',
             contents: [
-              { text: '⚡ 2026 產季早鳥保證工時包 ｜ 鎖定產季名額', color: '#FDE68A', size: 'xs', weight: 'bold' },
+              { text: '2026 產季早鳥保證工時包 ｜ 鎖定產季名額', color: '#FDE68A', size: 'xs', weight: 'bold' },
               { text: '提早鎖定產季工班 ｜ 保證出工', color: '#FFFFFF', size: 'xl', weight: 'bold' },
               { text: '315 元/hr 不打折・預付 20% 定金優先排班・承諾「遲到免單、放鳥雙倍賠」', color: '#FEF3C7', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '🥭 適用產季作物', color: '#64748B' }, { text: '枋山芒果、金鑽鳳梨、紅龍果、大西瓜', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '💰 早鳥工時單價', color: '#64748B' }, { text: 'NT$ 315 / 小時 (不打折・鎖定名額)', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '🔒 保證出工承諾', color: '#64748B' }, { text: 'SLA 合約保障，旺季搶工絕不被挖角放鳥', color: '#D97706' }] },
-              { layout: 'baseline', contents: [{ text: '🌧️ 暴雨天候避險', color: '#64748B' }, { text: '免費轉移冷鏈預冷包裝廠室內作業', color: '#2563EB' }] },
-              { layout: 'baseline', contents: [{ text: '⏱️ 本季限量席位', color: '#64748B' }, { text: '限量 20 席，目前僅剩最後 4 席', color: '#DC2626' }] }
+              { layout: 'baseline', contents: [{ text: '適用產季作物', color: '#64748B' }, { text: '枋山芒果、金鑽鳳梨、紅龍果、大西瓜', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '早鳥工時單價', color: '#64748B' }, { text: 'NT$ 315 / 小時 (不打折・鎖定名額)', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '保證出工承諾', color: '#64748B' }, { text: 'SLA 合約保障，旺季搶工絕不被挖角放鳥', color: '#D97706' }] },
+              { layout: 'baseline', contents: [{ text: '暴雨天候避險', color: '#64748B' }, { text: '免費轉移冷鏈預冷包裝廠室內作業', color: '#2563EB' }] },
+              { layout: 'baseline', contents: [{ text: '本季限量席位', color: '#64748B' }, { text: '限量 20 席，目前僅剩最後 4 席', color: '#E11D48' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '💳 立即線上選購早鳥工時包 (定金20%)', uri: '../農業派遣主網站/farmer-login.html' }, color: '#D97706' },
-              { action: { label: '💰 查詢各項農事標準費率', uri: 'javascript:handleQuickCmd("查費率")' }, color: '#2563EB' }
+              { action: { label: '立即線上選購早鳥工時包 (定金20%)', uri: '../農業派遣主網站/farmer-login.html' }, color: '#D97706' },
+              { action: { label: '查詢各項農事標準費率', uri: 'javascript:handleQuickCmd("查費率")' }, color: '#2563EB' }
             ]
           }
         }
@@ -1696,23 +1391,23 @@
           header: {
             backgroundColor: '#1E293B',
             contents: [
-              { text: '🚜 智慧農機與植保無人機預約特約 ｜ 機耕中樞', color: '#94A3B8', size: 'xs', weight: 'bold' },
+              { text: '智慧農機與植保無人機預約特約 ｜ 機耕中樞', color: '#94A3B8', size: 'xs', weight: 'bold' },
               { text: '大疆 T50 植保機 ╳ 80hp 曳引機', color: '#FFFFFF', size: 'xl', weight: 'bold' },
               { text: '雙證照專業飛手 ╳ RTK 公分級航跡 ╳ 1000萬責任險', color: '#CBD5E1', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '🚁 無人機噴藥施肥', color: '#64748B' }, { text: '大疆 T50 (NT$ 250 / 分地，含調配生物劑)', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '🚜 大型曳引機深耕', color: '#64748B' }, { text: '久保田 80hp (NT$ 310 / 小時，整地碎土)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '👨‍✈️ 責任飛手', color: '#64748B' }, { text: '陳建宏 (防檢署無人機代噴雙證照)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '📅 最近可預約檔期', color: '#64748B' }, { text: '明日 06:00 起尚有 2 席 (屏東/高雄區)', color: '#2563EB' }] }
+              { layout: 'baseline', contents: [{ text: '無人機噴藥施肥', color: '#64748B' }, { text: '大疆 T50 (NT$ 250 / 分地，含調配生物劑)', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '大型曳引機深耕', color: '#64748B' }, { text: '久保田 80hp (NT$ 310 / 小時，整地碎土)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '責任飛手', color: '#64748B' }, { text: '陳建宏 (防檢署無人機代噴雙證照)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '最近可預約檔期', color: '#64748B' }, { text: '明日 06:00 起尚有 2 席 (屏東/高雄區)', color: '#2563EB' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '⚡ 立即預約機耕班次 (農場主專屬)', uri: '../農業派遣主網站/farmer-login.html' }, color: '#059669' },
-              { action: { label: '🚁 檢視無人機飛行歷史航跡', uri: 'javascript:handleQuickCmd("機耕航跡")' }, color: '#4F46E5' }
+              { action: { label: '立即預約機耕班次 (農場主專屬)', uri: '../農業派遣主網站/farmer-login.html' }, color: '#059669' },
+              { action: { label: '檢視無人機飛行歷史航跡', uri: 'javascript:handleQuickCmd("機耕航跡")' }, color: '#2563EB' }
             ]
           }
         }
@@ -1726,23 +1421,23 @@
           header: {
             backgroundColor: '#047857',
             contents: [
-              { text: '📞 專屬現場工頭與專車司機熱線', color: '#A7F3D0', size: 'xs', weight: 'bold' },
+              { text: '專屬現場工頭與專車司機熱線', color: '#A7F3D0', size: 'xs', weight: 'bold' },
               { text: '現場即時通話聯絡網', color: '#FFFFFF', size: 'xl', weight: 'bold' },
               { text: '作業手路交辦 ╳ 專車接送確認 ╳ 臨時天候協調', color: '#D1FAE5', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '👷 現場小工頭', color: '#64748B' }, { text: '林小祥 (0921-999-888，現場調度責任人)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '🚐 專車司機', color: '#64748B' }, { text: '李建國 大哥 (0912-222-444，智農 2 號車)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '⏱️ 服務時段', color: '#64748B' }, { text: '每日 05:30 - 19:30 (田間作業優先接聽)', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '🛡️ 承諾保障', color: '#64748B' }, { text: 'SLA 遲到免單、放鳥雙倍賠償保證', color: '#047857' }] }
+              { layout: 'baseline', contents: [{ text: '現場小工頭', color: '#64748B' }, { text: '林小祥 (0921-999-888，現場調度責任人)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '專車司機', color: '#64748B' }, { text: '李建國 大哥 (0912-222-444，智農 2 號車)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '服務時段', color: '#64748B' }, { text: '每日 05:30 - 19:30 (田間作業優先接聽)', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '承諾保障', color: '#64748B' }, { text: 'SLA 遲到免單、放鳥雙倍賠償保證', color: '#047857' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '📞 撥打給現場小工頭 (林小祥)', uri: 'tel:0921999888' }, color: '#059669' },
-              { action: { label: '📞 撥打給專車司機 (李大哥)', uri: 'tel:0912222444' }, color: '#2563EB' }
+              { action: { label: '撥打給現場小工頭 (林小祥)', uri: 'tel:0921999888' }, color: '#059669' },
+              { action: { label: '撥打給專車司機 (李大哥)', uri: 'tel:0912222444' }, color: '#2563EB' }
             ]
           }
         }
@@ -1755,28 +1450,28 @@
         type: 'flex',
         contents: {
           header: {
-            backgroundColor: '#581C87',
+            backgroundColor: '#047857',
             contents: [
-              { text: '🇻🇳 Lịch làm việc hôm nay ｜ 今日田間任務卡', color: '#E9D5FF', size: 'xs', weight: 'bold' },
+              { text: 'Lịch làm việc hôm nay ｜ 今日田間任務卡', color: '#A7F3D0', size: 'xs', weight: 'bold' },
               { text: '枋山愛文芒果採收 ｜ Ca sáng (上午班)', color: '#FFFFFF', size: 'xl', weight: 'bold' },
-              { text: 'Hợp tác xã Nông nghiệp Fangshan ｜ 合作園區 B 區', color: '#F3E8FF', size: 'xs', weight: 'normal' }
+              { text: 'Hợp tác xã Nông nghiệp Fangshan ｜ 合作園區 B 區', color: '#D1FAE5', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
-              { text: '📋 Nhiệm vụ & Tiêu chuẩn thao tác (任務與手路SOP)：', color: '#1E293B', size: 'xs', weight: 'bold' },
-              { layout: 'baseline', contents: [{ text: '🥭 作物地點', color: '#64748B' }, { text: '屏東枋山善德路芒果示範園 (6.0 分地)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '⏰ 集合發車', color: '#64748B' }, { text: '06:30 宿舍門口 (智農 2 號車 李大哥)', color: '#7E22CE' }] },
-              { layout: 'baseline', contents: [{ text: '✂️ 採收標準', color: '#64748B' }, { text: '留蒂 0.5cm・護果粉採收・輕放藍箱', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '👥 同組夥伴', color: '#64748B' }, { text: '工班 B 組 6 人 (帶隊領班: 林小祥)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '🛡️ 納保合規', color: '#64748B' }, { text: '100% 勞保與農業職災即時生效中', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '💰 今日預估', color: '#64748B' }, { text: 'NT$ 1,840 (8H基本) + 採收品質獎金', color: '#D97706' }] }
+              { text: 'Nhiệm vụ & Tiêu chuẩn thao tác (任務與手路SOP)：', color: '#1E293B', size: 'xs', weight: 'bold' },
+              { layout: 'baseline', contents: [{ text: '作物地點', color: '#64748B' }, { text: '屏東枋山善德路芒果示範園 (6.0 分地)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '集合發車', color: '#64748B' }, { text: '06:30 宿舍門口 (智農 2 號車 李大哥)', color: '#059669' }] },
+              { layout: 'baseline', contents: [{ text: '採收標準', color: '#64748B' }, { text: '留蒂 0.5cm・護果粉採收・輕放藍箱', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '同組夥伴', color: '#64748B' }, { text: '工班 B 組 6 人 (帶隊領班: 林小祥)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '納保合規', color: '#64748B' }, { text: '100% 勞保與農業職災即時生效中', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '今日預估', color: '#64748B' }, { text: 'NT$ 1,840 (8H基本) + 採收品質獎金', color: '#D97706' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '⏱️ 立即現場出勤打卡 (Chấm công GPS)', uri: 'javascript:handleQuickCmd("田間打卡")' }, color: '#7E22CE' },
-              { action: { label: '🚐 查看專車時間與司機電話 (Xe đưa đón)', uri: 'javascript:handleQuickCmd("接送專車")' }, color: '#2563EB' }
+              { action: { label: '立即現場出勤打卡 (Chấm công GPS)', uri: 'javascript:handleQuickCmd("田間打卡")' }, color: '#059669' },
+              { action: { label: '查看專車時間與司機電話 (Xe đưa đón)', uri: 'javascript:handleQuickCmd("接送專車")' }, color: '#2563EB' }
             ]
           }
         }
@@ -1790,24 +1485,24 @@
           header: {
             backgroundColor: '#1E3A8A',
             contents: [
-              { text: '🚐 Xe đưa đón chuyên dụng ｜ 接送專車時刻表', color: '#93C5FD', size: 'xs', weight: 'bold' },
+              { text: 'Xe đưa đón chuyên dụng ｜ 接送專車時刻表', color: '#93C5FD', size: 'xs', weight: 'bold' },
               { text: '智農 2 號接送專車 (TDC-8899)', color: '#FFFFFF', size: 'xl', weight: 'bold' },
               { text: '恆春半島 ╳ 枋山果園 ╳ 屏南冷鏈中繼專線', color: '#BFDBFE', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '👨‍✈️ 專屬司機', color: '#64748B' }, { text: '李建國 大哥 (0912-222-444)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '🚏 去程發車', color: '#64748B' }, { text: '06:30 潮州外展移工宿舍大門準時發車', color: '#2563EB' }] },
-              { layout: 'baseline', contents: [{ text: '🏁 到達田區', color: '#64748B' }, { text: '07:10 枋山愛文芒果園 (約 40 分鐘車程)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '🔄 回程發車', color: '#64748B' }, { text: '17:30 園區入口原地接駁返回宿舍', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '🌧️ 暴雨避險', color: '#64748B' }, { text: '如遇豪雨自動轉運至屏南冷鏈預冷廠', color: '#047857' }] }
+              { layout: 'baseline', contents: [{ text: '專屬司機', color: '#64748B' }, { text: '李建國 大哥 (0912-222-444)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '去程發車', color: '#64748B' }, { text: '06:30 潮州外展移工宿舍大門準時發車', color: '#2563EB' }] },
+              { layout: 'baseline', contents: [{ text: '到達田區', color: '#64748B' }, { text: '07:10 枋山愛文芒果園 (約 40 分鐘車程)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '回程發車', color: '#64748B' }, { text: '17:30 園區入口原地接駁返回宿舍', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '暴雨避險', color: '#64748B' }, { text: '如遇豪雨自動轉運至屏南冷鏈預冷廠', color: '#047857' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '📞 撥打電話給李司機 (Gọi tài xế)', uri: 'tel:0912222444' }, color: '#2563EB' },
-              { action: { label: '📍 查看專車 GPS 即時動態位置', uri: 'https://agridispatch.tw/track/fleet' }, color: '#059669' }
+              { action: { label: '撥打電話給李司機 (Gọi tài xế)', uri: 'tel:0912222444' }, color: '#2563EB' },
+              { action: { label: '查看專車 GPS 即時動態位置', uri: 'https://agridispatch.tw/track/fleet' }, color: '#059669' }
             ]
           }
         }
@@ -1821,25 +1516,25 @@
           header: {
             backgroundColor: '#78350F',
             contents: [
-              { text: '💰 Tiền lương & Trợ cấp 8.800 NTD ｜ 薪資津貼明細', color: '#FDE68A', size: 'xs', weight: 'bold' },
+              { text: 'Tiền lương & Trợ cấp 8.800 NTD ｜ 薪資津貼明細', color: '#FDE68A', size: 'xs', weight: 'bold' },
               { text: '阮文雄 (Nguyễn Văn Hùng) ｜ 本月明細', color: '#FFFFFF', size: 'xl', weight: 'bold' },
               { text: '外展案號 #AG-V082 ｜ 雙軌合規入帳', color: '#FEF3C7', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '⏱️ 本月累計工時', color: '#64748B' }, { text: '168 小時 (達成率 105%)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '💵 基礎核定工資', color: '#64748B' }, { text: 'NT$ 38,640 (含超時加班費)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '🎁 農業部外展獎勵', color: '#64748B' }, { text: '+ NT$ 8,800 (就業安定基金直撥)', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '🏆 零損果採收獎金', color: '#64748B' }, { text: '+ NT$ 2,500 (品質滿分激勵)', color: '#D97706' }] },
-              { layout: 'baseline', contents: [{ text: '🏦 實發匯入總額', color: '#64748B' }, { text: 'NT$ 49,940 (郵局直撥・無非法扣款)', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '🛡️ 法定保障', color: '#64748B' }, { text: '勞健保與職災保險全額依法提撥', color: '#64748B' }] }
+              { layout: 'baseline', contents: [{ text: '本月累計工時', color: '#64748B' }, { text: '168 小時 (達成率 105%)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '基礎核定工資', color: '#64748B' }, { text: 'NT$ 38,640 (含超時加班費)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '農業部外展獎勵', color: '#64748B' }, { text: '+ NT$ 8,800 (就業安定基金直撥)', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '零損果採收獎金', color: '#64748B' }, { text: '+ NT$ 2,500 (品質滿分激勵)', color: '#D97706' }] },
+              { layout: 'baseline', contents: [{ text: '實發匯入總額', color: '#64748B' }, { text: 'NT$ 49,940 (郵局直撥・無非法扣款)', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '法定保障', color: '#64748B' }, { text: '勞健保與職災保險全額依法提撥', color: '#64748B' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '📄 查看電子薪資袋明細 (Bảng lương)', uri: 'javascript:lineBotToast("薪資袋憑證單號: PAY-2026-09-V082，實發金額 NT$ 49,940 已全數入帳。")' }, color: '#D97706' },
-              { action: { label: '💬 雙語人資專員諮詢 (Tư vấn nhân sự)', uri: 'javascript:handleQuickCmd("雙語求助")' }, color: '#7E22CE' }
+              { action: { label: '查看電子薪資袋明細 (Bảng lương)', uri: 'javascript:lineBotToast("薪資袋憑證單號: PAY-2026-09-V082，實發金額 NT$ 49,940 已全數入帳。")' }, color: '#D97706' },
+              { action: { label: '雙語人資專員諮詢 (Tư vấn nhân sự)', uri: 'javascript:handleQuickCmd("雙語求助")' }, color: '#059669' }
             ]
           }
         }
@@ -1853,24 +1548,24 @@
           header: {
             backgroundColor: '#047857',
             contents: [
-              { text: '⏱️ Chấm công GPS thành công ｜ 出勤打卡成功', color: '#A7F3D0', size: 'xs', weight: 'bold' },
+              { text: 'Chấm công GPS thành công ｜ 出勤打卡成功', color: '#A7F3D0', size: 'xs', weight: 'bold' },
               { text: 'GPS 定位簽到完成 ｜ 準時上工', color: '#FFFFFF', size: 'xl', weight: 'bold' },
               { text: '屏東枋山愛文芒果園區 ｜ 22.2571° N, 120.6558° E', color: '#D1FAE5', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '👤 出勤同仁', color: '#64748B' }, { text: 'Nguyễn Văn Hùng (外展編號: V082)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '⏰ 打卡時間', color: '#64748B' }, { text: '今日 07:12:35 (準時・無遲到)', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '📋 關聯派工單', color: '#64748B' }, { text: 'ORD-2026-001 (枋山愛文芒果採收)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '🛡️ 職災即時起保', color: '#64748B' }, { text: '農業保險保單 AG-20260923 生效中', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '👷 現場帶工領班', color: '#64748B' }, { text: '林小祥 (點名覆核通過)', color: '#0F172A' }] }
+              { layout: 'baseline', contents: [{ text: '出勤同仁', color: '#64748B' }, { text: 'Nguyễn Văn Hùng (外展編號: V082)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '打卡時間', color: '#64748B' }, { text: '今日 07:12:35 (準時・無遲到)', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '關聯派工單', color: '#64748B' }, { text: 'ORD-2026-001 (枋山愛文芒果採收)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '職災即時起保', color: '#64748B' }, { text: '農業保險保單 AG-20260923 生效中', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '現場帶工領班', color: '#64748B' }, { text: '林小祥 (點名覆核通過)', color: '#0F172A' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '📋 查看今日採收任務與手路SOP', uri: 'javascript:handleQuickCmd("今日任務卡")' }, color: '#059669' },
-              { action: { label: '🚨 現場異常即時通報', uri: 'javascript:handleQuickCmd("雙語求助")' }, color: '#DC2626' }
+              { action: { label: '查看今日採收任務與手路SOP', uri: 'javascript:handleQuickCmd("今日任務卡")' }, color: '#059669' },
+              { action: { label: '現場異常即時通報', uri: 'javascript:handleQuickCmd("雙語求助")' }, color: '#E11D48' }
             ]
           }
         }
@@ -1884,7 +1579,7 @@
           header: {
             backgroundColor: '#374151',
             contents: [
-              { text: '🌐 Multi-Language Settings ｜ 語系切換', color: '#9CA3AF', size: 'xs', weight: 'bold' },
+              { text: 'Multi-Language Settings ｜ 語系切換', color: '#9CA3AF', size: 'xs', weight: 'bold' },
               { text: '切換 LINE 互動母語介面', color: '#FFFFFF', size: 'xl', weight: 'bold' },
               { text: '支援越語、印尼語與繁體中文即時雙向切換', color: '#E5E7EB', size: 'xs', weight: 'normal' }
             ]
@@ -1892,15 +1587,15 @@
           body: {
             contents: [
               { text: '請選擇您偏好的操作語言 (Chọn ngôn ngữ của bạn)：', color: '#374151', size: 'xs', weight: 'normal' },
-              { layout: 'baseline', contents: [{ text: '🇻🇳 Tiếng Việt', color: '#64748B' }, { text: 'Hiển thị menu và thông báo tiếng Việt', color: '#7E22CE' }] },
-              { layout: 'baseline', contents: [{ text: '🇮🇩 Bahasa Indonesia', color: '#64748B' }, { text: 'Tampilan menu dalam Bahasa Indonesia', color: '#0284C7' }] },
-              { layout: 'baseline', contents: [{ text: '🇹🇼 繁體中文', color: '#64748B' }, { text: '標準中文介面與農務指引', color: '#047857' }] }
+              { layout: 'baseline', contents: [{ text: 'Tiếng Việt', color: '#64748B' }, { text: 'Hiển thị menu và thông báo tiếng Việt', color: '#059669' }] },
+              { layout: 'baseline', contents: [{ text: 'Bahasa Indonesia', color: '#64748B' }, { text: 'Tampilan menu dalam Bahasa Indonesia', color: '#2563EB' }] },
+              { layout: 'baseline', contents: [{ text: '繁體中文', color: '#64748B' }, { text: '標準中文介面與農務指引', color: '#047857' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '🇻🇳 Giữ Tiếng Việt (維持越南語模式)', uri: 'javascript:lineBotToast("✅ Đã thiết lập Tiếng Việt làm ngôn ngữ chính (已設為越南語)。")' }, color: '#7E22CE' },
-              { action: { label: '🇹🇼 切換為繁體中文介面', uri: 'javascript:lineBotToast("✅ 已切換為繁體中文介面。")' }, color: '#059669' }
+              { action: { label: 'Giữ Tiếng Việt (維持越南語模式)', uri: 'javascript:lineBotToast("Đã thiết lập Tiếng Việt làm ngôn ngữ chính (已設為越南語)。")' }, color: '#059669' },
+              { action: { label: '切換為繁體中文介面', uri: 'javascript:lineBotToast("已切換為繁體中文介面。")' }, color: '#059669' }
             ]
           }
         }
@@ -1912,26 +1607,26 @@
         type: 'flex',
         contents: {
           header: {
-            backgroundColor: '#991B1B',
+            backgroundColor: '#9F1239',
             contents: [
-              { text: '🆘 Hỗ trợ khẩn cấp 24/7 ｜ 雙語求助督導', color: '#FECACA', size: 'xs', weight: 'bold' },
+              { text: '🆘 Hỗ trợ khẩn cấp 24/7 ｜ 雙語求助督導', color: '#FECDD3', size: 'xs', weight: 'bold' },
               { text: '24小時外籍農工雙語關懷中心', color: '#FFFFFF', size: 'xl', weight: 'bold' },
-              { text: '醫療支援 ╳ 勞資爭議 ╳ 突發工傷 ╳ 生活求助', color: '#FEE2E2', size: 'xs', weight: 'normal' }
+              { text: '醫療支援 ╳ 勞資爭議 ╳ 突發工傷 ╳ 生活求助', color: '#FFE4E6', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '👩‍💼 雙語督導專員', color: '#64748B' }, { text: '阮氏梅 (Trần Thị Mai 0988-123-456)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '🏥 合作特約診所', color: '#64748B' }, { text: '枋山安康診所 (支援多語醫護通譯)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '⚖️ 勞動部 1955', color: '#64748B' }, { text: '1955 移工免付費 24H 雙語申訴專線', color: '#DC2626' }] },
-              { layout: 'baseline', contents: [{ text: '👷 現場帶工領班', color: '#64748B' }, { text: '林小祥 (0921-999-888，現場急難第1聯繫人)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '🛡️ 承諾保障', color: '#64748B' }, { text: '外展名額依法申請中，依法提供勞動保障', color: '#047857' }] }
+              { layout: 'baseline', contents: [{ text: '雙語督導專員', color: '#64748B' }, { text: '阮氏梅 (Trần Thị Mai 0988-123-456)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '合作特約診所', color: '#64748B' }, { text: '枋山安康診所 (支援多語醫護通譯)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '勞動部 1955', color: '#64748B' }, { text: '1955 移工免付費 24H 雙語申訴專線', color: '#E11D48' }] },
+              { layout: 'baseline', contents: [{ text: '現場帶工領班', color: '#64748B' }, { text: '林小祥 (0921-999-888，現場急難第1聯繫人)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '承諾保障', color: '#64748B' }, { text: '外展名額依法申請中，依法提供勞動保障', color: '#047857' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '📞 撥打雙語督導阮小姐 (Gọi tư vấn)', uri: 'tel:0988123456' }, color: '#DC2626' },
-              { action: { label: '⚖️ 撥打勞動部 1955 免費諮詢專線', uri: 'tel:1955' }, color: '#4B5563' }
+              { action: { label: '撥打雙語督導阮小姐 (Gọi tư vấn)', uri: 'tel:0988123456' }, color: '#E11D48' },
+              { action: { label: '撥打勞動部 1955 免費諮詢專線', uri: 'tel:1955' }, color: '#4B5563' }
             ]
           }
         }
@@ -1946,7 +1641,7 @@
           header: {
             backgroundColor: '#1E3A8A',
             contents: [
-              { text: '👷 工班現場實名出勤點名 ｜ 領班指揮中心', color: '#93C5FD', size: 'xs', weight: 'bold' },
+              { text: '工班現場實名出勤點名 ｜ 領班指揮中心', color: '#93C5FD', size: 'xs', weight: 'bold' },
               { text: '工班 B 組・6人全員到齊', color: '#FFFFFF', size: 'xl', weight: 'bold' },
               { text: 'ORD-2026-001 ｜ 枋山芒果示範園 ｜ 責任領班: 林小祥', color: '#BFDBFE', size: 'xs', weight: 'normal' }
             ]
@@ -1954,19 +1649,19 @@
           body: {
             contents: [
               { text: '實名驗身與職災納保覆核 (全員通過 6/6)：', color: '#1E293B', size: 'xs', weight: 'bold' },
-              { layout: 'baseline', contents: [{ text: '1. 阮文雄 (V082)', color: '#64748B' }, { text: '✅ 準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '2. 黎文南 (V083)', color: '#64748B' }, { text: '✅ 準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '3. 陳德英 (V085)', color: '#64748B' }, { text: '✅ 準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '4. 范文強 (V088)', color: '#64748B' }, { text: '✅ 準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '5. 黃文海 (V091)', color: '#64748B' }, { text: '✅ 準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '6. 武氏娥 (V094)', color: '#64748B' }, { text: '✅ 準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '1. 阮文雄 (V082)', color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '2. 黎文南 (V083)', color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '3. 陳德英 (V085)', color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '4. 范文強 (V088)', color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '5. 黃文海 (V091)', color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '6. 武氏娥 (V094)', color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
               { layout: 'baseline', contents: [{ text: '接駁專車', color: '#64748B' }, { text: '智農 2 號車 (司機: 李建國) 已順利送達', color: '#0F172A' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '✍️ 簽核點名並啟動今日工時計算', uri: 'javascript:lineBotToast("✅ 點名紀錄已回傳科技總台大腦，工時已開始起算！")' }, color: '#2563EB' },
-              { action: { label: '🚁 檢視無人機與機耕支援進度', uri: 'javascript:handleQuickCmd("機耕航跡")' }, color: '#4F46E5' }
+              { action: { label: '簽核點名並啟動今日工時計算', uri: 'javascript:lineBotToast("點名紀錄已回傳科技總台大腦，工時已開始起算！")' }, color: '#2563EB' },
+              { action: { label: '檢視無人機與機耕支援進度', uri: 'javascript:handleQuickCmd("機耕航跡")' }, color: '#2563EB' }
             ]
           }
         }
@@ -1978,27 +1673,27 @@
         type: 'flex',
         contents: {
           header: {
-            backgroundColor: '#312E81',
+            backgroundColor: '#1E3A8A',
             contents: [
-              { text: '🚁 智慧機耕與無人機飛行遙測 ｜ 航跡日誌', color: '#C7D2FE', size: 'xs', weight: 'bold' },
+              { text: '智慧機耕與無人機飛行遙測 ｜ 航跡日誌', color: '#BFDBFE', size: 'xs', weight: 'bold' },
               { text: '大疆 T50 植保航線 100% 完成', color: '#FFFFFF', size: 'xl', weight: 'bold' },
-              { text: '枋山愛文芒果園 4.5 甲 ｜ RTK 公分級精準定位', color: '#E0E7FF', size: 'xs', weight: 'normal' }
+              { text: '枋山愛文芒果園 4.5 甲 ｜ RTK 公分級精準定位', color: '#DBEAFE', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '🚁 作業機具', color: '#64748B' }, { text: 'DJI Agras T50 四旋翼農業無人機', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '👨‍✈️ 認證飛手', color: '#64748B' }, { text: '陳建宏 (防檢署無人機代噴雙證照)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '⏱️ 飛行數據', color: '#64748B' }, { text: '作業時長 2h 15m ｜ 總航程 18.6 km', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '🌾 代噴項目', color: '#64748B' }, { text: '炭疽病生物防治劑 ｜ 噴灑量 450L', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '🚜 支援曳引機', color: '#64748B' }, { text: '久保田 80hp (預約明日上午進行中耕)', color: '#2563EB' }] },
-              { layout: 'baseline', contents: [{ text: '🛡️ 農損保證', color: '#64748B' }, { text: '零漏噴、零重疊、投保 1,000 萬責任險', color: '#047857' }] }
+              { layout: 'baseline', contents: [{ text: '作業機具', color: '#64748B' }, { text: 'DJI Agras T50 四旋翼農業無人機', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '認證飛手', color: '#64748B' }, { text: '陳建宏 (防檢署無人機代噴雙證照)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '飛行數據', color: '#64748B' }, { text: '作業時長 2h 15m ｜ 總航程 18.6 km', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '代噴項目', color: '#64748B' }, { text: '炭疽病生物防治劑 ｜ 噴灑量 450L', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '支援曳引機', color: '#64748B' }, { text: '久保田 80hp (預約明日上午進行中耕)', color: '#2563EB' }] },
+              { layout: 'baseline', contents: [{ text: '農損保證', color: '#64748B' }, { text: '零漏噴、零重疊、投保 1,000 萬責任險', color: '#047857' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '🗺️ 查看無人機 RTK 飛行熱區圖資', uri: 'https://agridispatch.tw/track/drone-t50' }, color: '#4F46E5' },
-              { action: { label: '📑 下載防檢署合規代噴數位憑單', uri: 'javascript:lineBotToast("✅ 防檢署合規憑單 #DRN-2026-082 下載成功！")' }, color: '#059669' }
+              { action: { label: '查看無人機 RTK 飛行熱區圖資', uri: 'https://agridispatch.tw/track/drone-t50' }, color: '#2563EB' },
+              { action: { label: '下載防檢署合規代噴數位憑單', uri: 'javascript:lineBotToast("防檢署合規憑單 #DRN-2026-082 下載成功！")' }, color: '#059669' }
             ]
           }
         }
@@ -2012,24 +1707,24 @@
           header: {
             backgroundColor: '#065F46',
             contents: [
-              { text: '✍️ 完工驗收與手路數位簽核單 ｜ SLA 交付', color: '#A7F3D0', size: 'xs', weight: 'bold' },
+              { text: '完工驗收與手路數位簽核單 ｜ SLA 交付', color: '#A7F3D0', size: 'xs', weight: 'bold' },
               { text: 'ORD-2026-001 ｜ 作業驗收合格', color: '#FFFFFF', size: 'xl', weight: 'bold' },
               { text: '枋山愛文芒果合作園 ｜ 農場主: 陳建龍 班長', color: '#D1FAE5', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '🥭 作業成果', color: '#64748B' }, { text: '採收 4,800 台斤 (留蒂 0.5cm 護粉率 99.8%)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '⭐ 手路評分', color: '#64748B' }, { text: '5.0 顆星 (優於外銷標準・零刮傷)', color: '#D97706' }] },
-              { layout: 'baseline', contents: [{ text: '👷 帶工責任領班', color: '#64748B' }, { text: '林小祥 (簽章核銷完成)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '🧾 雙軌帳務發票', color: '#64748B' }, { text: '18%科技服務發票 #AG-882199 已雲端開立', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '💵 尾款核算', color: '#64748B' }, { text: 'NT$ 42,336 (總額 52,920 扣除 20% 定金)', color: '#0F172A' }] }
+              { layout: 'baseline', contents: [{ text: '作業成果', color: '#64748B' }, { text: '採收 4,800 台斤 (留蒂 0.5cm 護粉率 99.8%)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '手路評分', color: '#64748B' }, { text: '5.0 顆星 (優於外銷標準・零刮傷)', color: '#D97706' }] },
+              { layout: 'baseline', contents: [{ text: '帶工責任領班', color: '#64748B' }, { text: '林小祥 (簽章核銷完成)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '雙軌帳務發票', color: '#64748B' }, { text: '18%科技服務發票 #AG-882199 已雲端開立', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '尾款核算', color: '#64748B' }, { text: 'NT$ 42,336 (總額 52,920 扣除 20% 定金)', color: '#0F172A' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '✍️ 農友線上電子簽名確認', uri: 'javascript:lineBotToast("✅ 驗收簽核成功！發票與扣款收據已發送至農友信箱。")' }, color: '#059669' },
-              { action: { label: '💵 檢視帶工領班加給分紅', uri: 'javascript:handleQuickCmd("領班分紅")' }, color: '#D97706' }
+              { action: { label: '農友線上電子簽名確認', uri: 'javascript:lineBotToast("驗收簽核成功！發票與扣款收據已發送至農友信箱。")' }, color: '#059669' },
+              { action: { label: '檢視帶工領班加給分紅', uri: 'javascript:handleQuickCmd("領班分紅")' }, color: '#D97706' }
             ]
           }
         }
@@ -2043,23 +1738,23 @@
           header: {
             backgroundColor: '#1E293B',
             contents: [
-              { text: '🚐 接駁車隊即時調度 ｜ 車隊中樞', color: '#94A3B8', size: 'xs', weight: 'bold' },
+              { text: '接駁車隊即時調度 ｜ 車隊中樞', color: '#94A3B8', size: 'xs', weight: 'bold' },
               { text: '全島 4 輛中型接駁專車 ｜ 運作中', color: '#FFFFFF', size: 'xl', weight: 'bold' },
               { text: '配備車載 GPS、冷鏈轉運支援、職災急救包', color: '#CBD5E1', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '🚐 智農 1 號車', color: '#64748B' }, { text: '桃園設施組 (張大哥) ｜ 時速 52km/h 正常', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '🚐 智農 2 號車', color: '#64748B' }, { text: '屏東枋山線 (李大哥) ｜ 枋山芒果園待命中', color: '#2563EB' }] },
-              { layout: 'baseline', contents: [{ text: '🚐 智農 3 號車', color: '#64748B' }, { text: '雲林機耕無人機隊 ｜ 斗南機耕中心整備', color: '#4F46E5' }] },
-              { layout: 'baseline', contents: [{ text: '🚐 智農 4 號車', color: '#64748B' }, { text: '屏南冷鏈預冷車 ｜ 待命暴雨避險轉運', color: '#047857' }] }
+              { layout: 'baseline', contents: [{ text: '智農 1 號車', color: '#64748B' }, { text: '桃園設施組 (張大哥) ｜ 時速 52km/h 正常', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '智農 2 號車', color: '#64748B' }, { text: '屏東枋山線 (李大哥) ｜ 枋山芒果園待命中', color: '#2563EB' }] },
+              { layout: 'baseline', contents: [{ text: '智農 3 號車', color: '#64748B' }, { text: '雲林機耕無人機隊 ｜ 斗南機耕中心整備', color: '#2563EB' }] },
+              { layout: 'baseline', contents: [{ text: '智農 4 號車', color: '#64748B' }, { text: '屏南冷鏈預冷車 ｜ 待命暴雨避險轉運', color: '#047857' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '🗺️ 查看車隊全島 GPS 監控地圖', uri: 'https://agridispatch.tw/track/fleet' }, color: '#2563EB' },
-              { action: { label: '📢 發送車隊待命避險指令', uri: 'javascript:handleQuickCmd("天候避險")' }, color: '#059669' }
+              { action: { label: '查看車隊全島 GPS 監控地圖', uri: 'https://agridispatch.tw/track/fleet' }, color: '#2563EB' },
+              { action: { label: '發送車隊待命避險指令', uri: 'javascript:handleQuickCmd("天候避險")' }, color: '#059669' }
             ]
           }
         }
@@ -2073,24 +1768,24 @@
           header: {
             backgroundColor: '#78350F',
             contents: [
-              { text: '💵 帶隊領班專業加給 ╳ 履約分紅 ｜ 薪資核算', color: '#FDE68A', size: 'xs', weight: 'bold' },
+              { text: '帶隊領班專業加給 ╳ 履約分紅 ｜ 薪資核算', color: '#FDE68A', size: 'xs', weight: 'bold' },
               { text: '林小祥 領班 ｜ 本月加給累計', color: '#FFFFFF', size: 'xl', weight: 'bold' },
               { text: '小工頭責任制 ╳ 零客訴考核 ╳ 早鳥滿載紅利', color: '#FEF3C7', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '📅 帶隊出勤', color: '#64748B' }, { text: '22 班次 (出工率 100%・零違失)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '💰 基礎帶工費', color: '#64748B' }, { text: 'NT$ 12,000 (每班次 $500 專業領班津貼)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '🏆 手路滿分分紅', color: '#64748B' }, { text: 'NT$ 6,800 (農場主評核 5.0 星獎勵)', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '⚡ 機耕排班獎金', color: '#64748B' }, { text: 'NT$ 4,500 (T50 機耕支援協調獎)', color: '#2563EB' }] },
-              { layout: 'baseline', contents: [{ text: '💵 累計分紅總額', color: '#64748B' }, { text: 'NT$ 23,300 (隨次月5日薪資匯入)', color: '#047857' }] }
+              { layout: 'baseline', contents: [{ text: '帶隊出勤', color: '#64748B' }, { text: '22 班次 (出工率 100%・零違失)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '基礎帶工費', color: '#64748B' }, { text: 'NT$ 12,000 (每班次 $500 專業領班津貼)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '手路滿分分紅', color: '#64748B' }, { text: 'NT$ 6,800 (農場主評核 5.0 星獎勵)', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '機耕排班獎金', color: '#64748B' }, { text: 'NT$ 4,500 (T50 機耕支援協調獎)', color: '#2563EB' }] },
+              { layout: 'baseline', contents: [{ text: '累計分紅總額', color: '#64748B' }, { text: 'NT$ 23,300 (隨次月5日薪資匯入)', color: '#047857' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '📊 檢視本月各園區農友評核明細', uri: 'javascript:lineBotToast("本月服務 4 處果園，農友滿意度評分均為 5.0 滿分！")' }, color: '#D97706' },
-              { action: { label: '👷 返回工班點名中心', uri: 'javascript:handleQuickCmd("工班點名")' }, color: '#2563EB' }
+              { action: { label: '檢視本月各園區農友評核明細', uri: 'javascript:lineBotToast("本月服務 4 處果園，農友滿意度評分均為 5.0 滿分！")' }, color: '#D97706' },
+              { action: { label: '返回工班點名中心', uri: 'javascript:handleQuickCmd("工班點名")' }, color: '#2563EB' }
             ]
           }
         }
@@ -2102,26 +1797,26 @@
         type: 'flex',
         contents: {
           header: {
-            backgroundColor: '#991B1B',
+            backgroundColor: '#9F1239',
             contents: [
-              { text: '🚨 田間現場緊急異常通報 ｜ 快速反應系統', color: '#FECACA', size: 'xs', weight: 'bold' },
+              { text: '田間現場緊急異常通報 ｜ 快速反應系統', color: '#FECDD3', size: 'xs', weight: 'bold' },
               { text: '通報單 #INC-20260923-01', color: '#FFFFFF', size: 'xl', weight: 'bold' },
-              { text: '屏東枋山 3 號示範園 ｜ 午後強對流雷雨特報', color: '#FEE2E2', size: 'xs', weight: 'normal' }
+              { text: '屏東枋山 3 號示範園 ｜ 午後強對流雷雨特報', color: '#FFE4E6', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '⚠️ 異常類別', color: '#64748B' }, { text: '天候突發豪雨 / 田區泥濘無法採收', color: '#DC2626' }] },
-              { layout: 'baseline', contents: [{ text: '⏱️ 通報時間', color: '#64748B' }, { text: '今日 13:40 (系統自動觸發天候避險條款)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '💡 演算法解法', color: '#64748B' }, { text: '引導工班全體搭乘專車轉移至屏南冷鏈預冷廠', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '🚐 專車支援', color: '#64748B' }, { text: '智農 2 號車李司機已接收指令，10 分鐘內抵達', color: '#2563EB' }] },
-              { layout: 'baseline', contents: [{ text: '🛡️ 薪資保全', color: '#64748B' }, { text: '室內冷鏈分級工時照計，農民與移工零損失', color: '#047857' }] }
+              { layout: 'baseline', contents: [{ text: '異常類別', color: '#64748B' }, { text: '天候突發豪雨 / 田區泥濘無法採收', color: '#E11D48' }] },
+              { layout: 'baseline', contents: [{ text: '通報時間', color: '#64748B' }, { text: '今日 13:40 (系統自動觸發天候避險條款)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '演算法解法', color: '#64748B' }, { text: '引導工班全體搭乘專車轉移至屏南冷鏈預冷廠', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '專車支援', color: '#64748B' }, { text: '智農 2 號車李司機已接收指令，10 分鐘內抵達', color: '#2563EB' }] },
+              { layout: 'baseline', contents: [{ text: '薪資保全', color: '#64748B' }, { text: '室內冷鏈分級工時照計，農民與移工零損失', color: '#047857' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '📢 啟動冷鏈轉移作業指令', uri: 'javascript:handleQuickCmd("天候避險")' }, color: '#DC2626' },
-              { action: { label: '📞 撥打科技總台緊急指揮線 (0800)', uri: 'tel:0800888999' }, color: '#4B5563' }
+              { action: { label: '啟動冷鏈轉移作業指令', uri: 'javascript:handleQuickCmd("天候避險")' }, color: '#E11D48' },
+              { action: { label: '撥打科技總台緊急指揮線 (0800)', uri: 'tel:0800888999' }, color: '#4B5563' }
             ]
           }
         }

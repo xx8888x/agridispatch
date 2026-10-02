@@ -211,6 +211,7 @@ CREATE TABLE orders (
     foreman_phone      VARCHAR2(30),
     foreman_notes      VARCHAR2(500),
     crew_worker_ids    VARCHAR2(400),
+    requested_workers  NUMBER(4),
     start_date         DATE,
     end_date           DATE,
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,

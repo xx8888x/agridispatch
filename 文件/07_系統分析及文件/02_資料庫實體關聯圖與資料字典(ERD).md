@@ -79,6 +79,7 @@ erDiagram
         int transportSurcharge
         int totalHours
         int suggestedWorkers
+        int requestedWorkers "農場主指定的每日工人數（可為空）"
         int unitRate
         int standardAmount
         int finalAmount
@@ -330,7 +331,8 @@ erDiagram
 | `dispatchCategory` / `categoryName` | String | `harvest_grading` / `tillage_planting` / `pruning_bagging` / `drone_pest_control` / `cold_chain_pack` / `typhoon_emergency` |
 | `transportZone` | String | `core_35km`（不加價）/ `cross_region`（+1,200 元） |
 | `transportSurcharge` | int | 交通加價 |
-| `totalHours` / `suggestedWorkers` / `unitRate` | int | 由後端試算 |
+| `totalHours` / `suggestedWorkers` / `unitRate` | int | 由後端試算；`suggestedWorkers` 在農場主有指定人數時等於 `requestedWorkers` |
+| `requestedWorkers` | Integer | 農場主指定的每日工人數（1～30），null 表示由系統依面積估算。**不影響金額**（金額只看作業量＝工時 × 時薪），只決定編制人數與預估天數（天數 = 工時 ÷ (人數 × 8)）；派工媒合以此人數為需求。`POST`／`PUT /api/orders` 皆可帶，`PUT` 帶 0 表示改回系統估算；已排定的訂單只有 admin 能改。`POST /api/orders/calculate` 以 `workers`（或 `requestedWorkers`）傳入 |
 | `standardAmount` / `finalAmount` / `depositAmount` | int | 原價 / 折扣後總額 / 定金；由後端計算，客戶端不可直接修改 |
 | `depositPaid` | boolean | 定金是否已付；只能經金流流程設為 true |
 | `status` | String | 訂單狀態（見第參章） |

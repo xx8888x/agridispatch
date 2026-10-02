@@ -25,6 +25,8 @@ public class OrderService {
     public static final double MAX_AREA = 10_000;
     /** 產季早鳥工時包單價（元/hr）：不打折，全案統一 315，高於 F2 v2.3 方案 C2 損益兩平價約 306 */
     public static final int EARLY_BIRD_RATE = 315;
+    /** 單張訂單可指定的每日工人數上限（與前端一致） */
+    public static final int MAX_REQUESTED_WORKERS = 30;
 
     private final OrderRepository orderRepository;
     private final CropRepository cropRepository;
@@ -114,6 +116,18 @@ public class OrderService {
     }
 
     public Map<String, Object> calculateOrder(String cropId, double area, String plan, String zone, String dispatchCategory) {
+        return calculateOrder(cropId, area, plan, zone, dispatchCategory, null);
+    }
+
+    /**
+     * 試算。requestedWorkers 為農場主指定的每日工人數（null = 由系統依面積估算）：
+     * 金額只看作業量（工時 × 時薪），人數不同只影響編制與預估天數（天數 = 工時 ÷ (人數 × 8)）。
+     */
+    public Map<String, Object> calculateOrder(String cropId, double area, String plan, String zone, String dispatchCategory,
+                                              Integer requestedWorkers) {
+        if (requestedWorkers != null && (requestedWorkers < 1 || requestedWorkers > MAX_REQUESTED_WORKERS)) {
+            throw ApiException.badRequest("每日工人數 (workers) 必須介於 1 ～ " + MAX_REQUESTED_WORKERS);
+        }
         if (dispatchCategory == null || dispatchCategory.isBlank()) {
             dispatchCategory = "harvest_grading";
         }
@@ -183,7 +197,9 @@ public class OrderService {
         }
 
         int totalHours = (int) Math.round(baseHours * area);
-        int suggestedWorkers = Math.max(2, (int) Math.round(workersPerFen * (area > 3 ? 1.5 : 1)));
+        int suggestedWorkers = requestedWorkers != null
+                ? requestedWorkers
+                : Math.max(2, (int) Math.round(workersPerFen * (area > 3 ? 1.5 : 1)));
         double estDays = Math.round((totalHours / (suggestedWorkers * 8.0)) * 10.0) / 10.0;
 
         double discount = 1.0;
@@ -228,6 +244,7 @@ public class OrderService {
         data.put("transportSurcharge", surcharge);
         data.put("totalHours", totalHours);
         data.put("suggestedWorkers", suggestedWorkers);
+        data.put("requestedWorkers", requestedWorkers);
         data.put("estDays", estDays);
         data.put("unitRate", unitRate);
         data.put("standardTotal", standardTotal + surcharge);
@@ -349,6 +366,7 @@ public class OrderService {
         order.setForemanPhone(input.getForemanPhone());
         order.setForemanNotes(input.getForemanNotes());
         order.setAssignedTeamId(input.getAssignedTeamId());
+        order.setRequestedWorkers(input.getRequestedWorkers());   // 範圍由試算驗證
         validatePeriod(input.getStartDate(), input.getEndDate());
         order.setStartDate(input.getStartDate());
         order.setEndDate(input.getEndDate());
@@ -412,6 +430,19 @@ public class OrderService {
             throw ApiException.conflict("已付定金的訂單不可變更作物、面積或方案，請聯繫調度中心");
         }
 
+        // 每日工人數：不影響金額；0 = 改回由系統估算。已排定的訂單只有 admin 能改（可能影響已安排的出工名單）
+        boolean crewChanged = false;
+        if (updated.getRequestedWorkers() != null) {
+            Integer wanted = updated.getRequestedWorkers() == 0 ? null : updated.getRequestedWorkers();
+            if (!java.util.Objects.equals(wanted, existing.getRequestedWorkers())) {
+                if (!isAdmin && !PENDING.equals(existing.getStatus())) {
+                    throw ApiException.conflict("訂單已排定，人數調整請聯絡合作社（可能影響已安排的出工名單）");
+                }
+                existing.setRequestedWorkers(wanted);
+                crewChanged = true;
+            }
+        }
+
         if (updated.getFarmerName() != null && !updated.getFarmerName().isBlank()) existing.setFarmerName(updated.getFarmerName());
         if (updated.getPhone() != null) existing.setPhone(updated.getPhone());
         if (updated.getFarmLocation() != null) existing.setFarmLocation(updated.getFarmLocation());
@@ -433,6 +464,12 @@ public class OrderService {
             existing.setEndDate(end);
         }
 
+        if (crewChanged && !pricingChanged) {
+            // 只改人數：金額與狀態不動，只重算編制人數（同時驗證範圍）
+            Map<String, Object> calc = calculateOrder(existing.getCropId(), existing.getArea(), existing.getPlan(),
+                    existing.getTransportZone(), existing.getDispatchCategory(), existing.getRequestedWorkers());
+            existing.setSuggestedWorkers((int) calc.get("suggestedWorkers"));
+        }
         if (pricingChanged) {
             applyPricing(existing);
             if (!existing.isDepositPaid()) {
@@ -465,7 +502,7 @@ public class OrderService {
 
     private Map<String, Object> applyPricing(Order order) {
         Map<String, Object> calc = calculateOrder(order.getCropId(), order.getArea(), order.getPlan(),
-                order.getTransportZone(), order.getDispatchCategory());
+                order.getTransportZone(), order.getDispatchCategory(), order.getRequestedWorkers());
         order.setCropName((String) calc.get("cropName"));
         order.setPlanName((String) calc.get("planName"));
         order.setCategoryName((String) calc.get("categoryName"));

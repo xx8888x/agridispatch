@@ -162,6 +162,11 @@
                 <label class="ad-label ad-label--req" for="fStartDate">起工日期</label>
                 <input type="date" id="fStartDate" class="ad-input" required oninput="calcFarmerForm()">
               </div>
+              <div class="ad-field" style="max-width: 240px;">
+                <label class="ad-label" for="fWorkersCount">每日工人數（選填）</label>
+                <input type="number" id="fWorkersCount" class="ad-input ad-num" inputmode="numeric" min="1" max="30" placeholder="不填由系統估" oninput="calcFarmerForm()">
+                <span class="ad-hint">不影響總價，人數愈多完工愈快</span>
+              </div>
               <div class="ad-field">
                 <span class="ad-label" id="fPlanLabel">計價方式</span>
                 <div class="ad-seg" role="radiogroup" aria-labelledby="fPlanLabel" id="fPlanSeg" style="align-self: flex-start;">
@@ -239,7 +244,7 @@
               <div id="fOutHours" class="ad-stat__value">—</div>
             </div>
             <div class="ad-stat">
-              <div class="ad-stat__label">建議編制（系統依面積估）</div>
+              <div class="ad-stat__label">編制與天數</div>
               <div id="fOutWorkers" class="ad-stat__value ad-stat--primary" style="font-size: 1rem; color: var(--ad-primary-text);">—</div>
             </div>
             <div class="ad-stat">
@@ -714,10 +719,10 @@
     // 面積取「每分地標準工時 × 面積」最接近 DM 工時的值（溫室 6 分地 = 120 小時剛好吻合，其餘為近似），報價一律以系統試算為準；
     // 作業地點只在 demo 模式帶入示範地址，正式版保留農場主自己填的
     const PACKAGES = {
-      'dm-mango-2026':      { name: '屏東枋山愛文芒果 60 工時包', crop: 'mango',       category: 'harvest_grading',    acreage: 2, location: '屏東縣枋山鄉愛文芒果合作園區 2 號地' },
-      'dm-greenhouse-2026': { name: '八德設施有機溫室 120 工時包', crop: 'taoyuan_veg', category: 'tillage_planting',   acreage: 6, location: '桃園市八德區興豐路有機水耕農場 1 號棚' },
-      'dm-drone-2026':      { name: 'T50 無人機與機耕深耕包',      crop: 'rice',        category: 'drone_pest_control', acreage: 2.5, location: '嘉義縣太保市有機米契作產銷示範田' },
-      'dm-coldchain-2026':  { name: '旗山高樹採後冷鏈 80 工時包',  crop: 'pineapple',   category: 'cold_chain_pack',    acreage: 3, location: '高雄市旗山區高樹冷鏈集貨預冷中心' }
+      'dm-mango-2026':      { name: '屏東枋山愛文芒果 60 工時包', crop: 'mango',       category: 'harvest_grading',    acreage: 2, workers: 4, location: '屏東縣枋山鄉愛文芒果合作園區 2 號地' },
+      'dm-greenhouse-2026': { name: '八德設施有機溫室 120 工時包', crop: 'taoyuan_veg', category: 'tillage_planting',   acreage: 6, workers: 6, location: '桃園市八德區興豐路有機水耕農場 1 號棚' },
+      'dm-drone-2026':      { name: 'T50 無人機與機耕深耕包',      crop: 'rice',        category: 'drone_pest_control', acreage: 2.5, workers: 2, location: '嘉義縣太保市有機米契作產銷示範田' },
+      'dm-coldchain-2026':  { name: '旗山高樹採後冷鏈 80 工時包',  crop: 'pineapple',   category: 'cold_chain_pack',    acreage: 3, workers: 5, location: '高雄市旗山區高樹冷鏈集貨預冷中心' }
     };
 
     function applyPackage(id) {
@@ -730,13 +735,14 @@
       setIf('fCropType', p.crop);
       setIf('fCategory', p.category);
       document.getElementById('fAcreage').value = p.acreage;
+      document.getElementById('fWorkersCount').value = p.workers || '';
       const early = document.querySelector('input[name="fPlan"][value="early_bird"]');
       if (early) early.checked = true;
       if (p.location && document.documentElement.classList.contains('is-demo')) {
         document.getElementById('fFarmLocation').value = p.location;
       }
       document.getElementById('fPkgName').textContent = p.name;
-      document.getElementById('fPkgMeta').textContent = `已填好作物、類別與面積；金額依面積即時試算，確認後送出即可`;
+      document.getElementById('fPkgMeta').textContent = `已填好作物、類別、面積與 ${p.workers} 人；金額依面積即時試算，確認後送出即可`;
       document.getElementById('fPkgCard').hidden = false;
       return true;
     }
@@ -781,10 +787,10 @@
       turnkey: '依作物費率 95 折，預付 30%，驗收後結清'
     };
 
-    function localQuote(cropId, area, plan, category) {
+    function localQuote(cropId, area, plan, category, workers) {
       const [baseHours, workersPerFen, cropRate] = OFFLINE_CROPS[cropId] || [20, 3, 290];
       const hours = Math.round(baseHours * area);
-      const workers = Math.max(2, Math.round(workersPerFen * (area > 3 ? 1.5 : 1)));
+      const crew = workers || Math.max(2, Math.round(workersPerFen * (area > 3 ? 1.5 : 1)));
       let rate = cropRate;
       if (plan === 'early_bird' && category !== 'typhoon_emergency') rate = 315;
       else if (plan === 'hourly_flex' && category !== 'typhoon_emergency') rate = 310;
@@ -793,7 +799,7 @@
       const actual = plan === 'turnkey' ? Math.round(standard * 0.95) : standard;
       const deposit = plan === 'early_bird' ? Math.round(actual * 0.2) : (plan === 'turnkey' ? Math.round(actual * 0.3) : 0);
       return {
-        totalHours: hours, suggestedWorkers: workers, estDays: Math.round((hours / (workers * 8)) * 10) / 10,
+        totalHours: hours, suggestedWorkers: crew, requestedWorkers: workers || null, estDays: Math.round((hours / (crew * 8)) * 10) / 10,
         unitRate: rate, standardTotal: standard, actualTotal: actual, deposit, savings: standard - actual, offline: true
       };
     }
@@ -806,6 +812,7 @@
         area: parseFloat(document.getElementById('fAcreage').value) || 0,
         plan: planRadio ? planRadio.value : 'early_bird',
         dispatchCategory: catSelect.value,
+        workers: parseInt(document.getElementById('fWorkersCount').value, 10) || null,   // 沒填 = 由系統估算
         categoryHint: catSelect.options[catSelect.selectedIndex].getAttribute('data-hint') || ''
       };
     }
@@ -816,7 +823,7 @@
         const res = await fetch(`${(window.AgriAuth && window.AgriAuth.API_BASE) || '/api'}/orders/calculate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cropId: q.cropId, area: q.area, plan: q.plan, dispatchCategory: q.dispatchCategory })
+          body: JSON.stringify({ cropId: q.cropId, area: q.area, plan: q.plan, dispatchCategory: q.dispatchCategory, workers: q.workers })
         });
         const body = await res.json().catch(() => ({}));
         if (!res.ok || body.success === false) throw Object.assign(new Error(body.error || `HTTP ${res.status}`), { fromServer: true });
@@ -824,7 +831,8 @@
       } catch (err) {
         const demo = !window.AGRI_CONFIG || window.AGRI_CONFIG.mode !== 'production';
         if (err.fromServer || !demo) throw err;
-        return localQuote(q.cropId, q.area, q.plan, q.dispatchCategory);   // 連不上後端：demo 離線試算
+        if (q.workers && (q.workers < 1 || q.workers > 30)) throw new Error('每日工人數必須介於 1 ～ 30');
+        return localQuote(q.cropId, q.area, q.plan, q.dispatchCategory, q.workers);   // 連不上後端：demo 離線試算
       }
     }
 
@@ -844,6 +852,7 @@
       const money = (n) => `NT$ ${Number(n).toLocaleString()}`;
       document.getElementById('fOutHours').innerText = `${q.totalHours} 小時`;
       document.getElementById('fOutWorkers').innerText = `${q.suggestedWorkers} 人 × ${Math.max(1, Math.ceil(q.estDays))} 天 (${input.area} 分地)`;
+      document.getElementById('fWorkersCount').placeholder = q.requestedWorkers ? '不填由系統估' : `系統估 ${q.suggestedWorkers} 人`;
       const stdEl = document.getElementById('fOutStandard');
       stdEl.innerText = money(q.standardTotal);
       stdEl.classList.toggle('line-through', q.savings > 0);
@@ -934,6 +943,7 @@
         transportSurcharge: quote.transportSurcharge || 0,
         totalHours: quote.totalHours,
         suggestedWorkers: quote.suggestedWorkers,
+        requestedWorkers: input.workers,
         unitRate: quote.unitRate,
         standardAmount: quote.standardTotal,
         finalAmount: quote.actualTotal,
@@ -1113,8 +1123,11 @@
       tomorrow.setDate(tomorrow.getDate() + 1);
       document.getElementById('fStartDate').value = tomorrow.toISOString().split('T')[0];
       const qs = new URLSearchParams(window.location.search);
-      // 從文宣／簡報帶入工時包（?pkg=dm-mango-2026）；不認得的值忽略。先套工時包，?category= 可再覆蓋
+      // 從文宣／簡報帶入工時包（?pkg=dm-mango-2026）；不認得的值忽略。先套工時包，?workers=、?category= 可再覆蓋
       applyPackage(qs.get('pkg'));
+      // 從黑轉白轉換中心帶入補位人數（?workers=N，1～30）；不填或不合理就由系統估
+      const qsWorkers = parseInt(qs.get('workers'), 10);
+      if (qsWorkers >= 1) document.getElementById('fWorkersCount').value = Math.min(30, qsWorkers);
       // 從各入口預選派工類別（?category=cold_chain_pack，例如「冷鏈與物流」入口）；不認得的值忽略
       const qsCategory = qs.get('category');
       const categorySelect = document.getElementById('fCategory');

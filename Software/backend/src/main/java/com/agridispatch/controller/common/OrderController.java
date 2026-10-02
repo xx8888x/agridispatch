@@ -47,7 +47,17 @@ public class OrderController {
         String zone = str(req.get("zone"), str(req.get("transportZone"), "core_35km"));
         String dispatchCategory = str(req.get("dispatchCategory"), "harvest_grading");
 
-        Map<String, Object> result = orderService.calculateOrder(cropId, area, plan, zone, dispatchCategory);
+        Object w = req.get("workers") != null ? req.get("workers") : req.get("requestedWorkers");
+        Integer requestedWorkers = null;
+        if (w != null && !w.toString().isBlank()) {
+            try {
+                requestedWorkers = (int) Math.round(Double.parseDouble(w.toString()));
+            } catch (NumberFormatException e) {
+                throw ApiException.badRequest("每日工人數 (workers) 必須為數字");
+            }
+        }
+
+        Map<String, Object> result = orderService.calculateOrder(cropId, area, plan, zone, dispatchCategory, requestedWorkers);
         return ResponseEntity.ok(Map.of("success", true, "data", result));
     }
 

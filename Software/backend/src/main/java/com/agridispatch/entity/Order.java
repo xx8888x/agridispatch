@@ -43,6 +43,10 @@ public class Order {
     @jakarta.persistence.Column(name = "crew_worker_ids", length = 400)
     private String crewWorkerIds;
 
+    /** 農場主指定的每日工人數；null 表示由系統依面積估算（suggestedWorkers）。不影響金額，只決定編制人數與預估天數 */
+    @jakarta.persistence.Column(name = "requested_workers")
+    private Integer requestedWorkers;
+
     /** 預定開工日（含當日） */
     @jakarta.persistence.Column(name = "start_date")
     private java.time.LocalDate startDate;
@@ -53,6 +57,8 @@ public class Order {
 
     public Order() {}
 
+    public Integer getRequestedWorkers() { return requestedWorkers; }
+    public void setRequestedWorkers(Integer requestedWorkers) { this.requestedWorkers = requestedWorkers; }
     public java.time.LocalDate getStartDate() { return startDate; }
     public void setStartDate(java.time.LocalDate startDate) { this.startDate = startDate; }
     public java.time.LocalDate getEndDate() { return endDate; }

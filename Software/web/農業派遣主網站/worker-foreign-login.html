@@ -339,7 +339,11 @@
 
         const lang = ref('vi'); // Default to Vietnamese for foreign workers
 
-        // Android App 會提供使用者選的語言（AgriNativeBridge 或 'agri:app-profile' 事件）；網頁版維持 'vi'
+        // 語言優先順序：App 身分 > 網址參數 ?lang=vi|id（身分選擇頁帶入）> 預設 vi
+        const urlLang = new URLSearchParams(window.location.search).get('lang');
+        if (urlLang && translations[urlLang]) lang.value = urlLang;
+
+        // Android App 會提供使用者選的語言（AgriNativeBridge 或 'agri:app-profile' 事件），覆寫網址參數
         const applyProfileLang = (profile) => {
           const appLang = profile && profile.language;
           if (appLang && translations[appLang]) lang.value = appLang;

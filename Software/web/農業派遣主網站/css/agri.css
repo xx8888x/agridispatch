@@ -600,6 +600,11 @@ a.ad-pill { text-decoration: none; }
 .ad-seg__btn.is-active { background: var(--ad-primary); color: var(--ad-on-primary); }
 .ad-seg__btn--danger.is-active { background: var(--ad-danger); color: #fff; }
 .ad-seg__btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* 分段控制也能當單選：<label class="ad-seg__btn"><input type="radio">…</label>，選中由 JS 切 is-active */
+label.ad-seg__btn { position: relative; display: inline-flex; align-items: center; }
+.ad-seg__btn input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+.ad-seg__btn:focus-within { box-shadow: var(--ad-ring); }
 @media (max-width: 480px) {
   .ad-hide-sm { display: none !important; }
   .ad-header__brand { gap: 8px; }

@@ -105,142 +105,130 @@
           <span class="ad-pill ad-pill--warn">早鳥鎖定名額中</span>
         </div>
 
-        <form id="farmerBookingForm" onsubmit="submitFarmerBooking(event)" style="display: flex; flex-direction: column; gap: 20px;">
-          <!-- 基本資訊 -->
-          <div class="ad-form-grid ad-form-grid--2">
-            <div class="ad-field">
-              <label class="ad-label ad-label--req" for="fFarmerName">農場主／班長姓名</label>
-              <input type="text" id="fFarmerName" class="ad-input" required value="陳建龍 (阿龍班長)" autocomplete="name">
+        <form id="farmerBookingForm" onsubmit="submitFarmerBooking(event)" style="display: flex; flex-direction: column; gap: 24px;">
+
+          <!-- 從文宣／簡報帶入的工時包（?pkg=）；沒有就不顯示 -->
+          <div id="fPkgCard" class="ad-notice ad-notice--ok" hidden style="align-items: center; justify-content: space-between; gap: 12px;">
+            <div style="min-width: 0;">
+              <div style="font-weight: 600;">已帶入「<span id="fPkgName"></span>」</div>
+              <div id="fPkgMeta" class="ad-caption" style="color: inherit;"></div>
             </div>
-            <div class="ad-field">
-              <label class="ad-label ad-label--req" for="fFarmerPhone">聯絡電話</label>
-              <input type="tel" id="fFarmerPhone" class="ad-input" required value="0912-345-678" inputmode="tel" autocomplete="tel">
-            </div>
-            <div class="ad-field" style="grid-column: 1 / -1;">
-              <label class="ad-label ad-label--req" for="fFarmLocation">作業地點／農園地號</label>
-              <input type="text" id="fFarmLocation" class="ad-input" required value="屏東縣枋山鄉愛文芒果合作園區 2 號地">
-            </div>
+            <button type="button" onclick="clearPackage()" class="ad-btn ad-btn--ghost ad-btn--sm" style="flex-shrink: 0;">自己填</button>
           </div>
 
-          <!-- 作物與面積 -->
-          <div class="ad-form-grid ad-form-grid--2">
-            <div class="ad-field">
-              <label class="ad-label ad-label--req" for="fCropType">作物</label>
-              <select id="fCropType" class="ad-select" onchange="calcFarmerForm()">
-                <option value="mango" data-rate="2200" selected>愛文芒果 (枋山/玉井)</option>
-                <option value="pineapple" data-rate="2200">金鑽鳳梨 (高樹/大樹)</option>
-                <option value="waxapple" data-rate="2200">黑珍珠蓮霧 (佳冬/林邊)</option>
-                <option value="tea" data-rate="2800">高山茶 (阿里山/杉林溪)</option>
-                <option value="pomelo" data-rate="2200">麻豆文旦 (麻豆/花蓮)</option>
-                <option value="strawberry" data-rate="2400">溫室草莓／彩椒 (大湖/彰雲)</option>
-                <option value="rice" data-rate="2000">水稻／雜糧</option>
-              </select>
-            </div>
-            <div class="ad-field">
-              <label class="ad-label ad-label--req" for="fAcreage">面積（分地）</label>
-              <input id="fAcreage" class="ad-input ad-num" type="number" inputmode="decimal" min="0.5" max="50" step="0.5" value="5" oninput="calcFarmerForm()">
-              <span class="ad-hint">1 分地 ≈ 293 坪，1 甲 = 10 分地</span>
-            </div>
-          </div>
+          <ol class="ad-steps" style="gap: 28px;">
 
-          <!-- 派工類別 -->
-          <div class="ad-field">
-            <label class="ad-label ad-label--req" for="fCategory">派工類別</label>
-            <select id="fCategory" class="ad-select" onchange="calcFarmerForm()">
-              <option value="harvest_grading" data-rate="2200" data-hint="外展農事工・NT$ 2,200／人日" selected>採收搬運與套袋</option>
-              <option value="pruning_bagging" data-rate="2800" data-hint="專業技職工・NT$ 2,800／人日">嫁接與高空修剪</option>
-              <option value="tillage_planting" data-rate="2400" data-hint="溫室巡檢工・NT$ 2,400／人日">設施溫室精緻管理</option>
-              <option value="drone_pest_control" data-rate="3600" data-hint="無人機專隊・NT$ 3,600／組日">大型無人機精準植保</option>
-              <option value="cold_chain_pack" data-rate="2000" data-hint="採後冷鏈工・NT$ 2,000／人日">蔬果清洗分級包裝</option>
-              <option value="typhoon_emergency" data-rate="2600" data-hint="機動應急隊・NT$ 2,600／人日">產銷班應急代工</option>
-            </select>
-            <span id="fCategoryHint" class="ad-hint"></span>
-          </div>
-
-          <!-- 計價方案 -->
-          <fieldset class="ad-field" style="border: 0; padding: 0; margin: 0;">
-            <legend class="ad-label" style="margin-bottom: 6px; padding: 0;">計價方案</legend>
-            <div class="ad-form-grid ad-form-grid--3">
-              <label class="ad-choice" style="align-items: flex-start;">
-                <input type="radio" name="fPlan" value="early_bird" checked onchange="calcFarmerForm()" style="margin-top: 3px;">
-                <span>
-                  <span class="ad-heading" style="display: block; font-size: 15px;">早鳥工時包</span>
-                  <span class="ad-hint" style="display: block;">315 元/hr，預付 20% 保證出工</span>
-                </span>
-              </label>
-              <label class="ad-choice" style="align-items: flex-start;">
-                <input type="radio" name="fPlan" value="flexible" onchange="calcFarmerForm()" style="margin-top: 3px;">
-                <span>
-                  <span class="ad-heading" style="display: block; font-size: 15px;">彈性計時</span>
-                  <span class="ad-hint" style="display: block;">臨時需求，依牌價計費</span>
-                </span>
-              </label>
-              <label class="ad-choice" style="align-items: flex-start;">
-                <input type="radio" name="fPlan" value="lump_sum" onchange="calcFarmerForm()" style="margin-top: 3px;">
-                <span>
-                  <span class="ad-heading" style="display: block; font-size: 15px;">成果統包</span>
-                  <span class="ad-hint" style="display: block;">驗收合格後一次結清</span>
-                </span>
-              </label>
-            </div>
-          </fieldset>
-
-          <!-- 工期與人數 -->
-          <div class="ad-form-grid ad-form-grid--3">
-            <div class="ad-field">
-              <label class="ad-label ad-label--req" for="fStartDate">起工日期</label>
-              <input type="date" id="fStartDate" class="ad-input" required>
-            </div>
-            <div class="ad-field">
-              <label class="ad-label ad-label--req" for="fDaysCount">工作天數</label>
-              <input type="number" id="fDaysCount" class="ad-input ad-num" inputmode="numeric" min="1" max="60" value="4" oninput="calcFarmerForm()">
-            </div>
-            <div class="ad-field">
-              <label class="ad-label ad-label--req" for="fWorkersCount">每日工人數</label>
-              <input type="number" id="fWorkersCount" class="ad-input ad-num" inputmode="numeric" min="1" max="30" value="4" oninput="calcFarmerForm()">
-            </div>
-          </div>
-
-          <!-- 現場小工頭 -->
-          <div class="ad-card ad-card--inset">
-            <div class="ad-card__head" style="margin-bottom: 12px;">
-              <div>
-                <h3 class="ad-heading">現場小工頭</h3>
-                <p class="ad-caption">工人報到時會直接聯絡這位對口。</p>
+            <!-- 步驟 1：做什麼 -->
+            <li style="display: flex; flex-direction: column; gap: 16px;">
+              <h3 class="ad-heading" style="line-height: 28px;">做什麼</h3>
+              <div class="ad-form-grid ad-form-grid--2">
+                <div class="ad-field">
+                  <label class="ad-label ad-label--req" for="fCropType">作物</label>
+                  <select id="fCropType" class="ad-select" onchange="calcFarmerForm()">
+                    <option value="mango" data-rate="2200" selected>愛文芒果 (枋山/玉井)</option>
+                    <option value="pineapple" data-rate="2200">金鑽鳳梨 (高樹/大樹)</option>
+                    <option value="waxapple" data-rate="2200">黑珍珠蓮霧 (佳冬/林邊)</option>
+                    <option value="tea" data-rate="2800">高山茶 (阿里山/杉林溪)</option>
+                    <option value="pomelo" data-rate="2200">麻豆文旦 (麻豆/花蓮)</option>
+                    <option value="strawberry" data-rate="2400">溫室草莓／彩椒 (大湖/彰雲)</option>
+                    <option value="taoyuan_veg" data-rate="2400">溫室有機蔬菜 (八德/大溪)</option>
+                    <option value="rice" data-rate="2000">水稻／雜糧</option>
+                  </select>
+                </div>
+                <div class="ad-field">
+                  <label class="ad-label ad-label--req" for="fCategory">派工類別</label>
+                  <select id="fCategory" class="ad-select" onchange="calcFarmerForm()">
+                    <option value="harvest_grading" data-rate="2200" data-hint="外展農事工・NT$ 2,200／人日" selected>採收搬運與套袋</option>
+                    <option value="pruning_bagging" data-rate="2800" data-hint="專業技職工・NT$ 2,800／人日">嫁接與高空修剪</option>
+                    <option value="tillage_planting" data-rate="2400" data-hint="溫室巡檢工・NT$ 2,400／人日">設施溫室精緻管理</option>
+                    <option value="drone_pest_control" data-rate="3600" data-hint="無人機專隊・NT$ 3,600／組日">大型無人機精準植保</option>
+                    <option value="cold_chain_pack" data-rate="2000" data-hint="採後冷鏈工・NT$ 2,000／人日">蔬果清洗分級包裝</option>
+                    <option value="typhoon_emergency" data-rate="2600" data-hint="機動應急隊・NT$ 2,600／人日">產銷班應急代工</option>
+                  </select>
+                  <span id="fCategoryHint" class="ad-hint"></span>
+                </div>
               </div>
-              <button type="button" onclick="syncFarmerAsLead()" class="ad-btn ad-btn--secondary ad-btn--sm">由我帶隊</button>
-            </div>
-            <div class="ad-form-grid ad-form-grid--2">
-              <div class="ad-field">
-                <label class="ad-label" for="fForemanName">姓名</label>
-                <input type="text" id="fForemanName" class="ad-input" value="陳小龍 (副班長)">
+              <div class="ad-field" style="max-width: 240px;">
+                <label class="ad-label ad-label--req" for="fAcreage">面積（分地）</label>
+                <input id="fAcreage" class="ad-input ad-num" type="number" inputmode="decimal" min="0.5" max="50" step="0.5" value="5" oninput="calcFarmerForm()">
+                <span class="ad-hint">1 分地 ≈ 293 坪，1 甲 = 10 分地</span>
+              </div>
+            </li>
+
+            <!-- 步驟 2：什麼時候、幾個人 -->
+            <li style="display: flex; flex-direction: column; gap: 16px;">
+              <h3 class="ad-heading" style="line-height: 28px;">什麼時候、幾個人</h3>
+              <div class="ad-form-grid ad-form-grid--3">
+                <div class="ad-field">
+                  <label class="ad-label ad-label--req" for="fStartDate">起工日期</label>
+                  <input type="date" id="fStartDate" class="ad-input" required>
+                </div>
+                <div class="ad-field">
+                  <label class="ad-label ad-label--req" for="fDaysCount">工作天數</label>
+                  <input type="number" id="fDaysCount" class="ad-input ad-num" inputmode="numeric" min="1" max="60" value="4" oninput="calcFarmerForm()">
+                </div>
+                <div class="ad-field">
+                  <label class="ad-label ad-label--req" for="fWorkersCount">每日工人數</label>
+                  <input type="number" id="fWorkersCount" class="ad-input ad-num" inputmode="numeric" min="1" max="30" value="4" oninput="calcFarmerForm()">
+                </div>
               </div>
               <div class="ad-field">
-                <label class="ad-label" for="fForemanPhone">電話／LINE</label>
-                <input type="tel" id="fForemanPhone" class="ad-input" inputmode="tel" value="0921-999-888">
+                <span class="ad-label" id="fPlanLabel">計價</span>
+                <div class="ad-seg" role="radiogroup" aria-labelledby="fPlanLabel" id="fPlanSeg" style="align-self: flex-start;">
+                  <label class="ad-seg__btn is-active"><input type="radio" name="fPlan" value="early_bird" checked onchange="calcFarmerForm()">早鳥工時包</label>
+                  <label class="ad-seg__btn"><input type="radio" name="fPlan" value="flexible" onchange="calcFarmerForm()">彈性計時</label>
+                  <label class="ad-seg__btn"><input type="radio" name="fPlan" value="lump_sum" onchange="calcFarmerForm()">成果統包</label>
+                </div>
+                <span id="fPlanHint" class="ad-hint">315 元/hr，預付 20% 保證出工</span>
               </div>
-              <div class="ad-field" style="grid-column: 1 / -1;">
-                <label class="ad-label" for="fForemanNotes">現場指示／集合須知</label>
-                <input type="text" id="fForemanNotes" class="ad-input" value="早上 06:45 枋山 2 號集貨場集合，請穿著防滑雨鞋自備手套">
-              </div>
-            </div>
-          </div>
+            </li>
 
-          <!-- 合法派工四大保障 -->
-          <div id="legalBenefitsBanner" class="ad-notice" style="flex-direction: column; gap: 8px;">
-            <h3 class="ad-heading">預約即享「黑轉白」四大保障</h3>
-            <ul class="ad-caption" style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px;">
-              <li><strong style="color: var(--ad-text);">早鳥定價：</strong>提前預約鎖定產季名額、優先排班（315 元/hr 不打折）</li>
-              <li><strong style="color: var(--ad-text);">合法雇用：</strong>人員由合作社雇用並依法加保勞保／職災保險，免除非法容留外國人工作之罰鍰風險（就服法每人 15～75 萬）</li>
-              <li><strong style="color: var(--ad-text);">通路認證：</strong>完工可匯出出勤與合法用工證明，供產銷履歷與通路稽核使用</li>
-              <li><strong style="color: var(--ad-text);">帳務透明：</strong>開立合法發票，勞務費支出有憑有據，可交會計師依法列報</li>
-            </ul>
-            <a href="legalize.html" class="ad-btn ad-btn--ghost ad-btn--sm" style="align-self: flex-start;">園區有未投保工班？前往轉換</a>
-          </div>
+            <!-- 步驟 3：怎麼聯絡你 -->
+            <li style="display: flex; flex-direction: column; gap: 16px;">
+              <h3 class="ad-heading" style="line-height: 28px;">怎麼聯絡你</h3>
+              <div class="ad-form-grid ad-form-grid--2">
+                <div class="ad-field">
+                  <label class="ad-label ad-label--req" for="fFarmerName">農場主／班長姓名</label>
+                  <input type="text" id="fFarmerName" class="ad-input" required value="陳建龍 (阿龍班長)" autocomplete="name">
+                </div>
+                <div class="ad-field">
+                  <label class="ad-label ad-label--req" for="fFarmerPhone">聯絡電話</label>
+                  <input type="tel" id="fFarmerPhone" class="ad-input" required value="0912-345-678" inputmode="tel" autocomplete="tel">
+                </div>
+                <div class="ad-field" style="grid-column: 1 / -1;">
+                  <label class="ad-label ad-label--req" for="fFarmLocation">作業地點／農園地號</label>
+                  <input type="text" id="fFarmLocation" class="ad-input" required value="屏東縣枋山鄉愛文芒果合作園區 2 號地">
+                </div>
+              </div>
+              <label class="ad-choice" style="align-items: flex-start;">
+                <input type="checkbox" id="fLeadSelf" checked onchange="toggleLeadSelf()" style="margin-top: 3px;">
+                <span>
+                  <span style="display: block; font-weight: 600;">工人報到時直接聯絡我</span>
+                  <span class="ad-hint" style="display: block;">現場另有帶隊的人，請取消勾選並填他的聯絡方式</span>
+                </span>
+              </label>
+              <div id="fForemanFields" class="ad-card ad-card--inset" hidden>
+                <div class="ad-form-grid ad-form-grid--2">
+                  <div class="ad-field">
+                    <label class="ad-label" for="fForemanName">現場帶隊姓名</label>
+                    <input type="text" id="fForemanName" class="ad-input" value="陳小龍 (副班長)">
+                  </div>
+                  <div class="ad-field">
+                    <label class="ad-label" for="fForemanPhone">電話／LINE</label>
+                    <input type="tel" id="fForemanPhone" class="ad-input" inputmode="tel" value="0921-999-888">
+                  </div>
+                  <div class="ad-field" style="grid-column: 1 / -1;">
+                    <label class="ad-label" for="fForemanNotes">集合地點／現場須知</label>
+                    <input type="text" id="fForemanNotes" class="ad-input" value="早上 06:45 枋山 2 號集貨場集合，請穿著防滑雨鞋自備手套">
+                  </div>
+                </div>
+              </div>
+            </li>
+          </ol>
 
           <div>
             <button type="submit" id="fSubmitBtn" class="ad-btn ad-btn--primary ad-btn--lg ad-btn--block">送出預約</button>
-            <p class="ad-caption" style="text-align: center; margin-top: 8px;">送出後保留早鳥保證出工配額</p>
+            <p class="ad-caption" style="text-align: center; margin-top: 8px;">送出後保留早鳥保證出工配額，合作社 2 小時內電話確認</p>
           </div>
         </form>
       </div>
@@ -277,6 +265,17 @@
             <span class="ad-caption">定金 20%（鎖定名額）</span>
             <strong id="fOutDeposit" class="ad-price ad-price--accent">NT$ 8,064</strong>
           </div>
+        </div>
+
+        <div id="legalBenefitsBanner" class="ad-notice" style="flex-direction: column; gap: 8px;">
+          <h3 class="ad-heading">預約即享「黑轉白」四大保障</h3>
+          <ul class="ad-caption" style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px;">
+            <li><strong style="color: var(--ad-text);">早鳥定價：</strong>提前預約鎖定產季名額、優先排班（315 元/hr 不打折）</li>
+            <li><strong style="color: var(--ad-text);">合法雇用：</strong>人員由合作社雇用並依法加保勞保／職災保險，免除非法容留外國人工作之罰鍰風險（就服法每人 15～75 萬）</li>
+            <li><strong style="color: var(--ad-text);">通路認證：</strong>完工可匯出出勤與合法用工證明，供產銷履歷與通路稽核使用</li>
+            <li><strong style="color: var(--ad-text);">帳務透明：</strong>開立合法發票，勞務費支出有憑有據，可交會計師依法列報</li>
+          </ul>
+          <a href="legalize.html" class="ad-btn ad-btn--ghost ad-btn--sm" style="align-self: flex-start;">園區有未投保工班？前往轉換</a>
         </div>
 
         <div id="fSuccessBanner" class="hidden" role="status">
@@ -720,6 +719,57 @@
       });
     }
 
+    // 工時包（?pkg=）：文宣 brochure.html 與簡報 pitch.html 的四張 DM，帶進來就先把表單填好
+    // 人數×天數依 DM 建議編制；作業地點只在 demo 模式帶入示範地址，正式版保留農場主自己填的
+    const PACKAGES = {
+      'dm-mango-2026':      { name: '屏東枋山愛文芒果 60 工時包', crop: 'mango',       category: 'harvest_grading',    acreage: 3.5, workers: 4, days: 2, location: '屏東縣枋山鄉愛文芒果合作園區 2 號地' },
+      'dm-greenhouse-2026': { name: '八德設施有機溫室 120 工時包', crop: 'taoyuan_veg', category: 'tillage_planting',   acreage: 3,   workers: 6, days: 4, location: '桃園市八德區興豐路有機水耕農場 1 號棚' },
+      'dm-drone-2026':      { name: 'T50 無人機與機耕深耕包',      crop: 'rice',        category: 'drone_pest_control', acreage: 5,   workers: 2, days: 1, location: '嘉義縣太保市有機米契作產銷示範田' },
+      'dm-coldchain-2026':  { name: '旗山高樹採後冷鏈 80 工時包',  crop: 'pineapple',   category: 'cold_chain_pack',    acreage: 4,   workers: 5, days: 2, location: '高雄市旗山區高樹冷鏈集貨預冷中心' }
+    };
+
+    function applyPackage(id) {
+      const p = PACKAGES[id];
+      if (!p) return false;
+      const setIf = (selId, val) => {
+        const el = document.getElementById(selId);
+        if ([...el.options].some(o => o.value === val)) el.value = val;
+      };
+      setIf('fCropType', p.crop);
+      setIf('fCategory', p.category);
+      document.getElementById('fAcreage').value = p.acreage;
+      document.getElementById('fWorkersCount').value = p.workers;
+      document.getElementById('fDaysCount').value = p.days;
+      const early = document.querySelector('input[name="fPlan"][value="early_bird"]');
+      if (early) early.checked = true;
+      if (p.location && document.documentElement.classList.contains('is-demo')) {
+        document.getElementById('fFarmLocation').value = p.location;
+      }
+      document.getElementById('fPkgName').textContent = p.name;
+      document.getElementById('fPkgMeta').textContent = `${p.workers} 人 × ${p.days} 天・早鳥 315 元/hr，底下都填好了，確認後送出即可`;
+      document.getElementById('fPkgCard').hidden = false;
+      return true;
+    }
+
+    function clearPackage() {
+      document.getElementById('fPkgCard').hidden = true;
+      const url = new URL(window.location);
+      url.searchParams.delete('pkg');
+      window.history.replaceState({}, '', url);
+      document.getElementById('fCropType').focus();
+    }
+
+    // 勾「工人報到時直接聯絡我」就收起小工頭欄位，送單時由農場主資料帶入
+    function toggleLeadSelf() {
+      document.getElementById('fForemanFields').hidden = document.getElementById('fLeadSelf').checked;
+    }
+
+    const PLAN_HINT = {
+      early_bird: '315 元/hr，預付 20% 保證出工',
+      flexible: '臨時需求，依牌價計費',
+      lump_sum: '驗收合格後一次結清'
+    };
+
     function syncFarmerAsLead() {
       const name = document.getElementById('fFarmerName').value;
       const phone = document.getElementById('fFarmerPhone').value;
@@ -762,6 +812,13 @@
       document.getElementById('fOutFinal').innerText = `NT$ ${finalAmt.toLocaleString()}`;
       document.getElementById('fOutDeposit').innerText = `NT$ ${depositAmt.toLocaleString()}`;
       document.getElementById('fOutSavings').innerText = discountAmt > 0 ? `已省下 NT$ ${discountAmt.toLocaleString()} (${Math.round(discountRate * 100)}% 優惠)` : (planVal === 'early_bird' ? '早鳥 315 元/hr・鎖定名額・優先排班' : '標準費率計價');
+      // 計價分段控制：選中的那格亮起，底下一行說明跟著換
+      document.querySelectorAll('#fPlanSeg .ad-seg__btn').forEach((lab) => {
+        const input = lab.querySelector('input');
+        lab.classList.toggle('is-active', !!(input && input.checked));
+      });
+      const planHint = document.getElementById('fPlanHint');
+      if (planHint) planHint.textContent = PLAN_HINT[planVal] || '';
     }
 
     async function submitFarmerBooking(e) {
@@ -769,6 +826,10 @@
       const btn = document.getElementById('fSubmitBtn');
       btn.disabled = true;
       btn.textContent = '處理中…';
+
+      // 沒有另外指定現場帶隊的人，就由農場主本人擔任對口
+      const leadSelf = document.getElementById('fLeadSelf');
+      if (leadSelf && leadSelf.checked) syncFarmerAsLead();
 
       const orderId = 'ORD-2026-' + Math.floor(1000 + Math.random() * 9000);
       const catSelect = document.getElementById('fCategory');
@@ -987,13 +1048,17 @@
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       document.getElementById('fStartDate').value = tomorrow.toISOString().split('T')[0];
+      const qs = new URLSearchParams(window.location.search);
+      // 從文宣／簡報帶入工時包（?pkg=dm-mango-2026）；不認得的值忽略。先套工時包，後面的參數可再覆蓋
+      applyPackage(qs.get('pkg'));
       // 從黑轉白轉換中心帶入補位人數（?workers=N）
-      const qsWorkers = parseInt(new URLSearchParams(window.location.search).get('workers'), 10);
+      const qsWorkers = parseInt(qs.get('workers'), 10);
       if (qsWorkers > 0) document.getElementById('fWorkersCount').value = Math.min(30, qsWorkers);
       // 從各入口預選派工類別（?category=cold_chain_pack，例如「冷鏈與物流」入口）；不認得的值忽略
-      const qsCategory = new URLSearchParams(window.location.search).get('category');
+      const qsCategory = qs.get('category');
       const categorySelect = document.getElementById('fCategory');
       if (qsCategory && [...categorySelect.options].some(o => o.value === qsCategory)) categorySelect.value = qsCategory;
+      toggleLeadSelf();
       calcFarmerForm();
       // 預設顯示「發起派工」（與分頁按鈕的初始樣式一致）；#orders 直接開啟訂單列表
       if (window.location.hash === '#orders') {

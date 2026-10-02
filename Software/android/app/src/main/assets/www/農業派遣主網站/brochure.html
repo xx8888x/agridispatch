@@ -305,7 +305,7 @@
             <p class="text-[11px] text-slate-500">合作社立案登記：縣府社合字第 XXXXXXXX 號（依外展農務制度申請中，尚未取得外展資格）</p>
           </div>
           <div class="flex items-center gap-3 shrink-0 no-print">
-            <a href="farmer.html" class="ad-btn ad-btn--accent">線上預約派工</a>
+            <a :href="'farmer.html?pkg=' + encodeURIComponent(currentDm.id)" class="ad-btn ad-btn--accent">線上預約派工</a>
             <div class="p-2 rounded-xl bg-white text-slate-950 font-mono text-center shadow">
               <div class="w-12 h-12 bg-slate-100 rounded flex items-center justify-center text-[10px] font-bold border border-slate-300">
                 LINE

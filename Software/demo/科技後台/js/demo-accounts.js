@@ -9,9 +9,9 @@ window.AGRI_DEMO_ACCOUNTS = {
     bannerHint: '免控管帳密，任意輸入或點擊均可進入實測（正式帳密由後端控管）',
     directLinkLabel: '直接免密測試 ➔',
     profiles: [
-      { key: 'tech', email: 'admin@agridispatch.tw', password: 'tech2026', org: 'tech', otp: '888888', name: '林技術長 (Tech Lead)', label: '💻 科技技術長' },
-      { key: 'dispatcher', email: 'dispatch@coop.tw', password: 'coop888', org: 'coop', otp: '888888', name: '陳理事長 (Coop Chair)', label: '🌾 合作社調度長' },
-      { key: 'auditor', email: 'audit@moa.gov.tw', password: 'audit999', org: 'moa', otp: '888888', name: '張稽核專員', label: '🛡️ 農業部稽核員' }
+      { key: 'tech', email: 'admin@agridispatch.tw', password: 'tech2026', org: 'tech', otp: '888888', name: '林技術長 (Tech Lead)', label: '科技技術長' },
+      { key: 'dispatcher', email: 'dispatch@coop.tw', password: 'coop888', org: 'coop', otp: '888888', name: '陳理事長 (Coop Chair)', label: '合作社調度長' },
+      { key: 'auditor', email: 'audit@moa.gov.tw', password: 'audit999', org: 'moa', otp: '888888', name: '張稽核專員', label: '農業部稽核員' }
     ]
   },
   farmer: {

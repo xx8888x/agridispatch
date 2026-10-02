@@ -284,6 +284,7 @@
           <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'calendar' }" :aria-selected="dispatchSubTab === 'calendar'" @click="dispatchSubTab = 'calendar'">全台產曆</button>
           <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'talents' }" :aria-selected="dispatchSubTab === 'talents'" @click="dispatchSubTab = 'talents'">人才儲備<span class="ad-tab__count">{{ talents.length }}</span></button>
           <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'brochures' }" :aria-selected="dispatchSubTab === 'brochures'" @click="dispatchSubTab = 'brochures'">產品文宣<span class="ad-tab__count">{{ brochures.length }}</span></button>
+          <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'legalize' }" :aria-selected="dispatchSubTab === 'legalize'" @click="dispatchSubTab = 'legalize'; fetchLegalize()">工班合法化<span v-if="legalizeSummary" class="ad-tab__count">{{ legalizeSummary.totals.gapOpen }}</span></button>
         </div>
 
         <!-- Sub-View 1: Orders -->
@@ -1042,6 +1043,76 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Sub-View 7: 工班合法化（黑轉白）各農場彙總（資料：GET /api/legalize/summary，僅 admin） -->
+        <div v-if="dispatchSubTab === 'legalize'" class="space-y-6">
+          <div class="ad-section__head" style="margin-bottom: 0; flex-wrap: wrap; align-items: center;">
+            <div style="min-width: 0;">
+              <h2 class="ad-title">工班合法化</h2>
+              <p class="ad-caption" style="margin-top: 2px;">各農場「黑轉白」進度、需合法工班補位的缺口與罰鍰暴露；清冊由農場主在自己的工作台登錄</p>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+              <a href="../農業派遣主網站/legalize.html" target="_blank" class="ad-btn ad-btn--secondary ad-btn--sm">農場主端畫面</a>
+              <button type="button" @click="fetchLegalize()" class="ad-btn ad-btn--ghost ad-btn--sm ad-btn--icon" title="重新整理" aria-label="重新整理"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg></button>
+            </div>
+          </div>
+
+          <div v-if="legalizeError" class="ad-notice ad-notice--danger" role="alert">無法取得彙總：{{ legalizeError }}</div>
+
+          <template v-if="legalizeSummary">
+            <div class="ad-stat-grid">
+              <div class="ad-stat"><div class="ad-stat__label">登錄人員</div><div class="ad-stat__value">{{ legalizeSummary.totals.total }}<small>人・{{ legalizeSummary.farms.length }} 個農場</small></div></div>
+              <div class="ad-stat ad-stat--primary"><div class="ad-stat__label">已完成轉白</div><div class="ad-stat__value">{{ legalizeSummary.totals.legalized }}<small>人</small></div></div>
+              <div class="ad-stat ad-stat--accent"><div class="ad-stat__label">待合法工班補位</div><div class="ad-stat__value">{{ legalizeSummary.totals.gapOpen }}<small>人</small></div></div>
+              <div class="ad-stat ad-stat--danger"><div class="ad-stat__label">仍在使用中・罰鍰暴露</div><div class="ad-stat__value">{{ legalizeSummary.totals.exposed }}<small>人・{{ legalizeSummary.totals.exposureMinWan }}～{{ legalizeSummary.totals.exposureMaxWan }} 萬</small></div></div>
+            </div>
+
+            <div class="ad-notice ad-notice--danger" style="flex-direction: column; gap: 4px;">
+              <p style="font-weight: 600;">失聯（逃逸）移工與借用他人雇主的移工，依法無法在農場就地合法化</p>
+              <p style="color: var(--ad-text);">就業服務法第 44 條、第 57 條第 1 款禁止非法容留、聘僱未經許可或他人所申請之外國人，第 63 條每人罰鍰 15～75 萬元。本頁只做盤點與合法工班補位調度，不登錄這類人員的個資；過去已發生之責任能否減輕請諮詢律師【待確認】。</p>
+            </div>
+
+            <div class="ad-card" style="padding: 0 16px;">
+              <div class="overflow-x-auto">
+                <table class="ad-table" style="min-width: 960px;">
+                  <thead>
+                    <tr>
+                      <th>農場主</th>
+                      <th style="text-align: center;">登錄</th>
+                      <th style="text-align: center;">可直接轉白</th>
+                      <th style="text-align: center;">有條件</th>
+                      <th style="text-align: center;">不可就地轉</th>
+                      <th style="text-align: center;">已轉白</th>
+                      <th style="text-align: center;">仍在使用</th>
+                      <th style="text-align: center;">待補位</th>
+                      <th>罰鍰暴露</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="f in legalizeSummary.farms" :key="f.farmerId">
+                      <td><div style="font-weight: 600;">{{ f.farmerName }}</div><div class="ad-caption ad-num">{{ f.farmerId }}</div></td>
+                      <td class="ad-num" style="text-align: center;">{{ f.total }}</td>
+                      <td class="ad-num" style="text-align: center;">{{ f.direct }}</td>
+                      <td class="ad-num" style="text-align: center;">{{ f.conditional }}</td>
+                      <td class="ad-num" style="text-align: center;">{{ f.replace }}</td>
+                      <td class="ad-num" style="text-align: center; color: var(--ad-primary-text);">{{ f.legalized }}</td>
+                      <td class="ad-num" style="text-align: center;" :style="f.exposed ? 'color: var(--ad-danger-text); font-weight: 600;' : ''">{{ f.exposed }}</td>
+                      <td class="ad-num" style="text-align: center;" :style="f.gapOpen ? 'color: var(--ad-accent-text); font-weight: 600;' : ''">{{ f.gapOpen }}</td>
+                      <td class="ad-num">{{ f.exposed ? f.exposureMinWan + '～' + f.exposureMaxWan + ' 萬' : '—' }}</td>
+                      <td style="text-align: right;"><button v-if="f.gapOpen > 0" type="button" @click="prefillGapOrder(f)" class="ad-btn ad-btn--secondary ad-btn--sm" style="white-space: nowrap;">帶入補位訂單</button></td>
+                    </tr>
+                    <tr v-if="legalizeSummary.farms.length === 0">
+                      <td colspan="10" style="text-align: center; padding: 32px 12px; color: var(--ad-text-3);">目前沒有農場登錄黑轉白清冊</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <p class="ad-caption">{{ legalizeSummary.note }}</p>
+          </template>
+          <p v-else-if="!legalizeError" class="ad-caption">載入中…</p>
         </div>
       </section>
 
@@ -2329,6 +2400,25 @@
           } catch (e) { console.error(e); }
         };
 
+        // 工班合法化（黑轉白）各農場彙總：只有 admin 能看（demo token 視同 admin）
+        const legalizeSummary = ref(null);
+        const legalizeError = ref('');
+        const fetchLegalize = async () => {
+          try {
+            const res = await fetch(`${API_BASE}/legalize/summary`);
+            const json = plainDeep(await res.json());
+            if (res.ok && json.success && json.data) { legalizeSummary.value = json.data; legalizeError.value = ''; }
+            else legalizeError.value = json.error || json.message || `HTTP ${res.status}`;
+          } catch (e) { legalizeError.value = '無法連線伺服器'; }
+        };
+        // 缺口帶入訂單表單：切到訂單子頁、展開新增表單並帶入農場主；作物與面積由調度人員填
+        const prefillGapOrder = (f) => {
+          dispatchSubTab.value = 'orders';
+          showOrderCalc.value = true;
+          orderForm.farmerName = f.farmerName;
+          showToast(`已帶入 ${f.farmerName}，需合法工班補位 ${f.gapOpen} 人，請填作物與面積後建立訂單`);
+        };
+
         const fetchTalents = async () => {
           try {
             const res = await fetch(`${API_BASE}/talents`);
@@ -3480,12 +3570,17 @@
           fetchOrderCategories();
           calculateOrderLive();
           fetchBrochures();
+          fetchLegalize();
         });
 
         return {
           backendOnline,
           activeTab,
           dispatchSubTab,
+          legalizeSummary,
+          legalizeError,
+          fetchLegalize,
+          prefillGapOrder,
           regionalWeather,
           weatherAlertLogs,
           totalGMV,

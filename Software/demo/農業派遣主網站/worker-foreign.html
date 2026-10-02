@@ -164,6 +164,19 @@
             </div>
           </div>
 
+          <!-- 我的聘僱與加保：雇主是合作社，工作許可效期與加保狀態來自後端 -->
+          <div class="ad-card ad-card--inset" style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <span class="ad-label" data-i18n="legalTitle">我的聘僱與加保</span>
+              <span id="legalBadge" class="ad-pill" data-i18n="legalUnknown">讀取中</span>
+            </div>
+            <div class="ad-caption" style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: baseline;">
+              <span data-i18n="legalEmployer">雇主</span><strong style="color: var(--ad-text);">有限責任智農農業勞務生產合作社</strong>
+              <span data-i18n="legalPermit">工作許可效期</span><strong id="legalPermitVal" class="ad-num" style="color: var(--ad-text);">—</strong>
+              <span data-i18n="legalInsurance">加保</span><strong id="legalInsVal" style="color: var(--ad-text);">—</strong>
+            </div>
+          </div>
+
           <!-- 緊急求助 -->
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <a href="tel:119" class="ad-btn ad-btn--danger" style="flex: 1;"><span data-i18n="sos119">緊急救護 119</span></a>
@@ -341,6 +354,15 @@
         signDone: "小工頭：林小祥（已簽核）",
         sos119: "緊急救護 119",
         sosHotline: "雙語舍監熱線",
+        legalTitle: "我的聘僱與加保",
+        legalEmployer: "雇主",
+        legalPermit: "工作許可效期",
+        legalInsurance: "加保",
+        legalOk: "加保完整",
+        legalMissing: "尚缺 {x}",
+        legalUnknown: "讀取中",
+        legalUnavailable: "無法讀取",
+        legalPermitDays: "{d} 天後到期",
         okIn: "上班打卡成功",
         okOut: "下班打卡成功",
         msgIn: "時間 {t}，已通知小工頭與調度。",
@@ -387,6 +409,15 @@
         signDone: "Đội trưởng: 林小祥 (đã xác nhận)",
         sos119: "Cấp cứu 119",
         sosHotline: "Đường dây quản lý ký túc xá",
+        legalTitle: "Hợp đồng & bảo hiểm của tôi",
+        legalEmployer: "Chủ sử dụng lao động",
+        legalPermit: "Hạn giấy phép lao động",
+        legalInsurance: "Bảo hiểm",
+        legalOk: "Đầy đủ",
+        legalMissing: "Thiếu {x}",
+        legalUnknown: "Đang tải",
+        legalUnavailable: "Không đọc được",
+        legalPermitDays: "Còn {d} ngày",
         okIn: "Chấm công vào thành công",
         okOut: "Chấm công ra thành công",
         msgIn: "Giờ {t}. Đã báo cho đội trưởng.",
@@ -433,6 +464,15 @@
         signDone: "Mandor: 林小祥 (disetujui)",
         sos119: "Darurat medis 119",
         sosHotline: "Hotline pengawas asrama",
+        legalTitle: "Kontrak & asuransi saya",
+        legalEmployer: "Pemberi kerja",
+        legalPermit: "Masa berlaku izin kerja",
+        legalInsurance: "Asuransi",
+        legalOk: "Lengkap",
+        legalMissing: "Kurang {x}",
+        legalUnknown: "Memuat",
+        legalUnavailable: "Tidak dapat dibaca",
+        legalPermitDays: "{d} hari lagi",
         okIn: "Absen masuk berhasil",
         okOut: "Absen pulang berhasil",
         msgIn: "Waktu {t}. Mandor sudah diberi tahu.",
@@ -710,6 +750,51 @@
       });
     }
 
+    // 聘僱與加保狀態：工作許可效期取自工人資料，加保取自保險登錄；讀不到就顯示「無法讀取」
+    const INS_LABEL = { labor: '勞保', employment: '就保', occupational: '職保', health: '健保' };
+    async function loadLegalStatus(workerId) {
+      const badge = document.getElementById('legalBadge');
+      const permitEl = document.getElementById('legalPermitVal');
+      const insEl = document.getElementById('legalInsVal');
+      try {
+        const [wRes, iRes] = await Promise.all([
+          fetch(`${API_BASE}/workers/${encodeURIComponent(workerId)}`),
+          fetch(`${API_BASE}/insurance/workers/${encodeURIComponent(workerId)}`)
+        ]);
+        const w = await wRes.json().catch(() => ({})), ins = await iRes.json().catch(() => ({}));
+        if (!wRes.ok || !w.success) throw new Error(w.error || `HTTP ${wRes.status}`);
+        const expiry = w.data.permitExpiry;
+        if (expiry) {
+          const days = Math.floor((new Date(expiry + 'T00:00:00') - new Date()) / 86400000);
+          permitEl.textContent = `${expiry}（${tr('legalPermitDays').replace('{d}', Math.max(0, days))}）`;
+          permitEl.style.color = days < 90 ? 'var(--ad-accent-text)' : 'var(--ad-text)';
+        } else {
+          permitEl.textContent = '—';
+        }
+        if (iRes.ok && ins.success && ins.data) {
+          const missing = (ins.data.missing || []).map((k) => INS_LABEL[k] || k);
+          if (missing.length) {
+            insEl.textContent = tr('legalMissing').replace('{x}', missing.join('、'));
+            badge.textContent = tr('legalMissing').replace('{x}', missing.join('、'));
+            badge.className = 'ad-pill ad-pill--warn';
+          } else {
+            insEl.textContent = (ins.data.required || []).map((k) => INS_LABEL[k] || k).join('、') || tr('legalOk');
+            badge.textContent = tr('legalOk');
+            badge.className = 'ad-pill ad-pill--ok';
+          }
+        } else {
+          insEl.textContent = w.data.insuranceStatus || '—';
+          badge.textContent = tr('legalUnavailable');
+          badge.className = 'ad-pill';
+        }
+        badge.removeAttribute('data-i18n');
+      } catch (e) {
+        badge.textContent = tr('legalUnavailable');
+        badge.className = 'ad-pill';
+        badge.removeAttribute('data-i18n');
+      }
+    }
+
     async function loadAttendanceSummary(workerId) {
       const now = new Date();
       document.getElementById('attMonthPill').textContent = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -764,6 +849,7 @@
       const wid = currentWorkerId();
       loadAttendanceHistory(wid);
       loadAttendanceSummary(wid);
+      loadLegalStatus(wid);
       fetchPayroll(wid).then(renderPayroll);
     });
   </script>

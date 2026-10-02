@@ -547,6 +547,18 @@
 
           <div class="ad-card">
             <div class="ad-card__head">
+              <h4 class="ad-heading">我的聘僱與加保</h4>
+              <span id="localLegalBadge" class="ad-pill">讀取中</span>
+            </div>
+            <div class="ad-caption" style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: baseline;">
+              <span>雇主</span><strong style="color: var(--ad-text);">有限責任智農農業勞務生產合作社</strong>
+              <span>加保</span><strong id="localLegalIns" style="color: var(--ad-text);">—</strong>
+              <span>勞退 6%</span><strong style="color: var(--ad-text);">合作社全額提繳</strong>
+            </div>
+          </div>
+
+          <div class="ad-card">
+            <div class="ad-card__head">
               <h4 class="ad-heading">勞退 6% 強制提繳專戶</h4>
               <span class="ad-pill ad-pill--ok">合作社全額負擔</span>
             </div>
@@ -794,7 +806,25 @@
       if (note) note.textContent = `無法取得薪資資料：${msg}`;
     }
 
+    // 聘僱與加保狀態（保險登錄）；讀不到就顯示「無法讀取」
+    const INS_LABEL = { labor: '勞保', employment: '就保', occupational: '職保', health: '健保' };
+    async function loadLocalLegal(id) {
+      const badge = document.getElementById('localLegalBadge'), insEl = document.getElementById('localLegalIns');
+      if (!badge || !insEl) return;
+      try {
+        const res = await fetch(`${API_BASE}/insurance/workers/${encodeURIComponent(id)}`);
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || !body.success || !body.data) throw new Error(body.error || `HTTP ${res.status}`);
+        const missing = (body.data.missing || []).map((k) => INS_LABEL[k] || k);
+        if (missing.length) { insEl.textContent = `尚缺 ${missing.join('、')}`; badge.textContent = `尚缺 ${missing.join('、')}`; badge.className = 'ad-pill ad-pill--warn'; }
+        else { insEl.textContent = (body.data.required || []).map((k) => INS_LABEL[k] || k).join('、') || '加保完整'; badge.textContent = '加保完整'; badge.className = 'ad-pill ad-pill--ok'; }
+      } catch (e) {
+        badge.textContent = '無法讀取'; badge.className = 'ad-pill';
+      }
+    }
+
     function loadLocalPayroll() {
+      loadLocalLegal(payrollWorkerId());
       const seq = ++payrollSeq;
       fetchLocalPayroll(payrollWorkerId()).then((p) => { if (seq === payrollSeq) renderLocalPayroll(p); })
         .catch((e) => { if (seq === payrollSeq) renderLocalPayrollError(e.message); });

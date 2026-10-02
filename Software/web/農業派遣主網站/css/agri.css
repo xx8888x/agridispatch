@@ -659,6 +659,74 @@ a.ad-pill { text-decoration: none; }
   font-size: var(--ad-fs-caption);
 }
 
+/* [hidden] 一律隱藏（不被元件的 display 規則蓋掉） */
+[hidden] { display: none !important; }
+
+/* 對話框：<div class="ad-modal"><div class="ad-modal__panel">… */
+.ad-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ad-sp-4);
+  background: rgba(2, 6, 23, 0.72);
+}
+.ad-modal__panel {
+  width: 100%;
+  max-width: 480px;
+  max-height: 92vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-sp-4);
+  padding: var(--ad-sp-6);
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-border-strong);
+  border-radius: var(--ad-radius);
+  box-shadow: var(--ad-shadow);
+}
+.ad-modal__panel .ad-card__head { margin-bottom: 0; }
+
+/* 右上角通知（AgriDocs.notify）：靜止、不閃、不跳 */
+.ad-toast-stack {
+  position: fixed;
+  top: var(--ad-sp-4);
+  right: var(--ad-sp-4);
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-sp-2);
+  width: min(92vw, 360px);
+  pointer-events: none;
+}
+.ad-toast-item {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ad-sp-3);
+  padding: var(--ad-sp-3) var(--ad-sp-4);
+  background: var(--ad-surface-2);
+  color: var(--ad-text);
+  border: 1px solid var(--ad-border-strong);
+  border-left-width: 3px;
+  border-left-color: var(--ad-primary);
+  border-radius: var(--ad-radius-sm);
+  box-shadow: var(--ad-shadow);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity .2s ease, transform .2s ease;
+}
+.ad-toast-item.is-in { opacity: 1; transform: none; }
+.ad-toast-item.is-out { opacity: 0; transform: translateX(12px); }
+.ad-toast-item--alert { border-color: var(--ad-danger); border-left-color: var(--ad-danger); }
+.ad-toast-item--alert .ad-toast-item__title { color: var(--ad-danger-text); }
+.ad-toast-item__body { flex: 1; min-width: 0; }
+.ad-toast-item__title { font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--ad-text); }
+.ad-toast-item__msg { margin-top: 2px; font-size: 13px; line-height: 1.5; color: var(--ad-text-2); overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) { .ad-toast-item { transition: none; } }
+
 /* 卡片內的凹陷區塊（資訊格、小表單群組） */
 .ad-card--inset {
   background: var(--ad-surface-2);

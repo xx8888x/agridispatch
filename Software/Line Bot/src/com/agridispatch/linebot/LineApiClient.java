@@ -19,6 +19,9 @@ public class LineApiClient {
     private static final String REPLY_URL = "https://api.line.me/v2/bot/message/reply";
     private static final String PUSH_URL = "https://api.line.me/v2/bot/message/push";
     private static final String BROADCAST_URL = "https://api.line.me/v2/bot/message/broadcast";
+    private static final String MULTICAST_URL = "https://api.line.me/v2/bot/message/multicast";
+    /** Multicast 一次最多 500 人（LINE 規定） */
+    public static final int MULTICAST_MAX = 500;
     private static final String PROFILE_URL = "https://api.line.me/v2/bot/profile/";
     private static final String USER_URL = "https://api.line.me/v2/bot/user/";
 
@@ -56,6 +59,31 @@ public class LineApiClient {
             return true;
         }
         return sendPost(PUSH_URL, "{\"to\":\"" + toUserId + "\",\"messages\":[" + messageJson + "]}");
+    }
+
+    /**
+     * 多人推播 (Multicast)：自動每 500 人一批；每批失敗重試 1 次（規格第柒章第 5 點）。回傳成功送達的人數。
+     */
+    public int multicast(java.util.List<String> to, java.util.List<String> messages) {
+        if (to.isEmpty() || messages.isEmpty()) return 0;
+        String msgs = String.join(",", messages.size() > 5 ? messages.subList(0, 5) : messages);
+        int ok = 0;
+        for (int i = 0; i < to.size(); i += MULTICAST_MAX) {
+            java.util.List<String> batch = to.subList(i, Math.min(to.size(), i + MULTICAST_MAX));
+            if (channel.isMock()) {
+                System.out.println("📨 [模擬模式・" + channel.key + "] multicast " + batch.size() + " 人：" + msgs.length() + " 字元");
+                ok += batch.size();
+                continue;
+            }
+            StringBuilder ids = new StringBuilder();
+            for (String id : batch) {
+                if (ids.length() > 0) ids.append(",");
+                ids.append("\"").append(id.replace("\"", "")).append("\"");
+            }
+            String payload = "{\"to\":[" + ids + "],\"messages\":[" + msgs + "]}";
+            if (sendPost(MULTICAST_URL, payload) || sendPost(MULTICAST_URL, payload)) ok += batch.size();
+        }
+        return ok;
     }
 
     /**

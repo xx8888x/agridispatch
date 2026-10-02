@@ -25,7 +25,8 @@
 <!--
   科技後台：LINE 官方帳號（農場主／工作者）狀態與帳號綁定管理
   規格：文件/07_系統分析及文件/05_LINE官方帳號拆分規格.md 6.4、第拾參章
-  資料：GET /api/line/config（兩帳號設定狀態）、GET /api/line/bindings、DELETE /api/line/bindings/{id}（皆僅 admin）
+  資料：GET /api/line/config（兩帳號設定狀態）、GET /api/line/bindings、DELETE /api/line/bindings/{id}、
+        GET /api/line/notify/status、POST /api/line/notify/tomorrow、POST /api/line/notify/farmer-broadcast（皆僅 admin）
 -->
 <body class="ad-body min-h-screen flex flex-col">
 
@@ -55,6 +56,29 @@
       <h2 class="ad-title" style="margin-bottom: 12px;">帳號狀態</h2>
       <div class="ad-stat-grid" id="status-grid"></div>
       <div class="ad-list" id="setup-list" style="margin-top: 12px;"></div>
+    </section>
+
+    <!-- 推播（規格第柒章）：訂單狀態、定金入帳、天候警戒會自動通知；這裡是手動操作 -->
+    <section>
+      <h2 class="ad-title" style="margin-bottom: 4px;">推播</h2>
+      <p class="ad-caption" style="margin-bottom: 12px;">訂單狀態變更、定金入帳、天候警戒會自動通知。工作人員只會收到自己出工名單的通知，並依各自的語言發送。</p>
+      <div class="ad-list">
+        <div class="ad-row ad-card">
+          <div class="ad-row__main">
+            <div class="ad-row__title">明日出工通知</div>
+            <div class="ad-row__meta" id="tomorrow-meta">每天傍晚自動發給隔天的出工名單。</div>
+          </div>
+          <div class="ad-row__aside"><button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" id="tomorrow-btn">立即發送</button></div>
+        </div>
+        <div class="ad-card" style="padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+          <div class="ad-field">
+            <label class="ad-label" for="broadcast-text">給全部農場主的方案通知</label>
+            <textarea class="ad-textarea" id="broadcast-text" rows="3" maxlength="1000" placeholder="例如：產季早鳥工時包開放預約，鎖定名額、優先排班。"></textarea>
+            <span class="ad-hint">只會發到「智農派工（農場主）」帳號。工作人員帳號不做全員廣播。</span>
+          </div>
+          <div><button type="button" class="ad-btn ad-btn--line ad-btn--sm" id="broadcast-btn">發送通知</button></div>
+        </div>
+      </div>
     </section>
 
     <!-- 綁定清單 -->
@@ -190,8 +214,58 @@
       }
     });
 
+    // ------------------------------------------------------------ 推播
+    function toast(msg) { if (window.AgriTheme && window.AgriTheme.toast) window.AgriTheme.toast(msg); }
+
+    async function loadNotifyStatus() {
+      try {
+        const res = await fetch(API + '/line/notify/status');
+        if (!res.ok) return;
+        const st = await res.json();
+        $('tomorrow-meta').textContent = '每天傍晚自動發給隔天的出工名單。工作人員只在 ' + st.workerHours + ' 之間收到推播'
+          + (st.inWorkerHours ? '。' : '，現在不在這個時段，立即發送也會略過。');
+      } catch (e) { /* 離線時沿用預設說明 */ }
+    }
+
+    $('tomorrow-btn').addEventListener('click', async () => {
+      const btn = $('tomorrow-btn');
+      btn.disabled = true;
+      try {
+        const res = await fetch(API + '/line/notify/tomorrow', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+        if (!res.ok) throw new Error();
+        const d = await res.json();
+        toast(d.orders + ' 張訂單，通知 ' + d.workerRecipients + ' 人' + (d.skippedQuietHours ? '，時段外略過 ' + d.skippedQuietHours + ' 人' : ''));
+      } catch (e) {
+        showError('發送失敗，請確認後台與 LINE 機器人服務都已啟動。');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    $('broadcast-btn').addEventListener('click', async () => {
+      const text = $('broadcast-text').value.trim();
+      if (!text) { showError('請先輸入通知內容。'); return; }
+      if (!confirm('確定發送給全部農場主？')) return;
+      const btn = $('broadcast-btn');
+      btn.disabled = true;
+      try {
+        const res = await fetch(API + '/line/notify/farmer-broadcast', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text })
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok || !d.success) throw new Error();
+        $('broadcast-text').value = '';
+        toast('已發送給農場主');
+      } catch (e) {
+        showError('發送失敗，請確認 LINE 機器人服務已啟動。');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
     if (window.lucide) window.lucide.createIcons();
     load();
+    loadNotifyStatus();
   })();
   </script>
 </body>

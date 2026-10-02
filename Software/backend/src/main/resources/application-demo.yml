@@ -3,6 +3,10 @@
 agri:
   demo:
     enabled: true
+  # 路演可隨時示範 LINE 推播；正式環境的工作者帳號推播時段見 application.yml【待確認】
+  line:
+    notify:
+      worker-hours: 00:00-24:00
 
 spring:
   h2:

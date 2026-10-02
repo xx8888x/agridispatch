@@ -166,6 +166,26 @@ public class TestSimulator {
 
         failed += expectEq("選單按鈕與 ACTIONS 都有對應處理", String.valueOf(RichMenus.UNKNOWN_ACTIONS.get() - unknownBefore), "0");
 
+        // P5：主動推播訊息（依語言產生，JSON 合法、只用該帳號支援的種類）
+        Map<String, Object> np = new java.util.HashMap<>();
+        np.put("orderId", "ORD-2026-001"); np.put("status", "confirmed"); np.put("statusLabel", "已排定");
+        np.put("crop", "芒果"); np.put("period", "2026-10-06 ～ 2026-10-08"); np.put("amount", 10584);
+        np.put("weather", "暴雨警戒"); np.put("orders", List.of("ORD-2026-001")); np.put("date", "2026-10-03");
+        np.put("place", "枋山"); np.put("indoor", true);
+        for (String type : NotifyMessages.FARMER_TYPES) {
+            failed += expectEq("推播 farmer " + type, String.valueOf(validMessages(NotifyMessages.render(F, type, "zh", np))), "true");
+        }
+        for (String type : NotifyMessages.WORKER_TYPES) {
+            for (String lang : List.of("zh", "vi", "id")) {
+                failed += expectEq("推播 worker " + type + " " + lang, String.valueOf(validMessages(NotifyMessages.render(W, type, lang, np))), "true");
+            }
+        }
+        failed += expect("推播 明日出工（越語）", NotifyMessages.render(W, "tomorrow_task", "vi", np), 0, "Thông báo đi làm ngày mai");
+        failed += expect("推播 天候室內（印尼語）", NotifyMessages.render(W, "weather_worker", "id", np), 0, "dalam ruangan");
+        failed += expect("推播 定金入帳金額", NotifyMessages.render(F, "deposit_paid", "zh", np), 0, "NT$ 10,584");
+        failed += expectEq("工作者帳號不支援農場主通知", String.valueOf(NotifyMessages.supports(W, "order_status")), "false");
+        failed += expectEq("工作者帳號禁止 broadcast", String.valueOf(LineApiClient.of(W).broadcast(FlexMessageBuilder.wrapText("x"))), "false");
+
         // 主動選擇的語言不被國籍覆蓋（規格 3.2 第 1 點）
         String uid = "U_CHECK_LOCK";
         IdentityStore.override(W, uid, IdentityStore.preset("vn"));
@@ -217,6 +237,23 @@ public class TestSimulator {
         boolean ok = expected.equals(got);
         System.out.printf("  %s %-36s → %s%n", ok ? "✅" : "❌", name, ok ? got : "預期 " + expected + "，實際 " + got);
         return ok ? 0 : 1;
+    }
+
+    /** 每則都是可解析的 LINE 訊息物件（flex 有 altText 與 bubble，text 有內容） */
+    @SuppressWarnings("unchecked")
+    private static boolean validMessages(List<String> messages) {
+        if (messages.isEmpty() || messages.size() > 5) return false;
+        for (String m : messages) {
+            Object o = SimpleJson.parse(m);
+            if (!(o instanceof Map)) return false;
+            Map<String, Object> msg = (Map<String, Object>) o;
+            if ("flex".equals(msg.get("type"))) {
+                if (msg.get("altText") == null || !(msg.get("contents") instanceof Map)) return false;
+            } else if (!"text".equals(msg.get("type")) || msg.get("text") == null) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** 讀出選單 JSON 每格的 postback data */

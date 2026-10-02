@@ -242,6 +242,26 @@ public class FlexMessageBuilder {
                 List.of(uriButton(I18n.t(lang, keyPrefix + ".open"), url, "#06C755"))));
     }
 
+    // =========================================================================
+    // 主動推播（NotifyMessages 使用）
+    // =========================================================================
+
+    static String notifyBubble(String altText, String headerBg, String subtitle, String title, List<String> lines, String button) {
+        return wrapFlex(altText.length() > 380 ? altText.substring(0, 380) : altText,
+                simpleBubble(headerBg, subtitle, title, lines, button == null ? List.of() : List.of(button)));
+    }
+
+    static String notifyUriButton(String label, String uri) {
+        return uriButton(label, uri, "#06C755");
+    }
+
+    /** postback 按鈕：效果與圖文選單相同（規格 5.2） */
+    static String notifyPostbackButton(String label, String data) {
+        return """
+            { "type": "button", "style": "primary", "height": "sm", "color": "#06C755", "action": { "type": "postback", "label": "%s", "data": "%s", "displayText": "%s" } }"""
+                .formatted(escapeJson(label), escapeJson(data), escapeJson(label));
+    }
+
     /** 標題列＋若干段文字＋若干按鈕的通用卡片 */
     private static String simpleBubble(String headerBg, String subtitle, String title, List<String> lines, List<String> buttons) {
         StringBuilder body = new StringBuilder();
@@ -288,7 +308,7 @@ public class FlexMessageBuilder {
             "依法無法就地合法化。請停止使用並結清工資，勿扣留證件；本人可洽移民署專勤隊或勞動部 1955 專線了解到案方式【待確認】。本系統不記錄其個資。"}
     };
 
-    private static String webPageUrl(String page) {
+    static String webPageUrl(String page) {
         String site = URLEncoder.encode("農業派遣主網站", StandardCharsets.UTF_8);
         return Config.WEB_BASE_URL + "/" + site + "/" + page;
     }

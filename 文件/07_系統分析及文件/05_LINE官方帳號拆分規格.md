@@ -1,7 +1,7 @@
 # 智農派工 LINE 官方帳號拆分規格（方案 B：農場主／工作者雙帳號）
 
 > **文件版本**：v1.0.2（2026-10-02，草案；P1 實作後修正 6.2、拾.5 的 `/mock/chat` 規則；P2 實作後補 6.3 `langLocked`、6.5 `ref_id` 欄、5.3 demo 假 token）
-> **實作進度**：P1 ✅（Line Bot 雙帳號骨架）、P2 ✅（後端 `line_users`、內部端點、綁定 API；LIFF 綁定頁屬 P4）、P3 ✅（6 份圖文選單、上傳工具、依身分自動連結；實機上傳待 P0 帳號）、P4 ✅（LIFF 綁定頁 `line-bind.html`、科技後台 `admin-line.html`、LINE 模擬器雙帳號）
+> **實作進度**：P1 ✅（Line Bot 雙帳號骨架）、P2 ✅（後端 `line_users`、內部端點、綁定 API；LIFF 綁定頁屬 P4）、P3 ✅（6 份圖文選單、上傳工具、依身分自動連結；實機上傳待 P0 帳號）、P4 ✅（LIFF 綁定頁 `line-bind.html`、科技後台 `admin-line.html`、LINE 模擬器雙帳號）、P5 ✅（推播：訂單狀態、定金、天候、明日出工、農場主方案通知；薪資入帳待發薪功能）
 > **適用範圍**：`Software/Line Bot/`（port 5000）、`Software/backend/`（port 3000）的 LINE 相關程式、`Software/demo/linebot/line.html` 模擬器、科技後台 LINE 設定頁
 > **相關文件**：`01_系統分析與架構設計規格書.md` 第陸章（LINE 子系統現況）、`02_資料庫實體關聯圖與資料字典(ERD).md`（`line_users`）、`03_認證與API安全規格.md`（端點權限）、`Software/android/docs/角色與人力分類表.md`（身分與國別代碼）
 > **狀態**：本規格只定義目標設計，程式尚未修改。實作完成後須同步更新上列 01、02、03 文件與 `Software/Line Bot/README.md`。
@@ -346,6 +346,15 @@ flowchart LR
 3. 推播內容依收件人語言產生；同一則通知不同語言分開送。
 4. 下班時間推播工作通知，可能涉及工作時間認定【待確認：可推播時段與是否計入工時】。在確認前，工作者帳號的排程通知預設只在 07:00～20:00 發送。
 5. 推播失敗（對方封鎖等）只記 log，不重試超過 1 次。
+
+### 7.0 實作（P5）
+
+- **分工**：後端 `LineNotifyService` 決定「推給誰」（已綁定、未封鎖、出工名單或訂單農場主），LINE Bot `/internal/notify` 決定「怎麼說」：`{channel, type, params, recipients:[{lineUserId, lang}]}`，依語言分組各產生一次訊息後 multicast（每批 500 人、失敗重試 1 次）。訊息範本在 `Software/Line Bot/.../NotifyMessages.java`，工作者帳號三語文字在 `i18n/worker_*.properties`。`/internal/push` 另收原始訊息，`broadcast` 只允許農場主帳號。
+- **觸發點**：訂單狀態 `OrderService.changeStatus`（只在狀態真的改變時）；定金 `OrderService.markDepositPaid`；天候 `DispatchController`（切換到 `warning`／`danger` 等級且情境改變時才通知；今天在工期內的已排定／施工中訂單，加上沒填工期的施工中訂單；工人依所屬工班是否改到室內分兩批）；明日出工 `@Scheduled`（`agri.line.notify.tomorrow-cron`，預設每天 18:00，同一天只自動發一次），隔天在工期內的已排定／施工中訂單。出工名單沒有時以分派工班成員代替（與派工前加保檢查相同）。
+- **時段**：`agri.line.notify.worker-hours`（預設 `07:00-20:00`，環境變數 `AGRI_LINE_WORKER_HOURS`）只限制工作者帳號，時段外略過、不補發，結果回報 `skippedQuietHours`；demo profile 設 `00:00-24:00` 方便路演。
+- **後台**：`GET /api/line/notify/status`、`POST /api/line/notify/tomorrow`、`POST /api/line/notify/farmer-broadcast`（皆僅 admin），操作介面在 `科技後台/admin-line.html`。
+- **未做**：薪資入帳通知——系統目前沒有「發薪作業完成」事件，待發薪功能建立後掛上；推播紀錄不存表（`line_messages` 仍未啟用，見第拾肆章第 11 項）。
+- 推播一律在背景執行，LINE Bot 離線或失敗不影響訂單、付款、天候操作本身。
 
 ### 7.1 推播則數估算
 

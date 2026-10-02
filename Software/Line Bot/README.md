@@ -142,6 +142,23 @@ Invoke-RestMethod -Uri "http://localhost:5000/health"
 - 綁定頁：`Software/demo/農業派遣主網站/line-bind.html`（LIFF ID 設在前端 `js/app-config.js` 的 `liffBindId`；Line Bot 的 `LIFF_BIND_ID` 要填同一個）。使用者在綁定頁登入平台帳號後呼叫後端 `POST /api/line/bind`；後端綁定或解除後會呼叫 Line Bot `POST /internal/richmenu/link` 切換圖文選單（見下方「圖文選單」）。
 - 本機測試綁定（後端 demo 模式、未設定 `LINE_LOGIN_CHANNEL_ID`）：以平台帳號登入取得 token 後，`POST /api/line/bind`，body `{"channel":"worker","idToken":"mock:U0123456789abcdef0123456789abcdef"}`；之後用同一個 userId 呼叫 `/mock/chat`（不帶 `as`）即可看到依綁定身分回覆。
 
+## 📨 主動推播（規格第柒章）
+
+後端決定推給誰，Line Bot 依收件人語言產生訊息並 multicast（每批 500 人，失敗重試 1 次）：
+
+| 通知 | 帳號 | 觸發 |
+| :--- | :--- | :--- |
+| 訂單狀態更新 `order_status` | 農場主 | 科技後台變更訂單狀態 |
+| 已收到定金 `deposit_paid` | 農場主 | 定金付款成功 |
+| 天候警戒 `weather_farmer` | 農場主 | 科技後台切到警戒等級的天候情境 |
+| 明日出工 `tomorrow_task` | 工作者（三語） | 每天 18:00 排程，或科技後台「立即發送」 |
+| 天候與集合 `weather_worker` | 工作者（三語） | 同天候警戒；依工班是否改到室內分兩種內容 |
+| 方案通知 | 農場主（broadcast） | 科技後台手動；工作者帳號不做 broadcast |
+
+- 內部端點：`POST /internal/notify`（`{channel, type, params, recipients:[{lineUserId, lang}]}`）、`POST /internal/push`（原始訊息；`broadcast:true` 只限農場主帳號），都要 `X-Internal-Key`。Mock 模式只印 log、不呼叫 LINE。
+- 工作者帳號只在後端設定的時段推播（`AGRI_LINE_WORKER_HOURS`，預設 07:00-20:00【待確認】）。
+- 訊息範本：`src/.../NotifyMessages.java`；工作者帳號文字：`i18n/worker_*.properties` 的 `notify.*`。
+
 ## 🔐 管理端點與金鑰（/api/config）
 
 `/api/config` 可讀取（遮罩後）與更新 LINE 金鑰、後台 API 位址等設定，屬於高權限端點，因此：

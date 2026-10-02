@@ -12,6 +12,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -44,6 +46,53 @@ public class LineBotClient {
             HttpResponse<String> res = httpClient.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             return res.statusCode() == 200 ? objectMapper.readValue(res.body(), Map.class) : null;
         } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * 請 LINE Bot 依收件人語言產生通知並 multicast（POST /internal/notify）；連不到或失敗回傳 null
+     */
+    public Map<String, Object> notify(String channel, String type, Map<String, Object> params, List<Map<String, String>> recipients) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("channel", channel);
+        body.put("type", type);
+        body.put("params", params);
+        body.put("recipients", recipients);
+        return postInternal("/internal/notify", body, 15);
+    }
+
+    /** 農場主帳號方案行銷 broadcast（POST /internal/push，broadcast 只允許農場主帳號） */
+    public Map<String, Object> broadcastFarmer(String text) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("channel", "farmer");
+        body.put("broadcast", true);
+        body.put("messages", List.of(Map.of("type", "text", "text", text)));
+        return postInternal("/internal/push", body, 15);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> postInternal(String path, Map<String, Object> body, int timeoutSec) {
+        String key = settings.getLinebotInternalKey();
+        if (key == null) {
+            log.info("[LINE] 未設定 AGRI_LINEBOT_INTERNAL_KEY，略過 {}", path);
+            return null;
+        }
+        try {
+            HttpRequest req = HttpRequest.newBuilder(URI.create(settings.getLinebotBaseUrl() + path))
+                    .timeout(Duration.ofSeconds(timeoutSec))
+                    .header("Content-Type", "application/json; charset=UTF-8")
+                    .header("X-Internal-Key", key)
+                    .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body), StandardCharsets.UTF_8))
+                    .build();
+            HttpResponse<String> res = httpClient.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            if (res.statusCode() != 200) {
+                log.warn("[LINE] LINE Bot {} 失敗 [HTTP {}]", path, res.statusCode());
+                return null;
+            }
+            return objectMapper.readValue(res.body(), Map.class);
+        } catch (Exception e) {
+            log.warn("[LINE] 無法連線 LINE Bot（{}）{}：{}", settings.getLinebotBaseUrl(), path, e.getMessage());
             return null;
         }
     }

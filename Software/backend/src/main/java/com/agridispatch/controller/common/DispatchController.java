@@ -2,6 +2,7 @@ package com.agridispatch.controller.common;
 
 import com.agridispatch.entity.DispatchTeam;
 import com.agridispatch.service.DispatchService;
+import com.agridispatch.service.LineNotifyService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,9 +13,11 @@ import java.util.*;
 @RequestMapping("/api/dispatch")
 public class DispatchController {
     private final DispatchService dispatchService;
+    private final LineNotifyService lineNotifyService;
 
-    public DispatchController(DispatchService dispatchService) {
+    public DispatchController(DispatchService dispatchService, LineNotifyService lineNotifyService) {
         this.dispatchService = dispatchService;
+        this.lineNotifyService = lineNotifyService;
     }
 
     @GetMapping("/overview")
@@ -33,7 +36,9 @@ public class DispatchController {
         if (req != null && req.containsKey("scenarioId")) {
             scenarioId = req.get("scenarioId").toString();
         }
+        String previous = dispatchService.getCurrentScenarioId();
         Map<String, Object> result = dispatchService.applyWeatherScenario(scenarioId);
+        lineNotifyService.weatherChanged(previous, result); // 切到警戒時 LINE 通知受影響訂單的農場主與出工名單（背景執行）
         return ResponseEntity.ok(Map.of("success", true, "data", result, "message", "已成功切換天候情境: " + scenarioId));
     }
 
@@ -70,7 +75,9 @@ public class DispatchController {
         } else {
             rain = !dispatchService.isRainMode();
         }
+        String previous = dispatchService.getCurrentScenarioId();
         Map<String, Object> result = dispatchService.setRainMode(rain);
+        lineNotifyService.weatherChanged(previous, result);
         return ResponseEntity.ok(Map.of("success", true, "data", result, "message", "天候避險狀態已切換"));
     }
 }

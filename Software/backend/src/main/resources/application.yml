@@ -48,6 +48,10 @@ agri:
     channel-access-token: ${LINE_CHANNEL_ACCESS_TOKEN:}
     # LIFF 帳號綁定：LINE Login channel ID（驗證 ID token 的 aud）；未設定時綁定 API 回 503（demo 模式可用 mock:<userId> 測試）
     login-channel-id: ${LINE_LOGIN_CHANNEL_ID:}
+    # 主動推播（規格 05 第柒章）：工作者帳號只在此時段推播【待確認：可推播時段與工時認定】；明日出工通知排程【待確認：時間】
+    notify:
+      worker-hours: ${AGRI_LINE_WORKER_HOURS:07:00-20:00}
+      tomorrow-cron: ${AGRI_LINE_TOMORROW_CRON:0 0 18 * * *}
   # LINE Bot（Software/Line Bot，port 5000）內部端點：共用金鑰未設定時 /api/line/internal/** 一律 403
   linebot:
     internal-key: ${AGRI_LINEBOT_INTERNAL_KEY:}

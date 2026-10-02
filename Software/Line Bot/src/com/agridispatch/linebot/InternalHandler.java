@@ -94,13 +94,14 @@ public class InternalHandler implements HttpHandler {
         for (Map.Entry<String, List<String>> e : byLang.entrySet()) {
             List<String> messages = NotifyMessages.render(channel, type, e.getKey(), params);
             int ok = LineApiClient.of(channel).multicast(e.getValue(), messages);
+            MockOutbox.add(channel, type, e.getKey(), e.getValue(), messages.isEmpty() ? null : messages.get(0));
             total += e.getValue().size();
             sent += ok;
             if (groups.length() > 0) groups.append(",");
             groups.append("\"").append(e.getKey()).append("\":").append(e.getValue().size());
         }
         String result = channel.isMock() ? "mock" : (sent == total ? "sent" : (sent == 0 ? "failed" : "partial"));
-        System.out.println("📨 [" + channel.key + "] 推播 " + type + "：" + sent + "/" + total + " 人（" + result + "）");
+        System.out.println("📨 [" + channel.key + "] 推播 " + type + "：" + sent + "/" + total + " 人（" + result + "）語言 {" + groups + "}");
         HttpUtils.sendJson(exchange, 200, "{\"success\":" + (sent == total) + ",\"result\":\"" + result + "\",\"recipients\":" + total
                 + ",\"sent\":" + sent + ",\"groups\":{" + groups + "}}");
     }
@@ -121,6 +122,7 @@ public class InternalHandler implements HttpHandler {
                 return;
             }
             boolean ok = LineApiClient.of(channel).broadcast(String.join(",", messages));
+            MockOutbox.add(channel, "broadcast", "zh", List.of("*"), messages.get(0));
             HttpUtils.sendJson(exchange, 200, "{\"success\":" + ok + ",\"result\":\"" + (channel.isMock() ? "mock" : ok ? "sent" : "failed") + "\"}");
             return;
         }
@@ -133,6 +135,7 @@ public class InternalHandler implements HttpHandler {
             return;
         }
         int sent = LineApiClient.of(channel).multicast(to, messages);
+        MockOutbox.add(channel, "push", "", to, messages.get(0));
         HttpUtils.sendJson(exchange, 200, "{\"success\":" + (sent == to.size()) + ",\"result\":\"" + (channel.isMock() ? "mock" : sent == to.size() ? "sent" : "failed")
                 + "\",\"recipients\":" + to.size() + ",\"sent\":" + sent + "}");
     }

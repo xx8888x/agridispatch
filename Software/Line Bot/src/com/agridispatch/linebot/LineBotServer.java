@@ -25,6 +25,8 @@ public class LineBotServer {
 
             // 本地模擬發言與除錯 API（僅 Mock 模式）
             server.createContext("/mock/chat", new MockChatHandler());
+            // 模擬模式的推播收件匣（驗收腳本確認推給誰、哪種語言）
+            server.createContext("/mock/outbox", new MockOutbox());
 
             // 圖文選單 JSON 與底圖（網頁模擬器顯示用；只開放 6 份選單檔）
             server.createContext("/rich_menu/", exchange -> {

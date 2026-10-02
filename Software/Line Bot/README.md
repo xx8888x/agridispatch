@@ -159,6 +159,18 @@ Invoke-RestMethod -Uri "http://localhost:5000/health"
 - 工作者帳號只在後端設定的時段推播（`AGRI_LINE_WORKER_HOURS`，預設 07:00-20:00【待確認】）。
 - 訊息範本：`src/.../NotifyMessages.java`；工作者帳號文字：`i18n/worker_*.properties` 的 `notify.*`。
 
+## ✅ 模擬環境驗收
+
+不需要 LINE 帳號，自動啟動隔離的後端（demo、暫存資料庫）與 Line Bot（模擬模式），跑規格第拾參章的 15 條驗收情境：
+
+```
+python tools/acceptance_mock.py --report 驗收結果.md
+```
+
+- 使用埠 3071、5071～5073，結束時自動關閉程序並刪除暫存資料；開發用資料庫與 `config.properties` 不受影響。
+- 推播在模擬模式不呼叫 LINE，內容記在 `GET /mock/outbox?since=序號`（只在模擬模式開放），可確認推給誰、哪種語言。
+- 帳號申請下來後的設定與手機實機驗收：`文件/07_系統分析及文件/07_LINE官方帳號上線與實機驗收手冊.md`。
+
 ## 🔐 管理端點與金鑰（/api/config）
 
 `/api/config` 可讀取（遮罩後）與更新 LINE 金鑰、後台 API 位址等設定，屬於高權限端點，因此：

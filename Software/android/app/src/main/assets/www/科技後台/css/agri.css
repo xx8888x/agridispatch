@@ -241,6 +241,26 @@
 .ad-btn--line { background: var(--ad-line); color: #fff; }
 .ad-btn--line:hover { background: var(--ad-line-hover); }
 
+/* 打卡等「大按鈕＋小字」：上下排列 */
+.ad-btn--stack {
+  flex-direction: column;
+  gap: 2px;
+  min-height: 76px;
+  padding: var(--ad-sp-3) var(--ad-sp-2);
+  line-height: 1.3;
+}
+.ad-btn--stack .ad-caption { color: inherit; opacity: .85; font-weight: 500; }
+/* 已完成的步驟按鈕：維持清楚可讀，不用變淡 */
+.ad-btn.is-done,
+.ad-btn:disabled.is-done {
+  opacity: 1;
+  background: var(--ad-primary-soft);
+  color: var(--ad-primary-text);
+  border-color: transparent;
+  cursor: default;
+}
+.ad-avatar--lg { width: 48px; height: 48px; font-size: 18px; }
+
 .ad-btn--sm { min-height: 36px; padding: 0 var(--ad-sp-3); font-size: var(--ad-fs-caption); border-radius: var(--ad-radius-sm); }
 .ad-btn--lg { min-height: 52px; padding: 0 var(--ad-sp-8); font-size: 1.0625rem; }
 .ad-btn--block { width: 100%; }

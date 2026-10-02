@@ -203,6 +203,7 @@ const AgriDocs = (function () {
     // 有帶後端試算（slip）就以它為準：金額、發薪日、帳戶與頁面上看到的完全相同。
     // 後端沒有「宿舍費代扣」這一項，所以不列【待確認：外籍移工住宿費可否代扣、上限，依勞動部規定】。
     const slip = customData.slip || null;
+    let pensionHtml = '';
     let payDate = '2026/09/05 (電匯入帳)';
     let bankLine = '電匯帳號：中華郵政 (700) 帳號末五碼 56789 ╳ 匯入完成';
     if (slip) {
@@ -219,6 +220,9 @@ const AgriDocs = (function () {
       netPay = slip.netPay;
       payDate = slip.payDate || '依合作社薪資系統為準';
       bankLine = `薪轉帳戶：${slip.bankAccount || '（尚未登錄薪轉帳戶）'}`;
+      if (slip.pension6Percent) {
+        pensionHtml = `<div class="multilingual-note" style="border-left-color:#10b981;">雇主另提繳勞工退休金 6%：NT$ ${Number(slip.pension6Percent).toLocaleString()}（由合作社負擔，不自薪資扣除）</div>`;
+      }
     }
 
     const html = `<!DOCTYPE html>
@@ -269,9 +273,9 @@ const AgriDocs = (function () {
     <div class="info-grid">
       <div><strong>農工姓名：</strong>${workerName}</div>
       <div><strong>員工工號：</strong><span style="font-family:monospace;">${workerId}</span></div>
-      <div><strong>職責身分：</strong>${isForeman ? '本國帶工領班 (小工頭)' : (isLabor ? '合作社在籍農業勞務員' : '外籍外展農工')}</div>
+      <div><strong>職責身分：</strong>${customData.roleLabel || (isForeman ? '本國帶工領班 (小工頭)' : (isLabor ? '合作社在籍農業勞務員' : '外籍外展農工'))}</div>
       <div><strong>發薪日期：</strong>${payDate}</div>
-      <div><strong>所屬調度工班：</strong>工班 A 組 (桃園八德 / 屏東枋山)</div>
+      <div><strong>所屬調度工班：</strong>${customData.teamLabel || '工班 A 組 (桃園八德 / 屏東枋山)'}</div>
       <div><strong>勞健保與職災：</strong>100% 依法足額提繳</div>
     </div>
 
@@ -357,10 +361,14 @@ const AgriDocs = (function () {
       <div style="font-size:11px; color:#94a3b8;">${bankLine}</div>
     </div>
 
-    <div class="multilingual-note">
+    ${pensionHtml}
+    ${(isForeign || !slip) ? (slip ? `<div class="multilingual-note">
+      <strong>VI:</strong> Đây là bảng lương ước tính, chưa phải phiếu lương chính thức. Số tiền thực nhận theo hệ thống lương của hợp tác xã.<br>
+      <strong>ID:</strong> Ini adalah perkiraan gaji, bukan slip gaji resmi. Jumlah yang diterima mengikuti sistem gaji koperasi.
+    </div>` : `<div class="multilingual-note">
       <strong>🇻🇳 Lưu ý cho người lao động:</strong> Tiền lương tháng này đã chuyển vào tài khoản bưu điện của bạn kèm khoản tiền thưởng việc làm NT$ 8,800. Nếu có thắc mắc vui lòng liên hệ quản lý ký túc xá.<br>
       <strong>🇮🇩 Catatan untuk pekerja:</strong> Gaji bulan ini telah ditransfer ke rekening pos Anda termasuk bonus pertanian NT$ 8.800 dari Kementerian Pertanian.
-    </div>
+    </div>`) : ''}
 
     <div class="footer">
       ${slip ? '試算文件，非正式薪資單 ╳ 合作社立案字號：【待確認】（依外展農務制度申請中，尚未取得外展資格）' : '合作社出納印鑑：[ 台灣智農合作社核訖 ] ╳ 合作社立案字號：農授糧字第 1150092300 號'}
@@ -741,7 +749,8 @@ const AgriDocs = (function () {
     const path = isClockIn ? 'clock-in' : 'clock-out';
     const user = (window.AgriAuth && window.AgriAuth.getUser && window.AgriAuth.getUser()) || null;
     // 登入者本人的工號優先（正式版工人只能替自己打卡）；頁面傳入的 workerId 只作 demo 後備
-    const workerId = (user && user.refId) || options.workerId || (user && user.username) || 'self';
+    const isWorkerUser = !!(user && !user.demo && /^worker_/.test(user.role || ''));   // demo 自動登入的身分不算（頁面會帶示範工號）
+    const workerId = (isWorkerUser && user.refId) || options.workerId || (user && user.username) || 'self';
 
     let res = null;
     try {

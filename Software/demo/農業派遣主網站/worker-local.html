@@ -498,14 +498,10 @@
           <div class="lg:col-span-4">
             <div class="ad-card" style="padding: 24px;">
               <h4 class="ad-heading" style="margin-bottom: 12px;">本月薪資明細</h4>
-              <div class="ad-list">
-                <div class="ad-row"><div class="ad-row__main"><div class="ad-row__title">本月基本工資</div></div><strong class="ad-num">NT$ 29,500</strong></div>
-                <div class="ad-row" style="border-color: var(--ad-primary); background: var(--ad-primary-soft);"><div class="ad-row__main"><div class="ad-row__title" style="color: var(--ad-primary-text);">農業部就業獎勵金</div></div><strong class="ad-num" style="color: var(--ad-primary-text);">+NT$ 8,800</strong></div>
-                <div class="ad-row"><div class="ad-row__main"><div class="ad-row__title">交通接送補助</div></div><strong class="ad-num">+NT$ 1,200</strong></div>
-              </div>
+              <div id="laborMiniRows" class="ad-list"></div>
               <div class="ad-card__foot" style="justify-content: space-between;">
                 <span class="ad-heading">應領合計</span>
-                <strong class="ad-price ad-price--lg ad-price--accent">NT$ 39,500</strong>
+                <strong id="laborMiniGross" class="ad-price ad-price--lg ad-price--accent">—</strong>
               </div>
               <p class="ad-caption" style="margin-top: 8px;">合作社依法辦理勞保、健保與 6% 勞退金提撥，薪資明細條（PDF）於每月 5 日發出。</p>
             </div>
@@ -519,57 +515,32 @@
     <div id="tabContentLocalPayroll" class="hidden space-y-6">
 
       <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
-        <p class="ad-caption" style="margin: 0;">保障月薪 NT$ 42,000・成果統包專案分紅・合作社全額 6% 勞退提繳・職災與意外險</p>
-        <button type="button" onclick="downloadLocalPayslip('2026年09月 (預估結算)')" class="ad-btn ad-btn--primary">下載本月薪資單</button>
+        <p id="localPayCaption" class="ad-caption" style="margin: 0;">合作社全額 6% 勞退提繳・職災保險</p>
+        <button type="button" onclick="downloadLocalPayslip(-1)" class="ad-btn ad-btn--primary">下載本月薪資單</button>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
         <div class="lg:col-span-7 ad-card" style="padding: 24px;">
           <div class="ad-card__head">
-            <h3 class="ad-heading">2026 年 09 月薪酬結算明細</h3>
-            <span class="ad-caption ad-num">預定發薪日 2026/10/05</span>
+            <h3 id="localPayTitle" class="ad-heading">薪酬結算明細</h3>
+            <span id="localPayDate" class="ad-caption ad-num"></span>
           </div>
 
           <div class="ad-label" style="margin-bottom: 8px;">應發項目</div>
-          <div class="ad-list">
-            <div class="ad-row">
-              <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal;">技術技師與領班保障基本月薪</div><div class="ad-row__meta">本國專業人員技術底薪保障</div></div>
-              <strong class="ad-num">NT$ 42,000</strong>
-            </div>
-            <div class="ad-row" style="border-color: var(--ad-primary); background: var(--ad-primary-soft);">
-              <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal; color: var(--ad-primary-text);">外展移工帶隊領班責任加給（工班 B 組 6 人）</div><div class="ad-row__meta">帶領 6 名外籍移工、雙語指令協調、現場農務手路品管與安全津貼</div></div>
-              <strong class="ad-num" style="color: var(--ad-primary-text);">+ NT$ 8,000</strong>
-            </div>
-            <div class="ad-row" style="border-color: var(--ad-primary); background: var(--ad-primary-soft);">
-              <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal; color: var(--ad-primary-text);">分地成果統包分紅獎金（枋山芒果／元長專案）</div><div class="ad-row__meta">作業品質驗收合格、留蒂 0.5cm 零破損履約獎金</div></div>
-              <strong class="ad-num" style="color: var(--ad-primary-text);">+ NT$ 12,500</strong>
-            </div>
-            <div class="ad-row">
-              <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal;">超時帶工與避雨趕工作業加班費</div><div class="ad-row__meta">本月累計 7.5 小時（晨間與午後避雨調度）</div></div>
-              <strong class="ad-num">+ NT$ 2,800</strong>
-            </div>
-          </div>
+          <div id="localPayEarnings" class="ad-list"></div>
 
           <div class="ad-label" style="margin: 16px 0 8px;">法定應扣項目</div>
-          <div class="ad-list">
-            <div class="ad-row">
-              <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal;">勞工保險自付額</div><div class="ad-row__meta">最高級距投保，保障傷病與老年給付</div></div>
-              <strong class="ad-num" style="color: var(--ad-danger-text);">- NT$ 924</strong>
-            </div>
-            <div class="ad-row">
-              <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal;">全民健康保險自付額</div><div class="ad-row__meta">個人健保自付</div></div>
-              <strong class="ad-num" style="color: var(--ad-danger-text);">- NT$ 653</strong>
-            </div>
-          </div>
+          <div id="localPayDeductions" class="ad-list"></div>
 
           <div class="ad-card ad-card--accent" style="margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
             <div>
-              <div class="ad-heading">本月實領預估總額</div>
-              <div class="ad-caption">含領班責任加給，土地銀行自動撥款（土地銀行 005 ****-8821）</div>
+              <div class="ad-heading">本月預估淨所得</div>
+              <div id="localPayBank" class="ad-caption"></div>
             </div>
-            <strong class="ad-price ad-price--lg ad-price--accent">NT$ 63,723</strong>
+            <strong id="localPayNet" class="ad-price ad-price--lg ad-price--accent">—</strong>
           </div>
+          <p id="localPayNote" class="ad-caption" style="margin-top: 12px;"></p>
         </div>
 
         <div class="lg:col-span-5" style="display: flex; flex-direction: column; gap: 24px;">
@@ -580,8 +551,8 @@
               <span class="ad-pill ad-pill--ok">合作社全額負擔</span>
             </div>
             <div class="ad-card ad-card--inset">
-              <div class="ad-label">本月提繳金額（月薪 $42,000 × 6%）</div>
-              <div class="ad-price ad-price--lg" style="margin-top: 2px; color: var(--ad-primary-text);">NT$ 2,520</div>
+              <div id="localPensionLabel" class="ad-label">本月提繳金額（月薪 × 6%）</div>
+              <div id="localPensionAmt" class="ad-price ad-price--lg" style="margin-top: 2px; color: var(--ad-primary-text);">—</div>
               <p class="ad-caption" style="margin-top: 4px;">合作社全額負擔提繳至勞保局個人退休金專戶，不從薪資內扣除。</p>
             </div>
             <div class="ad-card ad-card--inset" style="margin-top: 12px;">
@@ -596,20 +567,7 @@
               <h4 class="ad-heading">歷史薪資單</h4>
               <span class="ad-caption">近 3 個月</span>
             </div>
-            <div class="ad-list">
-              <div class="ad-row">
-                <div class="ad-row__main"><div class="ad-row__title ad-num">2026 年 08 月</div><div class="ad-row__meta">實領 NT$ 63,500（含領班加給・已入帳）</div></div>
-                <button type="button" onclick="downloadLocalPayslip('2026年08月')" class="ad-btn ad-btn--secondary ad-btn--sm">下載 PDF</button>
-              </div>
-              <div class="ad-row">
-                <div class="ad-row__main"><div class="ad-row__title ad-num">2026 年 07 月</div><div class="ad-row__meta">實領 NT$ 61,800（含領班加給・已入帳）</div></div>
-                <button type="button" onclick="downloadLocalPayslip('2026年07月')" class="ad-btn ad-btn--secondary ad-btn--sm">下載 PDF</button>
-              </div>
-              <div class="ad-row">
-                <div class="ad-row__main"><div class="ad-row__title ad-num">2026 年 06 月</div><div class="ad-row__meta">實領 NT$ 62,400（含領班加給・已入帳）</div></div>
-                <button type="button" onclick="downloadLocalPayslip('2026年06月')" class="ad-btn ad-btn--secondary ad-btn--sm">下載 PDF</button>
-              </div>
-            </div>
+            <div id="localPayHistory" class="ad-list"></div>
           </div>
 
         </div>
@@ -645,6 +603,7 @@
         switchLocalTrack(role);
       }
       if (savedRole) sessionStorage.removeItem('localRole'); // 用完即清
+      loadLocalPayroll();
     });
 
     let currentLocalTab = 'task';
@@ -691,6 +650,7 @@
       if (tabbarEval) tabbarEval.style.display = showEval ? '' : 'none';
 
       updatePageTitle();
+      loadLocalPayroll();
     }
 
     function playVoiceInstruction(instruction) {
@@ -720,12 +680,137 @@
       if (window.scrollY > 200) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // 薪資單下載：依目前身分決定（勞務員下載勞務員薪資單，其餘為領班／機耕師）
-    function downloadLocalPayslip(periodLabel) {
-      const isLabor = (currentTrack === 'labor');
-      AgriDocs.downloadPayslip(periodLabel, isLabor ? 'labor' : 'foreman', {
-        id: isLabor ? 'W030' : 'W026',
-        name: isLabor ? '張志明 (合作社農業勞務員)' : '林小祥 (外展帶隊小工頭)'
+    // ===== 薪資：數字一律來自後端 /workers/{id}/payroll（與外籍工人頁同一套）=====
+    // 登入的是本國工人就查本人；沒登入（demo 預設身分）時依目前頁面身分查示範帳號。
+    // 連不上後端的 demo 離線展示才用 LOCAL_PAY（鏡像 WorkerService.buildSlip 與種子資料；後端公式或資料改了要同步改）。
+    const DEMO_WORKER = { foreman: 'W026', machinery: 'W012', labor: 'W030' };
+    const ROLE_LABEL = { foreman: '本國帶工領班 (小工頭)', machinery: '專業機耕師', labor: '合作社在籍農業勞務員' };
+    const TEAM_LABEL = { team_a: '工班 A 組', team_b: '工班 B 組', team_c: '工班 C 組', team_d: '工班 D 組' };
+    const LOCAL_PAY = {
+      W026: { name: '林小祥', team: 'team_b', base: 42000, bonus: 8000, transport: 2800, pension: true },
+      W012: { name: '陳建宏', team: 'team_c', base: 45000, bonus: 8800, transport: 3000, pension: true },
+      W030: { name: '張志明', team: 'team_a', base: 29500, bonus: 8800, transport: 2400, pension: true }
+    };
+    const money = (n) => `NT$ ${Number(n).toLocaleString()}`;
+    let payrollData = null;
+    let payrollSeq = 0;
+
+    function payrollWorkerId() {
+      const u = (window.AgriAuth && window.AgriAuth.getUser && window.AgriAuth.getUser()) || null;
+      // demo 自動登入的身分（u.demo）只是示範帳號，不代表目前頁面選的身分，所以只認真正登入的本國工人
+      if (u && u.role === 'worker_local' && u.refId && !u.demo) return u.refId;
+      return DEMO_WORKER[currentTrack] || 'W026';
+    }
+
+    function localSlip(id, overtimeHours) {
+      const p = LOCAL_PAY[id] || LOCAL_PAY.W026;
+      const hourly = Math.max(p.base / 240, 196);
+      const ot = Math.round(overtimeHours * hourly * 4 / 3);
+      const labor = Math.round(p.base * 0.125 * 0.2), health = Math.round(p.base * 0.0517 * 0.3);
+      const gross = p.base + p.bonus + p.transport + ot;
+      return { baseSalary: p.base, agriSubsidy: p.bonus, transportHeatAllowance: p.transport, overtimePay: ot,
+        pension6Percent: Math.round(p.base * 0.06), laborInsuranceDeduction: labor, healthInsuranceDeduction: health,
+        grossPay: gross, totalDeductions: labor + health, netPay: gross - labor - health, overtimeHours };
+    }
+
+    function localPayroll(id) {
+      const p = LOCAL_PAY[id] || LOCAL_PAY.W026;
+      const now = new Date();
+      const ym = (d) => `${d.getFullYear()}年${String(d.getMonth() + 1).padStart(2, '0')}月`;
+      const next5 = new Date(now.getFullYear(), now.getMonth() + 1, 5);
+      return { workerId: id, workerName: p.name, teamId: p.team, offline: true, simulated: true,
+        note: '離線示範：未連上伺服器，金額依示範底薪與津貼試算，僅供參考。',
+        currentMonth: { ...localSlip(id, 0), month: `${ym(now)} (預估結算)`, bankAccount: '（尚未登錄薪轉帳戶）',
+          payDate: `${next5.getFullYear()}-${String(next5.getMonth() + 1).padStart(2, '0')}-05 (預定入帳)`, overtimeHours: 0 },
+        historicalSlips: [1, 2, 3].map((i) => ({ ...localSlip(id, 0), period: ym(new Date(now.getFullYear(), now.getMonth() - i, 1)), status: '離線試算', overtimeHours: 0 })) };
+    }
+
+    async function fetchLocalPayroll(id) {
+      let res;
+      try {
+        res = await fetch(`${API_BASE}/workers/${encodeURIComponent(id)}/payroll`);
+      } catch (e) {
+        return localPayroll(id);                       // 連不上後端
+      }
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.success && body.data) return body.data;
+      throw new Error(body.error || `HTTP ${res.status}`);   // 403（看別人的薪資）等，如實顯示，不編數字
+    }
+
+    function payRow(title, meta, amount, cls) {
+      const color = cls === 'plus' ? ' style="color: var(--ad-primary-text);"' : (cls === 'minus' ? ' style="color: var(--ad-danger-text);"' : '');
+      return `<div class="ad-row"><div class="ad-row__main"><div class="ad-row__title" style="white-space: normal;">${title}</div>${meta ? `<div class="ad-row__meta">${meta}</div>` : ''}</div><strong class="ad-num"${color}>${amount}</strong></div>`;
+    }
+
+    function renderLocalPayroll(p) {
+      payrollData = p;
+      const c = p.currentMonth;
+      const isLeader = currentTrack === 'foreman';
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      const html = (id, v) => { const el = document.getElementById(id); if (el) el.innerHTML = v; };
+      const bonusTitle = isLeader ? '外展移工帶隊責任加給' : '獎勵與加給';
+      const bonusMeta = isLeader ? '帶領外籍移工、雙語指令協調與安全津貼；適用條件【待確認】' : '農業部就業獎勵等；適用對象與條件【待確認】農業部規定';
+
+      set('localPayTitle', `薪酬結算明細・${c.month || '本月'}`);
+      set('localPayDate', c.payDate ? `預定發薪 ${c.payDate.replace(' (預定入帳)', '')}` : '');
+      html('localPayEarnings', [
+        payRow(isLeader ? '技術技師與領班保障基本月薪' : '保障基本月薪', '本國專業人員技術底薪保障', money(c.baseSalary)),
+        payRow(bonusTitle, bonusMeta, `+ ${money(c.agriSubsidy)}`, 'plus'),
+        payRow('超時帶工與避雨趕工加班費', `本月累計 ${c.overtimeHours != null ? c.overtimeHours : 0} 小時，依勞基法加班費率試算`, `+ ${money(c.overtimePay)}`),
+        payRow('交通接送與高溫補助', '合作社補助', `+ ${money(c.transportHeatAllowance)}`)
+      ].join(''));
+      html('localPayDeductions', [
+        payRow('勞工保險自付額', '保障傷病與老年給付（概估）', `- ${money(c.laborInsuranceDeduction)}`, 'minus'),
+        payRow('全民健康保險自付額', '個人健保自付（概估）', `- ${money(c.healthInsuranceDeduction)}`, 'minus')
+      ].join(''));
+      set('localPayNet', money(c.netPay));
+      set('localPayBank', `薪轉帳戶：${c.bankAccount || '（尚未登錄薪轉帳戶）'}`);
+      set('localPayNote', p.note || '依底薪、津貼與出勤試算，勞健保自付額為概估值，實際以合作社薪資系統為準。');
+      set('localPayCaption', `保障月薪 ${money(c.baseSalary)}・合作社全額 6% 勞退提繳・職災保險`);
+      set('localPensionLabel', `本月提繳金額（月薪 ${money(c.baseSalary)} × 6%）`);
+      set('localPensionAmt', c.pension6Percent != null ? money(c.pension6Percent) : '—');
+
+      html('localPayHistory', (p.historicalSlips || []).map((s, i) => `
+        <div class="ad-row">
+          <div class="ad-row__main"><div class="ad-row__title ad-num">${s.period.replace('年', ' 年 ').replace('月', ' 月')}</div><div class="ad-row__meta">試算實領 ${money(s.netPay)}${s.overtimeHours ? `（含加班 ${s.overtimeHours} 小時）` : ''}</div></div>
+          <button type="button" onclick="downloadLocalPayslip(${i})" class="ad-btn ad-btn--secondary ad-btn--sm">下載 PDF</button>
+        </div>`).join(''));
+
+      // 勞務員任務頁的小卡（本月薪資明細）
+      html('laborMiniRows', [
+        payRow('本月基本工資', '', money(c.baseSalary)),
+        payRow('獎勵與加給', '', `+ ${money(c.agriSubsidy)}`, 'plus'),
+        payRow('交通接送補助', '', `+ ${money(c.transportHeatAllowance)}`),
+        payRow('加班費', '', `+ ${money(c.overtimePay)}`)
+      ].join(''));
+      set('laborMiniGross', money(c.grossPay));
+    }
+
+    function renderLocalPayrollError(msg) {
+      payrollData = null;
+      ['localPayNet', 'localPensionAmt', 'laborMiniGross'].forEach((id) => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
+      ['localPayEarnings', 'localPayDeductions', 'localPayHistory', 'laborMiniRows'].forEach((id) => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+      const note = document.getElementById('localPayNote');
+      if (note) note.textContent = `無法取得薪資資料：${msg}`;
+    }
+
+    function loadLocalPayroll() {
+      const seq = ++payrollSeq;
+      fetchLocalPayroll(payrollWorkerId()).then((p) => { if (seq === payrollSeq) renderLocalPayroll(p); })
+        .catch((e) => { if (seq === payrollSeq) renderLocalPayrollError(e.message); });
+    }
+
+    // 薪資單下載：-1 = 本月試算；其餘為歷月清單的索引。內容與畫面同一筆試算。
+    function downloadLocalPayslip(i) {
+      if (!payrollData) return;
+      const isCurrent = i == null || i < 0;
+      const slip = isCurrent ? payrollData.currentMonth : payrollData.historicalSlips[i];
+      AgriDocs.downloadPayslip(isCurrent ? slip.month : slip.period, currentTrack === 'labor' ? 'labor' : 'foreman', {
+        id: payrollData.workerId || payrollWorkerId(),
+        name: payrollData.workerName,
+        roleLabel: ROLE_LABEL[currentTrack],
+        teamLabel: TEAM_LABEL[payrollData.teamId] || payrollData.teamId,
+        slip
       });
     }
 
@@ -787,13 +872,13 @@
     }
 
     // 目前身分對應的工號與出勤地點（後端打卡用）
-    const localWorkerId = () => (currentTrack === 'labor' ? 'W030' : (currentTrack === 'foreman' ? 'W021' : 'W016'));
+    const localWorkerId = () => payrollWorkerId();
     const localTrackName = () => (currentTrack === 'labor' ? '勞務出勤' : (currentTrack === 'foreman' ? '領班出勤' : '機耕出勤'));
 
     async function handleForemanClockOut() {
       // 先向後端打卡，成功才更新畫面；後端拒絕（如重複打卡）時由 clockAction 顯示原因
       const punch = window.AgriDocs
-        ? await AgriDocs.clockAction('clock-out', { workerId: 'W021', locationLabel: '枋山愛文芒果合作園區', silent: true })
+        ? await AgriDocs.clockAction('clock-out', { workerId: DEMO_WORKER.foreman, locationLabel: '枋山愛文芒果合作園區', silent: true })
         : { success: true };
       if (!punch.success) return;
 

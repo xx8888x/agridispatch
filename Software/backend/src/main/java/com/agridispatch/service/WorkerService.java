@@ -180,6 +180,10 @@ public class WorkerService {
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("workerId", w.getId());
+        data.put("workerName", w.getChineseName() != null && !w.getChineseName().isBlank() ? w.getChineseName() : w.getName());
+        data.put("teamId", w.getTeamId());
+        data.put("tier", w.getTier());
+        data.put("leader", w.isLeader());
         data.put("simulated", true);
         data.put("note", "依農工底薪、津貼與本月出勤試算；勞健保自付額為概估值，實際以合作社薪資系統為準");
         data.put("currentMonth", current);

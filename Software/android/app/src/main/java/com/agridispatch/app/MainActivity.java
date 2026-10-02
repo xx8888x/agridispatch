@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.view.View;
 import android.webkit.GeolocationPermissions;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
@@ -17,6 +16,7 @@ import android.webkit.WebViewClient;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 import androidx.core.content.ContextCompat;
 import com.agridispatch.app.profile.AppSide;
@@ -92,13 +92,17 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // 沉浸式全螢幕
-        getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-        );
-
+        // 滿版顯示，WebView 外包一層深色容器並依系統列 insets 內縮 (見 SystemBarInsets)
+        FrameLayout container = new FrameLayout(this);
+        container.setBackgroundColor(ContextCompat.getColor(this, R.color.slate_950));
         bindingWebView = new WebView(this);
-        setContentView(bindingWebView);
+        container.addView(bindingWebView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        setContentView(container);
+        SystemBarInsets.apply(getWindow(), container);
+
+        // debug 版開放 chrome://inspect 偵錯 WebView；release 版關閉
+        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
 
         configureWebView(bindingWebView);
 
@@ -251,6 +255,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         Intent intent = new Intent(this, RoleSelectActivity.class);
+        intent.putExtra(RoleSelectActivity.EXTRA_CHOOSE, true);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();

@@ -16,6 +16,8 @@
 建置指令：`assembleClientDebug`、`assembleServerDebug`（或 `assembleDebug` 一次建兩支）；輸出在 `app/build/outputs/apk/<flavor>/debug/app-<flavor>-debug.apk`。
 安裝：`install_apk.bat`（客戶端，預設）或 `install_apk.bat -Flavor server`。
 
+模擬器：`D:\Android\sdk\emulator\emulator.exe -avd AgriTest_API35`（Pixel 6、Android 15，2026-10-02 建立）；debug 版可用 `chrome://inspect` 偵錯 WebView。
+
 > FCM：兩支 App 套件名稱不同，`google-services.json` 需在 Firebase 同時註冊 `com.agridispatch.app` 與 `com.agridispatch.app.admin`，否則 google-services 外掛會建置失敗。
 
 ---

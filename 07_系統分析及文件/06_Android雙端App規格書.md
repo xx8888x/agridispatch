@@ -1,10 +1,10 @@
 # 智農派工 Android 雙端 App 規格書（Server 端／客戶端）
 
-> **文件版本**：v1.0.0（2026-10-02）
+> **文件版本**：v1.1.0（2026-10-02：模擬器實測；修正滿版遮擋與重開 App 仍詢問身分；選擇畫面排版）
 > **適用範圍**：`Software/android/`（Java WebView 殼）
 > **相關文件**：`01_系統分析與架構設計規格書.md`（7.1 技術組成、11.2 測試）、`03_認證與API安全規格.md`（前後端認證）、`05_LINE官方帳號拆分規格.md`（同一套身分代碼）、`Software/android/docs/角色與人力分類表.md`（分類表開發者版）、`Software/android/README.md`（建置環境）
 > **資料來源**：`農場派遣人力成本分析/農場派遣人力成本分析_試算表.xlsx`（2026 年 10 月版）之「人力類型比較」「國別比較」「價目表」工作表
-> **狀態**：程式已實作並通過建置、單元測試與 lintVital；**尚未在實機或模擬器上執行**。
+> **狀態**：程式已實作並通過建置、單元測試、lintVital 與 Android 15 模擬器實測；**尚未在實體手機上測試**。
 
 ---
 
@@ -131,6 +131,8 @@ flowchart TD
 ```
 
 - 選擇畫面為原生畫面，文字依系統語系顯示（zh、vi、id）；國名同時列出中文與母語（例如「越南 · Việt Nam」）。
+- 卡片版面統一為「固定寬度圖示欄｜標題＋說明｜右箭頭」，所有文字左緣對齊；停用的國別半透明、無箭頭、不可點。
+- 從桌面啟動時，若已選過身分就直接開啟 MainActivity；只有「切換角色」會帶 `EXTRA_CHOOSE_ROLE` 強制顯示選擇畫面。
 - 返回鍵：在第二步時回到第一步；在第一步時離開 App。
 
 ### 4.2 已選身分後
@@ -227,9 +229,28 @@ flowchart TD
 | 單元測試 `UserProfileTest` | ✅ client、server 各 5/5 通過 |
 | Release lintVital | ✅ 兩個 flavor 通過 |
 | 安裝腳本 | ✅ 兩個 flavor 都能找到對應 APK（本機無裝置，未實際安裝） |
-| 實機或模擬器執行 | ⚠️ 未做（本機無模擬器、無連線裝置） |
+| 模擬器實測（Pixel 6、Android 15 / API 35，AVD `AgriTest_API35`） | ✅ 見 7.3 |
+| 實體手機 | ⚠️ 未測 |
 
-### 7.3 Play Console 發佈設定
+### 7.3 模擬器實測紀錄（2026-10-02）
+
+| # | 測試 | 結果 |
+|---|---|---|
+| 1 | 首次啟動顯示三個身分卡片 | ✅ |
+| 2 | 外籍移工 → 國別：越南、印尼可點；泰國、菲律賓停用，點了沒有反應 | ✅ |
+| 3 | 選印尼 → `worker-foreign-login.html` 以印尼語顯示；`AGRI_APP_PROFILE`、`getAppProfile()` 皆為 `ID`／`id`，`getSystemLanguage()` 回 `id` | ✅ |
+| 4 | 關閉後從桌面重開 → 直接進登入頁、不再詢問 | ✅（實測發現原本每次都詢問，已修正） |
+| 5 | 頁面導向 `../科技後台/admin.html` → 攔截、顯示「科技後台請使用『智農派工後台』App」、留在原頁 | ✅ |
+| 6 | 頁面導向 `login.html`／呼叫 `switchRole()` → 回到原生選擇畫面 | ✅ |
+| 7 | 本地工人 → 帶班師傅 → `worker-local-login.html?role=foreman`，頁面自動選「帶隊領班」軌 | ✅ |
+| 8 | 農場主 → `farmer-login.html`，`platformRole` = `farmer` | ✅ |
+| 9 | 後台 App → 直接開 `科技後台/admin-login.html`，`platformRole` = `admin_tech` | ✅ |
+| 10 | 狀態列、手勢列不遮擋網頁與選擇畫面 | ✅（實測發現 targetSdk 35 強制滿版造成遮擋，已以 `SystemBarInsets` 修正） |
+| 11 | WebView 主控台錯誤 | ✅ 無（僅 Tailwind CDN 的既有提示） |
+
+debug 版已開啟 WebView 遠端偵錯（`WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)`，release 版關閉），可用 `chrome://inspect` 或 `adb forward tcp:9222 localabstract:webview_devtools_remote_<pid>` 檢查頁面。
+
+### 7.4 Play Console 發佈設定
 
 | 項目 | 客戶端 | 後台 |
 |---|---|---|
@@ -244,9 +265,10 @@ flowchart TD
 
 | # | 事項 | 負責 |
 |---|---|---|
-| 1 | 實機或模擬器測試：身分選擇三條路徑、切換角色、科技後台連結攔截、越南／印尼工單頁自動切語言 | Android |
-| 2 | `worker-foreign-login.html`（Vue）預設語言固定為 `vi`，尚未讀 `AGRI_APP_PROFILE`；建議前端在 `agri:app-profile` 事件或 `AgriNativeBridge.getAppProfile()` 取得 `language` 後設定預設語言 | 前端（`Software/demo/`） |
+| 1 | 實體手機測試（模擬器已通過，見 7.3） | Android |
+| 2 | ~~`worker-foreign-login.html` 預設語言固定為 `vi`~~ ✅ 已由前端 a552924 修正，模擬器確認印尼籍顯示印尼語 | 前端 |
 | 3 | 前端「切換角色」可改呼叫 `AgriNativeBridge.switchRole()`（現行由 App 攔截 `login.html` 處理，網頁版不受影響） | 前端，選做 |
 | 4 | Firebase 專案同時註冊兩個套件名稱並放入 `google-services.json` | 營運 |
 | 5 | 泰國、菲律賓是否開放【待確認】；開放後依 3.3 調整 | 營運→Android、前端、LINE |
 | 6 | 若日後改採方案 B（農場主、工人分開上架）：新增 flavor 並在該 flavor 固定 `ClientRole` | Android |
+| 7 | 各前端頁首在手機寬度（約 400px）會擠成多行（例如「切換身分」斷成兩行、副標換行），需前端調整 RWD | 前端（`Software/demo/`） |

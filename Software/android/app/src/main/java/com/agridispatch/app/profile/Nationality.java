@@ -8,11 +8,13 @@ import com.agridispatch.app.R;
  * offered=false 者在身分選擇畫面停用 (泰國、菲律賓：未規劃引進【待確認】)。
  */
 public enum Nationality {
-    VN("🇻🇳 越南 · Việt Nam", "vi", true, R.string.nation_vn_desc),
-    ID("🇮🇩 印尼 · Indonesia", "id", true, R.string.nation_id_desc),
-    TH("🇹🇭 泰國 · ประเทศไทย", "", false, R.string.nation_not_offered),
-    PH("🇵🇭 菲律賓 · Pilipinas", "", false, R.string.nation_not_offered);
+    VN("🇻🇳", "越南 · Việt Nam", "vi", true, R.string.nation_vn_desc),
+    ID("🇮🇩", "印尼 · Indonesia", "id", true, R.string.nation_id_desc),
+    TH("🇹🇭", "泰國 · ประเทศไทย", "", false, R.string.nation_not_offered),
+    PH("🇵🇭", "菲律賓 · Pilipinas", "", false, R.string.nation_not_offered);
 
+    /** 國旗 (選擇畫面左側圖示) */
+    public final String flag;
     /** 國名 (中文 + 母語，不隨系統語系翻譯) */
     public final String label;
     /** 前端介面語言代碼；空字串表示系統尚未支援 */
@@ -20,7 +22,8 @@ public enum Nationality {
     public final boolean offered;
     public final int descRes;
 
-    Nationality(String label, String language, boolean offered, int descRes) {
+    Nationality(String flag, String label, String language, boolean offered, int descRes) {
+        this.flag = flag;
         this.label = label;
         this.language = language;
         this.offered = offered;

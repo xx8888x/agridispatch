@@ -14,22 +14,22 @@
     <!-- 客戶端身分選擇 (RoleSelectActivity)；分類依據見 android/docs/角色與人力分類表.md -->
     <string name="role_pick_title">請選擇您的身分</string>
     <string name="role_pick_back">← 上一步</string>
-    <string name="role_pick_farmer">🧑‍🌾 我是農場主</string>
+    <string name="role_pick_farmer">我是農場主</string>
     <string name="role_pick_farmer_desc">叫工、預約產季工時包、查看出勤與帳單</string>
-    <string name="role_pick_worker_local">👷 我是本地工人（本勞）</string>
-    <string name="role_pick_worker_local_desc">中高齡、二度就業、大專生、帶班師傅、機耕師</string>
-    <string name="role_pick_worker_foreign">🌏 我是外籍移工（外勞）</string>
+    <string name="role_pick_worker_local">我是本地工人（本勞）</string>
+    <string name="role_pick_worker_local_desc">中高齡、二度就業、大專生、帶班、機耕</string>
+    <string name="role_pick_worker_foreign">我是外籍移工（外勞）</string>
     <string name="role_pick_worker_foreign_desc">Lao động nước ngoài · Pekerja asing</string>
 
     <string name="local_pick_title">請選擇您的工作類型</string>
     <string name="local_senior">中高齡／銀髮（45 歲以上）</string>
-    <string name="local_senior_desc">集貨場分級、清洗、裝箱；溫室挑菜包裝；樹下套袋。每日 4～6 小時，不安排攀高、正午曝曬、搬運超過 20 公斤</string>
+    <string name="local_senior_desc">集貨場分級裝箱、溫室挑菜、樹下套袋\n每日 4～6 小時；不攀高、不曝曬、不搬重</string>
     <string name="local_returning_women">二度就業婦女</string>
-    <string name="local_returning_women_desc">分級包裝、挑菜、套袋等細工；配合家庭作息排班預約</string>
+    <string name="local_returning_women_desc">包裝、挑菜、套袋等細工；彈性排班</string>
     <string name="local_student">大專生（寒暑假）</string>
-    <string name="local_student_desc">採收、搬運、田間紀錄與手機回報；暑假約 6 月中～9 月中、寒假</string>
+    <string name="local_student_desc">採收、搬運、田間紀錄；寒暑假可排</string>
     <string name="local_foreman">本土帶班師傅</string>
-    <string name="local_foreman_desc">技術示範、品質把關、現場帶班；隨工班出勤</string>
+    <string name="local_foreman_desc">技術示範、品質把關、現場帶班</string>
     <string name="local_machinery">農機機耕師</string>
     <string name="local_machinery_desc">農機操作與機耕作業</string>
 

@@ -1,0 +1,95 @@
+{
+  "size": {
+    "width": 2500,
+    "height": 1686
+  },
+  "selected": true,
+  "name": "智農派工（工作者）已綁定選單（zh）",
+  "chatBarText": "📋 工作選單",
+  "areas": [
+    {
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "今日任務",
+        "data": "a=task",
+        "displayText": "今日任務"
+      }
+    },
+    {
+      "bounds": {
+        "x": 833,
+        "y": 0,
+        "width": 834,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "上下班打卡",
+        "data": "a=clock",
+        "displayText": "上下班打卡"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1667,
+        "y": 0,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "天候與集合",
+        "data": "a=weather",
+        "displayText": "天候與集合"
+      }
+    },
+    {
+      "bounds": {
+        "x": 0,
+        "y": 843,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "薪資明細",
+        "data": "a=salary",
+        "displayText": "薪資明細"
+      }
+    },
+    {
+      "bounds": {
+        "x": 833,
+        "y": 843,
+        "width": 834,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "我的出勤",
+        "data": "a=attendance",
+        "displayText": "我的出勤"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1667,
+        "y": 843,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "語言・說明",
+        "data": "a=lang_help",
+        "displayText": "語言・說明"
+      }
+    }
+  ]
+}

@@ -5,12 +5,36 @@
  * 2. 財政部規範電子發票證明聯 (HTML + 可列印另存 PDF 下載)
  * 3. 勞動部標準外展農工 / 帶工領班 / 農業勞務員薪資清冊 (中/越/印多語對照 + 另存 PDF 下載)
  * 4. 全域伺服器連線狀態感知與離線提示浮條
+ *
+ * UI（收銀台彈窗、通知 toast）一律使用設計系統 css/agri.css 的 .ad-* 元件；
+ * 發票與薪資單是「紙本單據」，維持自己的列印樣式。規範：07_系統分析及文件/04_UI設計系統規範.md
  */
 
 const AgriDocs = (function () {
   const API_BASE = window.location.origin.startsWith('http')
     ? `${window.location.origin}/api`
     : 'http://localhost:3000/api';
+
+  // 共用工具 ----------------------------------------------------------
+  const escHtml = (s) => (window.AgriUtil && window.AgriUtil.escapeHtml)
+    ? window.AgriUtil.escapeHtml(String(s == null ? '' : s))
+    : String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // 通知文字不放 emoji：各頁舊的呼叫端還帶著，統一在這裡濾掉
+  const EMOJI_RE = /(?:\p{Extended_Pictographic}[\uFE0F\u200D]*)+/gu;
+  const stripEmoji = (s) => String(s == null ? '' : s).replace(EMOJI_RE, '').replace(/[ \t]{2,}/g, ' ').replace(/^\s+/, '');
+
+  // 確保設計系統樣式已載入（各頁都載入本檔，但不一定載入 agri.css）
+  function ensureStyles() {
+    if (document.querySelector('link[href*="agri.css"]')) return;
+    const me = document.querySelector('script[src*="agri-docs.js"]');
+    const href = me ? me.getAttribute('src').replace(/js\/agri-docs\.js.*$/, 'css/agri.css') : 'css/agri.css';
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+  }
+  ensureStyles();
 
   // 1. 下載電子發票 (財政部電子發票載具規範)
   function downloadInvoice(orderId, customOptions = {}) {
@@ -110,7 +134,7 @@ const AgriDocs = (function () {
     </table>
 
     <div class="tax-split-box">
-      <strong>⚖️ 合作社與科技公司雙軌金流扣繳拆分：</strong><br>
+      <strong>合作社與科技公司雙軌金流扣繳拆分：</strong><br>
       • 合作社外展農務勞務（免營業稅，農民社員交易）：<strong>NT$ ${coopAmount.toLocaleString()}</strong> (82%)<br>
       • 智農科技代管營運（專車 logistics 與系統代管，應稅 5%）：<strong>NT$ ${Math.round(amount * 0.18).toLocaleString()}</strong> (銷售額 $${techAmountTaxExcluded.toLocaleString()} / 稅額 $${techTax.toLocaleString()})<br>
       • 備註：本頁為系統展示用發票範本，並非正式統一發票；正式營運須串接財政部電子發票整合服務平台開立。
@@ -131,7 +155,7 @@ const AgriDocs = (function () {
     </div>
   </div>
 
-  <button class="btn-print" onclick="window.print()">🖨️ 列印此發票 / 另存為 PDF</button>
+  <button class="btn-print" onclick="window.print()">列印此發票 / 另存為 PDF</button>
 </body>
 </html>`;
 
@@ -321,7 +345,7 @@ const AgriDocs = (function () {
     </div>
   </div>
 
-  <button class="btn-print" onclick="window.print()">🖨️ 列印此薪資單 / 另存為 PDF</button>
+  <button class="btn-print" onclick="window.print()">列印此薪資單 / 另存為 PDF</button>
 </body>
 </html>`;
 
@@ -345,121 +369,97 @@ const AgriDocs = (function () {
 
   // 3. 實體互動金流收銀台 (ECPay / LINE Pay / ATM)
   function openPaymentCashier(orderId, amount, cropName, farmLocation, onSuccessCallback) {
+    ensureStyles();
     const existingModal = document.getElementById('agriCheckoutModal');
     if (existingModal) existingModal.remove();
 
     const depositAmount = amount || 4480;
+    const oid = orderId || 'ORD-2026-002';
+    const isDemo = !window.AGRI_CONFIG || window.AGRI_CONFIG.mode !== 'production';
+    const due = new Date(Date.now() + 3 * 86400000);
+    const dueText = `${due.getFullYear()}/${String(due.getMonth() + 1).padStart(2, '0')}/${String(due.getDate()).padStart(2, '0')} 23:59 止`;
+    const testCard = isDemo ? { num: '4311-9522-2222-2222', exp: '12/28', cvv: '888' } : { num: '', exp: '', cvv: '' };
+
     const modalHtml = `
-    <div id="agriCheckoutModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-slate-900 border border-emerald-500/50 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl text-xs text-slate-100">
-        <!-- Header -->
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <div class="flex items-center gap-2.5">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-xl shadow-lg shadow-emerald-500/30">
-              💳
-            </div>
-            <div>
-              <h3 class="font-extrabold text-base text-white">智農派工 ╳ 履約保證金流收銀台</h3>
-              <p class="text-[11px] text-emerald-400 font-mono">訂單號：${orderId || 'ORD-2026-002'}</p>
-            </div>
-          </div>
-          <button onclick="document.getElementById('agriCheckoutModal').remove()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-sm">
-            ✕
-          </button>
-        </div>
-
-        <!-- Order Summary -->
-        <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+    <div id="agriCheckoutModal" class="ad-modal" role="dialog" aria-modal="true" aria-labelledby="agriCheckoutTitle">
+      <div class="ad-modal__panel">
+        <div class="ad-card__head">
           <div>
-            <span class="text-slate-400 text-[11px] block">派工田區與品項</span>
-            <span class="text-white font-bold text-sm">${cropName || '苗栗卓蘭高接梨 (4分地)'}</span>
+            <h3 id="agriCheckoutTitle" class="ad-title">支付早鳥定金</h3>
+            <p class="ad-caption ad-num">訂單號 ${escHtml(oid)}</p>
           </div>
-          <div class="text-right">
-            <span class="text-slate-400 text-[11px] block">應付 20% 早鳥履約定金</span>
-            <span class="text-xl font-black text-amber-400 font-mono">NT$ ${depositAmount.toLocaleString()}</span>
+          <button type="button" data-ad-close class="ad-btn ad-btn--ghost ad-btn--icon ad-btn--sm" aria-label="關閉">×</button>
+        </div>
+
+        <div class="ad-card ad-card--inset" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+          <div style="min-width: 0;">
+            <div class="ad-label">派工田區與品項</div>
+            <div class="ad-heading" style="margin-top: 2px;">${escHtml(cropName || '苗栗卓蘭高接梨 (4分地)')}</div>
+          </div>
+          <div style="text-align: right; flex-shrink: 0;">
+            <div class="ad-label">應付定金（20%）</div>
+            <div class="ad-price ad-price--lg ad-price--accent">NT$ ${Number(depositAmount).toLocaleString()}</div>
           </div>
         </div>
 
-        <!-- Payment Method Tabs -->
         <div>
-          <label class="block font-bold text-slate-300 mb-2">選擇付款管道：</label>
-          <div class="grid grid-cols-3 gap-2">
-            <button type="button" onclick="AgriDocs._selectPayTab('card')" id="payTab_card" class="p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/10 text-emerald-300 font-bold flex flex-col items-center gap-1">
-              <span class="text-lg">💳</span>
-              <span>信用卡刷卡</span>
-            </button>
-            <button type="button" onclick="AgriDocs._selectPayTab('line')" id="payTab_line" class="p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 font-bold flex flex-col items-center gap-1 hover:border-slate-700">
-              <span class="text-lg">💚</span>
-              <span>LINE Pay</span>
-            </button>
-            <button type="button" onclick="AgriDocs._selectPayTab('atm')" id="payTab_atm" class="p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 font-bold flex flex-col items-center gap-1 hover:border-slate-700">
-              <span class="text-lg">🏧</span>
-              <span>ATM 虛擬帳號</span>
-            </button>
+          <div class="ad-label" style="margin-bottom: 6px;">付款方式</div>
+          <div class="ad-seg" role="group" aria-label="付款方式" style="display: flex;">
+            <button type="button" id="payTab_card" class="ad-seg__btn is-active" style="flex: 1;" onclick="AgriDocs._selectPayTab('card')">信用卡</button>
+            <button type="button" id="payTab_line" class="ad-seg__btn" style="flex: 1;" onclick="AgriDocs._selectPayTab('line')">LINE Pay</button>
+            <button type="button" id="payTab_atm" class="ad-seg__btn" style="flex: 1;" onclick="AgriDocs._selectPayTab('atm')">ATM 轉帳</button>
           </div>
         </div>
 
-        <!-- Content 1: Credit Card (ECPay) -->
-        <div id="payContent_card" class="space-y-3 p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
-          <div class="flex items-center justify-between text-[11px] text-slate-400">
-            <span>綠界科技 ECPay 3D 驗證環境</span>
-            <button type="button" onclick="AgriDocs._fillTestCard()" class="text-emerald-400 underline hover:text-emerald-300">一鍵填入測試卡號</button>
-          </div>
-          <div>
-            <label class="text-[11px] text-slate-400 block mb-1">信用卡卡號 (16 碼)</label>
-            <input id="input_card_num" type="text" value="4311-9522-2222-2222" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-xs focus:border-emerald-500">
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="text-[11px] text-slate-400 block mb-1">有效月年 (MM/YY)</label>
-              <input id="input_card_exp" type="text" value="12/28" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-xs text-center focus:border-emerald-500">
+        <div id="payContent_card">
+          <div class="ad-card ad-card--inset" style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <span class="ad-caption">綠界科技 ECPay 3D 驗證環境</span>
+              ${isDemo ? '<button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" onclick="AgriDocs._fillTestCard()">填入測試卡號</button>' : ''}
             </div>
-            <div>
-              <label class="text-[11px] text-slate-400 block mb-1">背面末三碼 (CVV)</label>
-              <input id="input_card_cvv" type="text" value="888" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-xs text-center focus:border-emerald-500">
+            <div class="ad-field">
+              <label class="ad-label" for="input_card_num">信用卡卡號（16 碼）</label>
+              <input id="input_card_num" class="ad-input ad-num" type="text" inputmode="numeric" autocomplete="cc-number" value="${testCard.num}">
+            </div>
+            <div class="ad-form-grid ad-form-grid--2">
+              <div class="ad-field">
+                <label class="ad-label" for="input_card_exp">有效月年（MM/YY）</label>
+                <input id="input_card_exp" class="ad-input ad-num" type="text" inputmode="numeric" autocomplete="cc-exp" value="${testCard.exp}">
+              </div>
+              <div class="ad-field">
+                <label class="ad-label" for="input_card_cvv">背面末三碼（CVV）</label>
+                <input id="input_card_cvv" class="ad-input ad-num" type="text" inputmode="numeric" autocomplete="cc-csc" value="${testCard.cvv}">
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Content 2: LINE Pay -->
-        <div id="payContent_line" class="hidden space-y-3 p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center">
-          <span class="text-xs text-emerald-400 font-bold block">🟢 LINE Pay 快速條碼結帳</span>
-          <div class="w-28 h-28 mx-auto bg-white p-2 rounded-xl flex items-center justify-center border border-slate-300 shadow-inner">
-            <div style="font-family:monospace; font-size:10px; color:#111; word-break:break-all; text-align:center;">
-              [ LINE PAY QR ]<br>NT$ ${depositAmount}<br>ORD-002
+        <div id="payContent_line" hidden>
+          <div class="ad-card ad-card--inset" style="text-align: center;">
+            <div class="ad-heading" style="margin-bottom: 12px;">LINE Pay 快速條碼結帳</div>
+            <div style="width: 112px; height: 112px; margin: 0 auto; padding: 8px; background: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+              <div style="font-family: monospace; font-size: 10px; color: #111; word-break: break-all; text-align: center;">
+                [ LINE PAY QR ]<br>NT$ ${depositAmount}<br>${escHtml(oid)}
+              </div>
             </div>
-          </div>
-          <p class="text-[11px] text-slate-400">使用手機 LINE「錢包」掃描上方行動條碼即可授權付款</p>
-        </div>
-
-        <!-- Content 3: ATM Virtual -->
-        <div id="payContent_atm" class="hidden space-y-2.5 p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
-          <div class="text-[11px] text-amber-300 font-bold">🏧 台灣 Pay / 跨行虛擬轉帳帳號</div>
-          <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900">
-            <span class="text-slate-400">收款行庫：</span>
-            <span class="font-bold text-white font-mono">013 (國泰世華商業銀行)</span>
-          </div>
-          <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900">
-            <span class="text-slate-400">專屬繳款帳號：</span>
-            <span class="font-bold text-amber-400 font-mono text-sm">9812-0923-4480-1288</span>
-          </div>
-          <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900">
-            <span class="text-slate-400">繳費期限：</span>
-            <span class="font-bold text-slate-300 font-mono">2026/09/25 23:59 止</span>
+            <p class="ad-caption" style="margin-top: 12px;">用手機 LINE「錢包」掃描上方條碼即可授權付款。</p>
           </div>
         </div>
 
-        <!-- Status & Buttons -->
-        <div id="checkoutFeedbackBox" class="hidden p-3 rounded-xl"></div>
+        <div id="payContent_atm" hidden>
+          <div class="ad-card ad-card--inset" style="display: flex; flex-direction: column; gap: 8px;">
+            <div class="ad-heading">台灣 Pay／跨行虛擬轉帳帳號</div>
+            <div style="display: flex; justify-content: space-between; gap: 12px;"><span class="ad-caption">收款行庫</span><span class="ad-num" style="font-weight: 600;">013 國泰世華商業銀行</span></div>
+            <div style="display: flex; justify-content: space-between; gap: 12px;"><span class="ad-caption">專屬繳款帳號</span><span class="ad-num" style="font-weight: 700; color: var(--ad-accent-text);">9812-0923-4480-1288</span></div>
+            <div style="display: flex; justify-content: space-between; gap: 12px;"><span class="ad-caption">繳費期限</span><span class="ad-num" style="font-weight: 600;">${dueText}</span></div>
+          </div>
+        </div>
 
-        <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-800">
-          <button type="button" onclick="document.getElementById('agriCheckoutModal').remove()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition">
-            取消
-          </button>
-          <button id="btnSubmitPayment" type="button" onclick="AgriDocs._doSubmitPayment('${orderId}', ${depositAmount})" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-slate-950 font-black shadow-lg shadow-emerald-600/30 transition flex items-center gap-2">
-            <span>🔒</span>
-            <span id="btnSubmitPaymentText">確認支付 NT$ ${depositAmount.toLocaleString()}</span>
-          </button>
+        <div id="checkoutFeedbackBox" role="status" hidden></div>
+
+        <div class="ad-card__foot" style="margin-top: 0;">
+          <button type="button" data-ad-close class="ad-btn ad-btn--ghost">取消</button>
+          <button id="btnSubmitPayment" type="button" class="ad-btn ad-btn--accent"><span id="btnSubmitPaymentText">確認支付 NT$ ${Number(depositAmount).toLocaleString()}</span></button>
         </div>
       </div>
     </div>
@@ -467,20 +467,22 @@ const AgriDocs = (function () {
 
     document.body.insertAdjacentHTML('beforeend', modalHtml);
     window._onPaymentSuccess = onSuccessCallback;
+
+    const modal = document.getElementById('agriCheckoutModal');
+    const close = () => { modal.remove(); document.removeEventListener('keydown', onKey); };
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    modal.querySelectorAll('[data-ad-close]').forEach((b) => b.addEventListener('click', close));
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+    document.addEventListener('keydown', onKey);
+    document.getElementById('btnSubmitPayment').addEventListener('click', () => _doSubmitPayment(oid, depositAmount));
   }
 
   function _selectPayTab(tab) {
-    const tabs = ['card', 'line', 'atm'];
-    tabs.forEach(t => {
+    ['card', 'line', 'atm'].forEach((t) => {
       const btn = document.getElementById(`payTab_${t}`);
       const content = document.getElementById(`payContent_${t}`);
-      if (t === tab) {
-        btn.className = 'p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/10 text-emerald-300 font-bold flex flex-col items-center gap-1';
-        content.classList.remove('hidden');
-      } else {
-        btn.className = 'p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 font-bold flex flex-col items-center gap-1 hover:border-slate-700';
-        content.classList.add('hidden');
-      }
+      if (btn) btn.classList.toggle('is-active', t === tab);
+      if (content) content.hidden = (t !== tab);
     });
   }
 
@@ -496,14 +498,17 @@ const AgriDocs = (function () {
     const feedback = document.getElementById('checkoutFeedbackBox');
 
     btn.disabled = true;
-    btnText.innerText = '金流中心授權處理中...';
+    btnText.innerText = '授權處理中…';
 
     const isDemo = !window.AGRI_CONFIG || window.AGRI_CONFIG.mode !== 'production';
-    const esc = (s) => (window.AgriUtil && AgriUtil.escapeHtml) ? AgriUtil.escapeHtml(String(s ?? '')) : String(s ?? '');
+    const esc = escHtml;
+    const setFeedback = (kind, html) => {
+      feedback.hidden = false;
+      feedback.className = `ad-notice ad-notice--${kind}`;
+      feedback.innerHTML = `<div style="min-width: 0;">${html}</div>`;
+    };
     const showError = (msg) => {
-      feedback.className = 'p-3.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-200 space-y-1 block';
-      feedback.innerHTML = `<div class="font-bold text-white flex items-center gap-1.5"><span>⚠️</span> 付款未完成</div>
-        <div class="text-[11px]">${esc(msg)}</div>`;
+      setFeedback('danger', `<div style="font-weight: 600;">付款未完成</div><div class="ad-caption" style="color: inherit;">${esc(msg)}</div>`);
       btn.disabled = false;
       btnText.innerText = '重新付款';
     };
@@ -526,7 +531,7 @@ const AgriDocs = (function () {
       if (data.status === 'PENDING' && data.next) {
         if (data.next.actionUrl) {
           // 綠界 ECPay：以 POST 表單導向綠界付款頁，付款結果由後端 /api/payments/ecpay/notify 接收
-          btnText.innerText = '正在前往綠界付款頁...';
+          btnText.innerText = '前往綠界付款頁…';
           const form = document.createElement('form');
           form.method = data.next.method || 'POST';
           form.action = data.next.actionUrl;
@@ -550,19 +555,13 @@ const AgriDocs = (function () {
         }
       }
 
-      feedback.className = 'p-3.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 space-y-1 block';
-      feedback.innerHTML = `
-        <div class="font-bold text-white flex items-center gap-1.5">
-          <span>✅</span> ${data.alreadyPaid ? '此訂單定金已付清' : '付款成功！'}（交易序號：${esc(data.transactionId)}）
-        </div>
-        <div class="text-[11px] text-slate-300">
-          授權碼：<span class="font-mono text-emerald-400 font-bold">${esc(data.authCode || '—')}</span> ╳ 電子發票號碼：<span class="font-mono text-emerald-400 font-bold">${esc(data.invoiceNo || '—')}</span>
-        </div>
-        ${data.provider === 'mock' ? '<div class="text-[10px] text-amber-300">展示模式模擬金流，未實際扣款。</div>' : ''}
-      `;
+      setFeedback('ok', `
+        <div style="font-weight: 600;">${data.alreadyPaid ? '此訂單定金已付清' : '付款成功'}（交易序號 ${esc(data.transactionId)}）</div>
+        <div class="ad-caption" style="color: inherit;">授權碼 <span class="ad-num">${esc(data.authCode || '—')}</span>・電子發票 <span class="ad-num">${esc(data.invoiceNo || '—')}</span></div>
+        ${data.provider === 'mock' ? '<div class="ad-caption" style="color: inherit;">展示模式模擬金流，未實際扣款。</div>' : ''}
+      `);
 
-      btn.className = 'px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold';
-      btnText.innerText = '已完成扣款！';
+      btnText.innerText = '已完成扣款';
 
       setTimeout(() => {
         const modal = document.getElementById('agriCheckoutModal');
@@ -583,15 +582,11 @@ const AgriDocs = (function () {
       }
       // 本地展示備援（僅 demo 模式、後端離線時）
       console.warn('Backend unavailable, simulating checkout locally', e);
-      feedback.className = 'p-3.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 space-y-1 block';
-      feedback.innerHTML = `
-        <div class="font-bold text-white flex items-center gap-1.5">
-          <span>✅</span> 付款成功！(離線展示交易序號: TXN-20260923-99120)
-        </div>
-        <div class="text-[11px] text-slate-300">
-          授權核銷碼：<span class="font-mono text-emerald-400 font-bold">AUTH-882103</span> ╳ 發票號碼：<span class="font-mono text-emerald-400 font-bold">AG-98765432</span>
-        </div>
-      `;
+      setFeedback('ok', `
+        <div style="font-weight: 600;">付款成功（離線展示交易序號 TXN-20260923-99120）</div>
+        <div class="ad-caption" style="color: inherit;">授權核銷碼 <span class="ad-num">AUTH-882103</span>・發票號碼 <span class="ad-num">AG-98765432</span></div>
+      `);
+      btnText.innerText = '已完成扣款';
       setTimeout(() => {
         const modal = document.getElementById('agriCheckoutModal');
         if (modal) modal.remove();
@@ -653,6 +648,8 @@ const AgriDocs = (function () {
   // 5. 跨平台推播通知發送器 (Android 原生 Notification / Web Notification / 浮動 Toast)
   function notify(title, message, options = {}) {
     const channel = options.channel || 'dispatch';
+    title = stripEmoji(title);
+    message = stripEmoji(message);
 
     // A. 原生 Android 容器
     if (window.AgriNativeBridge) {
@@ -681,41 +678,38 @@ const AgriDocs = (function () {
       });
     }
 
-    // C. 現代化浮動通知 (Toast Banner)
+    // C. 浮動通知（靜止、不閃、不跳；警示以紅色邊線標示）
+    ensureStyles();
     const toastContainerId = 'agriFloatingNotificationContainer';
     let container = document.getElementById(toastContainerId);
     if (!container) {
       container = document.createElement('div');
       container.id = toastContainerId;
-      container.className = 'fixed top-5 right-5 z-[99999] flex flex-col gap-2.5 max-w-sm pointer-events-none';
+      container.className = 'ad-toast-stack';
+      container.setAttribute('aria-live', 'polite');
       document.body.appendChild(container);
     }
 
     const toast = document.createElement('div');
     const isAlert = channel === 'weather' || options.isAlert;
-    toast.className = `p-4 rounded-2xl shadow-2xl border transition-all duration-300 pointer-events-auto flex items-start gap-3 backdrop-blur-md transform translate-y-[-10px] opacity-0 ${
-      isAlert ? 'bg-red-950/95 border-red-500/50 text-red-200' : 'bg-slate-900/95 border-emerald-500/50 text-slate-100'
-    }`;
-    const escFn = (window.AgriUtil && window.AgriUtil.escapeHtml) || ((s) => String(s == null ? '' : s));
+    toast.className = 'ad-toast-item' + (isAlert ? ' ad-toast-item--alert' : '');
+    toast.setAttribute('role', isAlert ? 'alert' : 'status');
     toast.innerHTML = `
-      <div class="text-xl shrink-0">${isAlert ? '🚨' : '🌱'}</div>
-      <div class="flex-1 min-w-0">
-        <div class="font-black text-sm text-white">${escFn(title)}</div>
-        <div class="text-xs text-slate-300 mt-0.5 leading-snug">${escFn(message)}</div>
+      <div class="ad-toast-item__body">
+        <div class="ad-toast-item__title">${escHtml(title)}</div>
+        <div class="ad-toast-item__msg">${escHtml(message)}</div>
       </div>
-      <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white text-xs p-1">✕</button>
+      <button type="button" class="ad-btn ad-btn--ghost ad-btn--icon ad-btn--sm" aria-label="關閉">×</button>
     `;
+    const remove = () => {
+      toast.classList.remove('is-in');
+      toast.classList.add('is-out');
+      setTimeout(() => toast.remove(), 250);
+    };
+    toast.querySelector('button').addEventListener('click', remove);
     container.appendChild(toast);
-
-    requestAnimationFrame(() => {
-      toast.classList.remove('translate-y-[-10px]', 'opacity-0');
-      toast.classList.add('translate-y-0', 'opacity-100');
-    });
-
-    setTimeout(() => {
-      toast.classList.add('opacity-0', 'translate-x-full');
-      setTimeout(() => toast.remove(), 400);
-    }, options.duration || 4500);
+    requestAnimationFrame(() => toast.classList.add('is-in'));
+    setTimeout(remove, options.duration || 4500);
   }
 
   // 6. 出勤打卡（真實 API：/api/attendance/clock-in、/clock-out；離線或舊後端時走示範回應）
@@ -745,7 +739,7 @@ const AgriDocs = (function () {
       const data = await res.json().catch(() => null);
       if (res.ok && data && data.success) {
         if (!options.silent) notify(
-          isClockIn ? '🟢 上班打卡成功' : '🔴 下班打卡成功',
+          isClockIn ? '上班打卡成功' : '下班打卡成功',
           `時間：${nowStr}${data.data && data.data.workHours ? `　今日工時：${data.data.workHours} 小時` : ''}`,
           { channel: 'attendance' }
         );
@@ -753,20 +747,20 @@ const AgriDocs = (function () {
       }
       // 後端明確拒絕（例如 409 重複上班打卡、尚未上班即下班）：如實告知，不假裝成功
       const reason = (data && (data.error || data.message)) || `HTTP ${res.status}`;
-      notify(isClockIn ? '⚠️ 上班打卡未完成' : '⚠️ 下班打卡未完成', reason, { channel: 'attendance' });
+      notify(isClockIn ? '上班打卡未完成' : '下班打卡未完成', reason, { channel: 'attendance' });
       return { success: false, status: res.status, error: reason };
     }
 
     const isDemo = !window.AGRI_CONFIG || window.AGRI_CONFIG.mode !== 'production';
     if (!isDemo) {
-      notify('⚠️ 打卡失敗', '無法連線伺服器，請稍後再試或聯繫帶班組長。', { channel: 'attendance' });
+      notify('打卡失敗', '無法連線伺服器，請稍後再試或聯繫帶班組長。', { channel: 'attendance' });
       return { success: false, offline: true };
     }
 
     const offlineDetail = isClockIn
       ? `時間：${nowStr}　GPS 定位：${options.locationLabel || '屏東縣枋山鄉 (22.6123°N, 120.6145°E)'}`
       : `時間：${nowStr}　今日工時：${options.demoHours || (Math.floor(Math.random() * 2) + 7)} 小時`;
-    if (!options.silent) notify(isClockIn ? '✅ 上班打卡成功（離線示範）' : '🔴 下班打卡成功（離線示範）', offlineDetail, { channel: 'attendance' });
+    if (!options.silent) notify(isClockIn ? '上班打卡成功（離線示範）' : '下班打卡成功（離線示範）', offlineDetail, { channel: 'attendance' });
     return { success: true, offline: true };
   }
 
@@ -787,20 +781,20 @@ const AgriDocs = (function () {
       if (res.ok) {
         const data = await res.json().catch(() => null);
         if (data && data.success) {
-          notify('🚨 緊急求助已送出', message, { channel: 'emergency', isAlert: true });
+          notify('緊急求助已送出', message, { channel: 'emergency', isAlert: true });
           return data;
         }
       }
     } catch (e) {
       // 後端離線：走以下離線示範回應
     }
-    notify('🚨 緊急求助已送出（離線示範）', message, { channel: 'emergency', isAlert: true });
+    notify('緊急求助已送出（離線示範）', message, { channel: 'emergency', isAlert: true });
     return { success: true, offline: true };
   }
 
   // 8. GPS 定位顯示（純前端展示，無需 API）
   function showGpsLocation(title, message) {
-    notify(title || '📍 GPS 即時定位', message, { channel: 'gps' });
+    notify(title || 'GPS 即時定位', message, { channel: 'gps' });
   }
 
   return {

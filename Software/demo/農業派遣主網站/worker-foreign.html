@@ -83,218 +83,173 @@
         <h1 id="txt-main-title" class="ad-display">今日任務</h1>
         <p id="txt-sub-title" class="ad-caption" style="margin-top: 6px;">薪資與農業部 8,800 就業獎勵清楚透明</p>
       </div>
-      <p class="ad-caption" style="margin: 0;">
+      <p id="status-line" class="ad-caption" style="margin: 0;">
         <span id="txt-status-label">今日出勤狀態</span>：<strong id="txt-status-val" style="color: var(--ad-primary-text);">已派工・專車接送中</strong>
       </p>
     </div>
 
 
-    <!-- TAB 1: 每日任務與上下班打卡系統 -->
+    <!-- TAB 1: 今日任務與打卡 -->
     <div id="tabContentTask" class="space-y-8">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
-        <!-- Left Column (5 cols): Mobile Phone Frame Simulation & Clock In/Out -->
-        <div class="lg:col-span-5 max-w-md mx-auto w-full bg-slate-900 border-4 border-slate-700 rounded-[2.5rem] p-6 shadow-2xl shadow-purple-950/30 space-y-5">
-          <!-- Worker Profile Header -->
-          <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-            <div class="flex items-center gap-3">
-              <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-purple-600 to-amber-400 flex items-center justify-center font-black text-slate-950 text-base shadow">
-                雄
-              </div>
-              <div>
-                <h3 class="font-extrabold text-base text-white">Nguyễn Văn Hùng</h3>
-                <p class="text-xs text-purple-400">智農外展農工 #001 (越南)</p>
+
+        <!-- 左：我的任務與打卡 -->
+        <div class="lg:col-span-5 ad-card" style="padding: 24px; display: flex; flex-direction: column; gap: 20px;">
+          <div class="ad-card__head" style="margin: 0;">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+              <span class="ad-avatar ad-avatar--lg">雄</span>
+              <div style="min-width: 0;">
+                <h3 class="ad-heading">Nguyễn Văn Hùng</h3>
+                <p class="ad-caption">智農外展農工 #001（越南）</p>
               </div>
             </div>
-            <span id="badge-dispatched" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-              已派工
-            </span>
+            <span id="badge-dispatched" class="ad-pill ad-pill--ok">已派工</span>
           </div>
 
-          <!-- Task Card -->
-          <div class="p-5 rounded-2xl bg-slate-800/90 border border-slate-700 space-y-4">
-            <div class="flex items-center justify-between">
-              <span id="txt-card-title" class="text-xs font-bold uppercase tracking-wider text-slate-400">今日派工任務卡</span>
-              <span class="text-xs text-amber-400 font-semibold font-mono">2026-09-23</span>
+          <!-- 打卡 -->
+          <div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px;">
+              <h3 id="txt-punch-title" class="ad-heading" data-i18n="punchTitle">上下班打卡</h3>
+              <span id="punch-status-badge" class="ad-pill ad-pill--warn">待出勤打卡</span>
             </div>
 
-            <div class="space-y-3 text-xs">
-              <div>
-                <span id="lbl-shift-time" class="text-slate-400 block font-medium">出勤時間</span>
-                <strong id="val-shift-time" class="text-white text-sm">06:30 集合上車 / 07:00 ~ 16:00 作業</strong>
-              </div>
-
-              <div>
-                <span id="lbl-van" class="text-slate-400 block font-medium">接送專車</span>
-                <p id="val-van" class="text-emerald-400 font-semibold">智農 1 號專車 (車號: RBF-8899 / 司機: 張大哥)</p>
-              </div>
-
-              <div>
-                <span id="lbl-location" class="text-slate-400 block font-medium">作業地點</span>
-                <p id="val-location" class="text-white font-bold text-sm">屏東縣高樹鄉金牌洋蔥產銷班 第 3 號試驗田</p>
-              </div>
-
-              <div>
-                <span id="lbl-foreman" class="text-slate-400 block font-medium">現場小工頭 (帶隊對口)</span>
-                <p id="val-foreman" class="text-amber-300 font-bold text-sm">林小祥 (0922-888-999)</p>
-              </div>
-
-              <div>
-                <span id="lbl-tasks" class="text-slate-400 block font-medium">主要作業內容</span>
-                <p id="val-tasks" class="text-slate-200">洋蔥剪葉、田間裝袋、搬運堆疊至田埂 (每袋 20kg)</p>
-              </div>
-
-              <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] space-y-1">
-                <strong id="lbl-safety" class="block font-bold">⚠️ 農務安全注意事項：</strong>
-                <p id="val-safety">高溫防暑！每 45 分鐘強制至遮陽棚飲水 300cc，務必穿戴防穿刺防滑鞋。</p>
-              </div>
+            <div class="ad-form-grid ad-form-grid--2" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+              <button type="button" id="btn-clockin" onclick="handleClockIn()" class="ad-btn ad-btn--primary ad-btn--stack">
+                <span id="txt-btn-clockin">上班打卡</span>
+                <span id="time-clockin" class="ad-caption ad-num">未打卡</span>
+              </button>
+              <button type="button" id="btn-clockout" onclick="handleClockOut()" disabled class="ad-btn ad-btn--secondary ad-btn--stack">
+                <span id="txt-btn-clockout">下班打卡</span>
+                <span id="time-clockout" class="ad-caption ad-num">未打卡</span>
+              </button>
             </div>
 
-            <!-- 上下班打卡系統操作面板 (Clock-In & Clock-Out Panel) -->
-            <div class="p-4 rounded-2xl bg-slate-900 border border-slate-700/80 space-y-3">
-              <div class="flex items-center justify-between text-xs">
-                <span class="font-bold text-slate-300 flex items-center gap-1.5">
-                  <span>⏰</span> <span id="txt-punch-title">上下班打卡系統</span>
-                </span>
-                <span id="punch-status-badge" class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                  待出勤打卡
-                </span>
-              </div>
-
-              <div class="grid grid-cols-2 gap-2.5">
-                <!-- 上班打卡按鈕 -->
-                <button id="btn-clockin" onclick="handleClockIn()" class="py-3 px-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md transition transform active:scale-95 flex flex-col items-center justify-center gap-1">
-                  <span class="text-base">🟢</span>
-                  <span id="txt-btn-clockin">上班打卡</span>
-                  <span id="time-clockin" class="text-[10px] text-purple-200 font-mono">未打卡</span>
-                </button>
-
-                <!-- 下班打卡按鈕 -->
-                <button id="btn-clockout" onclick="handleClockOut()" disabled class="py-3 px-2 rounded-xl bg-slate-800 text-slate-500 font-bold text-xs border border-slate-700 transition flex flex-col items-center justify-center gap-1 cursor-not-allowed">
-                  <span class="text-base">🔴</span>
-                  <span id="txt-btn-clockout">下班打卡</span>
-                  <span id="time-clockout" class="text-[10px] text-slate-500 font-mono">未打卡</span>
-                </button>
-              </div>
-
-              <div id="punch-info-box" class="text-[11px] text-slate-400 bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/60 flex items-center justify-between">
-                <span>本日累計工時：<strong id="txt-today-hours" class="text-white font-mono">0.0 小時</strong></span>
-                <span id="txt-foreman-sign" class="text-slate-400">小工頭：待簽核</span>
-              </div>
+            <div id="punch-info-box" class="ad-caption" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px;">
+              <span><span data-i18n="todayHours">本日累計工時</span>：<strong id="txt-today-hours" class="ad-num" style="color: var(--ad-text);">0.0 小時</strong></span>
+              <span id="txt-foreman-sign">小工頭：待簽核</span>
             </div>
           </div>
 
-          <!-- Emergency SOS Button -->
-          <div class="flex items-center gap-2">
-            <a href="tel:119" class="flex-1 py-2.5 rounded-xl bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/30 text-xs font-bold text-center transition flex items-center justify-center gap-1">
-              <span>🚨</span> 緊急救護 119
-            </a>
-            <button onclick="AgriDocs.sendEmergencyAlert('外展移工緊急求助：請雙語舍監立即聯繫，督導電話 0988-777-666', { contact: '0988-777-666' })" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition flex items-center justify-center gap-1 border border-slate-700">
-              <span>📞</span> 雙語舍監熱線
-            </button>
+          <!-- 任務卡 -->
+          <div class="ad-card ad-card--inset" style="display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <span id="txt-card-title" class="ad-label">今日派工任務卡</span>
+              <span class="ad-caption ad-num">2026-09-23</span>
+            </div>
+
+            <div>
+              <span id="lbl-shift-time" class="ad-label">出勤時間</span>
+              <strong id="val-shift-time" class="ad-heading" style="display: block; margin-top: 2px;">06:30 集合上車 / 07:00 ~ 16:00 作業</strong>
+            </div>
+            <div>
+              <span id="lbl-van" class="ad-label">接送專車</span>
+              <p id="val-van" style="margin-top: 2px;">智農 1 號專車 (車號: RBF-8899 / 司機: 張大哥)</p>
+            </div>
+            <div>
+              <span id="lbl-location" class="ad-label">作業地點</span>
+              <p id="val-location" class="ad-heading" style="margin-top: 2px;">屏東縣高樹鄉金牌洋蔥產銷班 第 3 號試驗田</p>
+            </div>
+            <div>
+              <span id="lbl-foreman" class="ad-label">現場小工頭 (帶隊對口)</span>
+              <p id="val-foreman" class="ad-heading" style="margin-top: 2px;">林小祥 (0922-888-999)</p>
+            </div>
+            <div>
+              <span id="lbl-tasks" class="ad-label">主要作業內容</span>
+              <p id="val-tasks" style="margin-top: 2px;">洋蔥剪葉、田間裝袋、搬運堆疊至田埂 (每袋 20kg)</p>
+            </div>
+
+            <div class="ad-notice ad-notice--warn" style="flex-direction: column; gap: 4px;">
+              <strong id="lbl-safety">農務安全注意事項</strong>
+              <p id="val-safety" style="color: inherit;">高溫防暑！每 45 分鐘強制至遮陽棚飲水 300cc，務必穿戴防穿刺防滑鞋。</p>
+            </div>
+          </div>
+
+          <!-- 緊急求助 -->
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="tel:119" class="ad-btn ad-btn--danger" style="flex: 1;"><span data-i18n="sos119">緊急救護 119</span></a>
+            <button type="button" onclick="AgriDocs.sendEmergencyAlert('外展移工緊急求助：請雙語舍監立即聯繫，督導電話 0988-777-666', { contact: '0988-777-666' })" class="ad-btn ad-btn--secondary" style="flex: 1;"><span data-i18n="sosHotline">雙語舍監熱線</span></button>
           </div>
         </div>
 
-        <!-- Right Column (7 cols): Attendance History & Weekly Schedule -->
-        <div class="lg:col-span-7 space-y-6">
-          
-          <!-- Attendance Punch Card Summary -->
-          <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-5">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <!-- 右：出勤紀錄與班表 -->
+        <div class="lg:col-span-7" style="display: flex; flex-direction: column; gap: 24px;">
+
+          <div class="ad-card" style="padding: 24px;">
+            <div class="ad-card__head">
               <div>
-                <h3 id="txt-att-title" class="font-extrabold text-white text-base">本月出勤月曆與打卡紀錄</h3>
-                <p id="txt-att-sub" class="text-xs text-slate-400">GPS 現場打卡 ╳ 8 小時標準工時 ╳ 勞基法超時加班費核算</p>
+                <h3 id="txt-att-title" class="ad-heading">本月出勤與打卡紀錄</h3>
+                <p id="txt-att-sub" class="ad-caption">GPS 現場打卡・8 小時標準工時・依勞基法核算加班費</p>
               </div>
-              <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
-                出勤率 100%
-              </span>
+              <span class="ad-pill ad-pill--ok">出勤率 100%</span>
             </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-              <div class="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700">
-                <span class="text-xs text-slate-400 block">本月出勤天數</span>
-                <span class="text-lg font-bold text-white font-mono">22 天</span>
-              </div>
-              <div class="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700">
-                <span class="text-xs text-slate-400 block">正常作業工時</span>
-                <span class="text-lg font-bold text-purple-400 font-mono">176.0 小時</span>
-              </div>
-              <div class="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700">
-                <span class="text-xs text-slate-400 block">累計加班工時</span>
-                <span class="text-lg font-bold text-amber-400 font-mono">6.5 小時</span>
-              </div>
-              <div class="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700">
-                <span class="text-xs text-slate-400 block">打卡異常記錄</span>
-                <span class="text-lg font-bold text-emerald-400 font-mono">0 次</span>
-              </div>
+            <div class="ad-stat-grid">
+              <div class="ad-stat"><div class="ad-stat__label">本月出勤</div><div class="ad-stat__value">22<small>天</small></div></div>
+              <div class="ad-stat"><div class="ad-stat__label">正常工時</div><div class="ad-stat__value">176.0<small>小時</small></div></div>
+              <div class="ad-stat"><div class="ad-stat__label">累計加班</div><div class="ad-stat__value">6.5<small>小時</small></div></div>
+              <div class="ad-stat ad-stat--primary"><div class="ad-stat__label">打卡異常</div><div class="ad-stat__value">0<small>次</small></div></div>
             </div>
 
-            <!-- Recent Attendance List -->
-            <div class="space-y-2.5 text-xs">
-              <span class="text-xs font-bold text-slate-300 block">近期打卡與小工頭簽核清單</span>
-              
-              <div class="p-3 rounded-xl bg-slate-800/60 border border-slate-700 flex items-center justify-between">
-                <div>
-                  <strong class="text-white block font-mono">2026-09-23 (今日)</strong>
-                  <span class="text-slate-400">屏東高樹洋蔥試驗田・小工頭：林小祥</span>
+            <div style="margin-top: 20px;">
+              <div class="ad-label" style="margin-bottom: 8px;">近期打卡與小工頭簽核</div>
+              <div class="ad-list">
+                <div class="ad-row">
+                  <div class="ad-row__main">
+                    <div class="ad-row__title ad-num">2026-09-23（今日）</div>
+                    <div class="ad-row__meta">屏東高樹洋蔥試驗田・小工頭：林小祥</div>
+                  </div>
+                  <div class="ad-row__aside">
+                    <div id="row-today-status" class="ad-num" style="font-weight: 600; color: var(--ad-accent-text);">06:45 上班打卡（作業中）</div>
+                    <div class="ad-caption">預計 16:00 下班</div>
+                  </div>
                 </div>
-                <div class="text-right">
-                  <span id="row-today-status" class="text-amber-400 font-bold font-mono">06:45 上班打卡 (作業中)</span>
-                  <span class="text-[11px] text-slate-500 block">預計 16:00 下班</span>
+                <div class="ad-row">
+                  <div class="ad-row__main">
+                    <div class="ad-row__title ad-num">2026-09-22（昨日）</div>
+                    <div class="ad-row__meta">屏東枋山愛文芒果園・小工頭：林小龍</div>
+                  </div>
+                  <div class="ad-row__aside">
+                    <div class="ad-num" style="font-weight: 600;">06:50 ~ 16:00（8.0h）</div>
+                    <div class="ad-caption" style="color: var(--ad-primary-text);">林小龍已簽核</div>
+                  </div>
                 </div>
-              </div>
-
-              <div class="p-3 rounded-xl bg-slate-800/60 border border-slate-700 flex items-center justify-between">
-                <div>
-                  <strong class="text-white block font-mono">2026-09-22 (昨日)</strong>
-                  <span class="text-slate-400">屏東枋山愛文芒果園・小工頭：林小龍</span>
-                </div>
-                <div class="text-right">
-                  <span class="text-emerald-400 font-bold font-mono">06:50 ~ 16:00 (8.0h)</span>
-                  <span class="text-[11px] text-emerald-300 block">✓ 林小龍簽核</span>
-                </div>
-              </div>
-
-              <div class="p-3 rounded-xl bg-slate-800/60 border border-slate-700 flex items-center justify-between">
-                <div>
-                  <strong class="text-white block font-mono">2026-09-21</strong>
-                  <span class="text-slate-400">屏東枋山愛文芒果園・小工頭：林小龍</span>
-                </div>
-                <div class="text-right">
-                  <span class="text-purple-300 font-bold font-mono">06:40 ~ 16:10 (8.5h 加班0.5h)</span>
-                  <span class="text-[11px] text-emerald-300 block">✓ 林小龍簽核</span>
+                <div class="ad-row">
+                  <div class="ad-row__main">
+                    <div class="ad-row__title ad-num">2026-09-21</div>
+                    <div class="ad-row__meta">屏東枋山愛文芒果園・小工頭：林小龍</div>
+                  </div>
+                  <div class="ad-row__aside">
+                    <div class="ad-num" style="font-weight: 600;">06:40 ~ 16:10（8.5h・加班 0.5h）</div>
+                    <div class="ad-caption" style="color: var(--ad-primary-text);">林小龍已簽核</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Weekly Transportation & Crop Schedule -->
-          <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
-            <h3 id="txt-schedule-title" class="font-extrabold text-white text-base">本週出勤與接送班表</h3>
-            
-            <div class="space-y-3 text-xs">
-              <div class="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700 flex items-center justify-between">
-                <div class="space-y-0.5">
-                  <span class="font-bold text-white">週一至週三：屏東高樹 洋蔥採收裝袋</span>
-                  <p class="text-slate-400">智農 1 號專車 06:30 宿舍大門發車・對口：林小祥</p>
+          <div class="ad-card" style="padding: 24px;">
+            <h3 id="txt-schedule-title" class="ad-heading" style="margin-bottom: 14px;">本週出勤與接送班表</h3>
+            <div class="ad-list">
+              <div class="ad-row">
+                <div class="ad-row__main">
+                  <div class="ad-row__title" style="white-space: normal;">週一至週三：屏東高樹 洋蔥採收裝袋</div>
+                  <div class="ad-row__meta">智農 1 號專車 06:30 宿舍大門發車・對口：林小祥</div>
                 </div>
-                <span class="px-2 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-400 font-bold">已出勤</span>
+                <span class="ad-pill">已出勤</span>
               </div>
-
-              <div class="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/30 flex items-center justify-between">
-                <div class="space-y-0.5">
-                  <span class="font-bold text-purple-300">週四至週五：屏東枋山 愛文芒果套袋</span>
-                  <p class="text-slate-300">智農 2 號專車 06:30 發車・對口：陳小龍 (0921-999-888)</p>
+              <div class="ad-row" style="border-color: var(--ad-primary); background: var(--ad-primary-soft);">
+                <div class="ad-row__main">
+                  <div class="ad-row__title" style="white-space: normal;">週四至週五：屏東枋山 愛文芒果套袋</div>
+                  <div class="ad-row__meta">智農 2 號專車 06:30 發車・對口：陳小龍 (0921-999-888)</div>
                 </div>
-                <span class="px-2 py-0.5 rounded text-[11px] bg-purple-500/20 text-purple-300 font-bold">今日出勤</span>
+                <span class="ad-pill ad-pill--ok">今日出勤</span>
               </div>
-
-              <div class="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700 flex items-center justify-between">
-                <div class="space-y-0.5">
-                  <span class="font-bold text-white">週六：午後暴雨預報 轉派冷鏈包裝場</span>
-                  <p class="text-slate-400">屏南冷鏈預冷物流庫・室內空調作業免淋雨</p>
+              <div class="ad-row">
+                <div class="ad-row__main">
+                  <div class="ad-row__title" style="white-space: normal;">週六：午後暴雨預報，轉派冷鏈包裝場</div>
+                  <div class="ad-row__meta">屏南冷鏈預冷物流庫・室內空調作業免淋雨</div>
                 </div>
-                <span class="px-2 py-0.5 rounded text-[11px] bg-blue-500/20 text-blue-400 font-bold">避險排班</span>
+                <span class="ad-pill ad-pill--warn">避險排班</span>
               </div>
             </div>
           </div>
@@ -304,184 +259,105 @@
       </div>
     </div>
 
-    <!-- TAB 2: 薪資系統與薪資單明細 (獨立專頁) -->
+    <!-- TAB 2: 薪資與薪資單 -->
     <div id="tabContentPayroll" class="hidden space-y-6">
-      
-      <!-- Payroll Banner & Summary -->
-      <div class="p-6 rounded-3xl bg-slate-900 border border-purple-500/40 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">薪資透明化</span>
-            <h2 id="txt-pay-main-title" class="text-xl sm:text-2xl font-black text-white">外展移工數位薪資系統</h2>
-          </div>
-          <p id="txt-pay-sub-title" class="text-xs sm:text-sm text-slate-400 mt-1">底薪保障 ╳ 農業部 $8,800 就業獎勵 ╳ 加班費透明計發 ╳ 歷月薪資條下載</p>
-        </div>
-        <div class="flex items-center gap-3">
-          <div class="px-4 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-right">
-            <span class="text-xs text-slate-400 block">發薪金融帳戶</span>
-            <span class="text-sm font-bold text-emerald-400 font-mono">合作金庫 (006) ****-5889</span>
-          </div>
-          <button onclick="AgriDocs.downloadPayslip('2026年09月 (預估結算)', 'foreign', { id: 'W001', name: '阮文雄 (Nguyễn Văn Hùng)' })" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs text-white font-bold shadow-lg transition flex items-center gap-1.5">
-            <span>📄</span> 下載本月電子薪資單
-          </button>
-        </div>
+
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
+        <p id="txt-pay-sub-title" class="ad-caption" style="margin: 0;">底薪保障・農業部 $8,800 就業獎勵・加班費透明計發・歷月薪資條下載</p>
+        <button type="button" onclick="AgriDocs.downloadPayslip('2026年09月 (預估結算)', 'foreign', { id: 'W001', name: '阮文雄 (Nguyễn Văn Hùng)' })" class="ad-btn ad-btn--primary">下載本月薪資單</button>
       </div>
 
-      <!-- Current Month Pay Breakdown -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
-        <!-- Left: Breakdown Table (7 cols) -->
-        <div class="lg:col-span-7 bg-slate-900/90 rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-xl space-y-5">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-            <h3 class="font-extrabold text-white text-base flex items-center gap-2">
-              <span>🧾</span> 2026 年 09 月薪資核算明細 (預估結算)
-            </h3>
-            <span class="text-xs text-purple-400 font-mono">預定發放日：2026/10/05</span>
+
+        <!-- 左：薪資明細 -->
+        <div class="lg:col-span-7 ad-card" style="padding: 24px;">
+          <div class="ad-card__head">
+            <h3 class="ad-heading">2026 年 09 月薪資核算明細（預估結算）</h3>
+            <span class="ad-caption ad-num">預定發放日 2026/10/05</span>
           </div>
 
-          <!-- Earnings -->
-          <div class="space-y-3 text-xs">
-            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider block">應發項目 (Earnings)</span>
-            <div class="space-y-2">
-              <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700 flex justify-between items-center">
-                <div>
-                  <strong class="text-white block">外展保障基本底薪</strong>
-                  <span class="text-slate-400">法定最低月薪（全額保障出工）</span>
-                </div>
-                <span class="font-mono text-white font-bold text-sm">NT$ 29,500</span>
-              </div>
-
-              <div class="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 flex justify-between items-center">
-                <div>
-                  <strong class="text-emerald-300 block">農業部外展就業獎勵津貼</strong>
-                  <span class="text-slate-300">中央政府獎勵農事勞動（連續出勤第 3 個月）</span>
-                </div>
-                <span class="font-mono text-emerald-400 font-black text-base">+ NT$ 8,800</span>
-              </div>
-
-              <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700 flex justify-between items-center">
-                <div>
-                  <strong class="text-white block">平日與產季超時加班費</strong>
-                  <span class="text-slate-400">本月累計 6.5 小時 (以 1.34x / 1.67x 計發)</span>
-                </div>
-                <span class="font-mono text-purple-300 font-bold text-sm">+ NT$ 1,650</span>
-              </div>
-
-              <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700 flex justify-between items-center">
-                <div>
-                  <strong class="text-white block">高溫防暑與田間交通補助</strong>
-                  <span class="text-slate-400">合作社全勤防暑補貼</span>
-                </div>
-                <span class="font-mono text-purple-300 font-bold text-sm">+ NT$ 2,400</span>
-              </div>
+          <div class="ad-label" style="margin-bottom: 8px;">應發項目</div>
+          <div class="ad-list">
+            <div class="ad-row">
+              <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal;">外展保障基本底薪</div><div class="ad-row__meta">法定最低月薪（全額保障出工）</div></div>
+              <strong class="ad-num">NT$ 29,500</strong>
             </div>
-
-            <!-- Deductions -->
-            <span class="text-xs font-bold text-red-400 uppercase tracking-wider block pt-3">法定應扣項目 (Deductions)</span>
-            <div class="space-y-2">
-              <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700 flex justify-between items-center">
-                <div>
-                  <strong class="text-white block">勞工保險自付額</strong>
-                  <span class="text-slate-400">保障職災與生育老年給付</span>
-                </div>
-                <span class="font-mono text-red-400 font-bold text-sm">- NT$ 629</span>
-              </div>
-
-              <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700 flex justify-between items-center">
-                <div>
-                  <strong class="text-white block">全民健康保險自付額</strong>
-                  <span class="text-slate-400">在台就醫 100% 健保平權</span>
-                </div>
-                <span class="font-mono text-red-400 font-bold text-sm">- NT$ 444</span>
-              </div>
+            <div class="ad-row" style="border-color: var(--ad-primary); background: var(--ad-primary-soft);">
+              <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal; color: var(--ad-primary-text);">農業部外展就業獎勵津貼</div><div class="ad-row__meta">中央政府獎勵農事勞動（連續出勤第 3 個月）</div></div>
+              <strong class="ad-num" style="color: var(--ad-primary-text);">+ NT$ 8,800</strong>
             </div>
-
-            <!-- Net Pay Summary -->
-            <div class="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 to-amber-600/20 border border-amber-500/30 flex items-center justify-between mt-4">
-              <div>
-                <span class="text-xs text-amber-300 font-bold block">本月實發淨所得 (Net Pay)</span>
-                <span class="text-[11px] text-slate-400">合作金庫帳戶自動轉帳入帳</span>
-              </div>
-              <div class="text-right">
-                <span class="text-2xl font-black text-amber-400 font-mono">NT$ 40,367</span>
-              </div>
+            <div class="ad-row">
+              <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal;">平日與產季超時加班費</div><div class="ad-row__meta">本月累計 6.5 小時（以 1.34x／1.67x 計發）</div></div>
+              <strong class="ad-num">+ NT$ 1,650</strong>
             </div>
+            <div class="ad-row">
+              <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal;">高溫防暑與田間交通補助</div><div class="ad-row__meta">合作社全勤防暑補貼</div></div>
+              <strong class="ad-num">+ NT$ 2,400</strong>
+            </div>
+          </div>
+
+          <div class="ad-label" style="margin: 16px 0 8px;">法定應扣項目</div>
+          <div class="ad-list">
+            <div class="ad-row">
+              <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal;">勞工保險自付額</div><div class="ad-row__meta">保障職災與生育老年給付</div></div>
+              <strong class="ad-num" style="color: var(--ad-danger-text);">- NT$ 629</strong>
+            </div>
+            <div class="ad-row">
+              <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal;">全民健康保險自付額</div><div class="ad-row__meta">在台就醫 100% 健保平權</div></div>
+              <strong class="ad-num" style="color: var(--ad-danger-text);">- NT$ 444</strong>
+            </div>
+          </div>
+
+          <div class="ad-card ad-card--accent" style="margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <div>
+              <div class="ad-heading">本月實發淨所得</div>
+              <div class="ad-caption">合作金庫帳戶自動轉帳入帳（合作金庫 006 ****-5889）</div>
+            </div>
+            <strong class="ad-price ad-price--lg ad-price--accent">NT$ 40,367</strong>
           </div>
         </div>
 
-        <!-- Right: MOA Subsidy Tracking & Historical Slips (5 cols) -->
-        <div class="lg:col-span-5 space-y-6">
-          
-          <!-- MOA 8800 Subsidy Tracker -->
-          <div class="p-6 rounded-3xl bg-slate-900 border border-emerald-500/40 shadow-xl space-y-4">
-            <div class="flex items-center justify-between">
-              <h4 class="font-extrabold text-white text-sm flex items-center gap-1.5">
-                <span>🏛️</span> 農業部 8,800 就業獎勵撥款進度
-              </h4>
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">審核通過</span>
-            </div>
+        <!-- 右：獎勵進度與歷史薪資單 -->
+        <div class="lg:col-span-5" style="display: flex; flex-direction: column; gap: 24px;">
 
-            <div class="space-y-3 text-xs text-slate-300">
-              <div class="flex items-start gap-3">
-                <div class="w-6 h-6 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center font-bold text-xs flex-shrink-0">✓</div>
-                <div>
-                  <strong class="text-white block">1. 合作社出勤申報</strong>
-                  <span class="text-slate-400">本月出勤滿 20 天，符合外展農工獎勵標準。</span>
-                </div>
-              </div>
-              <div class="flex items-start gap-3">
-                <div class="w-6 h-6 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center font-bold text-xs flex-shrink-0">✓</div>
-                <div>
-                  <strong class="text-white block">2. 農業部跨部會審核</strong>
-                  <span class="text-slate-400">核對居留證與聘僱合約，資格符合。</span>
-                </div>
-              </div>
-              <div class="flex items-start gap-3">
-                <div class="w-6 h-6 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs flex-shrink-0">3</div>
-                <div>
-                  <strong class="text-amber-300 block">3. 國庫撥付入個人帳戶</strong>
-                  <span class="text-slate-400">預計 10 月 5 日撥入合作金庫帳戶。</span>
-                </div>
-              </div>
+          <div class="ad-card">
+            <div class="ad-card__head">
+              <h4 class="ad-heading">農業部 8,800 就業獎勵撥款進度</h4>
+              <span class="ad-pill ad-pill--ok">審核通過</span>
             </div>
+            <ol class="ad-steps">
+              <li>
+                <strong class="ad-heading" style="font-size: 15px; display: block;">合作社出勤申報</strong>
+                <span class="ad-caption">本月出勤滿 20 天，符合外展農工獎勵標準。</span>
+              </li>
+              <li>
+                <strong class="ad-heading" style="font-size: 15px; display: block;">農業部跨部會審核</strong>
+                <span class="ad-caption">核對居留證與聘僱合約，資格符合。</span>
+              </li>
+              <li>
+                <strong class="ad-heading" style="font-size: 15px; display: block; color: var(--ad-accent-text);">國庫撥付入個人帳戶</strong>
+                <span class="ad-caption">預計 10 月 5 日撥入合作金庫帳戶。</span>
+              </li>
+            </ol>
           </div>
 
-          <!-- Historical Paystubs -->
-          <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
-            <div class="flex items-center justify-between">
-              <h4 class="font-extrabold text-white text-sm">歷史薪資單下載</h4>
-              <span class="text-xs text-slate-400">近 3 個月記錄</span>
+          <div class="ad-card">
+            <div class="ad-card__head">
+              <h4 class="ad-heading">歷史薪資單</h4>
+              <span class="ad-caption">近 3 個月</span>
             </div>
-
-            <div class="space-y-2.5 text-xs">
-              <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-between">
-                <div>
-                  <strong class="text-white block font-mono">2026 年 08 月</strong>
-                  <span class="text-slate-400">實領：NT$ 40,250 (已入帳)</span>
-                </div>
-                <button onclick="AgriDocs.downloadPayslip('2026年08月', 'foreign', { id: 'W001', name: '阮文雄 (Nguyễn Văn Hùng)' })" class="px-2.5 py-1 rounded bg-purple-600/30 text-purple-300 hover:bg-purple-600/50 border border-purple-500/40 font-bold transition">
-                  📄 下載 PDF
-                </button>
+            <div class="ad-list">
+              <div class="ad-row">
+                <div class="ad-row__main"><div class="ad-row__title ad-num">2026 年 08 月</div><div class="ad-row__meta">實領 NT$ 40,250（已入帳）</div></div>
+                <button type="button" onclick="AgriDocs.downloadPayslip('2026年08月', 'foreign', { id: 'W001', name: '阮文雄 (Nguyễn Văn Hùng)' })" class="ad-btn ad-btn--secondary ad-btn--sm">下載 PDF</button>
               </div>
-
-              <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-between">
-                <div>
-                  <strong class="text-white block font-mono">2026 年 07 月</strong>
-                  <span class="text-slate-400">實領：NT$ 39,800 (已入帳)</span>
-                </div>
-                <button onclick="AgriDocs.downloadPayslip('2026年07月', 'foreign', { id: 'W001', name: '阮文雄 (Nguyễn Văn Hùng)' })" class="px-2.5 py-1 rounded bg-purple-600/30 text-purple-300 hover:bg-purple-600/50 border border-purple-500/40 font-bold transition">
-                  📄 下載 PDF
-                </button>
+              <div class="ad-row">
+                <div class="ad-row__main"><div class="ad-row__title ad-num">2026 年 07 月</div><div class="ad-row__meta">實領 NT$ 39,800（已入帳）</div></div>
+                <button type="button" onclick="AgriDocs.downloadPayslip('2026年07月', 'foreign', { id: 'W001', name: '阮文雄 (Nguyễn Văn Hùng)' })" class="ad-btn ad-btn--secondary ad-btn--sm">下載 PDF</button>
               </div>
-
-              <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-between">
-                <div>
-                  <strong class="text-white block font-mono">2026 年 06 月</strong>
-                  <span class="text-slate-400">實領：NT$ 41,100 (已入帳)</span>
-                </div>
-                <button onclick="AgriDocs.downloadPayslip('2026年06月', 'foreign', { id: 'W001', name: '阮文雄 (Nguyễn Văn Hùng)' })" class="px-2.5 py-1 rounded bg-purple-600/30 text-purple-300 hover:bg-purple-600/50 border border-purple-500/40 font-bold transition">
-                  📄 下載 PDF
-                </button>
+              <div class="ad-row">
+                <div class="ad-row__main"><div class="ad-row__title ad-num">2026 年 06 月</div><div class="ad-row__meta">實領 NT$ 41,100（已入帳）</div></div>
+                <button type="button" onclick="AgriDocs.downloadPayslip('2026年06月', 'foreign', { id: 'W001', name: '阮文雄 (Nguyễn Văn Hùng)' })" class="ad-btn ad-btn--secondary ad-btn--sm">下載 PDF</button>
               </div>
             </div>
           </div>
@@ -509,7 +385,25 @@
         navTask: "今日任務",
         navPayroll: "薪資",
         navSkills: "技能進度",
+        punchTitle: "上下班打卡",
+        btnClockout: "下班打卡",
+        notPunched: "未打卡",
+        badgeIdle: "待出勤打卡",
+        badgeWorking: "作業中（{t} 上班）",
+        badgeDone: "已下班（工時 {h}）",
+        todayHours: "本日累計工時",
+        hoursIdle: "0.0 小時",
+        hoursDone: "8.5 小時（正常 8h＋加班 0.5h）",
+        signPending: "小工頭：待簽核",
+        signDone: "小工頭：林小祥（已簽核）",
+        sos119: "緊急救護 119",
+        sosHotline: "雙語舍監熱線",
+        okIn: "上班打卡成功",
+        okOut: "下班打卡成功",
+        msgIn: "時間 {t}，已通知小工頭與調度。",
+        msgOut: "時間 {t}，今日工時 8.5h（含加班 0.5h），已記入本月薪酬。",
         mainTitle: "今日任務",
+        payTitle: "薪資",
         subTitle: "薪資與農業部 8,800 就業獎勵清楚透明",
         statusLabel: "今日出勤狀態",
         statusVal: "已派工・專車接送中",
@@ -523,9 +417,9 @@
         foreman: "現場小工頭 (帶隊對口)",
         tasks: "主要作業內容",
         valTasks: "洋蔥剪葉、田間裝袋、搬運堆疊至田埂 (每袋 20kg)",
-        safety: "⚠️ 農務安全注意事項：",
+        safety: "農務安全注意事項",
         valSafety: "高溫防暑！每 45 分鐘強制至遮陽棚飲水 300cc，務必穿戴防穿刺防滑鞋。",
-        btnClockin: "GPS 抵達現場數位打卡",
+        btnClockin: "上班打卡",
         salaryTitle: "本月累計所得與政府就業獎勵",
         basePay: "外展保障基本底薪",
         bonusAgri: "農業部外展就業獎勵津貼",
@@ -537,7 +431,25 @@
         navTask: "Nhiệm vụ",
         navPayroll: "Lương",
         navSkills: "Kỹ năng",
+        punchTitle: "Chấm công vào/ra",
+        btnClockout: "Chấm công ra",
+        notPunched: "Chưa chấm",
+        badgeIdle: "Chờ chấm công",
+        badgeWorking: "Đang làm việc (vào lúc {t})",
+        badgeDone: "Đã tan ca (làm {h})",
+        todayHours: "Giờ làm hôm nay",
+        hoursIdle: "0,0 giờ",
+        hoursDone: "8,5 giờ (thường 8h + tăng ca 0,5h)",
+        signPending: "Đội trưởng: chờ xác nhận",
+        signDone: "Đội trưởng: 林小祥 (đã xác nhận)",
+        sos119: "Cấp cứu 119",
+        sosHotline: "Đường dây quản lý ký túc xá",
+        okIn: "Chấm công vào thành công",
+        okOut: "Chấm công ra thành công",
+        msgIn: "Giờ {t}. Đã báo cho đội trưởng.",
+        msgOut: "Giờ {t}. Hôm nay làm 8,5h (tăng ca 0,5h), đã tính vào lương tháng này.",
         mainTitle: "Nhiệm vụ hôm nay",
+        payTitle: "Lương",
         subTitle: "Lương và thưởng 8.800 NTD minh bạch",
         statusLabel: "Trạng thái hôm nay",
         statusVal: "Đã phân công・Xe đưa đón",
@@ -551,9 +463,9 @@
         foreman: "Đội trưởng tại hiện trường",
         tasks: "Nội dung công việc chính",
         valTasks: "Cắt lá hành, đóng bao tại ruộng, bốc xếp lên bờ (20kg/bao)",
-        safety: "⚠️ Chú ý an toàn nông nghiệp:",
+        safety: "Chú ý an toàn nông nghiệp",
         valSafety: "Phòng chống say nắng! Cứ 45 phút uống 300cc nước. Phải đi ủng bảo hộ chống trượt.",
-        btnClockin: "Điểm danh kỹ thuật số GPS tại hiện trường",
+        btnClockin: "Chấm công vào",
         salaryTitle: "Thu Nhập Tích Lũy & Trợ Cấp Chính Phủ Tháng Này",
         basePay: "Lương cơ bản bảo đảm",
         bonusAgri: "Trợ cấp khuyến khích việc làm Bộ Nông Nghiệp",
@@ -565,7 +477,25 @@
         navTask: "Tugas",
         navPayroll: "Gaji",
         navSkills: "Keterampilan",
+        punchTitle: "Absen masuk/pulang",
+        btnClockout: "Absen pulang",
+        notPunched: "Belum absen",
+        badgeIdle: "Menunggu absen",
+        badgeWorking: "Sedang bekerja (masuk {t})",
+        badgeDone: "Selesai (jam kerja {h})",
+        todayHours: "Jam kerja hari ini",
+        hoursIdle: "0,0 jam",
+        hoursDone: "8,5 jam (normal 8j + lembur 0,5j)",
+        signPending: "Mandor: menunggu persetujuan",
+        signDone: "Mandor: 林小祥 (disetujui)",
+        sos119: "Darurat medis 119",
+        sosHotline: "Hotline pengawas asrama",
+        okIn: "Absen masuk berhasil",
+        okOut: "Absen pulang berhasil",
+        msgIn: "Waktu {t}. Mandor sudah diberi tahu.",
+        msgOut: "Waktu {t}. Jam kerja hari ini 8,5j (lembur 0,5j), sudah masuk gaji bulan ini.",
         mainTitle: "Tugas hari ini",
+        payTitle: "Gaji",
         subTitle: "Gaji & subsidi NT$ 8.800 transparan",
         statusLabel: "Status Hari Ini",
         statusVal: "Ditugaskan・Mobil jemputan",
@@ -579,9 +509,9 @@
         foreman: "Mandor Lapangan",
         tasks: "Tugas Utama",
         valTasks: "Potong daun bawang, bungkus karung, angkut ke pematang (20kg/karung)",
-        safety: "⚠️ Peringatan Keselamatan:",
+        safety: "Peringatan Keselamatan",
         valSafety: "Cegah sengatan panas! Minum 300cc air tiap 45 menit. Wajib pakai sepatu bot anti selip.",
-        btnClockin: "Absensi Digital GPS di Lokasi",
+        btnClockin: "Absen masuk",
         salaryTitle: "Pendapatan Akumulasi & Subsidi Pemerintah Bulan Ini",
         basePay: "Gaji Pokok Terjamin",
         bonusAgri: "Subsidi Insentif Kerja Kementerian Pertanian",
@@ -598,13 +528,20 @@
       cardTitle: 'txt-card-title', shiftTime: 'lbl-shift-time', valShift: 'val-shift-time',
       van: 'lbl-van', valVan: 'val-van', location: 'lbl-location', valLoc: 'val-location',
       foreman: 'lbl-foreman', tasks: 'lbl-tasks', valTasks: 'val-tasks',
-      safety: 'lbl-safety', valSafety: 'val-safety', btnClockin: 'txt-btn-clockin',
+      safety: 'lbl-safety', valSafety: 'val-safety',
       salaryTitle: 'txt-salary-title', basePay: 'lbl-base-pay', bonusAgri: 'lbl-bonus-agri',
       transportSub: 'lbl-transport-sub', totalEst: 'lbl-total-est', scheduleTitle: 'txt-schedule-title'
     };
 
+    let currentLang = 'zh';
+    const tr = (key) => {
+      const cur = translations[currentLang];
+      return (cur && cur[key] !== undefined) ? cur[key] : translations.zh[key];
+    };
+
     function setLang(lang) {
       const t = translations[lang] || translations.zh;
+      currentLang = translations[lang] ? lang : 'zh';
       ['zh', 'vi', 'id'].forEach(k => {
         const btn = document.getElementById('lang-' + k);
         if (btn) btn.classList.toggle('is-active', k === lang);
@@ -620,11 +557,24 @@
         const v = t[el.dataset.i18n];
         if (v !== undefined) el.textContent = v;
       });
+      updateTitle();
+      renderPunchUI();
+    }
+
+    // 標題隨頁籤切換：任務頁籤顯示「今日任務」，薪資頁籤顯示「薪資」（並隱藏今日出勤狀態）
+    let currentTab = 'task';
+    function updateTitle() {
+      const h1 = document.getElementById('txt-main-title');
+      if (h1) h1.textContent = currentTab === 'payroll' ? tr('payTitle') : tr('mainTitle');
+      const status = document.getElementById('status-line');
+      if (status) status.hidden = (currentTab === 'payroll');
     }
 
     // 頁籤切換：桌機導覽與手機 tabbar 上所有 [data-tab] 一起更新
     function switchWorkerTab(tab) {
       const isTask = (tab === 'task');
+      currentTab = isTask ? 'task' : 'payroll';
+      updateTitle();
       const tabTask = document.getElementById('tabContentTask');
       const tabPayroll = document.getElementById('tabContentPayroll');
       if (tabTask) tabTask.classList.toggle('hidden', !isTask);
@@ -639,9 +589,63 @@
       ? `${window.location.origin}/api`
       : 'http://localhost:3000/api';
 
+    // 打卡狀態：idle（尚未上班）→ working（作業中）→ done（已下班）。畫面一律由 renderPunchUI 依狀態與語言重畫。
+    let punchState = 'working';          // demo 預設已於 06:45 上班，可直接體驗下班打卡
     let clockInTime = '06:45:10';
-    let isClockedIn = true;
-    let isClockedOut = false;
+    let clockOutTime = '';
+
+    function nowTimeStr() {
+      const now = new Date();
+      return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    }
+
+    function renderPunchUI() {
+      const $ = (id) => document.getElementById(id);
+      const btnIn = $('btn-clockin'), btnOut = $('btn-clockout');
+      if (!btnIn || !btnOut) return;
+      const inDone = punchState !== 'idle';
+      const outDone = punchState === 'done';
+
+      $('txt-btn-clockin').textContent = tr('btnClockin');
+      $('txt-btn-clockout').textContent = tr('btnClockout');
+      $('time-clockin').textContent = inDone ? clockInTime : tr('notPunched');
+      $('time-clockout').textContent = outDone ? clockOutTime : tr('notPunched');
+
+      // 同一時間只有一顆主要按鈕：還沒上班→上班打卡；作業中→下班打卡；收工後都不能按
+      btnIn.disabled = inDone;
+      btnIn.className = 'ad-btn ad-btn--stack ' + (inDone ? 'is-done' : 'ad-btn--primary');
+      btnOut.disabled = !inDone || outDone;
+      btnOut.className = 'ad-btn ad-btn--stack ' + (outDone ? 'is-done' : (inDone ? 'ad-btn--primary' : 'ad-btn--secondary'));
+
+      const badge = $('punch-status-badge');
+      if (badge) {
+        const hhmm = clockInTime.slice(0, 5);
+        if (punchState === 'idle') { badge.className = 'ad-pill ad-pill--warn'; badge.textContent = tr('badgeIdle'); }
+        else if (punchState === 'working') { badge.className = 'ad-pill ad-pill--ok'; badge.textContent = tr('badgeWorking').replace('{t}', hhmm); }
+        else { badge.className = 'ad-pill'; badge.textContent = tr('badgeDone').replace('{h}', '8.5h'); }
+      }
+
+      const hours = $('txt-today-hours');
+      if (hours) hours.textContent = outDone ? tr('hoursDone') : tr('hoursIdle');
+      const sign = $('txt-foreman-sign');
+      if (sign) {
+        sign.textContent = outDone ? tr('signDone') : tr('signPending');
+        sign.style.color = outDone ? 'var(--ad-primary-text)' : '';
+        sign.style.fontWeight = outDone ? '600' : '';
+      }
+
+      // 近期紀錄的今日列（內容為中文資料列，維持原文）
+      const row = $('row-today-status');
+      if (row) {
+        if (outDone) {
+          row.textContent = `${clockInTime.slice(0, 5)} ~ ${clockOutTime.slice(0, 5)}（8.5h・加班 0.5h）`;
+          row.style.color = 'var(--ad-primary-text)';
+        } else if (inDone) {
+          row.textContent = `${clockInTime.slice(0, 5)} 上班打卡（作業中）`;
+          row.style.color = 'var(--ad-accent-text)';
+        }
+      }
+    }
 
     async function handleClockIn() {
       // 先向後端打卡，成功才更新畫面；後端拒絕（如重複打卡）時由 clockAction 顯示原因
@@ -650,79 +654,27 @@
         : { success: true };
       if (!punch.success) return;
 
-      const now = new Date();
-      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-      clockInTime = timeStr;
-      isClockedIn = true;
-
-      const btnIn = document.getElementById('btn-clockin');
-      const btnOut = document.getElementById('btn-clockout');
-      const badge = document.getElementById('punch-status-badge');
-      const timeInLabel = document.getElementById('time-clockin');
-
-      if (btnIn) {
-        btnIn.disabled = true;
-        btnIn.className = "py-3 px-2 rounded-xl bg-emerald-600/40 text-emerald-300 font-bold text-xs border border-emerald-500/40 flex flex-col items-center justify-center gap-1 cursor-default";
-      }
-      if (timeInLabel) timeInLabel.innerText = timeStr;
-
-      if (btnOut) {
-        btnOut.disabled = false;
-        btnOut.className = "py-3 px-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-xs shadow-md transition transform active:scale-95 flex flex-col items-center justify-center gap-1 cursor-pointer";
-      }
-
-      if (badge) {
-        badge.className = "px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-        badge.innerText = `🟢 作業中 (${timeStr} 上班)`;
-      }
-
-      const rowStatus = document.getElementById('row-today-status');
-      if (rowStatus) rowStatus.innerText = `${timeStr} 上班打卡 (作業中)`;
+      clockInTime = nowTimeStr();
+      punchState = 'working';
+      renderPunchUI();
 
       if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
-        window.AgriDocs.notify('📍 上班打卡成功', `時間: ${timeStr} ｜ GPS: 屏東高樹試驗田 (22.8214, 120.5982)。已同步調度大腦與現場小工頭。`, { channel: 'attendance' });
+        window.AgriDocs.notify(tr('okIn'), tr('msgIn').replace('{t}', clockInTime), { channel: 'attendance' });
       }
     }
 
     async function handleClockOut() {
-      // 先向後端打卡，成功才更新畫面；後端拒絕（如重複打卡）時由 clockAction 顯示原因
       const punch = window.AgriDocs
         ? await AgriDocs.clockAction('clock-out', { workerId: 'W001', locationLabel: '屏東縣高樹鄉金牌洋蔥試驗田', silent: true })
         : { success: true };
       if (!punch.success) return;
 
-      const now = new Date();
-      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-      isClockedOut = true;
-
-      const btnOut = document.getElementById('btn-clockout');
-      const badge = document.getElementById('punch-status-badge');
-      const timeOutLabel = document.getElementById('time-clockout');
-      const hoursText = document.getElementById('txt-today-hours');
-      const signText = document.getElementById('txt-foreman-sign');
-      const rowStatus = document.getElementById('row-today-status');
-
-      if (btnOut) {
-        btnOut.disabled = true;
-        btnOut.className = "py-3 px-2 rounded-xl bg-slate-800 text-slate-400 font-bold text-xs border border-slate-700 flex flex-col items-center justify-center gap-1 cursor-default";
-      }
-      if (timeOutLabel) timeOutLabel.innerText = timeStr;
-
-      if (badge) {
-        badge.className = "px-2 py-0.5 rounded text-[11px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30";
-        badge.innerText = "🔵 已完工下班 (工時 8.5h)";
-      }
-
-      if (hoursText) hoursText.innerText = "8.5 小時 (正常 8h + 加班 0.5h)";
-      if (signText) signText.innerHTML = "<span class='text-emerald-400 font-bold'>小工頭：林小祥 (✓已簽核)</span>";
-
-      if (rowStatus) {
-        rowStatus.className = "text-emerald-400 font-bold font-mono";
-        rowStatus.innerText = `${clockInTime} ~ ${timeStr} (8.5h 加班0.5h)`;
-      }
+      clockOutTime = nowTimeStr();
+      punchState = 'done';
+      renderPunchUI();
 
       if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
-        window.AgriDocs.notify('🏁 下班打卡成功', `時間: ${timeStr} ｜ 今日工時 8.5h (含 0.5h 加班費)。小工頭林小祥已數位簽核，已記入本月薪酬！`, { channel: 'attendance' });
+        window.AgriDocs.notify(tr('okOut'), tr('msgOut').replace('{t}', clockOutTime), { channel: 'attendance' });
       }
     }
 
@@ -734,37 +686,16 @@
         if (result.success && result.data && result.data.length > 0) {
           const latest = result.data[0];
           if (latest.status === 'working') {
-            const inTimeStr = latest.clockInTime ? latest.clockInTime.split('T')[1].substring(0, 5) : '06:45';
-            const timeInLabel = document.getElementById('time-clockin');
-            const badge = document.getElementById('punch-status-badge');
-            if (timeInLabel) timeInLabel.innerText = inTimeStr;
-            if (badge) badge.innerText = `🟢 作業中 (${inTimeStr} 上班)`;
+            clockInTime = latest.clockInTime ? latest.clockInTime.split('T')[1].substring(0, 8) : clockInTime;
+            punchState = 'working';
+            renderPunchUI();
           }
         }
       } catch (e) {}
     }
 
-    // 初始化打卡狀態（預設已於早上 06:45 上班打卡，可直接體驗下班打卡）
     document.addEventListener('DOMContentLoaded', () => {
-      const btnIn = document.getElementById('btn-clockin');
-      const btnOut = document.getElementById('btn-clockout');
-      const timeInLabel = document.getElementById('time-clockin');
-      const badge = document.getElementById('punch-status-badge');
-
-      if (btnIn) {
-        btnIn.disabled = true;
-        btnIn.className = "py-3 px-2 rounded-xl bg-emerald-600/40 text-emerald-300 font-bold text-xs border border-emerald-500/40 flex flex-col items-center justify-center gap-1 cursor-default";
-      }
-      if (timeInLabel) timeInLabel.innerText = "06:45:10";
-      if (badge) {
-        badge.className = "px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-        badge.innerText = "🟢 作業中 (06:45 上班)";
-      }
-      if (btnOut) {
-        btnOut.disabled = false;
-        btnOut.className = "py-3 px-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-xs shadow-md transition transform active:scale-95 flex flex-col items-center justify-center gap-1 cursor-pointer";
-      }
-
+      renderPunchUI();
       loadAttendanceHistory('W001');
     });
   </script>

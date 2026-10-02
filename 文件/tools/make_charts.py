@@ -3,7 +3,7 @@
 
 數字來源：02_財務模型與政府補助/03_財務計畫報表2_…（F2 v2.4 財務定版）。
 F2 數字變動時，更新下方 DATA 後重新執行：
-    python tools/make_charts.py [圖名 ...]   # 不帶參數則全部重產
+    python 文件/tools/make_charts.py [圖名 ...]   # 不帶參數則全部重產
 輸出：02_財務模型與政府補助/charts/*.svg、*.png
 配色：dataviz 參考色盤淺色模式前 3 槽（已以 validate_palette 驗證）；
 aqua 對白底對比 < 3:1，故每張圖都有數值標籤，文件中亦保留數據表。

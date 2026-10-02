@@ -19,7 +19,8 @@ import java.util.Map;
  *   event        follow／unfollow（不帶時依 text／postback 判斷）
  *   as           示範身分：farmer、local、foreman、machinery、machinery_leader、vn、id、th、unbound（見 IdentityStore.preset）
  *   lineLanguage 模擬 follow 時的 LINE 介面語言（例 vi）
- *   multi        true 時回傳 {"channel":..,"messages":[..]}；否則只回第一則訊息物件（相容舊版模擬器）
+ *   multi        true 時回傳 {"channel":..,"messages":[..],"menuKey":..}；否則只回第一則訊息物件（相容舊版模擬器）
+ *   event=menu   不送訊息，只回目前身分的圖文選單代碼（網頁模擬器載入選單用）
  */
 public class MockChatHandler implements HttpHandler {
 
@@ -64,6 +65,11 @@ public class MockChatHandler implements HttpHandler {
         }
 
         String eventName = str(f.get("event"), "");
+        if ("menu".equalsIgnoreCase(eventName)) {
+            HttpUtils.sendJson(exchange, 200, "{\"channel\":\"" + channel.key + "\",\"messages\":[],\"menuKey\":\""
+                    + RichMenus.menuKeyFor(channel, IdentityStore.get(channel, userId)) + "\"}");
+            return;
+        }
         BotEvent ev;
         if ("follow".equalsIgnoreCase(eventName)) {
             ev = BotEvent.follow(channel, userId, str(f.get("lineLanguage"), null));
@@ -78,7 +84,8 @@ public class MockChatHandler implements HttpHandler {
         List<String> replies = LineBotDispatcher.handle(ev);
         boolean multi = Boolean.TRUE.equals(f.get("multi")) || "true".equals(String.valueOf(f.get("multi")));
         if (multi || replies.isEmpty()) {
-            HttpUtils.sendJson(exchange, 200, "{\"channel\":\"" + channel.key + "\",\"messages\":[" + String.join(",", replies) + "]}");
+            HttpUtils.sendJson(exchange, 200, "{\"channel\":\"" + channel.key + "\",\"messages\":[" + String.join(",", replies)
+                    + "],\"menuKey\":\"" + RichMenus.menuKeyFor(channel, IdentityStore.get(channel, userId)) + "\"}");
         } else {
             HttpUtils.sendJson(exchange, 200, replies.get(0));
         }

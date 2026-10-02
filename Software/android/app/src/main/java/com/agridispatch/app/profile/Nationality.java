@@ -5,26 +5,28 @@ import com.agridispatch.app.R;
 /**
  * 外籍移工 (外勞) 國別 (分類表 表三)。
  * 同工同酬、不以國籍差別定價；國別只影響介面語言與排班提醒。
- * offered=false 者在身分選擇畫面停用 (泰國、菲律賓：未規劃引進【待確認】)。
+ * 身分選擇畫面第一層就列出各國卡片，標題用工人的母語，讓看不懂中文的人也能一眼找到自己；
+ * offered=false 者不顯示 (泰國、菲律賓：未規劃引進【待確認】)。
  */
 public enum Nationality {
-    VN("🇻🇳", "越南 · Việt Nam", "vi", true, R.string.nation_vn_desc),
-    ID("🇮🇩", "印尼 · Indonesia", "id", true, R.string.nation_id_desc),
-    TH("🇹🇭", "泰國 · ประเทศไทย", "", false, R.string.nation_not_offered),
-    PH("🇵🇭", "菲律賓 · Pilipinas", "", false, R.string.nation_not_offered);
+    VN("VI", "Tôi là lao động Việt Nam", "vi", true, R.string.nation_vn_desc),
+    ID("ID", "Saya pekerja Indonesia", "id", true, R.string.nation_id_desc),
+    TH("TH", "ฉันเป็นแรงงานไทย", "", false, R.string.nation_th_desc),
+    PH("PH", "Ako ay manggagawang Pilipino", "", false, R.string.nation_ph_desc);
 
-    /** 國旗 (選擇畫面左側圖示) */
-    public final String flag;
-    /** 國名 (中文 + 母語，不隨系統語系翻譯) */
-    public final String label;
+    /** 圖示欄的語言代碼字樣 (與網頁語言切換的 中／VI／ID 一致) */
+    public final String badge;
+    /** 卡片標題，固定用該國語言，不隨系統語系翻譯 */
+    public final String nativeTitle;
     /** 前端介面語言代碼；空字串表示系統尚未支援 */
     public final String language;
     public final boolean offered;
+    /** 卡片說明 (中文國籍名稱，方便旁人協助) */
     public final int descRes;
 
-    Nationality(String flag, String label, String language, boolean offered, int descRes) {
-        this.flag = flag;
-        this.label = label;
+    Nationality(String badge, String nativeTitle, String language, boolean offered, int descRes) {
+        this.badge = badge;
+        this.nativeTitle = nativeTitle;
         this.language = language;
         this.offered = offered;
         this.descRes = descRes;

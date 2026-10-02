@@ -1,6 +1,7 @@
 package com.agridispatch.linebot;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 /**
@@ -125,18 +126,68 @@ public class TestSimulator {
         failed += check("W 費率 → 引導農場主帳號", W, "local", text("費率多少錢"), 0, "此帳號提供工作人員使用");
         failed += check("W 未知 postback → 說明", W, "local", pb("a=nope"), 0, "使用說明");
 
+        // P3：新選單動作
+        failed += check("F 費率與產曆（後端離線→導覽）", F, null, pb("a=rates_calendar"), 0, "服務導覽");
+        failed += check("W 聯絡合作社（越語）", W, "vn", pb("a=contact"), 0, "Liên hệ hợp tác xã");
+        failed += check("W 聯絡合作社含 1955", W, "local", pb("a=contact"), 0, "tel:1955");
+        failed += check("W 語言・說明 → 語言卡", W, "id", pb("a=lang_help"), 0, "Pilih bahasa");
+        failed += check("W 語言・說明 → 說明卡", W, "id", pb("a=lang_help"), 1, "Panduan penggunaan");
+
+        // P3：圖文選單代碼依身分與語言（規格第捌章）
+        failed += expectEq("選單：農場主已綁定", RichMenus.menuKeyFor(F, IdentityStore.preset("farmer")), "farmer_main");
+        failed += expectEq("選單：農場主未綁定", RichMenus.menuKeyFor(F, IdentityStore.preset("unbound")), "farmer_guest");
+        failed += expectEq("選單：工作者未綁定", RichMenus.menuKeyFor(W, IdentityStore.preset("unbound")), "worker_guest");
+        failed += expectEq("選單：越南籍", RichMenus.menuKeyFor(W, IdentityStore.preset("vn")), "worker_main_vi");
+        failed += expectEq("選單：印尼籍", RichMenus.menuKeyFor(W, IdentityStore.preset("id")), "worker_main_id");
+        failed += expectEq("選單：泰國籍暫用中文", RichMenus.menuKeyFor(W, IdentityStore.preset("th")), "worker_main_zh");
+        failed += expectEq("選單：越南籍改中文", RichMenus.menuKeyFor(W, IdentityStore.preset("vn").withLang("zh", true)), "worker_main_zh");
+        failed += expectEq("選單：農場主身分在工作者帳號視為未綁定", RichMenus.menuKeyFor(W, IdentityStore.preset("farmer")), "worker_guest");
+
+        // P3：6 份選單檔（JSON 結構、按鈕動作都在分派器支援清單內、底圖尺寸與大小）
+        List<String> menuProblems = RichMenuUploader.validateAll();
+        menuProblems.forEach(p -> System.out.println("     " + p));
+        failed += expectEq("圖文選單檔檢核", menuProblems.isEmpty() ? "OK" : menuProblems.size() + " 項問題", "OK");
+        // 檢核器本身：不支援的動作要被抓出來
+        failed += expectEq("檢核器抓得到未知動作", String.valueOf(!FarmerDispatcher.ACTIONS.contains("task")), "true");
+
+        // 每個選單按鈕與 ACTIONS 清單實際送 postback，不得落到「未知動作」
+        int unknownBefore = RichMenus.UNKNOWN_ACTIONS.get();
+        for (String act : FarmerDispatcher.ACTIONS) LineBotDispatcher.handle(BotEvent.postback(F, "U_CHECK_ACT", "a=" + act));
+        for (String act : WorkerDispatcher.ACTIONS) LineBotDispatcher.handle(BotEvent.postback(W, "U_CHECK_ACT", "a=" + act + "&v=zh"));
+        for (Channel c : Channel.values()) {
+            for (String key : RichMenus.menusOf(c)) {
+                String as = key.endsWith("_guest") ? "unbound" : (key.startsWith("farmer") ? "farmer"
+                        : key.endsWith("_vi") ? "vn" : key.endsWith("_id") ? "id" : "local");
+                for (String data : menuData(key)) {
+                    failed += check("選單 " + key + " " + data, c, as, pb(data), 0, "\"type\"");
+                }
+            }
+        }
+
+        failed += expectEq("選單按鈕與 ACTIONS 都有對應處理", String.valueOf(RichMenus.UNKNOWN_ACTIONS.get() - unknownBefore), "0");
+
         // 主動選擇的語言不被國籍覆蓋（規格 3.2 第 1 點）
         String uid = "U_CHECK_LOCK";
         IdentityStore.override(W, uid, IdentityStore.preset("vn"));
         LineBotDispatcher.handle(BotEvent.text(W, uid, "中文"));
         failed += expect("W-06 越南籍改中文後任務卡為中文", LineBotDispatcher.handle(BotEvent.text(W, uid, "任務")), 0, "今日派工任務卡");
 
-        // 回覆不得帶出 LINE userId（規格第拾章第 2 點）
+        // 回覆不得帶出 LINE userId（規格第拾章第 2 點）；只有 Mock 模式的綁定頁網址附模擬用 mockUid
         String secretUid = "U0123456789abcdef0123456789abcdef";
-        List<String> bind = LineBotDispatcher.handle(BotEvent.text(F, secretUid, "帳號綁定"));
-        boolean leaked = String.join("", bind).contains(secretUid);
-        System.out.printf("  %s %-36s%n", leaked ? "❌" : "✅", "綁定卡不顯示 LINE userId");
-        if (leaked) failed++;
+        String mockCard = FlexMessageBuilder.getFarmerBindingFlex(secretUid);
+        failed += expectEq("Mock 模式綁定頁網址帶 mockUid", String.valueOf(mockCard.contains("line-bind.html?channel=farmer")
+                && mockCard.contains("mockUid=" + secretUid)), "true");
+        String savedSecret = F.secret, savedToken = F.accessToken, savedWs = W.secret, savedWt = W.accessToken;
+        try {
+            // 暫時視為正式模式
+            F.secret = "real_secret_for_check"; F.accessToken = "real_token_for_check";
+            W.secret = "real_secret_for_check"; W.accessToken = "real_token_for_check";
+            String prodCard = FlexMessageBuilder.getFarmerBindingFlex(secretUid) + FlexMessageBuilder.getWorkerBindingFlex("vi", secretUid);
+            failed += expectEq("正式模式綁定卡不含 LINE userId", String.valueOf(!prodCard.contains(secretUid)), "true");
+        } finally {
+            F.secret = savedSecret; F.accessToken = savedToken;
+            W.secret = savedWs; W.accessToken = savedWt;
+        }
 
         System.out.println(failed == 0 ? "✅ 自動檢核全部通過！" : "❌ 自動檢核失敗 " + failed + " 項");
         return failed;
@@ -160,6 +211,27 @@ public class TestSimulator {
         System.out.printf("  %s %-36s → %s%n", ok ? "✅" : "❌", name, ok ? summary(got) : "預期第 " + (index + 1)
                 + " 則含「" + expected + "」，實際：" + (got.isEmpty() ? "（無）" : summary(got)));
         return ok ? 0 : 1;
+    }
+
+    private static int expectEq(String name, String got, String expected) {
+        boolean ok = expected.equals(got);
+        System.out.printf("  %s %-36s → %s%n", ok ? "✅" : "❌", name, ok ? got : "預期 " + expected + "，實際 " + got);
+        return ok ? 0 : 1;
+    }
+
+    /** 讀出選單 JSON 每格的 postback data */
+    @SuppressWarnings("unchecked")
+    private static List<String> menuData(String key) {
+        List<String> out = new java.util.ArrayList<>();
+        try {
+            Map<String, Object> m = SimpleJson.parseObject(java.nio.file.Files.readString(RichMenus.dir().resolve(key + ".json")));
+            for (Object a : (List<Object>) m.get("areas")) {
+                out.add(String.valueOf(((Map<String, Object>) ((Map<String, Object>) a).get("action")).get("data")));
+            }
+        } catch (Exception e) {
+            out.add("讀取失敗:" + e.getMessage());
+        }
+        return out;
     }
 
     private static void printPrettyReply(String json) {

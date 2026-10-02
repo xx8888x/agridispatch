@@ -1,9 +1,9 @@
 # 智農派工 Android 雙端 App 規格書（Server 端／客戶端）
 
-> **文件版本**：v1.1.0（2026-10-02：模擬器實測；修正滿版遮擋與重開 App 仍詢問身分；選擇畫面排版）
+> **文件版本**：v1.2.0（2026-10-02：身分選擇畫面依設計系統「不讓使用者思考」改版；v1.1.0 模擬器實測、修正滿版遮擋與重開仍詢問身分）
 > **適用範圍**：`Software/android/`（Java WebView 殼）
 > **相關文件**：`01_系統分析與架構設計規格書.md`（7.1 技術組成、11.2 測試）、`03_認證與API安全規格.md`（前後端認證）、`05_LINE官方帳號拆分規格.md`（同一套身分代碼）、`Software/android/docs/角色與人力分類表.md`（分類表開發者版）、`Software/android/README.md`（建置環境）
-> **資料來源**：`農場派遣人力成本分析/農場派遣人力成本分析_試算表.xlsx`（2026 年 10 月版）之「人力類型比較」「國別比較」「價目表」工作表
+> **資料來源**：`其它/農場派遣人力成本分析/農場派遣人力成本分析_試算表.xlsx`（2026 年 10 月版）之「人力類型比較」「國別比較」「價目表」工作表
 > **狀態**：程式已實作並通過建置、單元測試、lintVital 與 Android 15 模擬器實測；**尚未在實體手機上測試**。
 
 ---
@@ -90,7 +90,16 @@ Gradle `flavorDimensions = ['side']`，同一份程式碼產出兩支 APK：
 | `WORKER_FOREIGN` | `worker_foreign` | 外籍移工（外勞，外展移工） | `worker-foreign-login.html` | 表三 |
 | （Server 端） | `admin_tech` | 科技公司代管人員 | `www/科技後台/admin-login.html` | — |
 
-### 3.2 表二：本地工人類型（`LocalWorkerType`）
+### 3.2 表二：本地工人類型（`LocalWorkerType`）與 App 軌別（`LocalTrack`）
+
+App 只問「做哪一種工作」，選項是會進不同頁面的三種軌別（`LocalTrack`）；下表的細分類型是人才庫與 LINE 共用的分類代碼，App 不詢問（1.0.6 以前存的細分類型，升級後自動轉成對應軌別）。
+
+| App 軌別 `LocalTrack` | 畫面文字 | 前端 `role=` | 涵蓋的細分類型 |
+|---|---|---|---|
+| `LABOR` | 一般農務｜採收、包裝、套袋 | `labor` | `SENIOR`、`RETURNING_WOMEN`、`STUDENT` |
+| `FOREMAN` | 帶班師傅｜帶領外籍工班 | `foreman` | `FOREMAN` |
+| `MACHINERY` | 農機操作｜曳引機、無人機 | `machinery` | `MACHINERY` |
+
 
 | 代碼 | 類型 | 前端軌別 `role=` | 計價（參考） | 適合作業 | 可排時段 | 注意事項 |
 |---|---|---|---|---|---|---|
@@ -108,8 +117,8 @@ Gradle `flavorDimensions = ['side']`，同一份程式碼產出兩支 APK：
 |---|---|---|---|---|---|---|
 | `VN` | 越南 | ✅ 開放 | `vi` 越南語＋中文 | 果樹栽培、嫁接剪枝、套袋熟手 | 農曆春節返鄉需求較高，產季排班宜提早協調 | 主要來源；境內轉聘優先 |
 | `ID` | 印尼 | ✅ 開放 | `id` 印尼語＋中文 | 溫室設施栽培、細工作業 | 多數為穆斯林：清真飲食、禮拜時間、齋戒月作息調整（因人而異） | 主要來源；境內轉聘優先 |
-| `TH` | 泰國 | ⛔ 停用（按鈕顯示但不可點） | 系統尚未支援 | — | — | 未規劃引進【待確認】 |
-| `PH` | 菲律賓 | ⛔ 停用（按鈕顯示但不可點） | 系統尚未支援 | — | — | 未規劃引進【待確認】 |
+| `TH` | 泰國 | ⛔ 不顯示 | 系統尚未支援 | — | — | 未規劃引進【待確認】 |
+| `PH` | 菲律賓 | ⛔ 不顯示 | 系統尚未支援 | — | — | 未規劃引進【待確認】 |
 
 開放泰國、菲律賓時：`Nationality.java` 的 `offered` 改為 `true`、填入語言代碼，新增 `values-th`／`values-tl` 字串與前端語系；LINE 端同步新增選單（見 05 規格 3.1）。
 
@@ -123,15 +132,26 @@ Gradle `flavorDimensions = ['side']`，同一份程式碼產出兩支 APK：
 flowchart TD
     A[開啟 智農派工 App] --> B{已選身分?}
     B -- 是 --> M[MainActivity 載入對應登入頁]
-    B -- 否 --> R[RoleSelectActivity：請選擇您的身分]
-    R --> F[農場主] --> S[(ProfileStore 儲存)]
-    R --> L[本地工人] --> LT[選類型：中高齡／二度就業／大專生／帶班師傅／機耕師] --> S
-    R --> W[外籍移工] --> N[選國別：越南／印尼（泰國、菲律賓停用）] --> S
+    B -- 否 --> R["第一頁：你是哪一位？"]
+    R --> F[我是農場主] --> S[(ProfileStore 儲存)]
+    R --> VN["Tôi là lao động Việt Nam"] --> S
+    R --> ID["Saya pekerja Indonesia"] --> S
+    R --> L[我是本國工人] --> T["第二頁：你主要做哪一種工作？<br/>一般農務／帶班師傅／農機操作"] --> S
     S --> M
 ```
 
-- 選擇畫面為原生畫面，文字依系統語系顯示（zh、vi、id）；國名同時列出中文與母語（例如「越南 · Việt Nam」）。
-- 卡片版面統一為「固定寬度圖示欄｜標題＋說明｜右箭頭」，所有文字左緣對齊；停用的國別半透明、無箭頭、不可點。
+依設計系統「不讓使用者思考」（`04_UI設計系統規範.md`）設計：
+
+| 原則 | 做法 |
+|---|---|
+| 一頁只問一個問題 | 第一頁問「你是哪一位？」；只有本國工人有第二頁「你主要做哪一種工作？」 |
+| 外籍工人一次點選 | 各國直接列在第一頁，**卡片標題用工人母語**（不懂中文也找得到自己），說明用中文國籍方便旁人協助；圖示框顯示 VI／ID，與網頁語言切換字樣一致 |
+| 選項要有作用 | 本國工人只選會進不同頁面的三種軌別；中高齡、二度就業、大專生都屬「一般農務」，不再要求區分 |
+| 不顯示不能用的 | 未開放的國別（泰國、菲律賓）不顯示 |
+| 文案 | 用使用者的話說目的（「我要找人手」「我要接農務工作」），不加括號、不用「本勞／外勞」等行話 |
+| 視覺 | 圖示用 lucide（與網頁同一套，`res/drawable/ic_*.xml` 由前端 `lucide.min.js` 轉換），不用 emoji；色彩用設計系統 token（`colors.xml` 的 `ad_*`，主色 #059669）；卡片＝圖示框 40dp｜標題 16sp＋說明 13sp｜右箭頭，最小高度 72dp，按下有漣漪回饋；「上一步」整列可點、高度 ≥ 44dp |
+
+- 第一頁的「農場主」「本國工人」文字依系統語系顯示（zh、vi、id）；外籍工人卡片固定用母語。
 - 從桌面啟動時，若已選過身分就直接開啟 MainActivity；只有「切換角色」會帶 `EXTRA_CHOOSE_ROLE` 強制顯示選擇畫面。
 - 返回鍵：在第二步時回到第一步；在第一步時離開 App。
 
@@ -144,6 +164,7 @@ flowchart TD
 | 網頁呼叫 `AgriNativeBridge.switchRole()` | 同上 |
 | 網頁點到 `科技後台/…` 連結 | 攔截，提示「科技後台請使用『智農派工後台』App」，不開啟 |
 | 儲存的國別後來被停用（`offered=false`） | 視同未選，下次開啟要求重選 |
+| 由 1.0.6 以前升級、存的是本勞細分類型 | 自動轉成對應軌別（例如中高齡 → 一般農務），不需重選 |
 
 ### 4.3 Server 端
 
@@ -170,7 +191,6 @@ flowchart TD
   "side": "client",
   "role": "WORKER_FOREIGN",
   "platformRole": "worker_foreign",
-  "localType": "",
   "localTrack": "",
   "nationality": "VN",
   "language": "vi"
@@ -182,7 +202,7 @@ flowchart TD
 | `side` | `client`／`server` |
 | `role` | `FARMER`／`WORKER_LOCAL`／`WORKER_FOREIGN`／`ADMIN` |
 | `platformRole` | 後端 `users.role`：`farmer`／`worker_local`／`worker_foreign`／`admin_tech` |
-| `localType`、`localTrack` | 本勞類型與前端軌別，其餘身分為空字串 |
+| `localTrack` | 本國工人的軌別 `labor`／`foreman`／`machinery`，其餘身分為空字串（1.0.7 起移除 `localType`） |
 | `nationality` | `VN`／`ID`，其餘身分為空字串 |
 | `language` | 介面語言 |
 
@@ -237,7 +257,7 @@ flowchart TD
 | # | 測試 | 結果 |
 |---|---|---|
 | 1 | 首次啟動顯示三個身分卡片 | ✅ |
-| 2 | 外籍移工 → 國別：越南、印尼可點；泰國、菲律賓停用，點了沒有反應 | ✅ |
+| 2 | 外籍移工 → 國別：越南、印尼可點；泰國、菲律賓停用，點了沒有反應 | ✅（1.0.7 起改為第一頁直接列越南、印尼，泰國、菲律賓不顯示） |
 | 3 | 選印尼 → `worker-foreign-login.html` 以印尼語顯示；`AGRI_APP_PROFILE`、`getAppProfile()` 皆為 `ID`／`id`，`getSystemLanguage()` 回 `id` | ✅ |
 | 4 | 關閉後從桌面重開 → 直接進登入頁、不再詢問 | ✅（實測發現原本每次都詢問，已修正） |
 | 5 | 頁面導向 `../科技後台/admin.html` → 攔截、顯示「科技後台請使用『智農派工後台』App」、留在原頁 | ✅ |
@@ -247,6 +267,10 @@ flowchart TD
 | 9 | 後台 App → 直接開 `科技後台/admin-login.html`，`platformRole` = `admin_tech` | ✅ |
 | 10 | 狀態列、手勢列不遮擋網頁與選擇畫面 | ✅（實測發現 targetSdk 35 強制滿版造成遮擋，已以 `SystemBarInsets` 修正） |
 | 11 | WebView 主控台錯誤 | ✅ 無（僅 Tailwind CDN 的既有提示） |
+
+**Release 簽章版 1.0.5 複測（2026-10-02）**：由 1.0.0 覆蓋升級（同一把上傳金鑰），兩支 App 皆非 debuggable、通知權限正常授予；升級後保留原身分（越南）直接進越南語登入頁；上表 2～9 全部重測通過，另確認外籍移工工單頁依國別切換（越南、印尼），以及後台 App 可進入 `admin.html`；全程無閃退。
+
+**身分選擇改版複測（2026-10-02，release 簽章版）**：第一頁四張卡片（農場主、本國工人、越南、印尼）；本國工人 → 農機操作進 `?role=machinery`、`localTrack` = `machinery`；越南、印尼一次點選即進對應語言登入頁；返回鍵回第一頁；無閃退。
 
 debug 版已開啟 WebView 遠端偵錯（`WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)`，release 版關閉），可用 `chrome://inspect` 或 `adb forward tcp:9222 localabstract:webview_devtools_remote_<pid>` 檢查頁面。
 

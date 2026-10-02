@@ -990,6 +990,10 @@
       // 從黑轉白轉換中心帶入補位人數（?workers=N）
       const qsWorkers = parseInt(new URLSearchParams(window.location.search).get('workers'), 10);
       if (qsWorkers > 0) document.getElementById('fWorkersCount').value = Math.min(30, qsWorkers);
+      // 從各入口預選派工類別（?category=cold_chain_pack，例如「冷鏈與物流」入口）；不認得的值忽略
+      const qsCategory = new URLSearchParams(window.location.search).get('category');
+      const categorySelect = document.getElementById('fCategory');
+      if (qsCategory && [...categorySelect.options].some(o => o.value === qsCategory)) categorySelect.value = qsCategory;
       calcFarmerForm();
       // 預設顯示「發起派工」（與分頁按鈕的初始樣式一致）；#orders 直接開啟訂單列表
       if (window.location.hash === '#orders') {

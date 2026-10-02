@@ -7,7 +7,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**
- * 分類資料表 (docs/角色與人力分類表.md) 與啟動頁、語言的對應。
+ * 分類資料表 (Software/android/docs/角色與人力分類表.md) 與啟動頁、語言的對應。
  */
 public class UserProfileTest {
 
@@ -26,16 +26,24 @@ public class UserProfileTest {
     }
 
     @Test
-    public void localWorkerTypesMapToFrontendTracks() {
+    public void localTracksMapToFrontendRoleParam() {
         assertEquals("農業派遣主網站/worker-local-login.html?role=labor",
-                UserProfile.localWorker(LocalWorkerType.SENIOR).entryPage());
-        assertEquals("labor", LocalWorkerType.RETURNING_WOMEN.track);
-        assertEquals("labor", LocalWorkerType.STUDENT.track);
+                UserProfile.localWorker(LocalTrack.LABOR).entryPage());
         assertEquals("農業派遣主網站/worker-local-login.html?role=foreman",
-                UserProfile.localWorker(LocalWorkerType.FOREMAN).entryPage());
+                UserProfile.localWorker(LocalTrack.FOREMAN).entryPage());
         assertEquals("農業派遣主網站/worker-local-login.html?role=machinery",
-                UserProfile.localWorker(LocalWorkerType.MACHINERY).entryPage());
-        assertEquals("zh", UserProfile.localWorker(LocalWorkerType.STUDENT).language());
+                UserProfile.localWorker(LocalTrack.MACHINERY).entryPage());
+        assertEquals("zh", UserProfile.localWorker(LocalTrack.LABOR).language());
+    }
+
+    @Test
+    public void legacyLocalWorkerTypesMigrateToTracks() {
+        // 1.0.6 以前存的細分類型，升級後轉成軌別 (ProfileStore 讀取時使用)
+        assertEquals(LocalTrack.LABOR, LocalWorkerType.SENIOR.track);
+        assertEquals(LocalTrack.LABOR, LocalWorkerType.RETURNING_WOMEN.track);
+        assertEquals(LocalTrack.LABOR, LocalWorkerType.STUDENT.track);
+        assertEquals(LocalTrack.FOREMAN, LocalWorkerType.FOREMAN.track);
+        assertEquals(LocalTrack.MACHINERY, LocalWorkerType.MACHINERY.track);
     }
 
     @Test

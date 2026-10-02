@@ -11,33 +11,28 @@
     <string name="weather_alert_title">天候避險啟動</string>
     <string name="weather_alert_msg">遇雨田區泥濘，工班即刻改派屏南冷鏈預冷包裝場！</string>
 
-    <!-- 客戶端身分選擇 (RoleSelectActivity)；分類依據見 android/docs/角色與人力分類表.md -->
-    <string name="role_pick_title">請選擇您的身分</string>
-    <string name="role_pick_back">← 上一步</string>
+    <!-- 客戶端身分選擇 (RoleSelectActivity)：一頁只問一個問題；文案規則見 文件/07_系統分析及文件/04_UI設計系統規範.md 第 6 節 -->
+    <string name="role_pick_title">你是哪一位？</string>
+    <string name="role_pick_back">上一步</string>
     <string name="role_pick_farmer">我是農場主</string>
-    <string name="role_pick_farmer_desc">叫工、預約產季工時包、查看出勤與帳單</string>
-    <string name="role_pick_worker_local">我是本地工人（本勞）</string>
-    <string name="role_pick_worker_local_desc">中高齡、二度就業、大專生、帶班、機耕</string>
-    <string name="role_pick_worker_foreign">我是外籍移工（外勞）</string>
-    <string name="role_pick_worker_foreign_desc">Lao động nước ngoài · Pekerja asing</string>
+    <string name="role_pick_farmer_desc">我要找人手</string>
+    <string name="role_pick_worker_local">我是本國工人</string>
+    <string name="role_pick_worker_local_desc">我要接農務工作</string>
 
-    <string name="local_pick_title">請選擇您的工作類型</string>
-    <string name="local_senior">中高齡／銀髮（45 歲以上）</string>
-    <string name="local_senior_desc">集貨場分級裝箱、溫室挑菜、樹下套袋\n每日 4～6 小時；不攀高、不曝曬、不搬重</string>
-    <string name="local_returning_women">二度就業婦女</string>
-    <string name="local_returning_women_desc">包裝、挑菜、套袋等細工；彈性排班</string>
-    <string name="local_student">大專生（寒暑假）</string>
-    <string name="local_student_desc">採收、搬運、田間紀錄；寒暑假可排</string>
-    <string name="local_foreman">本土帶班師傅</string>
-    <string name="local_foreman_desc">技術示範、品質把關、現場帶班</string>
-    <string name="local_machinery">農機機耕師</string>
-    <string name="local_machinery_desc">農機操作與機耕作業</string>
+    <!-- 本國工人第二頁：三種軌別各進不同頁面；中高齡、二度就業、大專生都選「一般農務」 -->
+    <string name="track_pick_title">你主要做哪一種工作？</string>
+    <string name="track_labor">一般農務</string>
+    <string name="track_labor_desc">採收、包裝、套袋</string>
+    <string name="track_foreman">帶班師傅</string>
+    <string name="track_foreman_desc">帶領外籍工班</string>
+    <string name="track_machinery">農機操作</string>
+    <string name="track_machinery_desc">曳引機、無人機</string>
 
-    <string name="nation_pick_title">請選擇國籍 · Chọn quốc tịch · Pilih kewarganegaraan</string>
-    <string name="nation_vn_desc">越南語語音工單 ＋ 中文 · Tiếng Việt</string>
-    <string name="nation_id_desc">印尼語語音工單 ＋ 中文 · Bahasa Indonesia</string>
-    <string name="nation_not_offered">目前未提供 · Chưa hỗ trợ · Belum tersedia</string>
-    <string name="nation_equal_pay">同工同酬：不論國籍皆依最低工資與法定保險計薪，平台依技能與經驗媒合派工。</string>
+    <!-- 外籍工人卡片：標題用母語 (Nationality.nativeTitle)，說明用中文國籍方便旁人協助 -->
+    <string name="nation_vn_desc">越南籍工人</string>
+    <string name="nation_id_desc">印尼籍工人</string>
+    <string name="nation_th_desc">泰國籍工人</string>
+    <string name="nation_ph_desc">菲律賓籍工人</string>
 
     <string name="admin_only_in_server_app">科技後台請使用「智農派工後台」App</string>
 

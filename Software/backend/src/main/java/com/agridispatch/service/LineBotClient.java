@@ -33,6 +33,21 @@ public class LineBotClient {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * 讀取 LINE Bot 公開的 /health（兩帳號模式、選單是否已上傳、是否已設內部金鑰）；連不到時回傳 null
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> health() {
+        try {
+            HttpRequest req = HttpRequest.newBuilder(URI.create(settings.getLinebotBaseUrl() + "/health"))
+                    .timeout(Duration.ofSeconds(2)).GET().build();
+            HttpResponse<String> res = httpClient.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            return res.statusCode() == 200 ? objectMapper.readValue(res.body(), Map.class) : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     /** 請 LINE Bot 為使用者連結圖文選單；menuKey 見規格第捌章，guest 選單代表回到帳號預設 */
     public void linkRichMenu(String channel, String lineUserId, String menuKey) {
         String key = settings.getLinebotInternalKey();

@@ -1,7 +1,7 @@
 # 智農派工 LINE 官方帳號拆分規格（方案 B：農場主／工作者雙帳號）
 
 > **文件版本**：v1.0.2（2026-10-02，草案；P1 實作後修正 6.2、拾.5 的 `/mock/chat` 規則；P2 實作後補 6.3 `langLocked`、6.5 `ref_id` 欄、5.3 demo 假 token）
-> **實作進度**：P1 ✅（Line Bot 雙帳號骨架）、P2 ✅（後端 `line_users`、內部端點、綁定 API；LIFF 綁定頁屬 P4）
+> **實作進度**：P1 ✅（Line Bot 雙帳號骨架）、P2 ✅（後端 `line_users`、內部端點、綁定 API；LIFF 綁定頁屬 P4）、P3 ✅（6 份圖文選單、上傳工具、依身分自動連結；實機上傳待 P0 帳號）、P4 ✅（LIFF 綁定頁 `line-bind.html`、科技後台 `admin-line.html`、LINE 模擬器雙帳號）
 > **適用範圍**：`Software/Line Bot/`（port 5000）、`Software/backend/`（port 3000）的 LINE 相關程式、`Software/demo/linebot/line.html` 模擬器、科技後台 LINE 設定頁
 > **相關文件**：`01_系統分析與架構設計規格書.md` 第陸章（LINE 子系統現況）、`02_資料庫實體關聯圖與資料字典(ERD).md`（`line_users`）、`03_認證與API安全規格.md`（端點權限）、`Software/android/docs/角色與人力分類表.md`（身分與國別代碼）
 > **狀態**：本規格只定義目標設計，程式尚未修改。實作完成後須同步更新上列 01、02、03 文件與 `Software/Line Bot/README.md`。
@@ -232,6 +232,7 @@ sequenceDiagram
 3. 一個 LINE userId 在同一帳號只能綁一個平台帳號；一個平台帳號在同一帳號只能綁一個 LINE userId。重複綁定回 409，須先解除。
 4. 綁定頁沿用既有登入頁的錯誤訊息規則（不提示預設密碼）。綁定頁網址不得帶個資參數。
 5. 工作者帳號的綁定頁依 3.2 語言顯示；外籍移工綁定前須顯示個資告知與同意（越語、印尼語版本）【待確認：告知文字與同意方式】。
+- 綁定頁：`Software/demo/農業派遣主網站/line-bind.html`（中、越、印尼語；網址參數 `channel`、`role`、`lang`）。LIFF ID 設在前端 `js/app-config.js` 的 `liffBindId`（demo、web、android 三份各自一份），LIFF endpoint 指向此頁；未設定時 demo 模式改用模擬 LINE 帳號，production 顯示「請從 LINE 開啟」。只有該帳號為 Mock 模式時，Line Bot 的綁定卡網址才附模擬用 `mockUid`（模擬器綁定後接得上同一個聊天使用者），正式模式網址不帶任何使用者識別。
 6. 「同一個平台帳號」以「同身分且同 `ref_id`」判斷：同一位工人以工號（W001）或 users 帳號（worker_foreign → W001）登入視為同一人。
 7. 未設定 `LINE_LOGIN_CHANNEL_ID` 時：production 回 503；demo 模式接受 `mock:U+32位十六進位` 假 token（路演與自動測試用），正式環境不得以此綁定。
 
@@ -285,7 +286,7 @@ flowchart LR
 | POST | `/internal/push` | `{channel, to:[lineUserId...], messages:[...]}` | 1 人用 Push，多人用 Multicast（每次最多 500 人，Line Bot 自動分批）；**不提供 broadcast** |
 
 - 現行 `POST /api/line/webhook`（以 channel secret 驗簽）在 `internal/query` 上線後標為停用，過渡期保留、之後移除；`03_認證與API安全規格.md` 的公開端點清單同步修改。
-- P2 起 `/internal/richmenu/link` 已可呼叫並驗證參數，但各選單的 richMenuId 要到 P3 建立後才實際連結（回傳 `linked:false`）；`/internal/push` 於 P5 加入。
+- `/internal/richmenu/link` 回應 `result`：`linked`／`unlinked`（guest＝回到帳號預設）／`mock`／`missing`（尚未上傳該選單）／`failed`；`/internal/push` 於 P5 加入。
 - 本機開發：`start_all.bat` 未設定 `AGRI_LINEBOT_INTERNAL_KEY` 時每次啟動產生一組，後端與 LINE Bot 共用；LINE Bot 未設定金鑰或後端離線時，身分改存記憶體（P1 行為）。
 - 後端 `GET/POST /api/line/config` 改為顯示兩個帳號的設定狀態（向 Line Bot `/health` 取得），後端不再保存 channel token。
 
@@ -402,9 +403,12 @@ LINE 官方帳號依「每月主動推播則數」計費，**回覆訊息（Repl
 |---|---|---|
 | **薪資明細 W-04** | **我的出勤 W-05** | **語言・說明 W-06／W-08** |
 
-- 按鈕動作：功能類一律 `postback`（5.2）；開網頁的按鈕（W-02、F-05 預約、綁定）用 `uri`，網址取 `WEB_BASE_URL` 或 LIFF URL。
+- 按鈕動作：**一律 `postback`**（5.2）。原規劃開網頁的按鈕（W-02 打卡、F-05 預約、綁定）也改為 postback，由回覆的卡片提供連結：打卡頁依本勞／外勞不同、綁定頁本勞外勞入口不同，選單是靜態圖無法依人變換網址（P3 實作時調整）。
+- 新增動作：`farmer_main`「費率與產曆」＝`a=rates_calendar`（兩張卡一起回）；`worker_guest`「聯絡合作社」＝`a=contact`（帶班師傅、合作社專線 `COOP_CONTACT_PHONE`、勞動部 1955 專線）；`worker_main_*`「語言・說明」＝`a=lang_help`（語言卡＋說明卡）。
+- 原始定義：`Software/Line Bot/tools/make_rich_menus.py` 同時產生 `rich_menu/<代碼>.json` 與 `.jpg`；`RichMenuUploader --check` 檢核。
+- 連結時機：每次互動時依目前身分與語言確認個人選單（記憶體快取），後端綁定／解除時另呼叫 `/internal/richmenu/link` 立即切換；重新上傳選單後，使用者下一次互動時自動補連結。
 - 現行共用六宮格 `rich_menu.json` 在拆分後移除。
-- `RichMenuUploader` 改為一次上傳全部 6 份選單、記錄各選單 ID 與代碼的對照，並分別設定兩帳號的預設選單；per-user 連結改由 `/internal/richmenu/link` 處理。
+- `RichMenuUploader` 改為一次上傳全部 6 份選單、記錄各選單 ID 與代碼的對照（`rich_menu/richmenu_ids.properties`，不進版控），並分別設定兩帳號的預設選單；舊選單預設保留，加 `--delete-old` 才刪。
 
 ---
 
@@ -451,9 +455,9 @@ LINE 官方帳號依「每月主動推播則數」計費，**回覆訊息（Repl
 | 後端 | `LineController.java` | 新增 6.3、6.4 端點；`/api/line/webhook` 標停用；`/config` 改顯示兩帳號狀態 |
 | 後端 | `LineUser.java`、`LineUserRepository.java` | 依 6.5 修改；新增 `LineBindingService` |
 | 後端 | `AuthInterceptor` 等授權設定 | 內部端點改以內部金鑰驗證，綁定端點需登入 |
-| 前端 | `Software/demo/linebot/line.html` | 模擬器上方切換「農場主帳號／工作者帳號」；工作者帳號可選身分與語言 |
+| 前端 | `Software/demo/linebot/line.html` | 模擬器上方切換「農場主帳號／工作者帳號」；工作者帳號可選身分與語言（P4 完成：手機頂部顯示目前帳號、細分身分、「示範身分／實際綁定」切換、真正的圖文選單、一次顯示全部回覆） |
 | 前端 | `Software/demo/農業派遣主網站/` 新增綁定頁 | LIFF 綁定頁（中、越、印尼語） |
-| 前端 | `Software/demo/科技後台/admin.html` | LINE 設定頁顯示兩帳號狀態；綁定清單與解除 |
+| 前端 | `Software/demo/科技後台/admin.html` | LINE 設定頁顯示兩帳號狀態；綁定清單與解除（P4 實作為獨立頁 `admin-line.html`，admin.html 表頭加入口；資料來自 `GET /api/line/config`（含 Line Bot `/health` 的模式、選單上傳、加好友按鈕、共用金鑰狀態）與 `/api/line/bindings`） |
 | 資料庫 | `Software/database/01_agridispatch_oracle_schema.sql` | `line_users` 依 6.5 修改 |
 | 文件 | 01、02、03 規格、`Line Bot/README.md` | 實作完成後同步 |
 

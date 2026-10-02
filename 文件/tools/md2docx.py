@@ -2,8 +2,8 @@
 """把專案內的 Markdown 文件轉成同名 .docx（python-docx）。
 
 用法：
-    python tools/md2docx.py <file.md> [<file2.md> ...]
-    python tools/md2docx.py --all          # 轉換專案內所有 .md（略過 Software/ 與 tools/）
+    python 文件/tools/md2docx.py <file.md> [<file2.md> ...]
+    python 文件/tools/md2docx.py --all     # 轉換「文件」資料夾內所有 .md（略過 tools/）
 
 支援：# 標題、![圖說](相對路徑.png) 圖片、段落、**粗體**、`程式碼`、- / * 項目、1. 編號、> 引言、| 表格 |、``` 程式碼區塊、--- 分隔線。
 mermaid 區塊會以等寬文字保留（Word 無法繪製）。
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     if args == ["--all"]:
         targets = [p for p in ROOT.rglob("*.md")
-                   if "Software" not in p.parts and "tools" not in p.parts and ".git" not in p.parts]
+                   if "tools" not in p.parts and ".git" not in p.parts]
     else:
         targets = [Path(a).resolve() for a in args]
     for t in targets:

@@ -11,14 +11,14 @@ public final class UserProfile {
     /** 客戶端身分；Server 端為 null */
     public final ClientRole role;
     /** 僅 WORKER_LOCAL 有值 */
-    public final LocalWorkerType localType;
+    public final LocalTrack localTrack;
     /** 僅 WORKER_FOREIGN 有值 */
     public final Nationality nationality;
 
-    private UserProfile(AppSide side, ClientRole role, LocalWorkerType localType, Nationality nationality) {
+    private UserProfile(AppSide side, ClientRole role, LocalTrack localTrack, Nationality nationality) {
         this.side = side;
         this.role = role;
-        this.localType = localType;
+        this.localTrack = localTrack;
         this.nationality = nationality;
     }
 
@@ -30,8 +30,8 @@ public final class UserProfile {
         return new UserProfile(AppSide.CLIENT, ClientRole.FARMER, null, null);
     }
 
-    public static UserProfile localWorker(LocalWorkerType type) {
-        return new UserProfile(AppSide.CLIENT, ClientRole.WORKER_LOCAL, type, null);
+    public static UserProfile localWorker(LocalTrack track) {
+        return new UserProfile(AppSide.CLIENT, ClientRole.WORKER_LOCAL, track, null);
     }
 
     public static UserProfile foreignWorker(Nationality nationality) {
@@ -43,8 +43,8 @@ public final class UserProfile {
         if (side == AppSide.SERVER) {
             return "科技後台/admin-login.html";
         }
-        if (role == ClientRole.WORKER_LOCAL && localType != null) {
-            return role.entryPage + "?role=" + localType.track;
+        if (role == ClientRole.WORKER_LOCAL && localTrack != null) {
+            return role.entryPage + "?role=" + localTrack.code;
         }
         return role.entryPage;
     }
@@ -64,8 +64,7 @@ public final class UserProfile {
             o.put("role", side == AppSide.SERVER ? "ADMIN" : role.name());
             // 後端 users.role 代碼 (farmer / worker_local / worker_foreign / admin_tech)
             o.put("platformRole", side == AppSide.SERVER ? "admin_tech" : role.platformRole);
-            o.put("localType", localType == null ? "" : localType.name());
-            o.put("localTrack", localType == null ? "" : localType.track);
+            o.put("localTrack", localTrack == null ? "" : localTrack.code);
             o.put("nationality", nationality == null ? "" : nationality.name());
             o.put("language", language());
         } catch (JSONException ignored) {

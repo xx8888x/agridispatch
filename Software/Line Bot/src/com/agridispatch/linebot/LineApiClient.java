@@ -13,13 +13,14 @@ import java.util.Map;
 /**
  * 智農派工 - LINE Messaging API HTTP 客戶端 (純 Java 零依賴)
  * 每個官方帳號一個實例，使用該帳號自己的 channel access token。
- * 支援 Reply (回覆)、Push (推播)、Broadcast (僅農場主帳號，規格第柒章) 與 Get Profile。
+ * 支援 Reply (回覆)、Push (推播)、Broadcast (僅農場主帳號，規格第柒章)、Get Profile 與 per-user 圖文選單連結。
  */
 public class LineApiClient {
     private static final String REPLY_URL = "https://api.line.me/v2/bot/message/reply";
     private static final String PUSH_URL = "https://api.line.me/v2/bot/message/push";
     private static final String BROADCAST_URL = "https://api.line.me/v2/bot/message/broadcast";
     private static final String PROFILE_URL = "https://api.line.me/v2/bot/profile/";
+    private static final String USER_URL = "https://api.line.me/v2/bot/user/";
 
     private static final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(3))
@@ -97,15 +98,34 @@ public class LineApiClient {
         }
     }
 
+    /** 把使用者連結到指定圖文選單（per-user rich menu） */
+    public boolean linkRichMenu(String userId, String richMenuId) {
+        return send("POST", USER_URL + URLEncoder.encode(userId, StandardCharsets.UTF_8) + "/richmenu/"
+                + URLEncoder.encode(richMenuId, StandardCharsets.UTF_8), null);
+    }
+
+    /** 解除使用者的個人圖文選單，回到帳號預設選單 */
+    public boolean unlinkRichMenu(String userId) {
+        return send("DELETE", USER_URL + URLEncoder.encode(userId, StandardCharsets.UTF_8) + "/richmenu", null);
+    }
+
     private boolean sendPost(String endpoint, String jsonBody) {
+        return send("POST", endpoint, jsonBody);
+    }
+
+    private boolean send(String method, String endpoint, String jsonBody) {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest.Builder b = HttpRequest.newBuilder()
                     .uri(URI.create(endpoint))
                     .timeout(Duration.ofSeconds(10))
-                    .header("Authorization", "Bearer " + channel.accessToken())
-                    .header("Content-Type", "application/json; charset=UTF-8")
-                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8))
-                    .build();
+                    .header("Authorization", "Bearer " + channel.accessToken());
+            if (jsonBody != null) {
+                b.header("Content-Type", "application/json; charset=UTF-8")
+                 .method(method, HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8));
+            } else {
+                b.method(method, HttpRequest.BodyPublishers.noBody());
+            }
+            HttpRequest request = b.build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() >= 200 && response.statusCode() < 300) {

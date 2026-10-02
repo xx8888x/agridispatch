@@ -6,7 +6,7 @@
 
 ## 🧭 雙端架構：Server 端 / 客戶端（2026-10-02）
 
-同一份程式碼以 Gradle product flavor（dimension `side`）產出兩支 APK，分類依據見 [`docs/角色與人力分類表.md`](docs/角色與人力分類表.md)，規格見 `07_系統分析及文件/06_Android雙端App規格書.md`。
+同一份程式碼以 Gradle product flavor（dimension `side`）產出兩支 APK，分類依據見 [`docs/角色與人力分類表.md`](docs/角色與人力分類表.md)，規格見 `文件/07_系統分析及文件/06_Android雙端App規格書.md`。
 
 | flavor | App 名稱 | applicationId | 啟動 | 前端資料夾 | 發佈 |
 |---|---|---|---|---|---|

@@ -1,0 +1,95 @@
+{
+  "size": {
+    "width": 2500,
+    "height": 1686
+  },
+  "selected": true,
+  "name": "智農派工（農場主）未綁定選單",
+  "chatBarText": "👨‍🌾 選單",
+  "areas": [
+    {
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "早鳥工時包",
+        "data": "a=early_bird",
+        "displayText": "早鳥工時包"
+      }
+    },
+    {
+      "bounds": {
+        "x": 833,
+        "y": 0,
+        "width": 834,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "費率試算",
+        "data": "a=rates",
+        "displayText": "費率試算"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1667,
+        "y": 0,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "產曆查詢",
+        "data": "a=calendar",
+        "displayText": "產曆查詢"
+      }
+    },
+    {
+      "bounds": {
+        "x": 0,
+        "y": 843,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "機耕代噴預約",
+        "data": "a=machinery_book",
+        "displayText": "機耕代噴預約"
+      }
+    },
+    {
+      "bounds": {
+        "x": 833,
+        "y": 843,
+        "width": 834,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "帳號綁定",
+        "data": "a=account",
+        "displayText": "帳號綁定"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1667,
+        "y": 843,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "服務導覽",
+        "data": "a=help",
+        "displayText": "服務導覽"
+      }
+    }
+  ]
+}

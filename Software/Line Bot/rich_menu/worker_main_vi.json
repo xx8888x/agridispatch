@@ -1,0 +1,95 @@
+{
+  "size": {
+    "width": 2500,
+    "height": 1686
+  },
+  "selected": true,
+  "name": "智農派工（工作者）已綁定選單（vi）",
+  "chatBarText": "📋 Công việc",
+  "areas": [
+    {
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "Nhiệm vụ hôm nay",
+        "data": "a=task",
+        "displayText": "Nhiệm vụ hôm nay"
+      }
+    },
+    {
+      "bounds": {
+        "x": 833,
+        "y": 0,
+        "width": 834,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "Chấm công",
+        "data": "a=clock",
+        "displayText": "Chấm công"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1667,
+        "y": 0,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "Thời tiết & tập trun",
+        "data": "a=weather",
+        "displayText": "Thời tiết & tập trung"
+      }
+    },
+    {
+      "bounds": {
+        "x": 0,
+        "y": 843,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "Lương",
+        "data": "a=salary",
+        "displayText": "Lương"
+      }
+    },
+    {
+      "bounds": {
+        "x": 833,
+        "y": 843,
+        "width": 834,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "Ngày công",
+        "data": "a=attendance",
+        "displayText": "Ngày công"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1667,
+        "y": 843,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "Ngôn ngữ & hướng dẫn",
+        "data": "a=lang_help",
+        "displayText": "Ngôn ngữ & hướng dẫn"
+      }
+    }
+  ]
+}

@@ -3,6 +3,7 @@ package com.agridispatch.linebot;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.agridispatch.linebot.FarmerDispatcher.has;
 
@@ -14,6 +15,10 @@ final class WorkerDispatcher {
     private WorkerDispatcher() {}
 
     private static final Channel CH = Channel.WORKER;
+
+    /** 支援的 postback 動作（圖文選單 data 的 a=，TestSimulator 據此檢核選單） */
+    static final Set<String> ACTIONS = Set.of("task", "clock", "weather", "salary", "attendance", "lang",
+            "lang_select", "lang_help", "account", "contact", "cross", "help");
 
     static List<String> handle(BotEvent ev) {
         if (ev.type() == BotEvent.Type.UNFOLLOW) return List.of();
@@ -51,7 +56,7 @@ final class WorkerDispatcher {
                 + "\n\n" + I18n.t("id", "welcome.guest");
         return List.of(FlexMessageBuilder.wrapText(welcome),
                 FlexMessageBuilder.getLanguageSelectFlex(),
-                FlexMessageBuilder.getWorkerBindingFlex(lang));
+                FlexMessageBuilder.getWorkerBindingFlex(lang, ev.userId()));
     }
 
     /** 文字中指定的語言；沒有指定回傳 null */
@@ -77,6 +82,7 @@ final class WorkerDispatcher {
         if (has(t, "薪資", "津貼", "8800", "獎勵", "lương", "gaji", "salary")) return "salary";
         if (has(t, "出勤", "紀錄", "ngày công", "kehadiran", "attendance")) return "attendance";
         if (has(t, "綁定", "帳號", "bind", "liên kết", "tài khoản", "hubungkan", "akun")) return "account";
+        if (has(t, "聯絡", "客服", "求助", "liên hệ", "hubungi", "contact")) return "contact";
         return "help";
     }
 
@@ -84,7 +90,7 @@ final class WorkerDispatcher {
         String lang = me.lang();
         switch (action) {
             case "task": {
-                if (!me.isWorker()) return bindingRequired(lang);
+                if (!me.isWorker()) return bindingRequired(lang, userId);
                 List<String> out = new ArrayList<>();
                 if (me.isMachinery()) {
                     if (!"zh".equals(lang)) out.add(FlexMessageBuilder.wrapText(I18n.t(lang, "fallback.zh")));
@@ -96,13 +102,13 @@ final class WorkerDispatcher {
                 return out;
             }
             case "clock":
-                if (!me.isWorker()) return bindingRequired(lang);
+                if (!me.isWorker()) return bindingRequired(lang, userId);
                 return List.of(FlexMessageBuilder.getWorkerLinkFlex(lang, "clock", FlexMessageBuilder.workerPageUrl(me)));
             case "weather":
-                if (!me.isWorker()) return bindingRequired(lang);
+                if (!me.isWorker()) return bindingRequired(lang, userId);
                 return List.of(FlexMessageBuilder.getWorkerWeatherFlex(lang));
             case "salary": {
-                if (!me.isWorker()) return bindingRequired(lang);
+                if (!me.isWorker()) return bindingRequired(lang, userId);
                 // 8,800 元就業獎勵的適用對象【待確認】；確認前維持現行卡片內容
                 List<String> out = new ArrayList<>();
                 if (!"zh".equals(lang)) out.add(FlexMessageBuilder.wrapText(I18n.t(lang, "fallback.zh")));
@@ -110,30 +116,35 @@ final class WorkerDispatcher {
                 return out;
             }
             case "attendance":
-                if (!me.isWorker()) return bindingRequired(lang);
+                if (!me.isWorker()) return bindingRequired(lang, userId);
                 return List.of(FlexMessageBuilder.getWorkerLinkFlex(lang, "attendance", FlexMessageBuilder.workerPageUrl(me)));
             case "lang": {
                 String v = I18n.normalize(params.get("v"));
                 Identity updated = IdentityStore.setLang(CH, userId, v);
                 return List.of(FlexMessageBuilder.wrapText(I18n.t(v, "lang.switched")),
-                        updated.isWorker() ? FlexMessageBuilder.getWorkerHelpFlex(v) : FlexMessageBuilder.getWorkerBindingFlex(v));
+                        updated.isWorker() ? FlexMessageBuilder.getWorkerHelpFlex(v) : FlexMessageBuilder.getWorkerBindingFlex(v, userId));
             }
             case "lang_select":
                 return List.of(FlexMessageBuilder.getLanguageSelectFlex());
+            case "lang_help":
+                return List.of(FlexMessageBuilder.getLanguageSelectFlex(), FlexMessageBuilder.getWorkerHelpFlex(lang));
+            case "contact":
+                return List.of(FlexMessageBuilder.getContactFlex(lang));
             case "account":
-                return List.of(FlexMessageBuilder.getWorkerBindingFlex(lang));
+                return List.of(FlexMessageBuilder.getWorkerBindingFlex(lang, userId));
             case "cross":
                 return List.of(FlexMessageBuilder.getCrossChannelFlex(CH, lang));
             case "help":
                 return List.of(FlexMessageBuilder.getWorkerHelpFlex(lang));
             default:
+                RichMenus.UNKNOWN_ACTIONS.incrementAndGet();
                 System.err.println("⚠️ [worker] 未知的 postback 動作: " + action);
                 return List.of(FlexMessageBuilder.getWorkerHelpFlex(lang));
         }
     }
 
-    private static List<String> bindingRequired(String lang) {
+    private static List<String> bindingRequired(String lang, String userId) {
         return List.of(FlexMessageBuilder.wrapText(I18n.t(lang, "bind.required")),
-                FlexMessageBuilder.getWorkerBindingFlex(lang));
+                FlexMessageBuilder.getWorkerBindingFlex(lang, userId));
     }
 }

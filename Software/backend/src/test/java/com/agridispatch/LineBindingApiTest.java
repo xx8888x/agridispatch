@@ -234,6 +234,21 @@ class LineBindingApiTest extends ApiTestSupport {
         assertEquals(409, call("DELETE", "/api/line/bindings/" + rowId, admin, null).getResponse().getStatus());
     }
 
+    // ------------------------------------------------------------------ 設定狀態（科技後台 LINE 帳號頁）
+
+    @Test
+    void configShowsDualAccountStatusOnlyToAdmin() throws Exception {
+        String admin = login("admin_tech", "admin888");
+        MvcResult r = call("GET", "/api/line/config", admin, null);
+        assertEquals(200, r.getResponse().getStatus());
+        JsonNode cfg = json(r);
+        assertTrue(cfg.get("internalKeyConfigured").asBoolean());
+        assertFalse(cfg.get("loginChannelConfigured").asBoolean());
+        assertFalse(cfg.get("linebot").get("reachable").asBoolean()); // 測試把 LINE Bot 指到不存在的埠
+        assertFalse(r.getResponse().getContentAsString().contains(KEY));
+        assertEquals(403, call("GET", "/api/line/config", login("farmer", "123456"), null).getResponse().getStatus());
+    }
+
     // ------------------------------------------------------------------ 查詢
 
     @Test

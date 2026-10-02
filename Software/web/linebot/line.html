@@ -131,12 +131,12 @@
             </div>
             <div>
               <div class="flex items-center gap-1">
-                <span class="font-bold text-sm tracking-tight">智農派工 AgriDispatch</span>
+                <span class="font-bold text-sm tracking-tight" id="line-account-name">智農派工（農場主）</span>
                 <!-- LINE Green Shield Verified Badge -->
                 <span class="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-white text-line-600 text-[9px] font-black" title="LINE 官方認證盾牌">✓</span>
               </div>
               <p class="text-[10px] text-emerald-100 flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-200"></span> 智慧農事派遣官方帳號
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-200"></span> <span id="line-account-sub">農場主官方帳號</span>
               </p>
             </div>
           </div>
@@ -241,6 +241,9 @@
               <span id="rich-menu-arrow">▼</span> 收合選單
             </button>
           </div>
+
+          <!-- LINE Bot 在線時顯示真正的圖文選單（rich_menu/<代碼>.jpg），點格子送 postback；離線時用下方 HTML 選單 -->
+          <img id="real-rich-menu" alt="圖文選單" class="w-full cursor-pointer select-none" draggable="false" hidden>
 
           <!-- 6 Grid Buttons (Dynamically Injected based on Persona) -->
           <div id="rich-menu-grid" class="grid grid-cols-3 gap-1 p-1 bg-slate-950 transition-all duration-200">
@@ -371,6 +374,25 @@
             <span class="text-[10px] text-slate-400 font-normal mt-0.5">系統管理員 (全區廣播)</span>
           </button>
         </div>
+
+        <!-- 雙帳號：農場主走「智農派工（農場主）」，工人走「智農派工（工作者）」 -->
+        <div class="pt-2 space-y-2 text-xs border-t border-slate-800">
+          <div id="persona-sub-wrap" class="flex items-center gap-2" hidden>
+            <label for="persona-sub" class="text-slate-400 font-bold shrink-0 w-16">細分身分</label>
+            <select id="persona-sub" onchange="onPersonaDetailChange()" class="flex-1 bg-slate-950 border border-slate-700 text-slate-200 px-2 py-1.5 rounded-lg"></select>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-slate-400 font-bold shrink-0 w-16">身分來源</span>
+            <label class="flex items-center gap-1 text-slate-300"><input type="radio" name="identity-mode" value="demo" checked onchange="onPersonaDetailChange()"> 示範身分</label>
+            <label class="flex items-center gap-1 text-slate-300"><input type="radio" name="identity-mode" value="bound" onchange="onPersonaDetailChange()"> 實際綁定</label>
+          </div>
+          <p id="identity-mode-hint" class="text-[11px] text-slate-500">示範身分：不必綁定，直接以上方身分回覆。</p>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" onclick="simulateFollow()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700">模擬加好友</button>
+            <a id="open-bind-page" href="../農業派遣主網站/line-bind.html" target="_blank" rel="noopener" hidden
+               class="px-3 py-1.5 rounded-lg bg-[#06C755] hover:opacity-90 text-white font-bold">開啟綁定頁</a>
+          </div>
+        </div>
       </div>
 
       <!-- Panel 2: Live Push Notification Simulator -->
@@ -493,11 +515,11 @@
 
           <div>
             <div class="flex items-center justify-between">
-              <label class="text-[11px] text-slate-400 font-bold">LINE 後台 Webhook URL (支援 HMAC-SHA256)</label>
+              <label class="text-[11px] text-slate-400 font-bold">LINE 後台 Webhook URL（農場主帳號；工作者帳號把結尾改成 /callback/worker）</label>
               <span id="copy-status-tip" class="text-[10px] text-emerald-400 hidden font-bold">✅ 已複製！</span>
             </div>
             <div class="flex items-center gap-1.5 mt-1">
-              <input type="text" readonly value="http://localhost:5000/callback" id="webhook-url-input"
+              <input type="text" readonly value="http://localhost:5000/callback/farmer" id="webhook-url-input"
                      class="flex-1 bg-slate-950 border border-slate-700 text-emerald-400 px-3 py-1.5 rounded-lg text-xs font-mono">
               <button onclick="copyWebhookUrl()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition">
                 複製
@@ -506,6 +528,13 @@
           </div>
 
           <div class="pt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div class="sm:col-span-2">
+              <label class="text-[11px] text-slate-400 font-bold" for="cfg-channel">要設定的官方帳號</label>
+              <select id="cfg-channel" class="w-full bg-slate-950 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs mt-1">
+                <option value="farmer">智農派工（農場主）</option>
+                <option value="worker">智農派工（工作者）</option>
+              </select>
+            </div>
             <div>
               <label class="text-[11px] text-slate-400 font-bold">Channel Secret (簽章校驗金鑰)</label>
               <input type="text" id="cfg-channel-secret" placeholder="填入 LINE Channel Secret" value="mock_secret_88888888"
@@ -554,17 +583,135 @@
     let currentUserName = '陳建龍 (阿龍班長)';
     let isRichMenuOpen = true;
 
-    // 農場主與工作者分屬兩個 LINE 官方帳號（07_系統分析及文件/05_LINE官方帳號拆分規格.md）：
-    // 依目前身分決定送往哪個帳號，並帶上示範身分（as），Java LINE Bot 依此回覆該帳號的功能
+    // 農場主與工作者分屬兩個 LINE 官方帳號（文件/07_系統分析及文件/05_LINE官方帳號拆分規格.md）：
+    // 依目前身分決定送往哪個帳號。「示範身分」帶 as 讓 Java LINE Bot 直接以該身分回覆；
+    // 「實際綁定」不帶 as，改用每個帳號固定的模擬 LINE userId，身分以後台的綁定為準（先到綁定頁綁定）
     const LINEBOT_ACCOUNT_BY_ROLE = {
       farmer: { channel: 'farmer', as: 'farmer' },
       worker_foreign: { channel: 'worker', as: 'vn' },
       worker_local: { channel: 'worker', as: 'machinery_leader' },
       admin_tech: { channel: 'farmer', as: 'farmer' }
     };
-    function lineBotAccount() {
-      return LINEBOT_ACCOUNT_BY_ROLE[currentRole] || LINEBOT_ACCOUNT_BY_ROLE.farmer;
+    const LINE_ACCOUNT_NAME = { farmer: '智農派工（農場主）', worker: '智農派工（工作者）' };
+    const PERSONA_SUB_OPTIONS = {
+      worker_foreign: [['vn', '越南籍（越南語）'], ['id', '印尼籍（印尼語）'], ['th', '泰國籍（暫用中文）']],
+      worker_local: [['machinery_leader', '機耕隊組長'], ['foreman', '本土帶班師傅'], ['machinery', '農機機耕師'], ['local', '中高齡本勞']]
+    };
+    function identityMode() {
+      const el = document.querySelector('input[name="identity-mode"]:checked');
+      return el ? el.value : 'demo';
     }
+    // 實際綁定模式：每個帳號一個固定的模擬 LINE userId（U + 32 位十六進位，綁定頁與後端才接受）
+    function simulatedLineUserId(channel) {
+      const key = 'agri_line_sim_uid_' + channel;
+      let uid = null;
+      try { uid = localStorage.getItem(key); } catch (e) {}
+      if (!/^U[0-9a-f]{32}$/.test(uid || '')) {
+        const bytes = new Uint8Array(16);
+        crypto.getRandomValues(bytes);
+        uid = 'U' + Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+        try { localStorage.setItem(key, uid); } catch (e) {}
+      }
+      return uid;
+    }
+    function lineBotAccount() {
+      const base = LINEBOT_ACCOUNT_BY_ROLE[currentRole] || LINEBOT_ACCOUNT_BY_ROLE.farmer;
+      if (identityMode() === 'bound') {
+        return { channel: base.channel, userId: simulatedLineUserId(base.channel) };
+      }
+      const sub = document.getElementById('persona-sub');
+      const as = (PERSONA_SUB_OPTIONS[currentRole] && sub && sub.value) ? sub.value : base.as;
+      return { channel: base.channel, as: as };
+    }
+
+    // 呼叫 Java LINE Bot（/mock/chat，一次取回全部回覆與目前的選單代碼）；離線回傳 null
+    async function askLineBot(fields, timeoutMs) {
+      try {
+        const res = await fetch(`${LINEBOT_BASE}/mock/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(Object.assign({ userId: currentUserId, multi: true }, lineBotAccount(), fields)),
+          signal: AbortSignal.timeout(timeoutMs || 1800)
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        showRealRichMenu(data.menuKey);
+        return data;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    let realMenu = null;
+    async function showRealRichMenu(key) {
+      if (!key || (realMenu && realMenu.key === key)) return;
+      try {
+        const res = await fetch(`${LINEBOT_BASE}/rich_menu/${key}.json`, { signal: AbortSignal.timeout(1500) });
+        if (!res.ok) return;
+        realMenu = Object.assign({ key: key }, await res.json());
+      } catch (e) { return; }
+      const img = document.getElementById('real-rich-menu');
+      img.src = `${LINEBOT_BASE}/rich_menu/${key}.jpg`;
+      img.hidden = !isRichMenuOpen;
+      document.getElementById('rich-menu-grid').classList.add('hidden');
+      const title = document.getElementById('rich-menu-title');
+      if (title) title.textContent = `${realMenu.chatBarText}・${key}`;
+    }
+
+    function updateAccountUi() {
+      const acc = LINEBOT_ACCOUNT_BY_ROLE[currentRole] || LINEBOT_ACCOUNT_BY_ROLE.farmer;
+      document.getElementById('line-account-name').textContent = LINE_ACCOUNT_NAME[acc.channel];
+      document.getElementById('line-account-sub').textContent = currentRole === 'admin_tech'
+        ? '科技後台不使用 LINE（以農場主帳號示範）' : (acc.channel === 'farmer' ? '農場主官方帳號' : '工作人員官方帳號（中・越・印尼）');
+      const opts = PERSONA_SUB_OPTIONS[currentRole];
+      const wrap = document.getElementById('persona-sub-wrap');
+      const sel = document.getElementById('persona-sub');
+      wrap.hidden = !opts || identityMode() === 'bound';
+      if (opts && sel.dataset.role !== currentRole) {
+        sel.innerHTML = opts.map(([v, label]) => `<option value="${v}">${label}</option>`).join('');
+        sel.dataset.role = currentRole;
+      }
+      const bound = identityMode() === 'bound';
+      document.getElementById('identity-mode-hint').textContent = bound
+        ? '實際綁定：以模擬 LINE 帳號互動，身分以後台綁定為準；請先按「開啟綁定頁」完成綁定（需後台服務）。'
+        : '示範身分：不必綁定，直接以上方身分回覆。';
+      const link = document.getElementById('open-bind-page');
+      link.hidden = !bound || currentRole === 'admin_tech';
+      if (bound) {
+        const role = acc.channel === 'farmer' ? 'farmer' : currentRole;
+        link.href = `../農業派遣主網站/line-bind.html?channel=${acc.channel}&role=${role}&mockUid=${simulatedLineUserId(acc.channel)}`;
+      }
+    }
+
+    function onPersonaDetailChange() {
+      updateAccountUi();
+      realMenu = null;
+      askLineBot({ event: 'menu' });
+    }
+
+    async function simulateFollow() {
+      appendUserBubble('（加入好友）');
+      showTypingIndicator();
+      const data = await askLineBot({ event: 'follow', lineLanguage: navigator.language });
+      removeTypingIndicator();
+      if (data) (data.messages || []).forEach(renderFlexOrText);
+      else appendBotText('LINE 機器人服務未啟動，無法模擬加好友。');
+    }
+
+    document.addEventListener('click', async (e) => {
+      if (e.target.id !== 'real-rich-menu' || !realMenu) return;
+      const r = e.target.getBoundingClientRect();
+      const x = (e.clientX - r.left) * realMenu.size.width / r.width;
+      const y = (e.clientY - r.top) * realMenu.size.height / r.height;
+      const area = realMenu.areas.find(a => x >= a.bounds.x && x < a.bounds.x + a.bounds.width
+                                          && y >= a.bounds.y && y < a.bounds.y + a.bounds.height);
+      if (!area) return;
+      appendUserBubble(area.action.displayText || area.action.label);
+      showTypingIndicator();
+      const data = await askLineBot({ postback: area.action.data });
+      removeTypingIndicator();
+      if (data) (data.messages || []).forEach(renderFlexOrText);
+    });
 
     // =========================================================================
     // 依身分切換圖文選單 (Dynamic Multi-Persona Rich Menu System)
@@ -731,8 +878,12 @@
         }
       }
 
-      // 動態更新圖文選單
+      // 動態更新圖文選單（LINE Bot 在線時改顯示該帳號與身分的真正選單）
       renderRichMenuForPersona(role);
+      realMenu = null;
+      document.getElementById('real-rich-menu').hidden = true;
+      updateAccountUi();
+      askLineBot({ event: 'menu' });
 
       appendSystemNotice(`已切換身分至【${name}】(LINE ID: ${lineId})，圖文選單已動態更換為專屬項目！`);
       
@@ -761,8 +912,10 @@
       const grid = document.getElementById('rich-menu-grid');
       const arrow = document.getElementById('rich-menu-arrow');
       isRichMenuOpen = !isRichMenuOpen;
+      const real = document.getElementById('real-rich-menu');
+      if (realMenu) real.hidden = !isRichMenuOpen;
       if (isRichMenuOpen) {
-        grid.classList.remove('hidden');
+        if (!realMenu) grid.classList.remove('hidden');
         arrow.innerText = '▼';
       } else {
         grid.classList.add('hidden');
@@ -804,19 +957,10 @@
     // 後端未啟動時改用本地示範卡片（規則同 農業派遣主網站/legalize.html）
     async function runLegalize(text) {
       showTypingIndicator();
-      let reply = null;
-      try {
-        const res = await fetch(`${LINEBOT_BASE}/mock/chat`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(Object.assign({ userId: currentUserId, text: text }, lineBotAccount())),
-          signal: AbortSignal.timeout(1500)
-        });
-        if (res.ok) reply = await res.json();
-      } catch (e) {}
+      const data = await askLineBot({ text: text }, 1500);
       removeTypingIndicator();
-      if (reply && reply.type === 'flex') {
-        renderFlexCard(reply);
+      if (data && data.messages && data.messages.length) {
+        data.messages.forEach(renderFlexOrText);
         return;
       }
       const key = Object.keys(LEGALIZE_TYPES).find(k => text.includes(LEGALIZE_TYPES[k].short));
@@ -926,18 +1070,11 @@
 
       try {
         let replyJson = null;
-        try {
-          const res5000 = await fetch(`${LINEBOT_BASE}/mock/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(Object.assign({ userId: currentUserId, text: text }, lineBotAccount())),
-            signal: AbortSignal.timeout(1800)
-          });
-          if (res5000.ok) {
-            replyJson = await res5000.json();
-          }
-        } catch (e5000) {
-          // Fallback to Port 3000
+        const botData = await askLineBot({ text: text });
+        if (botData && botData.messages && botData.messages.length) {
+          removeTypingIndicator();
+          botData.messages.forEach(renderFlexOrText);
+          return;
         }
 
         if (!replyJson) {
@@ -983,13 +1120,13 @@
       const target = document.getElementById('webhook-url-input');
       let val = input.value.trim();
       if (!val) {
-        target.value = `${LINEBOT_BASE}/callback`;
+        target.value = `${LINEBOT_BASE}/callback/farmer`;
       } else {
         if (!val.startsWith('http://') && !val.startsWith('https://')) {
           val = 'https://' + val;
         }
         val = val.replace(/\/+$/, '');
-        target.value = `${val}/callback`;
+        target.value = `${val}/callback/farmer`;
       }
     }
 
@@ -1065,7 +1202,7 @@
               'Content-Type': 'application/json',
               ...(adminKey ? { 'X-Admin-Key': adminKey } : {})
             },
-            body: JSON.stringify({ channelSecret: secret, channelAccessToken: token })
+            body: JSON.stringify({ channel: document.getElementById('cfg-channel').value, channelSecret: secret, channelAccessToken: token })
           }),
           fetch(`${API_BASE}/line/config`, {
             method: 'POST',
@@ -2240,11 +2377,14 @@
     // =========================================================================
     document.addEventListener('DOMContentLoaded', () => {
       renderRichMenuForPersona('farmer');
+      updateAccountUi();
+      askLineBot({ event: 'menu' });
       checkLineServerStatus();
       setInterval(checkLineServerStatus, 15000);
     });
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
       renderRichMenuForPersona('farmer');
+      updateAccountUi();
       checkLineServerStatus();
     }
   </script>

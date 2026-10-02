@@ -24,6 +24,12 @@ public final class LineBotDispatcher {
             case FARMER -> FarmerDispatcher.handle(ev);
             case WORKER -> WorkerDispatcher.handle(ev);
         };
+        // 圖文選單跟著身分與語言走（規格第捌章）：綁定、解除、改語言後下一次互動即切換
+        if (ev.type() == BotEvent.Type.UNFOLLOW) {
+            RichMenus.forget(ev.channel(), ev.userId());
+        } else {
+            RichMenus.ensure(ev.channel(), ev.userId(), IdentityStore.get(ev.channel(), ev.userId()));
+        }
         return out.size() > MAX_REPLY_MESSAGES ? out.subList(0, MAX_REPLY_MESSAGES) : out;
     }
 

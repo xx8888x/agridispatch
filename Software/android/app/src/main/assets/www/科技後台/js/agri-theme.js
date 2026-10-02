@@ -103,7 +103,8 @@
     { group: '營運工具', items: [
       { root: 'tech', href: 'insurance.html', title: '保險登錄與加保檢查', meta: '勞健保、職災險' },
       { root: 'tech', href: 'skills.html', title: '技能標籤與複核', meta: '熟手判定與審核' },
-      { root: 'tech', href: 'matching.html', title: '派工媒合與出工名單', meta: '撞期排除、人選建議' }
+      { root: 'tech', href: 'matching.html', title: '派工媒合與出工名單', meta: '撞期排除、人選建議' },
+      { root: 'tech', href: 'admin-line.html', title: 'LINE 官方帳號', meta: '兩帳號狀態、帳號綁定' }
     ] },
     { group: '介紹與工具', items: [
       { root: 'main', href: 'index.html', title: '首頁', meta: '農民入口' },

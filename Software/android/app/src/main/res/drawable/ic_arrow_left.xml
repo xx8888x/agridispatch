@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- lucide "arrow-left"（ISC License），由前端 js/vendor/lucide.min.js 轉換；與網頁設計系統同一套圖示 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="m12 19-7-7 7-7"
+        android:strokeColor="@color/ad_primary_text"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M19 12H5"
+        android:strokeColor="@color/ad_primary_text"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

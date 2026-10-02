@@ -21,6 +21,8 @@ Software\Line Bot\
 │       ├── Identity.java、IdentityStore.java  # 使用者身分與語言 (存後端 line_users；後端不可用時暫存記憶體)
 │       ├── BackendClient.java         # 呼叫後端 /api/line/internal/* (X-Internal-Key)
 │       ├── InternalHandler.java       # 後端呼叫的 /internal/richmenu/link (X-Internal-Key)
+│       ├── RichMenus.java             # 選單代碼、richMenuId 對照與 per-user 連結
+│       ├── RichMenuUploader.java      # 圖文選單檢核 (--check) 與上傳工具
 │       ├── I18n.java                  # 工作者帳號多語文字 (讀 i18n/*.properties)
 │       ├── FlexMessageBuilder.java    # Flex Message 卡片構造器
 │       ├── LineApiClient.java         # LINE Messaging API HTTP 客戶端 (每帳號一個；工作者帳號禁止 Broadcast)
@@ -37,9 +39,8 @@ Software\Line Bot\
 │   ├── 06_early_bird.json             # 產季早鳥保證工時包 (315 元/hr・鎖定名額)
 │   ├── 07_machinery_task.json         # 本國機耕師與大疆 T50 代噴工單
 │   └── 08_salary_bonus.json           # 農業部 8,800 元就業獎勵與薪資透明卡
-├── rich_menu/                         # 六宮格圖文選單設計
-│   ├── rich_menu.json                 # LINE 官方 Rich Menu 結構定義 (2500x1686)
-│   └── rich_menu.svg                  # 高解析向量視覺底圖
+├── rich_menu/                         # 兩帳號共 6 份圖文選單（<代碼>.json + .jpg，由 tools/make_rich_menus.py 產生）
+├── tools/make_rich_menus.py           # 圖文選單產生器（選單按鈕與文字的原始定義）
 ├── config.properties                  # 伺服器與 LINE 金鑰設定檔 (已列於 .gitignore，不會被提交)
 ├── config.properties.example          # 設定檔範本 (含 admin.key / CORS 白名單說明)
 ├── .env / .env.example                # 環境變數文件範本 (Java 不會自動讀取 .env，詳見下方說明)
@@ -138,7 +139,7 @@ Invoke-RestMethod -Uri "http://localhost:5000/health"
 - 加好友／封鎖、使用者選的語言、綁定狀態都存在後端 `line_users`（規格 6.5），重啟不遺失。Line Bot 以 `X-Internal-Key` 呼叫後端 `POST /api/line/internal/identity`、`/follow-state`、`/query`。
 - 金鑰：環境變數 `AGRI_LINEBOT_INTERNAL_KEY`（或 `config.properties` 的 `internal.key`），**後端與 Line Bot 必須相同**。`start_all.bat` 未設定時會自動產生一組給兩邊共用。
 - 未設定金鑰或後端離線時，Line Bot 退回本機記憶體（重啟後遺失）、訂單／費率／產曆改用本地卡片，啟動 log 會標示「身分與語言來源」。
-- 綁定由使用者在綁定頁（P4 製作 LIFF 頁）登入平台帳號後呼叫後端 `POST /api/line/bind`；後端綁定或解除後會呼叫 Line Bot `POST /internal/richmenu/link` 切換圖文選單（P3 建立選單前只記錄、回 `linked:false`）。
+- 綁定頁：`Software/demo/農業派遣主網站/line-bind.html`（LIFF ID 設在前端 `js/app-config.js` 的 `liffBindId`；Line Bot 的 `LIFF_BIND_ID` 要填同一個）。使用者在綁定頁登入平台帳號後呼叫後端 `POST /api/line/bind`；後端綁定或解除後會呼叫 Line Bot `POST /internal/richmenu/link` 切換圖文選單（見下方「圖文選單」）。
 - 本機測試綁定（後端 demo 模式、未設定 `LINE_LOGIN_CHANNEL_ID`）：以平台帳號登入取得 token 後，`POST /api/line/bind`，body `{"channel":"worker","idToken":"mock:U0123456789abcdef0123456789abcdef"}`；之後用同一個 userId 呼叫 `/mock/chat`（不帶 `as`）即可看到依綁定身分回覆。
 
 ## 🔐 管理端點與金鑰（/api/config）
@@ -165,37 +166,28 @@ Body 欄位（JSON）：`channel`（`farmer` 預設／`worker`）、`userId`、`
 
 ---
 
-## 🎛️ 六宮格圖文選單 (Rich Menu)
+## 🎛️ 圖文選單 (Rich Menu)
 
-> ⚠️ 過渡期說明：以下兩份選單目前都上傳到**農場主帳號**（`RichMenuUploader` 使用農場主帳號金鑰）。依規格第捌章，P3 會改為兩帳號共 6 份選單（`farmer_guest`、`farmer_main`、`worker_guest`、`worker_main_zh／vi／id`），選單按鈕改用 postback。
+依規格第捌章，兩個帳號共 6 份選單，按鈕一律送 postback（`a=動作`，規格 5.2）；需要依身分決定網址的功能（綁定、打卡、預約）由回覆的卡片提供連結。
 
-選單規格：`2500 x 1686` 像素，配置如下：
-
-| 位置 | 功能名稱 | 觸發關鍵字 | 功能說明 |
-| :---: | :--- | :--- | :--- |
-| **左上 (1)** | 📋 今日派工卡 | `今日派工` | 農場主派工單 / 移工出勤任務卡 |
-| **中上 (2)** | 🌧️ 暴雨天候避險 | `天候避險` | 突發暴雨冷鏈避險通報、專車接駁進度 |
-| **右上 (3)** | ⚡ 早鳥工時包 | `早鳥工時包` | 315 元/hr、預付 20% 定金鎖定名額・優先排班、保證出工承諾 |
-| **左下 (4)** | 🌐 切換語言 | `切換語言` | 繁體中文 ╳ 🇻🇳 越南語 ╳ 🇮🇩 印尼語 |
-| **中下 (5)** | 🚜 機耕代噴 | `機耕代噴` | 大疆 T50 植保機雙證照代噴、曳引機整地 |
-| **右下 (6)** | 👤 帳號綁定 | `帳號綁定` | 綁定智農派工帳號、查詢個人津貼明細 |
-
-若要一鍵將 Rich Menu 上傳發布至真實 LINE 帳號：
-- 先將 `rich_menu/rich_menu.svg` 匯出為 `rich_menu/rich_menu.png`（或 .jpg，1MB 以內）。
-- 執行 `java -cp bin com.agridispatch.linebot.RichMenuUploader` 即可自動註冊並設為預設。
-
-### 👨‍🌾 農場主專屬八宮格選單（含「黑轉白」）
-
-共用選單外籍移工也會看到，因此「黑轉白」只放在農場主專屬選單，透過 LINE API 綁定到指定的農場主帳號：
-
-| 上排 | 📋 今日派工單 `今日派工` | 🔄 現有工班黑轉白 `黑轉白` | ⚡ 早鳥工時包 `早鳥工時包` | 🌧️ 暴雨天候避險 `天候避險` |
+| 選單代碼 | 帳號 | 對象 | 版型 | 按鈕 |
 | :--- | :--- | :--- | :--- | :--- |
-| **下排** | 🚜 機耕代噴預約 `機耕代噴` | 👤 帳號綁定 `帳號綁定` | 🌐 切換語言 `切換語言` | 🌱 服務導覽 `服務導覽` |
+| `farmer_guest`（帳號預設） | 農場主 | 未綁定 | 3×2 | 早鳥工時包、費率試算、產曆查詢、機耕代噴預約、帳號綁定、服務導覽 |
+| `farmer_main` | 農場主 | 已綁定農場主 | 4×2 | 我的訂單、現有工班黑轉白、早鳥工時包、天候避險、機耕代噴預約、費率與產曆、我的帳號、服務導覽 |
+| `worker_guest`（帳號預設） | 工作者 | 未綁定 | 3×2（三語） | 繁體中文、Tiếng Việt、Bahasa Indonesia、帳號綁定、使用說明、聯絡合作社 |
+| `worker_main_zh`／`_vi`／`_id` | 工作者 | 已綁定（依語言） | 3×2 | 今日任務、上下班打卡、天候與集合、薪資明細、我的出勤、語言・說明（越、印尼語版附中文小字） |
 
-- 結構：`rich_menu/rich_menu_farmer.json`（4 欄 × 2 列，每格 625×843）
-- 底圖：`rich_menu/rich_menu_farmer.svg`（原稿）、`rich_menu/rich_menu_farmer.jpg`（2500×1686、約 270KB，上傳用）
-- 上傳並綁定：`java -cp bin com.agridispatch.linebot.RichMenuUploader farmer <農場主LINE userId> [...]`
-  （userId 格式為 `U` + 32 位十六進位；未列出的使用者維持共用選單）
+- **原始定義**：`tools/make_rich_menus.py`（一份定義同時產生 `rich_menu/<代碼>.json` 與 `.jpg`）。改按鈕或文字只改這支，執行 `python tools/make_rich_menus.py`（需 Pillow，使用 Windows 內建的微軟正黑體、Segoe UI、Segoe UI Emoji）。
+- **檢核**：`java -cp bin com.agridispatch.linebot.RichMenuUploader --check`（JSON 結構、按鈕鋪滿不重疊、動作都在分派器支援清單、底圖 2500×1686 且 ≤1MB）；`TestSimulator --check` 也會跑這項，並實際送出每個按鈕的 postback。
+- **上傳**：`java -cp bin com.agridispatch.linebot.RichMenuUploader farmer|worker|all [--delete-old]`
+  - 該帳號須已填真實 channel access token（Mock 模式只檢核）。
+  - 會先呼叫 LINE 驗證結構，再建立選單、上傳底圖、把 guest 選單設為帳號預設；任一步失敗就刪掉本次建立的選單。
+  - richMenuId 記在 `rich_menu/richmenu_ids.properties`（各環境不同，已列入 `rich_menu/.gitignore`）；Line Bot 會自動讀新檔。
+  - 舊選單預設保留；確認新選單正常後再加 `--delete-old` 上傳一次，或到 LINE 後台刪除。
+- **切換時機**：每次使用者與帳號互動時，Line Bot 依目前身分與語言確認個人選單（已綁定 → main、未綁定 → 回到預設 guest），結果快取在記憶體；後端綁定或解除時也會呼叫 `/internal/richmenu/link` 立即切換。所以綁定、解除、改語言之後，選單會馬上換掉；重新上傳選單後，使用者下一次互動時會補連結。
+- **科技後台**：`Software/demo/科技後台/admin-line.html` 顯示兩帳號狀態（模式、選單上傳、加好友按鈕、共用金鑰、綁定頁 LINE 登入）與綁定清單，可強制解除綁定。
+- **前端 LINE 模擬器**（`Software/demo/linebot/line.html`）：手機頂部顯示目前的官方帳號；工人可選細分身分；「實際綁定」模式以固定的模擬 LINE 帳號互動，按「開啟綁定頁」綁定後，回覆與選單就依後端綁定。
+- **網頁模擬器**（`http://localhost:5000/`）：手機畫面下方顯示目前帳號與身分的選單底圖，點格子即送出該格的 postback，可以直接檢查選單切換。
 
 ---
 

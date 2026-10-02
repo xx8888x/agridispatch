@@ -27,25 +27,9 @@
       document.write('<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"><\/script>');
     }
   </script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#ecfdf5',
-              100: '#d1fae5',
-              500: '#10b981',
-              600: '#059669',
-              700: '#047857',
-              800: '#065f46',
-              900: '#064e3b',
-            }
-          }
-        }
-      }
-    }
-  </script>
+  <!-- 設計系統：共用 tailwind.config、demo 模式標記 -->
+  <script src="js/agri-theme.js"></script>
+  <link rel="stylesheet" href="css/agri.css">
   <style>
     [v-cloak] { display: none; }
   </style>
@@ -60,277 +44,125 @@
     }, 1500);
   </script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-amber-500 selection:text-white">
+<body class="ad-body">
 
   <div id="app" v-cloak class="flex flex-col min-h-screen">
-    <!-- Header with Language Selector -->
-    <header class="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur-md sticky top-0 z-30">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <a href="login.html" class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-amber-500/20">
-            <span class="text-xl">👷</span>
+    <header class="ad-header">
+      <div class="ad-container ad-header__inner">
+        <a href="login.html" class="ad-header__brand"><span class="ad-header__logo"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ad-icon"><path d="M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3"></path><path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4"></path><path d="M5 21h14"></path></svg></span>智農派工<span class="ad-header__role">外籍移工</span></a>
+        <div class="ad-header__actions">
+          <div class="ad-seg" role="group" aria-label="Language">
+            <button type="button" @click="setLang('vi')" :class="{ 'is-active': lang === 'vi' }" class="ad-seg__btn" style="min-width: 34px; padding: 0 8px;">VI</button>
+            <button type="button" @click="setLang('id')" :class="{ 'is-active': lang === 'id' }" class="ad-seg__btn" style="min-width: 34px; padding: 0 8px;">ID</button>
+            <button type="button" @click="setLang('th')" :class="{ 'is-active': lang === 'th' }" class="ad-seg__btn" style="min-width: 34px; padding: 0 8px;">TH</button>
+            <button type="button" @click="setLang('en')" :class="{ 'is-active': lang === 'en' }" class="ad-seg__btn" style="min-width: 34px; padding: 0 8px;">EN</button>
+            <button type="button" @click="setLang('zh')" :class="{ 'is-active': lang === 'zh' }" class="ad-seg__btn" style="min-width: 34px; padding: 0 8px;">中</button>
           </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="font-extrabold text-base sm:text-lg tracking-tight text-white">智農派工</span>
-              <span class="text-[11px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">Tier 1 外展移工門戶</span>
-            </div>
-            <p class="text-[10px] text-slate-400">Portal Lao Động Nước Ngoài ╳ Foreign Worker Portal</p>
-          </div>
-        </a>
-
-        <!-- Multilingual Switcher -->
-        <div class="flex items-center gap-1 sm:gap-2">
-          <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
-            <button @click="setLang('vi')" :class="lang === 'vi' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2 py-1 rounded-lg transition flex items-center gap-1">
-              <span>🇻🇳</span> <span class="hidden sm:inline">Việt</span>
-            </button>
-            <button @click="setLang('id')" :class="lang === 'id' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2 py-1 rounded-lg transition flex items-center gap-1">
-              <span>🇮🇩</span> <span class="hidden sm:inline">Indo</span>
-            </button>
-            <button @click="setLang('th')" :class="lang === 'th' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2 py-1 rounded-lg transition flex items-center gap-1">
-              <span>🇹🇭</span> <span class="hidden sm:inline">ไทย</span>
-            </button>
-            <button @click="setLang('en')" :class="lang === 'en' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2 py-1 rounded-lg transition flex items-center gap-1">
-              <span>🇵🇭</span> <span class="hidden sm:inline">EN/PH</span>
-            </button>
-            <button @click="setLang('zh')" :class="lang === 'zh' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'" class="px-2 py-1 rounded-lg transition flex items-center gap-1">
-              <span>🇹🇼</span> <span class="hidden sm:inline">中文</span>
-            </button>
-          </div>
-          <a href="login.html" class="text-xs text-slate-400 hover:text-white px-2 py-1 hidden md:inline">↩ {{ t.switchRole }}</a>
+          <a href="login.html" class="ad-btn ad-btn--ghost ad-btn--sm ad-hide-sm" style="display: none;"></a>
         </div>
       </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div class="max-w-4xl w-full grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+    <main class="ad-auth">
+      <div class="ad-card ad-auth__card">
+        <h1 class="ad-title">{{ t.loginTitle }}</h1>
+        <p class="ad-caption" style="margin: 4px 0 20px;">{{ t.loginSubtitle }}</p>
 
-        <!-- Left Column: Rights & Welfare Notice (5 cols) -->
-        <div class="md:col-span-5 space-y-5">
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold">
-            <span>🛡️</span> {{ t.legalTag }}
-          </div>
-
-          <h1 class="text-2xl sm:text-3xl font-black text-white leading-snug">
-            {{ t.heroTitle1 }}<br>
-            <span class="text-amber-400">{{ t.heroTitle2 }}</span>
-          </h1>
-
-          <p class="text-xs text-slate-400 leading-relaxed">
-            {{ t.heroDesc }}
-          </p>
-
-          <!-- Wage & Subsidy Guarantee Banner -->
-          <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-900 to-amber-950/30 border border-amber-500/40 space-y-2">
-            <div class="text-[11px] font-bold text-amber-300 flex items-center gap-1.5">
-              <span>💰</span> {{ t.wageTitle }}
+            <div v-if="isDemo && demoCfg" class="ad-notice ad-notice--ok" style="margin-bottom: 16px; align-items: center; justify-content: space-between;">
+              <div style="min-width: 0;">
+                <div style="font-weight: 600;">{{ demoCfg.bannerNotice }}</div>
+                <div class="ad-caption" style="color: inherit;">免控管帳密，任意輸入或點擊均可實測。</div>
+              </div>
+              <a href="worker-foreign.html" class="ad-btn ad-btn--secondary ad-btn--sm" style="flex-shrink: 0;">直通工作台</a>
             </div>
-            <div class="flex items-baseline gap-2">
-              <span class="text-2xl font-black text-white font-mono">NT$ 39,500</span>
-              <span class="text-xs text-slate-400">/ {{ t.perMonth }}</span>
-            </div>
-            <div class="text-[11px] text-slate-300 border-t border-slate-800/80 pt-2 flex flex-col gap-1">
-              <div>• {{ t.wageBase }}: <span class="font-mono text-white font-bold">$29,500</span></div>
-              <div>• {{ t.wageBonus }}: <span class="font-mono text-amber-400 font-bold">+$8,800</span></div>
-              <div>• {{ t.wageAllowance }}: <span class="font-mono text-emerald-400 font-bold">+$1,200</span></div>
-            </div>
-          </div>
+            <div v-if="errorMsg" class="ad-notice ad-notice--danger" role="alert" style="margin-bottom: 16px;">{{ errorMsg }}</div>
+            <div v-if="successMsg" class="ad-notice ad-notice--ok" role="status" style="margin-bottom: 16px;">{{ successMsg }}</div>
 
-          <!-- 1955 Hotline & Bilingual Support -->
-          <div class="grid grid-cols-2 gap-3 text-xs">
-            <a href="tel:1955" class="p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-amber-500/50 flex flex-col justify-between transition">
-              <span class="text-slate-400 text-[10px]">📞 {{ t.hotlineLabel }}</span>
-              <span class="text-base font-black text-amber-400 font-mono mt-1">1955</span>
-              <span class="text-[10px] text-slate-500">{{ t.hotlineNote }}</span>
+            <form @submit.prevent="handleLogin" style="display: flex; flex-direction: column; gap: 16px;">
+              <div class="ad-field">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;"><label class="ad-label">{{ t.idLabel }}</label></div>
+                <input v-model="form.identifier" type="text" :placeholder="t.idPlaceholder" autocomplete="username" inputmode="text" class="ad-input ad-num">
+              </div>
+              <div class="ad-field">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;"><label class="ad-label">{{ t.pwdLabel }}</label><a href="tel:1955" class="ad-caption" style="color: var(--ad-primary-text);">{{ t.helpForgot }}</a></div>
+                <input v-model="form.password" type="password" :placeholder="pwdPlaceholderText" autocomplete="current-password" class="ad-input ad-num">
+              </div>
+              <p v-if="isDemo && demoCfg" class="ad-caption" style="margin: -8px 0 0;">{{ t.pwdDefaultHint }}：<span class="ad-num" style="color: var(--ad-text); font-weight: 600;">{{ demoCfg.defaultPassword }}</span></p>
+              <button type="submit" :disabled="loading" class="ad-btn ad-btn--primary ad-btn--lg ad-btn--block" style="margin-top: 4px;">{{ loading ? t.loggingIn : t.btnSubmit }}</button>
+            </form>
+
+            <a href="tel:1955" class="ad-row" style="margin-top: 16px;">
+              <div class="ad-row__main">
+                <div class="ad-row__title">{{ t.hotlineLabel }}</div>
+                <div class="ad-row__meta">{{ t.hotlineNote }}</div>
+              </div>
+              <strong class="ad-price ad-price--lg ad-price--accent">1955</strong>
             </a>
-            <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
-              <span class="text-slate-400 text-[10px]">🏥 {{ t.insuranceLabel }}</span>
-              <span class="text-sm font-bold text-emerald-400 mt-1">100% {{ t.insured }}</span>
-              <span class="text-[10px] text-slate-500">{{ t.insuranceNote }}</span>
-            </div>
-          </div>
-        </div>
 
-        <!-- Right Column: Foreign Worker Login Card (7 cols) -->
-        <div class="md:col-span-7 bg-slate-900/90 rounded-3xl border border-amber-500/40 p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-          <div class="absolute top-0 right-0 w-44 h-44 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-          <div class="mb-6">
-            <div class="flex items-center justify-between">
-              <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
-                <span>👷</span> {{ t.loginTitle }}
-              </h2>
-              <span class="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">Tier 1</span>
-            </div>
-            <p class="text-xs text-slate-400 mt-1">{{ t.loginSubtitle }}</p>
-          </div>
-
-          <!-- Demo Mode Notice（僅 demo 模式顯示） -->
-          <div v-if="isDemo && demoCfg" class="mb-5 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between gap-3">
-            <div class="flex items-center gap-2">
-              <span class="text-base shrink-0">⚡</span>
-              <div>
-                <div class="font-bold text-white">{{ demoCfg.bannerNotice }}</div>
-                <div class="text-[11px] text-slate-400">免控管帳密，任意輸入或點擊均可實測（正式帳密由後端控管）</div>
-              </div>
-            </div>
-            <a href="worker-foreign.html" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shrink-0 whitespace-nowrap shadow transition">
-              直通工作台 ➔
-            </a>
-          </div>
-
-          <!-- Alert / Messages -->
-          <div v-if="errorMsg" class="mb-4 p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2">
-            <span>⚠️</span> {{ errorMsg }}
-          </div>
-
-          <div v-if="successMsg" class="mb-4 p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2">
-            <span>✅</span> {{ successMsg }}
-          </div>
-
-          <!-- Login Form -->
-          <form @submit.prevent="handleLogin" class="space-y-4 text-xs">
-            <div>
-              <label class="block text-slate-300 font-semibold mb-1.5">
-                {{ t.idLabel }}
-                <span class="text-slate-400 font-normal">({{ t.idPlaceholderHint }})</span>
-              </label>
-              <div class="relative">
-                <input v-model="form.identifier" type="text" :placeholder="t.idPlaceholder"
-                  class="w-full px-4 py-3.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition text-sm font-mono">
-                <span class="absolute right-3.5 top-3.5 text-slate-500">🪪</span>
+            <div v-if="isDemo && demoCfg" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--ad-border);">
+              <div class="ad-label" style="margin-bottom: 8px;">{{ t.quickDemoTitle }}</div>
+              <div class="ad-list">
+                <button v-for="p in demoCfg.profiles" :key="p.identifier" @click="fillProfile(p.identifier, p.password, p.workerId)" type="button" class="ad-row">
+                  <div class="ad-row__main">
+                    <div class="ad-row__title">{{ p.name }}</div>
+                    <div class="ad-row__meta ad-num">ARC {{ p.identifier }}</div>
+                  </div>
+                </button>
               </div>
             </div>
 
-            <div>
-              <label class="block text-slate-300 font-semibold mb-1.5">{{ t.pwdLabel }}</label>
-              <div class="relative">
-                <input v-model="form.password" type="password" :placeholder="pwdPlaceholderText"
-                  class="w-full px-4 py-3.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition text-sm font-mono">
-                <span class="absolute right-3.5 top-3.5 text-slate-500">🔒</span>
-              </div>
-            </div>
-
-            <div class="flex items-center justify-between text-xs pt-1">
-              <span v-if="isDemo && demoCfg" class="text-slate-400 text-[11px]">💡 {{ t.pwdDefaultHint }}: <span class="font-mono text-amber-400 font-bold">{{ demoCfg.defaultPassword }}</span></span>
-              <span v-else></span>
-              <a href="tel:1955" class="text-amber-400 text-[11px] hover:underline">{{ t.helpForgot }}</a>
-            </div>
-
-            <button type="submit" :disabled="loading"
-              class="w-full py-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm shadow-xl shadow-amber-500/20 transition flex items-center justify-center gap-2 disabled:opacity-50 mt-2">
-              <span v-if="loading" class="animate-spin">🌀</span>
-              <span>{{ loading ? t.loggingIn : t.btnSubmit }}</span>
-            </button>
-          </form>
-
-          <!-- Quick Fill Demo Foreign Workers（僅 demo 模式顯示，資料來自 js/demo-accounts.js） -->
-          <div v-if="isDemo && demoCfg" class="mt-6 pt-5 border-t border-slate-800">
-            <div class="text-[11px] font-bold text-slate-400 mb-2.5 flex items-center justify-between">
-              <span>⚡ {{ t.quickDemoTitle }}</span>
-              <span class="text-[10px] text-slate-500">Click to fill</span>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <button v-for="p in demoCfg.profiles" :key="p.identifier" @click="fillProfile(p.identifier, p.password, p.workerId)" type="button"
-                class="text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 transition">
-                <div class="flex items-center gap-1 font-bold text-white text-[11px]">
-                  <span>{{ p.flag }}</span> {{ p.name }}
-                </div>
-                <div class="text-[10px] text-slate-400 font-mono mt-0.5">ARC: {{ p.identifier }}</div>
-              </button>
-            </div>
-          </div>
-
-          <!-- Bottom Switch -->
-          <div class="mt-5 text-center text-xs text-slate-500">
-            <a href="farmer-login.html" class="text-emerald-400 hover:underline mx-2">我是農場主</a>
-            •
-            <a href="worker-local-login.html" class="text-blue-400 hover:underline mx-2">我是本國機耕師</a>
-          </div>
-        </div>
-
+        <p class="ad-caption" style="margin-top: 20px; text-align: center;">
+          <a href="farmer-login.html" style="color: var(--ad-primary-text);">我是農場主</a>・<a href="worker-local-login.html" style="color: var(--ad-primary-text);">我是本國工作人員</a>
+        </p>
       </div>
     </main>
 
-    <!-- Post-Login Worker Dashboard Modal -->
-    <div v-if="workerModal.show" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-slate-900 border border-amber-500/50 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl text-xs">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <div class="flex items-center gap-2">
-            <span class="text-2xl">👷</span>
-            <div>
-              <h3 class="font-extrabold text-base text-white">{{ workerModal.data.name }}</h3>
-              <p class="text-[11px] text-amber-400 font-mono">{{ workerModal.data.roleDesc }}</p>
-            </div>
+    <!-- 登入後的個人摘要 -->
+    <div v-if="workerModal.show" class="ad-modal" role="dialog" aria-modal="true">
+      <div class="ad-modal__panel">
+        <div class="ad-card__head">
+          <div style="min-width: 0;">
+            <h3 class="ad-title">{{ workerModal.data.name }}</h3>
+            <p class="ad-caption">{{ workerModal.data.roleDesc }}</p>
           </div>
-          <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold">
-            已成功登入
-          </span>
+          <span class="ad-pill ad-pill--ok">已成功登入</span>
         </div>
 
-        <div v-if="workerModal.data.workerProfile" class="space-y-3">
-          <!-- Dispatch Status & Task -->
-          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-slate-400">目前派遣狀態</span>
-              <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold text-[11px]">
-                {{ workerModal.data.workerProfile.dispatchStatus === 'hedged_indoor' ? '🏢 室內冷鏈避險' : '🟢 田間作業出勤' }}
-              </span>
+        <div v-if="workerModal.data.workerProfile" style="display: flex; flex-direction: column; gap: 12px;">
+          <div class="ad-card ad-card--inset">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <span class="ad-label">目前派遣狀態</span>
+              <span class="ad-pill ad-pill--ok">{{ workerModal.data.workerProfile.dispatchStatus === 'hedged_indoor' ? '室內冷鏈避險' : '田間作業出勤' }}</span>
             </div>
-            <div>
-              <div class="text-slate-400 text-[10px]">今日作業內容 (Hôm nay / Hari ini):</div>
-              <div class="text-white font-bold text-sm mt-0.5">{{ workerModal.data.workerProfile.currentTask }}</div>
-            </div>
+            <div class="ad-label" style="margin-top: 10px;">今日作業內容（Hôm nay / Hari ini）</div>
+            <div class="ad-heading" style="margin-top: 2px;">{{ workerModal.data.workerProfile.currentTask }}</div>
           </div>
 
-          <!-- Grid details -->
-          <div class="grid grid-cols-2 gap-2 text-[11px]">
-            <div class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
-              <div class="text-slate-500">居留證號 (ARC)</div>
-              <div class="font-mono font-bold text-amber-300 mt-0.5">{{ workerModal.data.workerProfile.arcNumber }}</div>
-            </div>
-            <div class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
-              <div class="text-slate-500">護照號碼 (Passport)</div>
-              <div class="font-mono font-bold text-slate-300 mt-0.5">{{ workerModal.data.workerProfile.passportNumber }}</div>
-            </div>
-            <div class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
-              <div class="text-slate-500">所屬工班 (Đội / Tim)</div>
-              <div class="font-bold text-white mt-0.5">{{ workerModal.data.workerProfile.teamId }}</div>
-            </div>
-            <div class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
-              <div class="text-slate-500">法定納保狀態</div>
-              <div class="font-bold text-emerald-400 mt-0.5">{{ workerModal.data.workerProfile.insuranceStatus }}</div>
-            </div>
+          <div class="ad-form-grid ad-form-grid--2">
+            <div class="ad-card ad-card--inset"><div class="ad-label">居留證號（ARC）</div><div class="ad-num" style="font-weight: 600; margin-top: 2px;">{{ workerModal.data.workerProfile.arcNumber }}</div></div>
+            <div class="ad-card ad-card--inset"><div class="ad-label">護照號碼（Passport）</div><div class="ad-num" style="font-weight: 600; margin-top: 2px;">{{ workerModal.data.workerProfile.passportNumber }}</div></div>
+            <div class="ad-card ad-card--inset"><div class="ad-label">所屬工班（Đội / Tim）</div><div style="font-weight: 600; margin-top: 2px;">{{ workerModal.data.workerProfile.teamId }}</div></div>
+            <div class="ad-card ad-card--inset"><div class="ad-label">法定納保狀態</div><div style="font-weight: 600; margin-top: 2px; color: var(--ad-primary-text);">{{ workerModal.data.workerProfile.insuranceStatus }}</div></div>
           </div>
 
-          <!-- Salary Summary -->
-          <div class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
+          <div class="ad-card ad-card--accent" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
             <div>
-              <div class="text-[10px] text-amber-300 font-semibold">本月薪資保障總額</div>
-              <div class="text-slate-400 text-[10px]">底薪 + 獎勵金 + 津貼</div>
+              <div class="ad-heading">本月薪資保障總額</div>
+              <div class="ad-caption">底薪＋獎勵金＋津貼</div>
             </div>
-            <div class="text-lg font-black text-white font-mono">
-              NT$ {{ ((workerModal.data.workerProfile.baseSalary || 29500) + (workerModal.data.workerProfile.agriBonus || 8800) + (workerModal.data.workerProfile.transportAllowance || 1200)).toLocaleString() }}
-            </div>
+            <strong class="ad-price ad-price--lg ad-price--accent">NT$ {{ ((workerModal.data.workerProfile.baseSalary || 29500) + (workerModal.data.workerProfile.agriBonus || 8800) + (workerModal.data.workerProfile.transportAllowance || 1200)).toLocaleString() }}</strong>
           </div>
         </div>
 
-        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
-          <button @click="workerModal.show = false" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition">
-            關閉
-          </button>
-          <a href="worker-foreign.html" class="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold shadow transition">
-            進入外展移工工作台 ➔
-          </a>
+        <div class="ad-card__foot" style="margin-top: 0;">
+          <button type="button" @click="workerModal.show = false" class="ad-btn ad-btn--ghost">關閉</button>
+          <a href="worker-foreign.html" class="ad-btn ad-btn--primary">進入工作台</a>
         </div>
       </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="border-t border-slate-800/80 py-5 text-center text-xs text-slate-500">
-      智農派工 AgriDispatch © 2026 農業部外展合作社 ╳ 外展移工工作服務網
+    <footer class="ad-caption" style="border-top: 1px solid var(--ad-border); padding: 16px; text-align: center;">
+      © 2026 智農派工 AgriDispatch
     </footer>
   </div>
 
@@ -341,20 +173,8 @@
     const translations = {
       vi: {
         switchRole: 'Đổi vai trò',
-        legalTag: 'Hợp tác xã nông nghiệp đặc quyền của Bộ Nông nghiệp Đài Loan',
-        heroTitle1: 'Quyền lợi & Nhiệm vụ',
-        heroTitle2: 'Lao Động Nước Ngoài',
-        heroDesc: 'Hệ thống tra cứu lịch làm việc, địa điểm thu hoạch, thông báo tránh mưa trong kho lạnh và minh bạch tiền lương.',
-        wageTitle: 'Bảo đảm lương tháng & Tiền thưởng Bộ Nông nghiệp',
-        perMonth: 'tháng',
-        wageBase: 'Lương cơ bản',
-        wageBonus: 'Thưởng nông nghiệp',
-        wageAllowance: 'Phụ cấp đi lại',
         hotlineLabel: 'Đường dây trợ giúp',
         hotlineNote: 'Miễn phí 24/7 tiếng Việt',
-        insuranceLabel: 'Bảo hiểm lao động',
-        insured: 'Hợp quy',
-        insuranceNote: 'BHYT & Tai nạn LĐ',
         loginTitle: 'Đăng Nhập Lao Động',
         loginSubtitle: 'Nhập số thẻ cư trú (ARC), số hộ chiếu hoặc mã công nhân',
         idLabel: 'Số Thẻ Cư Trú (ARC) / Hộ Chiếu / Mã Công Nhân',
@@ -364,26 +184,14 @@
         pwdPlaceholder: 'Nhập mật khẩu',
         pwdDefaultHint: 'Mật khẩu mặc định',
         helpForgot: 'Quên mật khẩu? Gọi 1955',
-        btnSubmit: 'Đăng Nhập Ngay ➔',
+        btnSubmit: 'Đăng nhập',
         loggingIn: 'Đang xác thực...',
         quickDemoTitle: 'Tài khoản mẫu thử nghiệm:'
       },
       id: {
         switchRole: 'Ganti Peran',
-        legalTag: 'Koperasi Pertanian Berlisensi Kementerian Pertanian Taiwan',
-        heroTitle1: 'Hak & Tugas Kerja',
-        heroTitle2: 'Pekerja Migran Asing',
-        heroDesc: 'Sistem cek jadwal kerja harian, lokasi panen, pemberitahuan kerja dalam ruangan saat hujan, dan transparansi gaji.',
-        wageTitle: 'Jaminan Gaji Bulanan & Bonus Kementerian',
-        perMonth: 'bulan',
-        wageBase: 'Gaji Pokok',
-        wageBonus: 'Bonus Pertanian',
-        wageAllowance: 'Tunjangan Transport',
         hotlineLabel: 'Saluran Bantuan',
         hotlineNote: 'Bebas pulsa 24/7 Bahasa Indo',
-        insuranceLabel: 'Asuransi Kerja',
-        insured: 'Terdaftar',
-        insuranceNote: 'Kesehatan & Kecelakaan',
         loginTitle: 'Masuk Pekerja Migran',
         loginSubtitle: 'Masukkan nomor ARC, nomor paspor, atau ID pekerja',
         idLabel: 'Nomor ARC / Paspor / ID Pekerja',
@@ -393,26 +201,14 @@
         pwdPlaceholder: 'Masukkan kata sandi',
         pwdDefaultHint: 'Kata sandi default',
         helpForgot: 'Lupa sandi? Hubungi 1955',
-        btnSubmit: 'Masuk Sekarang ➔',
+        btnSubmit: 'Masuk',
         loggingIn: 'Memverifikasi...',
         quickDemoTitle: 'Akun demonstrasi cepat:'
       },
       th: {
         switchRole: 'เปลี่ยนบทบาท',
-        legalTag: 'สหกรณ์การเกษตรที่ได้รับอนุญาตจากกระทรวงเกษตรไต้หวัน',
-        heroTitle1: 'สิทธิประโยชน์และงาน',
-        heroTitle2: 'แรงงานต่างชาติ',
-        heroDesc: 'ระบบตรวจสอบตารางงานประจำวัน สถานที่เก็บเกี่ยว การแจ้งเตือนหลบฝนในห้องเย็น และความโปร่งใสของเงินเดือน',
-        wageTitle: 'รับประกันเงินเดือนรายเดือน & เงินโบนัส',
-        perMonth: 'เดือน',
-        wageBase: 'เงินเดือนพื้นฐาน',
-        wageBonus: 'เงินรางวัลเกษตร',
-        wageAllowance: 'เบี้ยเลี้ยงเดินทาง',
         hotlineLabel: 'สายด่วนช่วยเหลือ',
         hotlineNote: 'ฟรี 24 ชม. ภาษาไทย',
-        insuranceLabel: 'ประกันแรงงาน',
-        insured: 'ครบถ้วน',
-        insuranceNote: 'สุขภาพ & อุบัติเหตุ',
         loginTitle: 'เข้าสู่ระบบแรงงานต่างชาติ',
         loginSubtitle: 'กรอกหมายเลข ARC หนังสือเดินทาง หรือรหัสคนงาน',
         idLabel: 'หมายเลข ARC / หนังสือเดินทาง / รหัสคนงาน',
@@ -422,26 +218,14 @@
         pwdPlaceholder: 'กรอกรหัสผ่าน',
         pwdDefaultHint: 'รหัสผ่านเริ่มต้น',
         helpForgot: 'ลืมรหัสผ่าน? โทร 1955',
-        btnSubmit: 'เข้าสู่ระบบทันที ➔',
+        btnSubmit: 'เข้าสู่ระบบ',
         loggingIn: 'กำลังตรวจสอบ...',
         quickDemoTitle: 'บัญชีทดลองใช้งาน:'
       },
       en: {
         switchRole: 'Switch Role',
-        legalTag: 'Licensed Agricultural Cooperative - Ministry of Agriculture',
-        heroTitle1: 'Work Tasks & Rights',
-        heroTitle2: 'Foreign Migrant Workers',
-        heroDesc: 'Daily dispatch task viewer, harvesting locations, indoor cold-chain rain switch notification, and transparent wage breakdown.',
-        wageTitle: 'Monthly Guaranteed Wage & Government Bonus',
-        perMonth: 'mo',
-        wageBase: 'Base Salary',
-        wageBonus: 'Agri Bonus',
-        wageAllowance: 'Transport Subsidy',
         hotlineLabel: 'Helpline',
         hotlineNote: '24/7 Toll-free English/Tagalog',
-        insuranceLabel: 'Insurance Status',
-        insured: '100% Compliant',
-        insuranceNote: 'Health & Injury Covered',
         loginTitle: 'Worker Login',
         loginSubtitle: 'Enter your ARC number, Passport number, or Worker ID',
         idLabel: 'ARC Number / Passport / Worker ID',
@@ -451,26 +235,14 @@
         pwdPlaceholder: 'Enter password',
         pwdDefaultHint: 'Default password',
         helpForgot: 'Forgot password? Dial 1955',
-        btnSubmit: 'Login to Portal ➔',
+        btnSubmit: 'Log in',
         loggingIn: 'Authenticating...',
         quickDemoTitle: 'Quick demo profiles:'
       },
       zh: {
         switchRole: '切換身分',
-        legalTag: '農業部外展合作社 ╳ 合法在籍移工專用',
-        heroTitle1: '派遣任務與權益保障',
-        heroTitle2: '外籍外展農工門戶',
-        heroDesc: '提供每日派工任務即時查詢、出勤集合地點、雨天室內冷鏈避險通知與透明薪資獎勵金明細。',
-        wageTitle: '法定薪資與農業部就業獎勵保障',
-        perMonth: '月',
-        wageBase: '法定基本底薪',
-        wageBonus: '農業部就業獎勵',
-        wageAllowance: '交通偏遠津貼',
         hotlineLabel: '外勞諮詢專線',
         hotlineNote: '1955 雙語免付費',
-        insuranceLabel: '勞健職災納保',
-        insured: '100% 合規',
-        insuranceNote: '全員附法定保險',
         loginTitle: '外展移工登入',
         loginSubtitle: '請輸入居留證號 (ARC)、護照號碼或工號',
         idLabel: '居留證號 (ARC) / 護照號碼 / 農工工號',
@@ -480,7 +252,7 @@
         pwdPlaceholder: '請輸入密碼',
         pwdDefaultHint: '預設密碼',
         helpForgot: '忘記密碼？請撥打 1955',
-        btnSubmit: '登入移工工作台 ➔',
+        btnSubmit: '登入',
         loggingIn: '驗證登入中...',
         quickDemoTitle: '快速體驗示範身分：'
       }
@@ -531,8 +303,13 @@
           data: {}
         });
 
+        // <html lang> 跟著語言走（螢幕閱讀器與瀏覽器翻譯依此判斷）
+        const htmlLang = (l) => (l === 'zh' ? 'zh-TW' : l);
+        document.documentElement.lang = htmlLang(lang.value);
+
         const setLang = (newLang) => {
           lang.value = newLang;
+          document.documentElement.lang = htmlLang(newLang);
           if (window.AgriNativeBridge && typeof window.AgriNativeBridge.vibrate === 'function') {
             window.AgriNativeBridge.vibrate(30);
           }

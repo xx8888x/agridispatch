@@ -27,25 +27,9 @@
       document.write('<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"><\/script>');
     }
   </script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#eff6ff',
-              100: '#dbeafe',
-              500: '#3b82f6',
-              600: '#2563eb',
-              700: '#1d4ed8',
-              800: '#1e40af',
-              900: '#1e3a8a',
-            }
-          }
-        }
-      }
-    }
-  </script>
+  <!-- 設計系統：共用 tailwind.config、demo 模式標記 -->
+  <script src="js/agri-theme.js"></script>
+  <link rel="stylesheet" href="css/agri.css">
   <style>
     [v-cloak] { display: none; }
   </style>
@@ -60,295 +44,121 @@
     }, 1500);
   </script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white">
+<body class="ad-body">
 
   <div id="app" v-cloak class="flex flex-col min-h-screen">
-    <!-- Header -->
-    <header class="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur-md sticky top-0 z-30">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <a href="login.html" class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <span class="text-xl">👨‍💼</span>
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="font-extrabold text-base sm:text-lg tracking-tight text-white">智農派工</span>
-              <span class="text-[11px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 font-semibold">Tier 2/3 本國帶工領班與機耕門戶</span>
-            </div>
-            <p class="text-[10px] text-slate-400">外展帶隊小工頭 ╳ 大型曳引機 ╳ 植保無人機 ╳ 在地彈性兼職</p>
-          </div>
-        </a>
-
-        <div class="flex items-center gap-3 text-xs">
-          <a href="login.html" class="text-slate-400 hover:text-blue-400 transition flex items-center gap-1">
-            <span>↩</span> 切換身分
-          </a>
-          <a href="index.html" class="text-slate-400 hover:text-white transition hidden sm:inline">回首頁</a>
+    <header class="ad-header">
+      <div class="ad-container ad-header__inner">
+        <a href="login.html" class="ad-header__brand"><span class="ad-header__logo"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ad-icon"><path d="M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3"></path><path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4"></path><path d="M5 21h14"></path></svg></span>智農派工<span class="ad-header__role">本國工作人員</span></a>
+        <div class="ad-header__actions">
+          <a href="login.html" class="ad-btn ad-btn--ghost ad-btn--sm">切換身分</a>
         </div>
       </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div class="max-w-4xl w-full grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-
-        <!-- Left Column: Machinery & Local Work Features (5 cols) -->
-        <div class="md:col-span-5 space-y-5">
-          <!-- Dynamic Badge -->
-          <div v-if="activeTrack === 'labor'" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
-            <span>🧑‍🌾</span> 合作社在籍農業勞務員 (勞務勞工專用)
-          </div>
-          <div v-else-if="activeTrack === 'machinery'" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold">
-            <span>🚜</span> 專業成果代耕 ╳ 機耕技師專用
-          </div>
-          <div v-else class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold">
-            <span>👨‍💼</span> 本國帶工領班與現場小工頭專用
-          </div>
-
-          <!-- Dynamic Title -->
-          <h1 v-if="activeTrack === 'labor'" class="text-2xl sm:text-3xl font-black text-white leading-snug">
-            合作社在籍農工<br>
-            <span class="text-emerald-400">保障底薪 $29,500 + 獎勵金 $8,800</span>
-          </h1>
-          <h1 v-else-if="activeTrack === 'machinery'" class="text-2xl sm:text-3xl font-black text-white leading-snug">
-            80hp 曳引機 ╳ 無人機代噴<br>
-            <span class="text-cyan-400">純承攬合約 ╳ 成果驗收即結算</span>
-          </h1>
-          <h1 v-else class="text-2xl sm:text-3xl font-black text-white leading-snug">
-            帶隊領班 ╳ 雙語口令<br>
-            <span class="text-blue-400">帶隊 6 人小隊 ╳ 每月加給 $8,000</span>
-          </h1>
-
-          <p class="text-xs text-slate-400 leading-relaxed">
-            <span v-if="activeTrack === 'labor'">
-              合作社外展在籍農業勞務員享最高法定保障：勞健職災保險 100% 提繳、6% 勞退按月入帳、專車往返契作田區接送、農業部中央 $8,800 就業獎勵金。天候暴雨自動轉派冷鏈包裝廠，不扣工時！
-            </span>
-            <span v-else-if="activeTrack === 'machinery'">
-              大馬力曳引機深耕（每分地 $1,500）與大疆 T50 植保無人機精準代噴（每甲地 $2,500）。平台一鍵媒合契作農戶，驗收完成線上撥款。
-            </span>
-            <span v-else>
-              智農派工提供本國帶工領班現場帶領 6 名外籍移工小隊，享有每月 NT$ 8,000 領班加給與雙語廣播支援；點名簽核與田間手路指導。
-            </span>
-          </p>
-
-          <!-- Plan Rates Card -->
-          <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 space-y-2.5 text-xs">
-            <div class="text-[11px] font-bold text-slate-200 flex items-center gap-1.5">
-              <span>💼</span> 三軌農力三大保障與加給方案
-            </div>
-            
-            <div class="space-y-1.5 text-[11px]">
-              <div :class="activeTrack === 'labor' ? 'border-emerald-500/60 bg-emerald-950/30' : 'border-slate-800 bg-slate-950/60'" class="flex items-center justify-between p-2 rounded-xl border transition">
-                <span class="text-slate-300 font-bold">🧑‍🌾 【三軌】在籍農業勞務工</span>
-                <span class="font-bold text-emerald-400 font-mono">底薪 $29,500 + 獎勵 $8,800</span>
-              </div>
-              <div :class="activeTrack === 'foreman' ? 'border-blue-500/60 bg-blue-950/30' : 'border-slate-800 bg-slate-950/60'" class="flex items-center justify-between p-2 rounded-xl border transition">
-                <span class="text-slate-300 font-bold">👨‍💼 【Tier 2】外展帶隊領班</span>
-                <span class="font-bold text-amber-300 font-mono">底薪 + 領班加給 $8,000</span>
-              </div>
-              <div :class="activeTrack === 'machinery' ? 'border-cyan-500/60 bg-cyan-950/30' : 'border-slate-800 bg-slate-950/60'" class="flex items-center justify-between p-2 rounded-xl border transition">
-                <span class="text-slate-300 font-bold">🚜 【Tier 3】專業成果代耕</span>
-                <span class="font-bold text-cyan-300 font-mono">深耕 $1,500 / 噴灑 $800</span>
-              </div>
-            </div>
-          </div>
+    <main class="ad-auth">
+      <div class="ad-card ad-auth__card">
+        <div class="ad-seg" role="group" aria-label="身分" style="display: flex; margin-bottom: 20px;">
+          <button type="button" @click="setTrack('labor')" :class="{ 'is-active': activeTrack === 'labor' }" class="ad-seg__btn" style="flex: 1;">農業勞務員</button>
+          <button type="button" @click="setTrack('foreman')" :class="{ 'is-active': activeTrack === 'foreman' }" class="ad-seg__btn" style="flex: 1;">帶隊領班</button>
+          <button type="button" @click="setTrack('machinery')" :class="{ 'is-active': activeTrack === 'machinery' }" class="ad-seg__btn" style="flex: 1;">機耕技師</button>
         </div>
 
-        <!-- Right Column: Local Worker Login Card (7 cols) -->
-        <div class="md:col-span-7 bg-slate-900/90 rounded-3xl border border-slate-700/80 p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-          <div class="absolute top-0 right-0 w-44 h-44 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <h1 class="ad-title">
+          <span v-if="activeTrack === 'labor'">農業勞務員登入</span>
+          <span v-else-if="activeTrack === 'machinery'">機耕技師登入</span>
+          <span v-else>帶隊領班登入</span>
+        </h1>
+        <p class="ad-caption" style="margin: 4px 0 20px;">
+          <span v-if="activeTrack === 'labor'">輸入合作社勞務員工號（如 W030）或手機號碼。</span>
+          <span v-else>輸入身分證字號、手機號碼或工號。</span>
+        </p>
 
-          <!-- 3-Track Segmented Switcher -->
-          <div class="grid grid-cols-3 gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 mb-6">
-            <button type="button" @click="setTrack('labor')"
-              :class="activeTrack === 'labor' ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-600/30' : 'text-slate-400 hover:text-white'"
-              class="py-2.5 px-2 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1">
-              <span>🧑‍🌾</span> 農業勞務員
-            </button>
-            <button type="button" @click="setTrack('foreman')"
-              :class="activeTrack === 'foreman' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white'"
-              class="py-2.5 px-2 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1">
-              <span>👨‍💼</span> 帶隊領班
-            </button>
-            <button type="button" @click="setTrack('machinery')"
-              :class="activeTrack === 'machinery' ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-600/30' : 'text-slate-400 hover:text-white'"
-              class="py-2.5 px-2 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1">
-              <span>🚜</span> 機耕技師
-            </button>
-          </div>
+            <div v-if="errorMsg" class="ad-notice ad-notice--danger" role="alert" style="margin-bottom: 16px;">{{ errorMsg }}</div>
+            <div v-if="successMsg" class="ad-notice ad-notice--ok" role="status" style="margin-bottom: 16px;">{{ successMsg }}</div>
 
-          <div class="mb-5">
-            <div class="flex items-center justify-between">
-              <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
-                <span v-if="activeTrack === 'labor'">🧑‍🌾 合作社在籍農業勞務員登入</span>
-                <span v-else-if="activeTrack === 'machinery'">🚜 專業機耕 / 無人機飛手登入</span>
-                <span v-else>👨‍💼 本國帶工領班登入</span>
-              </h2>
-              <span v-if="activeTrack === 'labor'" class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">勞務勞工</span>
-              <span v-else-if="activeTrack === 'machinery'" class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30">Tier 3 代耕</span>
-              <span v-else class="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-bold border border-blue-500/30">Tier 2 領班</span>
-            </div>
-            <p class="text-xs text-slate-400 mt-1">
-              <span v-if="activeTrack === 'labor'">請輸入合作社勞務員工號 (如 W030) 或手機號碼 (0975-123-456)</span>
-              <span v-else>請輸入身分證字號、手機號碼或工號</span>
-            </p>
-          </div>
-
-          <!-- Alert / Messages -->
-          <div v-if="errorMsg" class="mb-4 p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2">
-            <span>⚠️</span> {{ errorMsg }}
-          </div>
-
-          <div v-if="successMsg" class="mb-4 p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2">
-            <span>✅</span> {{ successMsg }}
-          </div>
-
-          <!-- Login Form -->
-          <form @submit.prevent="handleLogin" class="space-y-4 text-xs">
-            <div>
-              <label class="block text-slate-300 font-semibold mb-1.5">
-                身分證字號 / 手機號碼 / 工號
-              </label>
-              <div class="relative">
-                <input v-model="form.identifier" type="text" required placeholder="如 0933-555-666 或 W025"
-                  class="w-full px-4 py-3.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition text-sm font-mono">
-                <span class="absolute right-3.5 top-3.5 text-slate-500">📱</span>
+            <form @submit.prevent="handleLogin" style="display: flex; flex-direction: column; gap: 16px;">
+              <div class="ad-field">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;"><label class="ad-label">身分證字號／手機號碼／工號</label></div>
+                <input v-model="form.identifier" type="text" placeholder="如 0933-555-666 或 W025" required autocomplete="username" class="ad-input ad-num">
               </div>
-            </div>
-
-            <div>
-              <label class="block text-slate-300 font-semibold mb-1.5">登入密碼</label>
-              <div class="relative">
-                <input v-model="form.password" type="password" required :placeholder="isDemo && demoCfg ? demoCfg.pwdPlaceholder : '請輸入密碼'"
-                  class="w-full px-4 py-3.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition text-sm font-mono">
-                <span class="absolute right-3.5 top-3.5 text-slate-500">🔒</span>
+              <div class="ad-field">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;"><label class="ad-label">密碼</label><a href="#" @click.prevent="alertHelp" class="ad-caption" style="color: var(--ad-primary-text);">忘記密碼？</a></div>
+                <input v-model="form.password" type="password" :placeholder="isDemo && demoCfg ? demoCfg.pwdPlaceholder : '請輸入密碼'" required autocomplete="current-password" class="ad-input ad-num">
               </div>
-            </div>
+              <p v-if="isDemo && demoCfg" class="ad-caption" style="margin: -8px 0 0;">{{ demoCfg.pwdHint }}</p>
+              <button type="submit" :disabled="loading" class="ad-btn ad-btn--primary ad-btn--lg ad-btn--block" style="margin-top: 4px;">{{ loading ? '驗證中…' : '登入' }}</button>
+            </form>
 
-            <div class="flex items-center justify-between text-xs pt-1">
-              <span v-if="isDemo && demoCfg" class="text-slate-400 text-[11px]">💡 {{ demoCfg.pwdHint }}</span>
-              <span v-else></span>
-              <a href="#" @click.prevent="alertHelp" class="text-blue-400 text-[11px] hover:underline">忘記密碼 / 人才登錄？</a>
-            </div>
-
-            <button type="submit" :disabled="loading"
-              class="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-black text-sm shadow-xl shadow-blue-500/20 transition flex items-center justify-center gap-2 disabled:opacity-50 mt-2">
-              <span v-if="loading" class="animate-spin">🌀</span>
-              <span>{{ loading ? '驗證身分中...' : '登入機耕 / 兼職工作台 ➔' }}</span>
-            </button>
-          </form>
-
-          <!-- Quick Fill Demo Local Workers（僅 demo 模式顯示，資料來自 js/demo-accounts.js） -->
-          <div v-if="isDemo && demoCfg" class="mt-6 pt-5 border-t border-slate-800">
-            <div class="text-[11px] font-bold text-slate-400 mb-2.5 flex items-center justify-between">
-              <span>⚡ 快速體驗示範身分：</span>
-              <span class="text-[10px] text-slate-500">點擊直接填入</span>
-            </div>
-            <div class="space-y-2">
-              <button v-for="p in demoCfg.profiles" :key="p.identifier" @click="fillProfile(p.identifier, p.password, p.workerId, p.track === 'labor' ? 'labor' : null)" type="button"
-                class="w-full text-left p-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-blue-500/40 transition flex items-center justify-between">
-                <div>
-                  <div class="flex items-center gap-1.5 font-bold text-white text-xs">
-                    <span>{{ p.icon }}</span> {{ p.name }}
+            <div v-if="isDemo && demoCfg" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--ad-border);">
+              <div class="ad-label" style="margin-bottom: 8px;">示範身分（點一下直接填入）</div>
+              <div class="ad-list">
+                <button v-for="p in demoCfg.profiles" :key="p.identifier" @click="fillProfile(p.identifier, p.password, p.workerId, p.track === 'labor' ? 'labor' : null)" type="button" class="ad-row">
+                  <div class="ad-row__main">
+                    <div class="ad-row__title">{{ p.name }}</div>
+                    <div class="ad-row__meta">{{ p.desc }}</div>
                   </div>
-                  <div class="text-[10px] text-slate-400 mt-0.5">{{ p.desc }}</div>
-                </div>
-                <span class="px-2 py-0.5 rounded font-mono text-[10px]" :class="'bg-' + p.tagColor + '-500/20 text-' + p.tagColor + '-300'">{{ p.tag }}</span>
-              </button>
+                  <span class="ad-pill">{{ p.tag }}</span>
+                </button>
+              </div>
             </div>
-          </div>
 
-          <!-- Bottom Switch -->
-          <div class="mt-5 text-center text-xs text-slate-500">
-            <a href="farmer-login.html" class="text-emerald-400 hover:underline mx-2">我是農場主</a>
-            •
-            <a href="worker-foreign-login.html" class="text-amber-400 hover:underline mx-2">我是外籍移工</a>
-          </div>
-        </div>
-
+        <p class="ad-caption" style="margin-top: 20px; text-align: center;">
+          <a href="farmer-login.html" style="color: var(--ad-primary-text);">我是農場主</a>・<a href="worker-foreign-login.html" style="color: var(--ad-primary-text);">我是外籍移工</a>
+        </p>
       </div>
     </main>
 
-    <!-- Post-Login Local Worker Modal -->
-    <div v-if="localModal.show" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-slate-900 border border-blue-500/50 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl text-xs">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <div class="flex items-center gap-2">
-            <span class="text-2xl">👨‍💼</span>
-            <div>
-              <h3 class="font-extrabold text-base text-white">{{ localModal.data.name }}</h3>
-              <p class="text-[11px] text-blue-400 font-mono">{{ localModal.data.roleDesc }}</p>
-            </div>
+    <!-- 登入後的個人摘要 -->
+    <div v-if="localModal.show" class="ad-modal" role="dialog" aria-modal="true">
+      <div class="ad-modal__panel">
+        <div class="ad-card__head">
+          <div style="min-width: 0;">
+            <h3 class="ad-title">{{ localModal.data.name }}</h3>
+            <p class="ad-caption">{{ localModal.data.roleDesc }}</p>
           </div>
-          <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold">
-            驗證登入成功
-          </span>
+          <span class="ad-pill ad-pill--ok">登入成功</span>
         </div>
 
-        <div v-if="localModal.data.workerProfile" class="space-y-3">
-          <!-- Current task -->
-          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-slate-400">目前派遣任務</span>
-              <span class="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40 font-bold text-[11px]">
-                {{ localModal.data.workerProfile.dispatchStatus === 'dispatched_field' ? '🟢 田間作業出勤' : '🟡 待命調度中' }}
-              </span>
+        <div v-if="localModal.data.workerProfile" style="display: flex; flex-direction: column; gap: 12px;">
+          <div class="ad-card ad-card--inset">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <span class="ad-label">目前派遣任務</span>
+              <span class="ad-pill" :class="localModal.data.workerProfile.dispatchStatus === 'dispatched_field' ? 'ad-pill--ok' : 'ad-pill--warn'">{{ localModal.data.workerProfile.dispatchStatus === 'dispatched_field' ? '田間作業出勤' : '待命調度中' }}</span>
             </div>
-            <div>
-              <div class="text-slate-400 text-[10px]">作業項目與指定場域:</div>
-              <div class="text-white font-bold text-sm mt-0.5">{{ localModal.data.workerProfile.currentTask }}</div>
-            </div>
+            <div class="ad-label" style="margin-top: 10px;">作業項目與指定場域</div>
+            <div class="ad-heading" style="margin-top: 2px;">{{ localModal.data.workerProfile.currentTask }}</div>
           </div>
 
-          <!-- Worker Specs -->
-          <div class="grid grid-cols-2 gap-2 text-[11px]">
-            <div class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
-              <div class="text-slate-500">工號 (ID)</div>
-              <div class="font-mono font-bold text-blue-300 mt-0.5">{{ localModal.data.workerProfile.id }}</div>
-            </div>
-            <div class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
-              <div class="text-slate-500">聯絡手機</div>
-              <div class="font-mono font-bold text-slate-300 mt-0.5">{{ localModal.data.workerProfile.phone }}</div>
-            </div>
-            <div class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
-              <div class="text-slate-500">所屬調度工班</div>
-              <div class="font-bold text-white mt-0.5">{{ localModal.data.workerProfile.teamId }}</div>
-            </div>
-            <div class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
-              <div class="text-slate-500">勞健保與職災</div>
-              <div class="font-bold text-emerald-400 mt-0.5">{{ localModal.data.workerProfile.insuranceStatus }}</div>
-            </div>
+          <div class="ad-form-grid ad-form-grid--2">
+            <div class="ad-card ad-card--inset"><div class="ad-label">工號</div><div class="ad-num" style="font-weight: 600; margin-top: 2px;">{{ localModal.data.workerProfile.id }}</div></div>
+            <div class="ad-card ad-card--inset"><div class="ad-label">聯絡手機</div><div class="ad-num" style="font-weight: 600; margin-top: 2px;">{{ localModal.data.workerProfile.phone }}</div></div>
+            <div class="ad-card ad-card--inset"><div class="ad-label">所屬調度工班</div><div style="font-weight: 600; margin-top: 2px;">{{ localModal.data.workerProfile.teamId }}</div></div>
+            <div class="ad-card ad-card--inset"><div class="ad-label">勞健保與職災</div><div style="font-weight: 600; margin-top: 2px; color: var(--ad-primary-text);">{{ localModal.data.workerProfile.insuranceStatus }}</div></div>
           </div>
 
-          <!-- Compensation Breakdown -->
-          <div class="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-between">
+          <div class="ad-card ad-card--accent" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
             <div>
-              <div class="text-[10px] text-blue-300 font-semibold">月薪津貼基準</div>
-              <div class="text-slate-400 text-[10px]">底薪 + 就業/領班加給 + 交通加給</div>
+              <div class="ad-heading">月薪津貼基準</div>
+              <div class="ad-caption">底薪＋就業／領班加給＋交通加給</div>
             </div>
-            <div class="text-lg font-black text-white font-mono">
-              NT$ {{ ((localModal.data.workerProfile.baseSalary || 33000) + (localModal.data.workerProfile.agriBonus || 8800) + (localModal.data.workerProfile.transportAllowance || 2000)).toLocaleString() }}
-            </div>
+            <strong class="ad-price ad-price--lg ad-price--accent">NT$ {{ ((localModal.data.workerProfile.baseSalary || 33000) + (localModal.data.workerProfile.agriBonus || 8800) + (localModal.data.workerProfile.transportAllowance || 2000)).toLocaleString() }}</strong>
           </div>
         </div>
 
-        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
-          <button @click="localModal.show = false" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition">
-            關閉
-          </button>
-          <a :href="activeTrack === 'labor' ? 'worker-local.html?role=labor' : (activeTrack === 'machinery' ? 'worker-local.html?role=machinery' : 'worker-local.html?role=foreman')"
-             class="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-500 hover:to-blue-500 text-white font-bold shadow transition">
-            <span v-if="activeTrack === 'labor'">進入農業勞務員工作台 ➔</span>
-            <span v-else-if="activeTrack === 'machinery'">進入機耕代耕工作台 ➔</span>
-            <span v-else>進入帶隊領班工作台 ➔</span>
+        <div class="ad-card__foot" style="margin-top: 0;">
+          <button type="button" @click="localModal.show = false" class="ad-btn ad-btn--ghost">關閉</button>
+          <a :href="activeTrack === 'labor' ? 'worker-local.html?role=labor' : (activeTrack === 'machinery' ? 'worker-local.html?role=machinery' : 'worker-local.html?role=foreman')" class="ad-btn ad-btn--primary">
+            <span v-if="activeTrack === 'labor'">進入勞務員工作台</span>
+            <span v-else-if="activeTrack === 'machinery'">進入機耕工作台</span>
+            <span v-else>進入領班工作台</span>
           </a>
         </div>
       </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="border-t border-slate-800/80 py-5 text-center text-xs text-slate-500">
-      智農派工 AgriDispatch © 2026 農業部外展合作社 ╳ 本國農力與代耕服務網
+    <footer class="ad-caption" style="border-top: 1px solid var(--ad-border); padding: 16px; text-align: center;">
+      © 2026 智農派工 AgriDispatch
     </footer>
   </div>
 
@@ -511,7 +321,7 @@
         };
 
         const alertHelp = () => {
-          (window.AgriUtil ? window.AgriUtil.toast : (t, m) => alert(`${t}\n${m}`))('📞 需要協助？', '如欲登錄專業農機、植保無人機具或報名兼職農工，請點選管理後台「人才儲備」或致電：(03) 388-1234。');
+          (window.AgriUtil ? window.AgriUtil.toast : (t, m) => alert(`${t}\n${m}`))('需要協助？', '如欲登錄專業農機、植保無人機具或報名兼職農工，請點選管理後台「人才儲備」或致電：(03) 388-1234。');
         };
 
         return {

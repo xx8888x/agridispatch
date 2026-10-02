@@ -280,4 +280,26 @@ class DemoModeApiTest extends ApiTestSupport {
         assertEquals(29_500, data.get("currentMonth").get("baseSalary").asInt());
         assertEquals(403, call("GET", "/api/workers/W001/payroll", token, null).getResponse().getStatus());
     }
+
+    @Test
+    void demoFarmerTokenOnlySeesOwnLegalizeRosterAndCanReset() throws Exception {
+        // demo-login 的 token 在 demo 模式視同 admin，但農場主身分仍只看自己的黑轉白清冊
+        String farmer = json(call("POST", "/api/auth/demo-login", null, Map.of("role", "farmer"))).get("token").asText();
+        JsonNode rows = json(call("GET", "/api/legalize/roster", farmer, null)).get("data");
+        assertEquals(7, rows.size());
+        for (JsonNode w : rows) assertEquals("F001", w.get("farmerId").asText());
+        assertEquals(403, call("GET", "/api/legalize/summary", farmer, null).getResponse().getStatus());
+
+        // 新增不必帶 farmerId、重設回 7 筆（demo 才有）
+        JsonNode added = json(call("POST", "/api/legalize/roster", farmer, Map.of("type", "local", "name", "阿財", "daysPerWeek", 2))).get("data");
+        assertEquals("F001", added.get("farmerId").asText());
+        JsonNode reset = json(call("POST", "/api/legalize/roster/reset", farmer, Map.of())).get("data");
+        assertEquals(7, reset.get("count").asInt());
+        assertEquals(7, json(call("GET", "/api/legalize/roster", farmer, null)).get("data").size());
+
+        // admin 看全部
+        String admin = json(call("POST", "/api/auth/demo-login", null, Map.of("role", "admin_tech"))).get("token").asText();
+        assertEquals(9, json(call("GET", "/api/legalize/roster", admin, null)).get("data").size());
+        assertEquals(200, call("GET", "/api/legalize/summary", admin, null).getResponse().getStatus());
+    }
 }

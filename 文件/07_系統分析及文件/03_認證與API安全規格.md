@@ -39,7 +39,7 @@
 
 ## 5. 授權規則
 
-- **公開（不需 token）**：`POST /api/auth/login`、`POST /api/auth/demo-login`、`GET /api/public/**`、`GET /api/crops/**`、`GET /api/calendar/**`、`GET /api/brochures/**`、`GET /api/payments/methods`、`GET /api/orders/categories`、`POST /api/orders/calculate`、`POST /api/talents/register`、`GET /api/dispatch/overview`、`GET /api/dispatch/weather-state`、`POST /api/payments/ecpay/notify`（以 CheckMacValue 驗證）、`POST /api/line/webhook`（以 X-Line-Signature 驗證；已停用，過渡期保留）、`POST /api/line/internal/**`（LINE Bot 內部端點，以 `X-Internal-Key` 驗證，見下方「LINE 官方帳號」）。
+- **公開（不需 token）**：`POST /api/auth/login`、`POST /api/auth/demo-login`、`GET /api/public/**`、`GET /api/crops/**`、`GET /api/calendar/**`、`GET /api/brochures/**`、`GET /api/legalize/types`（黑轉白身分類型與法規參考文字）、`GET /api/payments/methods`、`GET /api/orders/categories`、`POST /api/orders/calculate`、`POST /api/talents/register`、`GET /api/dispatch/overview`、`GET /api/dispatch/weather-state`、`POST /api/payments/ecpay/notify`（以 CheckMacValue 驗證）、`POST /api/line/webhook`（以 X-Line-Signature 驗證；已停用，過渡期保留）、`POST /api/line/internal/**`（LINE Bot 內部端點，以 `X-Internal-Key` 驗證，見下方「LINE 官方帳號」）。
 - **需登入**：其餘 `/api/**`。
 - **僅 admin_tech**：crops / brochures / talents / workers 的新增修改刪除、`/api/dispatch/*` 的 POST/PUT、`/api/line/config`、`GET /api/line/bindings`、`DELETE /api/line/bindings/{id}`、`/api/notifications/send`、`GET /api/workers`（完整名冊）、`/api/dev/**`。
 - **LINE 官方帳號（農場主／工作者雙帳號，規格 `05_LINE官方帳號拆分規格.md` 第伍、陸章）**：
@@ -53,6 +53,7 @@
 - **工班評價 `/api/ratings`**（皆需登入，權限於 Controller/Service 檢查）：`PUT /orders/{orderId}` 限訂單擁有者或 admin，且訂單須為 `in_progress`／`completed`（否則 409）；`GET /orders/{orderId}` 權限同訂單讀取；`GET /teams`、`/teams/{teamId}`、`/tags` 任何登入者。回應不含評分者編號，訂單編號只回給 admin。
 - **保險登錄 `/api/insurance`**（皆需登入，權限於 Controller/Service 檢查）：`GET /workers`、`POST /workers/{id}/enroll`、`POST /records/{id}/withdraw` 僅 admin；`GET /workers/{id}` 本人或 admin；`GET /teams/{teamId}` 任何登入者，但缺保名單 `gaps` 只回給 admin。
 - **合法用工證明**：`GET /api/certificates/orders/{orderId}` 限訂單擁有者或 admin，依該訂單出勤逐日核對工作許可效期與加保，全部符合才附查驗碼；`GET /api/public/certificates/{certificateNo}?code=` 公開查驗（屬 `/api/public/**`），只回摘要、不含工人姓名。查驗碼為 `AGRI_TOKEN_SECRET` 簽出的 HMAC，未固定密鑰時重啟即改變。
+- **工班合法化（黑轉白）`/api/legalize`**：`GET /types` 公開；其餘皆需登入——`GET /roster` 農場主只回自己的清冊（`?farmerId=` 對農場主無效），admin 回全部並可篩選；`POST /roster`、`PUT /roster/{id}`、`DELETE /roster/{id}` 限清冊所屬農場主或 admin（admin 新增須帶 `farmerId`），工人角色一律 403；`GET /summary`（各農場進度、補位缺口、罰鍰暴露）僅 admin（AuthInterceptor）；`POST /roster/reset` 僅 demo 模式（非 demo 回 404）。借用／失聯移工類型不接受也不回傳姓名。
 - **熟手標籤 `/api/skills`**（皆需登入）：`GET /workers` 與 `POST /workers/{id}/{skill}/restore`（暫停複核恢復）僅 admin；`GET /workers/{id}` 本人或 admin；`GET /teams/{teamId}` 任何登入者，只回人數不列姓名。規則常數集中於 `SkillService`。
 - **領班逐人評核 `/api/evaluations`**（皆需登入）：`GET /teams/{teamId}?date=`、`PUT /attendance/{id}`（`rating`＝excellent／ok／needs_improvement）限 admin 或「與受評者同工班且 isLeader 的工人」；不可評自己、須已下班簽核、領班只能評 7 天內班次。評核只用於技能標籤與媒合，不得作為扣薪或解僱依據【待確認】。
 - **派工媒合 `/api/matching/orders/{orderId}`**（僅 admin）：`GET` 工班排序與出工名單建議、`GET /crew?teamId=` 指定工班名單、`PUT {teamId, crew:[工號]}` 確認派工（名單須為該工班成員且工作許可有效、完整加保，否則 400／409；已完工或取消的訂單 409）。出工名單只能由此設定，`POST/PUT /api/orders` 不接受 `crewWorkerIds`。訂單有出工名單時，轉 `in_progress` 的加保檢查與打卡自動連結皆以名單為準。

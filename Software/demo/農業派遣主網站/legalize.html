@@ -112,7 +112,7 @@
       <div class="lg:col-span-7" style="display: flex; flex-direction: column; gap: 12px;">
         <div class="ad-section__head" style="margin-bottom: 0;">
           <h2 class="ad-title">現有工班清冊</h2>
-          <span class="ad-caption">點選人員查看轉白步驟</span>
+          <span class="ad-caption">點選人員查看轉白步驟・<span id="syncNote"></span></span>
         </div>
         <div id="rosterList" style="display: flex; flex-direction: column; gap: 8px;"></div>
       </div>
@@ -184,9 +184,31 @@
 
   <script>
     // ------------------------------------------------------------------
-    // 黑轉白轉換中心（demo：資料存在瀏覽器 localStorage）
+    // 黑轉白轉換中心
+    // 資料來源：後端 /api/legalize（農場主只看得到自己的清冊；科技後台另有各農場彙總）。
+    // 連不上後端時，demo 模式改用瀏覽器 localStorage 的示範資料（offline），正式版顯示錯誤。
+    // 下面 TYPES 的法規文字與後端 LegalizeService.TYPES 相同，啟動時會以後端回傳覆蓋，離線時當備援。
     // ------------------------------------------------------------------
     const STORE_KEY = 'agri.legalize.roster.v1';
+    const API_BASE = (window.AgriAuth && window.AgriAuth.API_BASE) || ((window.AGRI_CONFIG && window.AGRI_CONFIG.apiBase) || '/api');
+    const IS_DEMO = !window.AGRI_CONFIG || window.AGRI_CONFIG.mode !== 'production';
+    let online = false;   // 後端是否可用
+
+    async function api(path, options) {
+      const res = await fetch(`${API_BASE}/legalize${path}`, Object.assign({ headers: { 'Content-Type': 'application/json' } }, options || {}));
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body.success === false) {
+        const err = new Error(body.error || body.message || `HTTP ${res.status}`);
+        err.fromServer = true;
+        throw err;
+      }
+      return body.data;
+    }
+
+    // 後端清冊 → 畫面用的格式（days 與 done 沿用原本欄位名）
+    function fromApi(w) {
+      return { id: w.id, type: w.type, name: w.name, job: w.job, days: w.daysPerWeek, done: w.done.slice() };
+    }
 
     // 身分類型 → 轉換路徑。path: direct 可直接轉 / conditional 有條件 / replace 不可就地轉、改派補位
     const TYPES = {
@@ -266,7 +288,7 @@
     let roster = [];
     let selectedId = null;
 
-    function loadRoster() {
+    function loadOfflineRoster() {
       try {
         const raw = localStorage.getItem(STORE_KEY);
         if (raw) { roster = JSON.parse(raw); return; }
@@ -274,7 +296,32 @@
       roster = JSON.parse(JSON.stringify(DEMO_ROSTER));
     }
     function saveRoster() {
+      if (online) return;   // 連線時以後端為準，不另存
       try { localStorage.setItem(STORE_KEY, JSON.stringify(roster)); } catch (e) {}
+    }
+
+    // 啟動：先拿類型定義（法規文字以後端為準），再拿清冊；任一失敗就走離線備援
+    async function loadRoster() {
+      try {
+        const types = await api('/types');
+        types.forEach((td) => { if (TYPES[td.key]) Object.assign(TYPES[td.key], { label: td.label, path: td.path, summary: td.summary, note: td.note, steps: td.steps }); });
+        const rows = await api('/roster');
+        roster = rows.map(fromApi);
+        online = true;
+      } catch (err) {
+        online = false;
+        if (err.fromServer || !IS_DEMO) {
+          roster = [];
+          toast(`無法取得清冊：${err.message}`);
+          return;
+        }
+        loadOfflineRoster();   // demo 離線展示
+      }
+    }
+
+    function syncNote() {
+      const el = document.getElementById('syncNote');
+      if (el) el.textContent = online ? '資料已同步到合作社，科技後台可看到進度與補位缺口。' : (IS_DEMO ? '離線示範：資料只存在這台瀏覽器。' : '');
     }
 
     function displayName(w, idx) {
@@ -404,14 +451,27 @@
       }).join('');
     }
 
-    function renderAll() { renderKpis(); renderRoster(); renderDetail(); }
+    function renderAll() { renderKpis(); renderRoster(); renderDetail(); syncNote(); }
 
     function selectWorker(id) { selectedId = id; renderRoster(); renderDetail(); }
 
-    function toggleStep(id, i, checked) {
+    async function toggleStep(id, i, checked) {
       const w = roster.find(x => x.id === id);
       if (!w) return;
+      const previous = w.done[i];
       w.done[i] = checked;
+      renderAll();
+      if (online) {
+        try {
+          const saved = await api(`/roster/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify({ stepIndex: i, checked }) });
+          w.done = saved.done.slice();
+        } catch (err) {
+          w.done[i] = previous;   // 後端沒存成功就改回來
+          renderAll();
+          toast(`未儲存：${err.message}`);
+          return;
+        }
+      }
       saveRoster();
       renderAll();
       if (checked && isDone(w)) {
@@ -421,17 +481,26 @@
       }
     }
 
-    function removeWorker(id) {
+    async function removeWorker(id) {
+      if (online) {
+        try { await api(`/roster/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
+        catch (err) { toast(`未移除：${err.message}`); return; }
+      }
       roster = roster.filter(x => x.id !== id);
       selectedId = null;
       saveRoster();
       renderAll();
     }
 
-    function resetDemo() {
-      try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+    async function resetDemo() {
       selectedId = null;
-      loadRoster();
+      if (online) {
+        try { await api('/roster/reset', { method: 'POST', body: '{}' }); }
+        catch (err) { toast(`無法重設：${err.message}`); return; }
+      } else {
+        try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+      }
+      await loadRoster();
       renderAll();
       toast('已重設為示範資料');
     }
@@ -450,13 +519,13 @@
       document.getElementById('addNameWrap').hidden = anon;
       document.getElementById('addAnonNote').hidden = !anon;
     }
-    function submitAdd() {
+    async function submitAdd() {
       const type = document.getElementById('addType').value;
       const t = TYPES[type];
       const anon = t.path === 'replace';
       const name = document.getElementById('addName').value.trim();
       if (!anon && !name) { toast('請填寫稱呼'); return; }
-      const w = {
+      let w = {
         id: 'w' + Date.now(),
         type,
         name: anon ? null : name,
@@ -464,6 +533,11 @@
         days: Math.min(7, Math.max(1, parseInt(document.getElementById('addDays').value, 10) || 1)),
         done: t.steps.map(() => false)
       };
+      if (online) {
+        try {
+          w = fromApi(await api('/roster', { method: 'POST', body: JSON.stringify({ type, name: w.name, job: w.job, daysPerWeek: w.days }) }));
+        } catch (err) { toast(`未加入：${err.message}`); return; }
+      }
       roster.push(w);
       selectedId = w.id;
       saveRoster();
@@ -476,10 +550,8 @@
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('addType').innerHTML = Object.entries(TYPES)
         .map(([k, t]) => `<option value="${k}">${t.label}</option>`).join('');
-      loadRoster();
-      selectedId = roster.length ? roster[0].id : null;
       renderRules();
-      renderAll();
+      loadRoster().then(() => { selectedId = roster.length ? roster[0].id : null; renderAll(); });
     });
   </script>
 </body>

@@ -1,6 +1,6 @@
 # 智農派工 (AgriDispatch) - 資料庫實體關聯圖與資料字典 (ERD)
 
-> **文件版本**：v3.5.0（2026-10-02，`line_users` 改為 LINE 雙帳號結構並開始使用，見 2.14）；v3.4.0（2026-10-01，依 `Software/backend/src/main/java/com/agridispatch/entity/*.java` 實際 JPA 實體更新：新增 `team_ratings`、`insurance_records`、`skill_reviews`、`clock_ins.orderId` 與領班評核欄位、`orders.crewWorkerIds`、`orders.startDate`／`endDate`，補列 `farmers`、`financial_ledger`、`line_users`、`line_messages`；v3.0.0 為 2026-09-23）
+> **文件版本**：v3.6.0（2026-10-02，新增 `legalize_workers` 工班合法化清冊，見 2.15）；v3.5.0（2026-10-02，`line_users` 改為 LINE 雙帳號結構並開始使用，見 2.14）；v3.4.0（2026-10-01，依 `Software/backend/src/main/java/com/agridispatch/entity/*.java` 實際 JPA 實體更新：新增 `team_ratings`、`insurance_records`、`skill_reviews`、`clock_ins.orderId` 與領班評核欄位、`orders.crewWorkerIds`、`orders.startDate`／`endDate`，補列 `farmers`、`financial_ledger`、`line_users`、`line_messages`；v3.0.0 為 2026-09-23）
 > **資料庫**：H2 檔案資料庫（`Software/backend/data/agridispatch_db`），Hibernate `ddl-auto: update` 自動建表
 > **Visio 圖檔**：同資料夾的 `.vdx` / `.vsdx` 為 v2.0 舊版，**以本文件的 Mermaid 圖為準**
 
@@ -197,6 +197,17 @@ erDiagram
         string clearedBy
         string note
     }
+    legalize_workers {
+        string id PK "LGW-000001"
+        string farmerId "登錄的農場主 token.ref（邏輯關聯，無 FK）"
+        string workerType "local / spouse / student / borrowed / runaway"
+        string nickname "稱呼；borrowed／runaway 一律 NULL"
+        string job
+        int daysPerWeek "1～7"
+        string stepsDone "逗號分隔 0/1，長度 = 該類型步驟數"
+        datetime createdAt
+        datetime updatedAt
+    }
     farmers {
         string id PK "保留實體・程式未使用"
         string name
@@ -250,6 +261,7 @@ erDiagram
     orders ||..o{ clock_ins : "orderId"
     orders ||..o| team_ratings : "orderId"
     dispatch_teams ||..o{ team_ratings : "teamId"
+    farmers ||..o{ legalize_workers : "farmerId（邏輯關聯）"
     workers ||..o{ insurance_records : "workerId"
     workers ||..o{ skill_reviews : "workerId"
     users ||..o{ line_users : "refId（綁定）"
@@ -468,7 +480,22 @@ erDiagram
 
 > 同一人（同身分同 ref_id）在同一帳號只能綁一個 LINE userId，由 Service 檢查；Oracle 另以函數索引 `uk_line_users_username_channel` 保證（username 非空時）。2026-09-29 建立的舊結構空表，後端啟動時由 `LineUsersLegacyTableMigration` 自動刪除後重建（有資料則不動並記錯誤 log）。
 
-### 2.15 保留實體（程式尚未使用）
+### 2.15 工班合法化清冊 `legalize_workers`（實體 `LegalizeWorker`）
+| 欄位 | 型別 | 說明 |
+| :--- | :--- | :--- |
+| `id` (PK) | String(32) | `LGW-` + 6 位序號（`IdGenerator`） |
+| `farmer_id` | String(40) | 登錄的農場主 `token.ref`（例 F001）；農場主只能讀寫自己的清冊，admin 不限。`farmers` 為保留實體，故只做邏輯關聯、不設 FK |
+| `worker_type` | String(16) | 身分類型：`local` 本國籍臨時工（未投保）／`spouse` 新住民配偶／`student` 外籍學生僑生／`borrowed` 借用他人雇主的移工／`runaway` 失聯移工。類型定義（分流路徑、步驟、法規說明）在 `LegalizeService.TYPES`，由 `GET /api/legalize/types` 提供，與前台 `legalize.html` 文字相同 |
+| `nickname` | String(60) | 稱呼（可用暱稱）。`borrowed`／`runaway` 依法不能就地合法化，**不登錄個資**：後端強制為 NULL（Oracle 以 `chk_legalize_anon` 約束） |
+| `job` | String(60) | 目前工作內容，預設「農務」 |
+| `days_per_week` | int | 每週約幾天（1～7） |
+| `steps_done` | String(40) | 各轉白步驟完成狀態，逗號分隔 0/1，長度 = 該類型步驟數（例 `1,1,0,0,0`） |
+| `createdAt` / `updatedAt` | LocalDateTime | 建立 / 更新時間 |
+
+> 分流路徑：`direct` 可直接轉白（local、spouse）／`conditional` 有條件（student）／`replace` 不可就地轉、改派補位（borrowed、runaway）。衍生狀態由後端算：非 replace 全部完成 = `legalized`，否則 `in_progress`；replace 第 1 步「停止使用」完成 = `stopped`、全部完成 = `replaced`、都沒有 = `in_use`（仍計入罰鍰暴露，就服法第 63 條每人 15～75 萬）。
+> API：`/api/legalize`（`types` 公開；`roster` 增刪改限農場主本人或 admin；`summary` 各農場彙總限 admin；`roster/reset` 僅 demo 模式）。種子：F001 七筆（與前台示範清冊相同）、F002 兩筆。
+
+### 2.16 保留實體（程式尚未使用）
 `farmers`、`financial_ledger`、`line_messages` 為對應 Oracle 早期設計的 JPA 實體（2026-09-29 加入），目前沒有任何 Service／Controller 讀寫，H2 會因 `ddl-auto: update` 自動建立空表。農場主目前以 `users`（role=`farmer`）加 `orders.farmerId` 表示；雙軌分帳尚未落地成帳本資料。
 
 ---

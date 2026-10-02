@@ -55,6 +55,7 @@
     if (file.startsWith('matching')) return 'admin_tech'; // 派工媒合（科技後台）
     if (file.startsWith('worker-skills')) return 'worker_local'; // 工人技能進度（demo 預設帶工領班）
     if (file.startsWith('farmer')) return 'farmer';
+    if (file.startsWith('legalize') || file.startsWith('expenses')) return 'farmer'; // 農場主的工班合法化、支出明細
     if (file.startsWith('worker-foreign')) return 'worker_foreign';
     if (file.startsWith('worker-local')) return 'worker_local';
     return null;

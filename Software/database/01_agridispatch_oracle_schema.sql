@@ -27,6 +27,11 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END;
 /
 BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE legalize_workers CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
     EXECUTE IMMEDIATE 'DROP TABLE team_ratings CASCADE CONSTRAINTS';
 EXCEPTION WHEN OTHERS THEN NULL;
 END;
@@ -530,6 +535,26 @@ CREATE TABLE team_ratings (
     CONSTRAINT chk_rating_score CHECK (score BETWEEN 1 AND 5)
 );
 
+-- ====================================================================
+-- 工班合法化（黑轉白）清冊 (LEGALIZE_WORKERS)
+-- 失聯移工／借用移工（borrowed、runaway）不登錄個資：nickname 為 NULL
+-- ====================================================================
+CREATE TABLE legalize_workers (
+    id                 VARCHAR2(32)   NOT NULL,
+    farmer_id          VARCHAR2(40)   NOT NULL,
+    worker_type        VARCHAR2(16)   NOT NULL,
+    nickname           VARCHAR2(60),
+    job                VARCHAR2(60),
+    days_per_week      NUMBER(1)      NOT NULL,
+    steps_done         VARCHAR2(40)   NOT NULL,
+    created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP,
+    updated_at         TIMESTAMP,
+    CONSTRAINT pk_legalize_workers PRIMARY KEY (id),
+    CONSTRAINT chk_legalize_type CHECK (worker_type IN ('local','spouse','student','borrowed','runaway')),
+    CONSTRAINT chk_legalize_days CHECK (days_per_week BETWEEN 1 AND 7),
+    CONSTRAINT chk_legalize_anon CHECK (worker_type NOT IN ('borrowed','runaway') OR nickname IS NULL)
+);
+
 CREATE INDEX idx_team_ratings_team ON team_ratings (team_id, created_at);
 
 COMMENT ON TABLE team_ratings IS '工班評價表：農場主於工班出工後為訂單評分，每張訂單一筆、可修改';
@@ -724,4 +749,6 @@ SELECT 'team_ratings', COUNT(*) FROM team_ratings
 UNION ALL
 SELECT 'insurance_records', COUNT(*) FROM insurance_records
 UNION ALL
-SELECT 'skill_reviews', COUNT(*) FROM skill_reviews;
+SELECT 'skill_reviews', COUNT(*) FROM skill_reviews
+UNION ALL
+SELECT 'legalize_workers', COUNT(*) FROM legalize_workers;

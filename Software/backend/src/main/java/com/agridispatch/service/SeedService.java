@@ -55,6 +55,7 @@ public class SeedService {
     private final TeamRatingRepository teamRatingRepository;
     private final InsuranceRecordRepository insuranceRecordRepository;
     private final SkillReviewRepository skillReviewRepository;
+    private final LegalizeWorkerRepository legalizeWorkerRepository;
     private final PasswordHasher passwordHasher;
     private final AgriSettings settings;
 
@@ -74,6 +75,7 @@ public class SeedService {
                        TeamRatingRepository teamRatingRepository,
                        InsuranceRecordRepository insuranceRecordRepository,
                        SkillReviewRepository skillReviewRepository,
+                       LegalizeWorkerRepository legalizeWorkerRepository,
                        PasswordHasher passwordHasher,
                        AgriSettings settings) {
         this.userRepository = userRepository;
@@ -89,6 +91,7 @@ public class SeedService {
         this.teamRatingRepository = teamRatingRepository;
         this.insuranceRecordRepository = insuranceRecordRepository;
         this.skillReviewRepository = skillReviewRepository;
+        this.legalizeWorkerRepository = legalizeWorkerRepository;
         this.passwordHasher = passwordHasher;
         this.settings = settings;
     }
@@ -96,6 +99,7 @@ public class SeedService {
     public void seedAll(boolean cleanFirst) {
         if (cleanFirst) {
             teamRatingRepository.deleteAll();
+            legalizeWorkerRepository.deleteAll();
             insuranceRecordRepository.deleteAll();
             skillReviewRepository.deleteAll();
             paymentTransactionRepository.deleteAll();
@@ -117,6 +121,7 @@ public class SeedService {
         seedInsurance();
         seedOrders();
         seedRatings();
+        seedLegalize();
         seedTalents();
         seedBrochures();
         seedWeatherStates();
@@ -586,6 +591,13 @@ public class SeedService {
     }
 
     /** 已出工／完工訂單的歷史評價（ORD-2026-013 留空，供農場主工作台現場示範評價） */
+    /** 工班合法化（黑轉白）示範清冊：F001 七筆（與前台 DEMO_ROSTER 相同）、F002 兩筆 */
+    private void seedLegalize() {
+        List<LegalizeWorker> rows = new java.util.ArrayList<>(LegalizeService.demoRoster("F001"));
+        rows.addAll(LegalizeService.demoRoster("F002"));
+        saveMissing(legalizeWorkerRepository, rows, LegalizeWorker::getId);
+    }
+
     private void seedRatings() {
         Object[][] rows = {
                 {"ORD-2026-002", "team_b", 5, "準時到場,效率高,溝通順暢", "青蔥採收進度超前，班長每天回報很清楚。", "2026-09-21T18:00"},

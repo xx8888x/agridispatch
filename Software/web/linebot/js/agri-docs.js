@@ -813,6 +813,10 @@ const AgriDocs = (function () {
   };
 })();
 
+// 頂層 const 不會掛到 window：各頁用 `window.AgriDocs ? … : …` 判斷時會誤以為沒載入
+// （打卡不打後端、通知與送單錯誤都不顯示），所以明確掛上 window
+window.AgriDocs = AgriDocs;
+
 // 當 DOM 載入時自動初始化伺服器狀態監控
 document.addEventListener('DOMContentLoaded', () => {
   AgriDocs.initServerStatusMonitor();

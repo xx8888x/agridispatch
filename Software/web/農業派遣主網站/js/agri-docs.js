@@ -735,8 +735,10 @@ const AgriDocs = (function () {
       res = null; // 後端離線：走以下離線示範回應
     }
 
-    if (res && res.status !== 404) {
-      const data = await res.json().catch(() => null);
+    // 404 有兩種：舊後端根本沒有這個端點（走離線示範）、或端點存在但回「找不到該農工編號」（success:false，要如實告知）
+    const data = res ? await res.json().catch(() => null) : null;
+    const endpointMissing = res && res.status === 404 && !(data && data.success === false);
+    if (res && !endpointMissing) {
       if (res.ok && data && data.success) {
         if (!options.silent) notify(
           isClockIn ? '上班打卡成功' : '下班打卡成功',
@@ -812,6 +814,10 @@ const AgriDocs = (function () {
     _doSubmitPayment
   };
 })();
+
+// 頂層 const 不會掛到 window：各頁用 `window.AgriDocs ? … : …` 判斷時會誤以為沒載入
+// （打卡不打後端、通知與送單錯誤都不顯示），所以明確掛上 window
+window.AgriDocs = AgriDocs;
 
 // 當 DOM 載入時自動初始化伺服器狀態監控
 document.addEventListener('DOMContentLoaded', () => {

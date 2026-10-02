@@ -1,7 +1,7 @@
 # 智農派工 LINE 官方帳號拆分規格（方案 B：農場主／工作者雙帳號）
 
 > **文件版本**：v1.0.2（2026-10-02，草案；P1 實作後修正 6.2、拾.5 的 `/mock/chat` 規則；P2 實作後補 6.3 `langLocked`、6.5 `ref_id` 欄、5.3 demo 假 token）
-> **實作進度**：P1 ✅（Line Bot 雙帳號骨架）、P2 ✅（後端 `line_users`、內部端點、綁定 API；LIFF 綁定頁屬 P4）
+> **實作進度**：P1 ✅（Line Bot 雙帳號骨架）、P2 ✅（後端 `line_users`、內部端點、綁定 API；LIFF 綁定頁屬 P4）、P3 ✅（6 份圖文選單、上傳工具、依身分自動連結；實機上傳待 P0 帳號）
 > **適用範圍**：`Software/Line Bot/`（port 5000）、`Software/backend/`（port 3000）的 LINE 相關程式、`Software/demo/linebot/line.html` 模擬器、科技後台 LINE 設定頁
 > **相關文件**：`01_系統分析與架構設計規格書.md` 第陸章（LINE 子系統現況）、`02_資料庫實體關聯圖與資料字典(ERD).md`（`line_users`）、`03_認證與API安全規格.md`（端點權限）、`Software/android/docs/角色與人力分類表.md`（身分與國別代碼）
 > **狀態**：本規格只定義目標設計，程式尚未修改。實作完成後須同步更新上列 01、02、03 文件與 `Software/Line Bot/README.md`。
@@ -285,7 +285,7 @@ flowchart LR
 | POST | `/internal/push` | `{channel, to:[lineUserId...], messages:[...]}` | 1 人用 Push，多人用 Multicast（每次最多 500 人，Line Bot 自動分批）；**不提供 broadcast** |
 
 - 現行 `POST /api/line/webhook`（以 channel secret 驗簽）在 `internal/query` 上線後標為停用，過渡期保留、之後移除；`03_認證與API安全規格.md` 的公開端點清單同步修改。
-- P2 起 `/internal/richmenu/link` 已可呼叫並驗證參數，但各選單的 richMenuId 要到 P3 建立後才實際連結（回傳 `linked:false`）；`/internal/push` 於 P5 加入。
+- `/internal/richmenu/link` 回應 `result`：`linked`／`unlinked`（guest＝回到帳號預設）／`mock`／`missing`（尚未上傳該選單）／`failed`；`/internal/push` 於 P5 加入。
 - 本機開發：`start_all.bat` 未設定 `AGRI_LINEBOT_INTERNAL_KEY` 時每次啟動產生一組，後端與 LINE Bot 共用；LINE Bot 未設定金鑰或後端離線時，身分改存記憶體（P1 行為）。
 - 後端 `GET/POST /api/line/config` 改為顯示兩個帳號的設定狀態（向 Line Bot `/health` 取得），後端不再保存 channel token。
 
@@ -402,9 +402,12 @@ LINE 官方帳號依「每月主動推播則數」計費，**回覆訊息（Repl
 |---|---|---|
 | **薪資明細 W-04** | **我的出勤 W-05** | **語言・說明 W-06／W-08** |
 
-- 按鈕動作：功能類一律 `postback`（5.2）；開網頁的按鈕（W-02、F-05 預約、綁定）用 `uri`，網址取 `WEB_BASE_URL` 或 LIFF URL。
+- 按鈕動作：**一律 `postback`**（5.2）。原規劃開網頁的按鈕（W-02 打卡、F-05 預約、綁定）也改為 postback，由回覆的卡片提供連結：打卡頁依本勞／外勞不同、綁定頁本勞外勞入口不同，選單是靜態圖無法依人變換網址（P3 實作時調整）。
+- 新增動作：`farmer_main`「費率與產曆」＝`a=rates_calendar`（兩張卡一起回）；`worker_guest`「聯絡合作社」＝`a=contact`（帶班師傅、合作社專線 `COOP_CONTACT_PHONE`、勞動部 1955 專線）；`worker_main_*`「語言・說明」＝`a=lang_help`（語言卡＋說明卡）。
+- 原始定義：`Software/Line Bot/tools/make_rich_menus.py` 同時產生 `rich_menu/<代碼>.json` 與 `.jpg`；`RichMenuUploader --check` 檢核。
+- 連結時機：每次互動時依目前身分與語言確認個人選單（記憶體快取），後端綁定／解除時另呼叫 `/internal/richmenu/link` 立即切換；重新上傳選單後，使用者下一次互動時自動補連結。
 - 現行共用六宮格 `rich_menu.json` 在拆分後移除。
-- `RichMenuUploader` 改為一次上傳全部 6 份選單、記錄各選單 ID 與代碼的對照，並分別設定兩帳號的預設選單；per-user 連結改由 `/internal/richmenu/link` 處理。
+- `RichMenuUploader` 改為一次上傳全部 6 份選單、記錄各選單 ID 與代碼的對照（`rich_menu/richmenu_ids.properties`，不進版控），並分別設定兩帳號的預設選單；舊選單預設保留，加 `--delete-old` 才刪。
 
 ---
 

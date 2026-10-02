@@ -36,26 +36,11 @@
       document.write('<script src="https://unpkg.com/lucide@1.47.0"><\/script>');
     }
   </script>
+  <!-- 設計系統：共用 tailwind.config、demo 模式標記、抽屜 -->
+  <script src="js/agri-theme.js"></script>
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#ecfdf5',
-              100: '#d1fae5',
-              500: '#10b981',
-              600: '#059669',
-              700: '#047857',
-              900: '#064e3b',
-            }
-          }
-        }
-      }
-    }
-  </script>
+  <link rel="stylesheet" href="css/agri.css">
   <style>
     /* Custom Scrollbars */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -93,52 +78,30 @@
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+<body class="ad-body min-h-screen flex flex-col">
 
-  <!-- Top Navigation Header -->
-  <nav class="sticky top-0 z-50 bg-slate-950/95 backdrop-blur-md border-b border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-      <div class="flex items-center gap-3 shrink-0">
-        <a href="index.html" class="flex items-center gap-2 group">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-brand-600/30 group-hover:scale-105 transition shrink-0">
-            <span class="text-xl">🌱</span>
-          </div>
-          <div class="whitespace-nowrap">
-            <div class="flex items-center gap-2">
-              <span class="text-lg font-black tracking-tight text-white group-hover:text-emerald-400 transition">智農派工</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 font-bold">全台農會產地地圖</span>
-            </div>
-            <p class="hidden sm:block text-[10px] text-slate-400">連絡資訊 ╳ 產期週份 ╳ 從北到南 ╳ 依月份排序</p>
-          </div>
-        </a>
-      </div>
-
-      <!-- Quick Action Buttons -->
-      <div class="flex items-center gap-2 sm:gap-3 shrink-0 whitespace-nowrap">
-        <button onclick="exportToCSV()" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition flex items-center gap-1.5 shadow-sm shrink-0 whitespace-nowrap">
-          <i data-lucide="download" class="w-3.5 h-3.5"></i>
-          <span class="hidden sm:inline">匯出</span> CSV
-        </button>
-        <button onclick="copyContactList()" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-          <span class="hidden sm:inline">複製名冊</span>
-        </button>
-        <a href="index.html" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-          <span>🏠</span> 首頁
-        </a>
-        <a href="farmer.html" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-md shadow-emerald-600/30 transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-          <span>進入派工預約</span>
-        </a>
+  <!-- 表頭：公開頁 -->
+  <header class="ad-header" style="position: sticky; top: 0;">
+    <div class="ad-container ad-header__inner" style="max-width: 1280px;">
+      <a href="index.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">產地地圖</span>
+      </a>
+      <div class="ad-header__actions">
+        <button type="button" onclick="exportToCSV()" class="ad-btn ad-btn--ghost ad-btn--sm" aria-label="匯出 CSV"><i data-lucide="download" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">匯出 CSV</span></button>
+        <button type="button" onclick="copyContactList()" class="ad-btn ad-btn--ghost ad-btn--sm" aria-label="複製名冊"><i data-lucide="copy" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">複製名冊</span></button>
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()" aria-label="示範導覽"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span></button>
+        <a href="farmer.html" class="ad-btn ad-btn--primary ad-btn--sm">預約派工</a>
       </div>
     </div>
-  </nav>
+  </header>
 
   <!-- Main Container: Controller + Split Map/List -->
   <main class="flex-1 flex flex-col max-w-7xl w-full mx-auto p-4 sm:p-6 gap-4">
 
     <!-- Header Control Bar: Sorting + Timeline + Filter -->
-    <header class="bg-slate-900/80 backdrop-blur-sm border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
+    <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4">
       
       <!-- Top Row: Search + Sort Switch + Stat Badges -->
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -186,7 +149,6 @@
             onclick="togglePeakOnly()" 
             class="px-3 py-1.5 rounded-xl border border-slate-700 text-slate-400 hover:border-amber-500/50 hover:text-amber-400 text-xs font-bold transition flex items-center gap-1.5"
           >
-            <span>🔥</span>
             <span>僅看盛產期</span>
           </button>
         </div>
@@ -208,7 +170,7 @@
             <span>產出月份篩選 (詳細到週)：</span>
             <span id="currentFilterLabel" class="text-emerald-400 font-black ml-1">載入中...</span>
             <button type="button" onclick="resetToCurrentWeek()" class="ml-2 px-2.5 py-0.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold transition flex items-center gap-1 cursor-pointer" title="切換回當前月份與週數">
-              <span>⚡</span> 貼合當前時序
+              貼合當前時序
             </button>
             <button type="button" onclick="resetToAllYear()" class="px-2 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 text-[10px] font-medium transition cursor-pointer" title="查看全年 12 個月">
               查看全年
@@ -287,19 +249,19 @@
         <!-- Crop Shortcut Chips -->
         <div class="flex items-center gap-1.5 flex-wrap">
           <span class="text-slate-400 font-semibold">熱門作物：</span>
-          <button onclick="filterByCropTag('芒果')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-amber-500/20 hover:text-amber-300 text-slate-300 border border-slate-700 transition">🥭 芒果</button>
-          <button onclick="filterByCropTag('草莓')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-rose-500/20 hover:text-rose-300 text-slate-300 border border-slate-700 transition">🍓 草莓</button>
-          <button onclick="filterByCropTag('茶')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-emerald-500/20 hover:text-emerald-300 text-slate-300 border border-slate-700 transition">🍵 名茶</button>
-          <button onclick="filterByCropTag('蔥')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-teal-500/20 hover:text-teal-300 text-slate-300 border border-slate-700 transition">🌱 青蔥</button>
-          <button onclick="filterByCropTag('水蜜桃')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-pink-500/20 hover:text-pink-300 text-slate-300 border border-slate-700 transition">🍑 水蜜桃</button>
-          <button onclick="filterByCropTag('葡萄')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-purple-500/20 hover:text-purple-300 text-slate-300 border border-slate-700 transition">🍇 葡萄</button>
-          <button onclick="filterByCropTag('鳳梨')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-yellow-500/20 hover:text-yellow-300 text-slate-300 border border-slate-700 transition">🍍 鳳梨</button>
-          <button onclick="filterByCropTag('釋迦')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-green-500/20 hover:text-green-300 text-slate-300 border border-slate-700 transition">🍈 釋迦</button>
-          <button onclick="filterByCropTag('米')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-orange-500/20 hover:text-orange-300 text-slate-300 border border-slate-700 transition">🌾 優質米</button>
+          <button onclick="filterByCropTag('芒果')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-amber-500/20 hover:text-amber-300 text-slate-300 border border-slate-700 transition">芒果</button>
+          <button onclick="filterByCropTag('草莓')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-rose-500/20 hover:text-rose-300 text-slate-300 border border-slate-700 transition">草莓</button>
+          <button onclick="filterByCropTag('茶')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-emerald-500/20 hover:text-emerald-300 text-slate-300 border border-slate-700 transition">名茶</button>
+          <button onclick="filterByCropTag('蔥')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-teal-500/20 hover:text-teal-300 text-slate-300 border border-slate-700 transition">青蔥</button>
+          <button onclick="filterByCropTag('水蜜桃')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-pink-500/20 hover:text-pink-300 text-slate-300 border border-slate-700 transition">水蜜桃</button>
+          <button onclick="filterByCropTag('葡萄')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-purple-500/20 hover:text-purple-300 text-slate-300 border border-slate-700 transition">葡萄</button>
+          <button onclick="filterByCropTag('鳳梨')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-yellow-500/20 hover:text-yellow-300 text-slate-300 border border-slate-700 transition">鳳梨</button>
+          <button onclick="filterByCropTag('釋迦')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-green-500/20 hover:text-green-300 text-slate-300 border border-slate-700 transition">釋迦</button>
+          <button onclick="filterByCropTag('米')" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-orange-500/20 hover:text-orange-300 text-slate-300 border border-slate-700 transition">優質米</button>
         </div>
       </div>
 
-    </header>
+    </div>
 
     <!-- Main Body: Split View (Map on Left/Top, Detailed List on Right/Bottom) -->
     <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-[600px]">
@@ -365,7 +327,7 @@
     </div>
 
     <!-- Bottom Notice & Agricultural Labor Dispatch Value Banner -->
-    <section class="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/20 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
       <div class="space-y-1">
         <div class="flex items-center gap-2">
           <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">智農派工 ╳ 全台農會對接價值</span>
@@ -377,10 +339,10 @@
       </div>
       <div class="flex items-center gap-3">
         <a href="brochure.html" target="_blank" class="px-4 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 transition">
-          📖 產季早鳥文宣 DM
+          產季早鳥文宣 DM
         </a>
         <a href="../linebot/line.html" class="px-4 py-2 rounded-xl bg-[#06C755] hover:bg-[#05b04c] text-white text-xs font-black shadow-lg shadow-emerald-600/30 transition flex items-center gap-1.5">
-          <span>💬</span> LINE 官方對接
+          LINE 官方對接
         </a>
       </div>
     </section>
@@ -2118,7 +2080,6 @@
                 檢視詳細資訊
               </button>
               <a href="tel:${farmer.phone.replace(/[^0-9]/g, '')}" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 transition" title="致電農會">
-                📞
               </a>
             </div>
           </div>
@@ -2141,7 +2102,6 @@
       if (farmers.length === 0) {
         container.innerHTML = `
           <div class="p-8 text-center space-y-3">
-            <span class="text-3xl">🔍</span>
             <div class="text-sm font-bold text-slate-300">查無符合條件之農會</div>
             <p class="text-xs text-slate-500">建議清除搜尋關鍵字，或切換至其他月份與分區。</p>
             <button onclick="clearAllFilters()" class="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-bold transition">
@@ -2216,11 +2176,9 @@
             <div class="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px]">
               <div class="flex items-center gap-3 text-slate-400">
                 <a href="tel:${farmer.phone.replace(/[^0-9]/g, '')}" class="flex items-center gap-1 hover:text-emerald-400 text-slate-300 transition font-mono font-medium">
-                  <span>📞</span>
                   <span>${farmer.phone}</span>
                 </a>
                 <a href="${farmer.lineUrl}" target="_blank" class="flex items-center gap-1 text-[#06C755] hover:underline font-semibold">
-                  <span>💬</span>
                   <span>LINE: ${farmer.line}</span>
                 </a>
               </div>
@@ -2261,7 +2219,7 @@
       } else {
         const weekText = currentWeek === 'all' ? '全月' : `第 ${currentWeek} 週`;
         if (isCurrentTime) {
-          label.innerHTML = `${currentMonth} 月 (${weekText}) <span class="ml-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold">🟢 當前時序即時產期</span>`;
+          label.innerHTML = `${currentMonth} 月 (${weekText}) <span class="ml-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold">當前時序即時產期</span>`;
         } else {
           label.innerHTML = `${currentMonth} 月 (${weekText})`;
         }
@@ -2455,7 +2413,7 @@
               <span class="text-slate-400 font-semibold">官方 LINE / 諮詢渠道：</span>
               <div class="flex items-center gap-2">
                 <a href="${farmer.lineUrl}" target="_blank" class="text-[#06C755] font-black text-sm hover:underline flex items-center gap-1">
-                  <span>💬</span> ${farmer.line}
+                  ${farmer.line}
                 </a>
                 <span class="text-[10px] text-slate-500">(加為好友)</span>
               </div>
@@ -2466,7 +2424,7 @@
               <div class="flex items-center justify-between flex-wrap gap-2">
                 <span class="text-slate-200">${farmer.address}</span>
                 <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(farmer.address)}" target="_blank" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold text-[11px] transition flex items-center gap-1">
-                  🗺️ Google 地圖導航
+                  Google 地圖導航
                 </a>
               </div>
             </div>
@@ -2495,7 +2453,6 @@
           <!-- Labor Dispatch Tasks -->
           <div class="p-3.5 bg-emerald-950/20 border border-emerald-500/30 rounded-2xl space-y-1.5 text-xs">
             <div class="flex items-center gap-1.5 font-bold text-emerald-300">
-              <span>🛠️</span>
               <span>智農派工農務適配工種：</span>
             </div>
             <p class="text-slate-200 leading-relaxed">${farmer.tasks}</p>
@@ -2510,10 +2467,10 @@
           <!-- Bottom Action Buttons -->
           <div class="flex items-center gap-3 pt-2">
             <button onclick="focusOnMap('${farmer.id}'); closeModal();" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition flex items-center justify-center gap-1.5">
-              <span>📍</span> 在地圖上查看
+              在地圖上查看
             </button>
             <a href="tel:${farmer.phone.replace(/[^0-9]/g, '')}" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/30">
-              <span>📞</span> 立即致電對接
+              立即致電對接
             </a>
           </div>
         </div>
@@ -2585,12 +2542,15 @@
       });
 
       navigator.clipboard.writeText(text).then(() => {
-        (window.AgriUtil ? window.AgriUtil.toast : (t, m) => alert(`${t}\n${m}`))('📋 複製成功', `已成功複製 ${sorted.length} 家農會通訊錄至剪貼簿！`);
+        (window.AgriUtil ? window.AgriUtil.toast : (t, m) => alert(`${t}\n${m}`))('複製成功', `已成功複製 ${sorted.length} 家農會通訊錄至剪貼簿！`);
       }).catch(err => {
         console.error("複製失敗:", err);
       });
     }
   </script>
 
+  <script>
+    var demoNav = AgriTheme.demoNav();
+  </script>
 </body>
 </html>

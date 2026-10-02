@@ -27,8 +27,11 @@
       document.write('<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"><\/script>');
     }
   </script>
+  <!-- 設計系統：共用 tailwind.config、demo 模式標記（Vue 區塊內不放 lucide 圖示） -->
+  <script src="js/agri-theme.js"></script>
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/agri.css">
   <style>
     [v-cloak] { display: none; }
     @media print {
@@ -38,7 +41,7 @@
         font-size: 11pt;
         padding: 0 !important;
       }
-      .no-print {
+      .no-print, .ad-header {
         display: none !important;
       }
       .print-container {
@@ -52,17 +55,6 @@
         page-break-before: always;
       }
     }
-    .custom-scrollbar::-webkit-scrollbar {
-      height: 6px;
-      width: 6px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: #0f172a;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 3px;
-    }
   </style>
   <script>
     // Failsafe: Remove v-cloak if Vue takes more than 1.5s to prevent blank screen
@@ -75,103 +67,68 @@
     }, 1500);
   </script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen py-6 px-4 sm:px-6 antialiased selection:bg-emerald-500 selection:text-white">
+<body class="ad-body min-h-screen flex flex-col">
 
-  <div id="app" v-cloak>
-    <!-- Top Action Bar (No-print) -->
-    <header class="max-w-5xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-3 no-print">
-      <div class="flex items-center gap-3">
-        <a href="index.html" class="inline-flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white transition">
-          ← 返回官網首頁
+  <div id="app" v-cloak class="flex flex-col min-h-screen">
+    <!-- 表頭：公開頁，列印時隱藏 -->
+    <header class="ad-header no-print">
+      <div class="ad-container ad-header__inner">
+        <a href="index.html" class="ad-header__brand">
+          <span class="ad-header__logo"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ad-icon"><path d="M7 20h10"></path><path d="M10 20c5.5-2.5.8-6.4 3-10"></path><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"></path><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"></path></svg></span>
+          智農派工
+          <span class="ad-header__role">產品文宣</span>
         </a>
-        <span class="text-slate-600">|</span>
-        <div class="flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full" :class="backendOnline ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'"></span>
-          <span class="text-xs text-slate-400">{{ backendOnline ? '後台即時連線串通' : '展示離線模式' }} ({{ brochures.length }} 項 DM 上架)</span>
+        <nav class="ad-nav" aria-label="文宣導覽">
+          <a class="ad-nav__link" href="index.html">首頁</a>
+          <a class="ad-nav__link" href="pitch.html">產品介紹</a>
+          <a class="ad-nav__link" href="farmer.html">農場主預約</a>
+        </nav>
+        <div class="ad-header__actions">
+          <span class="ad-pill" :class="backendOnline ? 'ad-pill--ok' : 'ad-pill--warn'" data-demo-only><span class="ad-pill__dot"></span>{{ backendOnline ? '後台連線' : '離線展示' }}</span>
+          <a href="../科技後台/admin.html" class="ad-btn ad-btn--ghost ad-btn--sm ad-hide-sm" data-demo-only>後台管理 DM</a>
+          <button type="button" @click="printBrochure()" class="ad-btn ad-btn--primary ad-btn--sm">列印／存成 PDF</button>
         </div>
-      </div>
-
-      <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
-        <a href="../科技後台/admin.html" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 text-xs font-bold border border-indigo-500/30 transition flex items-center gap-1.5 shadow">
-          <span>⚙️</span> 後台上傳/管理 DM
-        </a>
-        <a href="pitch.html" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition flex items-center gap-1.5 shadow">
-          <span>📣</span> 產品介紹與產曆
-        </a>
-        <a href="farmer.html" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 text-xs font-bold border border-emerald-500/30 transition flex items-center gap-1.5 shadow">
-          <span>👨‍🌾</span> 農場主預約
-        </a>
-        <button @click="printBrochure()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs font-black shadow-lg shadow-emerald-600/30 transition flex items-center gap-2 cursor-pointer">
-          <span>🖨️</span> 列印本文宣 (或存為 PDF)
-        </button>
       </div>
     </header>
 
-    <!-- Multi-DM Selector Bar (No-print) - At least 4 DMs Displayed -->
-    <section class="max-w-5xl mx-auto mb-6 no-print space-y-3">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div class="flex items-center gap-2">
-          <span class="text-lg">📑</span>
-          <h2 class="text-sm sm:text-base font-extrabold text-white">智農派工精選產品文宣 DM 展示館（至少展示 4 項專案 DM）</h2>
-          <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">
-            前後台即時串通
-          </span>
+    <div class="ad-container w-full" style="padding-block: 24px 0; display: flex; flex-direction: column; gap: 24px;">
+      <!-- 文宣選擇 -->
+      <section class="no-print" style="display: flex; flex-direction: column; gap: 12px;">
+        <div>
+          <h1 class="ad-display">產品文宣</h1>
+          <p class="ad-caption" style="margin-top: 6px;">點選一張專案卡片，切換下方 A4 宣傳單；可直接列印或存成 PDF。</p>
         </div>
-        <span class="text-xs text-slate-400">點選下方任一專案卡片，即時切換 A4 宣傳單內容</span>
-      </div>
-
-      <!-- DM Cards Carousel / Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div 
-          v-for="dm in brochures" 
-          :key="dm.id"
-          @click="selectDm(dm)"
-          :class="currentDm && currentDm.id === dm.id ? activeCardClass(dm.themeColor) : 'bg-slate-900/90 border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-850'"
-          class="p-4 rounded-2xl border transition-all duration-200 cursor-pointer shadow-lg flex flex-col justify-between space-y-3 group"
-        >
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-2xl">{{ dm.icon || '🌾' }}</span>
-              <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider" :class="badgeClass(dm.themeColor)">
-                {{ dm.category || '農務專案' }}
-              </span>
-            </div>
-            <div>
-              <h3 class="font-extrabold text-xs sm:text-sm text-white line-clamp-2 leading-snug group-hover:text-emerald-300 transition">
-                {{ dm.title }}
-              </h3>
-              <p class="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
-                <span>📍</span> {{ dm.region }}
-              </p>
-            </div>
-          </div>
-
-          <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
-            <div>
-              <span class="text-[10px] text-slate-400 block">{{ dm.hours }} 工時包</span>
-              <span class="font-black text-amber-400 font-mono text-sm">NT$ {{ (dm.discountPrice || dm.originalPrice || 0).toLocaleString() }}</span>
-            </div>
-            <span v-if="currentDm && currentDm.id === dm.id" class="px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black">
-              ✓ 檢視中
+        <div style="display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));">
+          <button
+            v-for="dm in brochures"
+            :key="dm.id"
+            type="button"
+            @click="selectDm(dm)"
+            class="ad-card ad-card--interactive"
+            :class="{ 'is-selected': currentDm && currentDm.id === dm.id }"
+            :aria-pressed="currentDm && currentDm.id === dm.id"
+            style="padding: 16px; display: flex; flex-direction: column; gap: 10px;"
+          >
+            <span class="ad-pill" style="align-self: flex-start;">{{ dm.category || '農務專案' }}</span>
+            <span>
+              <span class="ad-heading" style="display: block; font-size: 15px;">{{ dm.title }}</span>
+              <span class="ad-caption" style="display: block; margin-top: 4px;">{{ dm.region }}</span>
             </span>
-            <span v-else class="text-[11px] text-slate-400 group-hover:text-white transition">
-              點擊查看 ➔
+            <span style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px; border-top: 1px solid var(--ad-border); padding-top: 10px;">
+              <span class="ad-caption">{{ dm.hours }} 工時包</span>
+              <span class="ad-num" style="font-weight: 700; color: var(--ad-accent-text);">NT$ {{ (dm.discountPrice || dm.originalPrice || 0).toLocaleString() }}</span>
             </span>
-          </div>
+          </button>
         </div>
-      </div>
-    </section>
+      </section>
 
     <!-- Main Printable Brochure Container (A4 Style) -->
     <article v-if="currentDm" class="print-container max-w-4xl mx-auto bg-white text-slate-900 rounded-3xl shadow-2xl overflow-hidden border border-slate-200 transition-all duration-300">
       
       <!-- Top Header Ribbon (Dynamic Theme Color) -->
-      <div :class="headerRibbonClass(currentDm.themeColor)" class="text-white p-6 sm:p-8 transition-colors duration-500">
+      <div class="text-white p-6 sm:p-8" style="background: #065f46;">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/20 pb-5">
           <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-3xl shadow-md border border-white/30">
-              {{ currentDm.icon || '🌱' }}
-            </div>
             <div>
               <div class="flex items-center gap-2">
                 <span class="text-2xl font-black tracking-tight text-white">智農派工</span>
@@ -181,7 +138,7 @@
             </div>
           </div>
           <div class="text-left sm:text-right">
-            <span class="text-xs font-semibold text-amber-300 block">★ 適用產區：{{ currentDm.region }}</span>
+            <span class="text-xs font-semibold text-amber-300 block">適用產區：{{ currentDm.region }}</span>
             <span class="text-sm font-extrabold text-white">{{ currentDm.crop }} 專屬專案</span>
           </div>
         </div>
@@ -189,7 +146,7 @@
         <!-- Hero Headline in Header -->
         <div class="pt-6 space-y-3">
           <span class="inline-block px-3 py-1 rounded-full text-xs font-black bg-amber-400 text-slate-950 uppercase tracking-wider shadow">
-            {{ currentDm.badge || '★ 產銷班長指名推薦款' }}
+            {{ currentDm.badge || '產銷班長指名推薦款' }}
           </span>
           <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight text-white">
             {{ currentDm.title }}
@@ -220,8 +177,8 @@
             <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
               <tr>
                 <th class="p-3.5 w-1/4">比較項目</th>
-                <th class="p-3.5 w-3/8 text-red-600 bg-red-50/50">❌ 傳統農村地下販仔（私人工頭）</th>
-                <th class="p-3.5 w-3/8 text-emerald-700 bg-emerald-50">⭐ 智農外展平台（正規軍）</th>
+                <th class="p-3.5 w-3/8 text-red-600 bg-red-50/50">傳統農村地下販仔（私人工頭）</th>
+                <th class="p-3.5 w-3/8 text-emerald-700 bg-emerald-50">智農外展平台（正規軍）</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -237,10 +194,10 @@
 
       <!-- Section 2: Core Product Package Card -->
       <div class="px-6 sm:px-8">
-        <div class="p-6 rounded-3xl bg-gradient-to-br from-emerald-50 via-teal-50 to-indigo-50 border-2 border-emerald-500/80 shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="p-6 rounded-3xl bg-emerald-50 border-2 border-emerald-600 flex flex-col md:flex-row items-center justify-between gap-6">
           <div class="space-y-2 text-center md:text-left">
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-black shadow-sm">
-              {{ currentDm.badge || '★ 產季鎖約推薦' }}
+              {{ currentDm.badge || '產季鎖約推薦' }}
             </div>
             <h3 class="text-xl sm:text-2xl font-black text-slate-900">
               【{{ currentDm.crop }} {{ currentDm.hours }} 工時保證專案包】
@@ -249,9 +206,9 @@
               {{ currentDm.description }}
             </p>
             <div class="flex flex-wrap items-center gap-3 pt-1 text-xs text-slate-500 justify-center md:justify-start">
-              <span>⏱️ 總計：<strong class="text-slate-800">{{ currentDm.hours }} 標準工時</strong></span>
-              <span>👥 建議出勤：<strong class="text-slate-800">{{ currentDm.workers }} 人</strong></span>
-              <span>📅 預估期程：<strong class="text-slate-800">{{ currentDm.days }} 天</strong></span>
+              <span>總計：<strong class="text-slate-800">{{ currentDm.hours }} 標準工時</strong></span>
+              <span>建議出勤：<strong class="text-slate-800">{{ currentDm.workers }} 人</strong></span>
+              <span>預估期程：<strong class="text-slate-800">{{ currentDm.days }} 天</strong></span>
             </div>
           </div>
 
@@ -290,7 +247,7 @@
             class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5"
           >
             <strong class="text-sm font-bold text-emerald-800 flex items-center gap-1.5">
-              <span>{{ feat.icon || '🛡️' }}</span> {{ feat.title }}
+              {{ feat.title }}
             </strong>
             <p class="text-slate-600 leading-relaxed">
               {{ feat.desc }}
@@ -343,14 +300,12 @@
         <!-- Contact Ribbon & Online Booking Action -->
         <div class="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
           <div class="space-y-1 text-center sm:text-left">
-            <p class="font-bold text-white text-sm">📞 產區早鳥預約專線：{{ currentDm.phone || '08-876-1234 / 0912-345-678' }}</p>
-            <p class="text-slate-400">🏢 產區營運服務處：{{ currentDm.serviceOffice || '屏東縣枋山鄉加祿路 128 號' }}</p>
+            <p class="font-bold text-white text-sm">產區早鳥預約專線：{{ currentDm.phone || '08-876-1234 / 0912-345-678' }}</p>
+            <p class="text-slate-400">產區營運服務處：{{ currentDm.serviceOffice || '屏東縣枋山鄉加祿路 128 號' }}</p>
             <p class="text-[11px] text-slate-500">合作社立案登記：縣府社合字第 XXXXXXXX 號（依外展農務制度申請中，尚未取得外展資格）</p>
           </div>
           <div class="flex items-center gap-3 shrink-0 no-print">
-            <a href="farmer.html" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/30 transition flex items-center gap-1.5">
-              <span>⚡</span> 線上立即預約派工
-            </a>
+            <a href="farmer.html" class="ad-btn ad-btn--accent">線上預約派工</a>
             <div class="p-2 rounded-xl bg-white text-slate-950 font-mono text-center shadow">
               <div class="w-12 h-12 bg-slate-100 rounded flex items-center justify-center text-[10px] font-bold border border-slate-300">
                 LINE
@@ -362,19 +317,10 @@
       </div>
 
     </article>
+    </div>
 
-    <!-- Footer (No-print) -->
-    <footer class="max-w-4xl mx-auto mt-8 text-center text-xs text-slate-500 no-print space-y-2">
-      <p>© 2026 智農派工 AgriDispatch. 本文宣系統支援後台即時上傳發布、全彩 A4 直接列印與 PDF 匯出。</p>
-      <div class="flex items-center justify-center gap-4 text-[11px] text-slate-400">
-        <a href="index.html" class="hover:text-white transition">官方首頁</a>
-        <span>•</span>
-        <a href="farmer.html" class="hover:text-white transition">農場主專區</a>
-        <span>•</span>
-        <a href="../科技後台/admin.html" class="hover:text-white transition">科技管理後台</a>
-        <span>•</span>
-        <a href="farmers_map.html" class="hover:text-white transition">全台農會產地地圖</a>
-      </div>
+    <footer class="ad-caption no-print" style="margin-top: auto; padding: 28px 16px; text-align: center;">
+      © 2026 智農派工 AgriDispatch ・ <a href="index.html" style="text-decoration: underline;">首頁</a> ・ <a href="farmer.html" style="text-decoration: underline;">農場主專區</a> ・ <a href="farmers_map.html" style="text-decoration: underline;">產地地圖</a>
     </footer>
   </div>
 
@@ -628,45 +574,6 @@
           }
         });
 
-        const activeCardClass = (theme) => {
-          switch (theme) {
-            case 'lime':
-              return 'bg-lime-950/40 border-lime-500 text-white shadow-lime-500/20 ring-1 ring-lime-500';
-            case 'indigo':
-              return 'bg-indigo-950/40 border-indigo-500 text-white shadow-indigo-500/20 ring-1 ring-indigo-500';
-            case 'cyan':
-              return 'bg-cyan-950/40 border-cyan-500 text-white shadow-cyan-500/20 ring-1 ring-cyan-500';
-            default:
-              return 'bg-emerald-950/40 border-emerald-500 text-white shadow-emerald-500/20 ring-1 ring-emerald-500';
-          }
-        };
-
-        const badgeClass = (theme) => {
-          switch (theme) {
-            case 'lime':
-              return 'bg-lime-500/20 text-lime-300 border border-lime-500/40';
-            case 'indigo':
-              return 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40';
-            case 'cyan':
-              return 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40';
-            default:
-              return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
-          }
-        };
-
-        const headerRibbonClass = (theme) => {
-          switch (theme) {
-            case 'lime':
-              return 'bg-gradient-to-r from-lime-800 via-emerald-800 to-slate-900';
-            case 'indigo':
-              return 'bg-gradient-to-r from-indigo-900 via-blue-900 to-slate-900';
-            case 'cyan':
-              return 'bg-gradient-to-r from-cyan-900 via-teal-900 to-slate-900';
-            default:
-              return 'bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900';
-          }
-        };
-
         const printBrochure = () => {
           window.print();
         };
@@ -682,9 +589,6 @@
           selectDm,
           parsedFeatures,
           parsedComparison,
-          activeCardClass,
-          badgeClass,
-          headerRibbonClass,
           printBrochure
         };
       }

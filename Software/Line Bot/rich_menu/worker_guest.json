@@ -1,0 +1,95 @@
+{
+  "size": {
+    "width": 2500,
+    "height": 1686
+  },
+  "selected": true,
+  "name": "智農派工（工作者）未綁定選單（三語）",
+  "chatBarText": "🌐 Menu / 選單",
+  "areas": [
+    {
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "繁體中文",
+        "data": "a=lang&v=zh",
+        "displayText": "繁體中文"
+      }
+    },
+    {
+      "bounds": {
+        "x": 833,
+        "y": 0,
+        "width": 834,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "Tiếng Việt",
+        "data": "a=lang&v=vi",
+        "displayText": "Tiếng Việt"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1667,
+        "y": 0,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "Bahasa Indonesia",
+        "data": "a=lang&v=id",
+        "displayText": "Bahasa Indonesia"
+      }
+    },
+    {
+      "bounds": {
+        "x": 0,
+        "y": 843,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "帳號綁定",
+        "data": "a=account",
+        "displayText": "帳號綁定"
+      }
+    },
+    {
+      "bounds": {
+        "x": 833,
+        "y": 843,
+        "width": 834,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "使用說明",
+        "data": "a=help",
+        "displayText": "使用說明"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1667,
+        "y": 843,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "聯絡合作社",
+        "data": "a=contact",
+        "displayText": "聯絡合作社"
+      }
+    }
+  ]
+}

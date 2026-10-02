@@ -26,6 +26,26 @@ public class LineBotServer {
             // 本地模擬發言與除錯 API（僅 Mock 模式）
             server.createContext("/mock/chat", new MockChatHandler());
 
+            // 圖文選單 JSON 與底圖（網頁模擬器顯示用；只開放 6 份選單檔）
+            server.createContext("/rich_menu/", exchange -> {
+                String name = exchange.getRequestURI().getPath().substring("/rich_menu/".length());
+                int dot = name.lastIndexOf('.');
+                String key = dot > 0 ? name.substring(0, dot) : "";
+                String ext = dot > 0 ? name.substring(dot + 1) : "";
+                boolean known = RichMenus.FARMER_MENUS.contains(key) || RichMenus.WORKER_MENUS.contains(key);
+                java.nio.file.Path file = RichMenus.dir().resolve(name);
+                if (!known || !(ext.equals("jpg") || ext.equals("json")) || !java.nio.file.Files.exists(file)) {
+                    HttpUtils.sendText(exchange, 404, "Not Found");
+                    return;
+                }
+                byte[] bytes = java.nio.file.Files.readAllBytes(file);
+                exchange.getResponseHeaders().set("Content-Type", ext.equals("jpg") ? "image/jpeg" : "application/json; charset=UTF-8");
+                exchange.sendResponseHeaders(200, bytes.length);
+                try (java.io.OutputStream os = exchange.getResponseBody()) {
+                    os.write(bytes);
+                }
+            });
+
             // 後端呼叫的內部端點（X-Internal-Key，規格 6.3）
             server.createContext("/internal", new InternalHandler());
 

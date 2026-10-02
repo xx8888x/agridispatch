@@ -131,35 +131,12 @@ public class WebSimulatorHandler implements HttpHandler {
                   <div id="chat-anchor"></div>
                 </div>
 
-                <!-- Rich Menu (六宮格圖文選單) -->
-                <div class="bg-slate-900 border-t border-slate-800 p-1.5">
-                  <div class="text-[10px] text-slate-400 text-center mb-1 font-semibold">▼ 六宮格圖文選單 (點擊即時觸發) ▼</div>
-                  <div class="grid grid-cols-3 gap-1">
-                    <button onclick="sendKeyword('今日派工')" class="p-2.5 rounded-lg bg-emerald-800 hover:bg-emerald-700 text-white flex flex-col items-center transition active:scale-95 shadow">
-                      <span class="text-base mb-0.5">📋</span>
-                      <span class="text-[11px] font-bold">今日派工</span>
-                    </button>
-                    <button onclick="sendKeyword('天候避險')" class="p-2.5 rounded-lg bg-blue-900 hover:bg-blue-800 text-white flex flex-col items-center transition active:scale-95 shadow">
-                      <span class="text-base mb-0.5">🌧️</span>
-                      <span class="text-[11px] font-bold">暴雨避險</span>
-                    </button>
-                    <button onclick="sendKeyword('早鳥工時包')" class="p-2.5 rounded-lg bg-amber-800 hover:bg-amber-700 text-white flex flex-col items-center transition active:scale-95 shadow">
-                      <span class="text-base mb-0.5">⚡</span>
-                      <span class="text-[11px] font-bold">早鳥工時包</span>
-                    </button>
-                    <button onclick="sendKeyword('切換語言')" class="p-2.5 rounded-lg bg-indigo-900 hover:bg-indigo-800 text-white flex flex-col items-center transition active:scale-95 shadow">
-                      <span class="text-base mb-0.5">🌐</span>
-                      <span class="text-[11px] font-bold">切換語言</span>
-                    </button>
-                    <button onclick="sendKeyword('機耕代噴')" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white flex flex-col items-center transition active:scale-95 shadow">
-                      <span class="text-base mb-0.5">🚜</span>
-                      <span class="text-[11px] font-bold">機耕代噴</span>
-                    </button>
-                    <button onclick="sendKeyword('帳號綁定')" class="p-2.5 rounded-lg bg-teal-800 hover:bg-teal-700 text-white flex flex-col items-center transition active:scale-95 shadow">
-                      <span class="text-base mb-0.5">👤</span>
-                      <span class="text-[11px] font-bold">帳號綁定</span>
-                    </button>
-                  </div>
+                <!-- Rich Menu：依目前帳號與身分顯示真正的選單底圖（rich_menu/*.jpg），點格子送出 postback -->
+                <div class="bg-slate-900 border-t border-slate-800">
+                  <button onclick="toggleMenu()" class="w-full text-[11px] text-slate-200 py-1.5 font-semibold hover:bg-slate-800 flex items-center justify-center gap-2">
+                    <span id="rm-bar">選單</span><span id="rm-key" class="text-[10px] text-slate-500 font-mono"></span><span id="rm-arrow">▼</span>
+                  </button>
+                  <img id="rm-img" alt="圖文選單" onclick="onMenuClick(event)" class="w-full cursor-pointer select-none" draggable="false">
                 </div>
 
                 <!-- Input Footer -->
@@ -303,6 +280,35 @@ public class WebSimulatorHandler implements HttpHandler {
             function onChannelChange() {
               const ch = renderPresets();
               appendBotText(ch === 'farmer' ? '已切換到「智農派工（農場主）」帳號' : '已切換到「智農派工（工作者）」帳號');
+              postMock({ event: 'menu' });
+            }
+
+            // 圖文選單：/mock/chat 回傳目前身分的 menuKey，載入對應的 JSON 與底圖
+            let currentMenu = null;
+            async function showMenu(key) {
+              if (!key || (currentMenu && currentMenu.key === key)) return;
+              const res = await fetch('/rich_menu/' + key + '.json');
+              if (!res.ok) return;
+              currentMenu = Object.assign({ key: key }, await res.json());
+              document.getElementById('rm-img').src = '/rich_menu/' + key + '.jpg';
+              document.getElementById('rm-bar').textContent = currentMenu.chatBarText;
+              document.getElementById('rm-key').textContent = key;
+            }
+            function toggleMenu() {
+              const img = document.getElementById('rm-img');
+              img.classList.toggle('hidden');
+              document.getElementById('rm-arrow').textContent = img.classList.contains('hidden') ? '▲' : '▼';
+            }
+            async function onMenuClick(ev) {
+              if (!currentMenu) return;
+              const r = ev.target.getBoundingClientRect();
+              const x = (ev.clientX - r.left) * currentMenu.size.width / r.width;
+              const y = (ev.clientY - r.top) * currentMenu.size.height / r.height;
+              const area = currentMenu.areas.find(a => x >= a.bounds.x && x < a.bounds.x + a.bounds.width
+                                                    && y >= a.bounds.y && y < a.bounds.y + a.bounds.height);
+              if (!area) return;
+              appendUserMessage(area.action.displayText || area.action.label || area.action.data);
+              await postMock({ postback: area.action.data });
             }
 
             async function simulateFollow() {
@@ -327,6 +333,7 @@ public class WebSimulatorHandler implements HttpHandler {
                 }
                 const data = await res.json();
                 (data.messages || []).forEach(appendBotReply);
+                await showMenu(data.menuKey);
               } catch (e) {
                 appendBotText("❌ 伺服器通訊異常，請確認 Java 後台仍在運行中。");
               }
@@ -474,6 +481,8 @@ public class WebSimulatorHandler implements HttpHandler {
             }
 
             renderPresets();
+            postMock({ event: 'menu' });
+            document.getElementById('sim-as').addEventListener('change', () => postMock({ event: 'menu' }));
           </script>
         </body>
         </html>

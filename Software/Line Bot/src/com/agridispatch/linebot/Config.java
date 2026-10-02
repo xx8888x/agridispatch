@@ -56,6 +56,9 @@ public class Config {
     public static List<String> ALLOWED_ORIGINS = Collections.unmodifiableList(
             List.of("http://localhost:3000", "http://127.0.0.1:3000"));
 
+    /** 合作社服務專線（工作者帳號「聯絡合作社」按鈕）；未設定時只顯示勞動部 1955 專線。來源：COOP_CONTACT_PHONE／coop.contact.phone */
+    public static String COOP_CONTACT_PHONE = null;
+
     /** 是否以舊的單一帳號設定（LINE_CHANNEL_*／line.channel.*）當作農場主帳號 */
     public static boolean LEGACY_FARMER_CONFIG = false;
 
@@ -126,6 +129,8 @@ public class Config {
 
         INTERNAL_KEY = pick(prop, "AGRI_LINEBOT_INTERNAL_KEY", "internal.key");
         if (INTERNAL_KEY != null && INTERNAL_KEY.startsWith("請填入")) INTERNAL_KEY = null;
+
+        COOP_CONTACT_PHONE = pick(prop, "COOP_CONTACT_PHONE", "coop.contact.phone");
 
         LIFF_BIND_ID = pick(prop, "LIFF_BIND_ID", "liff.bind.id");
         if (LIFF_BIND_ID != null && LIFF_BIND_ID.startsWith("請填入")) LIFF_BIND_ID = null;

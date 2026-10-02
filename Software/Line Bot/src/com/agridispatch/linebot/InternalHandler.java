@@ -13,8 +13,8 @@ import java.util.Set;
  *   POST /internal/richmenu/link  {channel, lineUserId, menuKey}
  * 以 X-Internal-Key（AGRI_LINEBOT_INTERNAL_KEY）constant-time 比對；未設定金鑰時整組停用（403）。
  *
- * P2：驗證並記錄請求；各選單的 richMenuId 於 P3（規格第捌章）建立後才實際呼叫 LINE API 連結，
- * 在此之前回傳 linked:false。/internal/push 於 P5 加入。
+ * 選單代碼對應的 richMenuId 由 RichMenuUploader 上傳後記錄（RichMenus）；Mock 模式只記錄不呼叫 LINE。
+ * 回應 result：linked／unlinked（guest 選單＝回到帳號預設）／mock／missing（尚未上傳）／failed。/internal/push 於 P5 加入。
  */
 public class InternalHandler implements HttpHandler {
 
@@ -54,8 +54,9 @@ public class InternalHandler implements HttpHandler {
             return;
         }
 
-        System.out.println("🎛️ [" + channel.key + "] 圖文選單切換請求：" + WebhookHandler.maskUserId(userId) + " → " + menuKey
-                + "（P3 建立選單後才會實際連結）");
-        HttpUtils.sendJson(exchange, 200, "{\"success\":true,\"linked\":false,\"menuKey\":\"" + menuKey + "\"}");
+        String result = RichMenus.link(channel, userId, menuKey);
+        boolean linked = "linked".equals(result) || "unlinked".equals(result);
+        HttpUtils.sendJson(exchange, 200, "{\"success\":true,\"linked\":" + linked + ",\"result\":\"" + result
+                + "\",\"menuKey\":\"" + menuKey + "\"}");
     }
 }

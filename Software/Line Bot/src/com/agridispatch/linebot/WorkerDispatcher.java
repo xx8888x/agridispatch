@@ -3,6 +3,7 @@ package com.agridispatch.linebot;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.agridispatch.linebot.FarmerDispatcher.has;
 
@@ -14,6 +15,10 @@ final class WorkerDispatcher {
     private WorkerDispatcher() {}
 
     private static final Channel CH = Channel.WORKER;
+
+    /** 支援的 postback 動作（圖文選單 data 的 a=，TestSimulator 據此檢核選單） */
+    static final Set<String> ACTIONS = Set.of("task", "clock", "weather", "salary", "attendance", "lang",
+            "lang_select", "lang_help", "account", "contact", "cross", "help");
 
     static List<String> handle(BotEvent ev) {
         if (ev.type() == BotEvent.Type.UNFOLLOW) return List.of();
@@ -77,6 +82,7 @@ final class WorkerDispatcher {
         if (has(t, "薪資", "津貼", "8800", "獎勵", "lương", "gaji", "salary")) return "salary";
         if (has(t, "出勤", "紀錄", "ngày công", "kehadiran", "attendance")) return "attendance";
         if (has(t, "綁定", "帳號", "bind", "liên kết", "tài khoản", "hubungkan", "akun")) return "account";
+        if (has(t, "聯絡", "客服", "求助", "liên hệ", "hubungi", "contact")) return "contact";
         return "help";
     }
 
@@ -120,6 +126,10 @@ final class WorkerDispatcher {
             }
             case "lang_select":
                 return List.of(FlexMessageBuilder.getLanguageSelectFlex());
+            case "lang_help":
+                return List.of(FlexMessageBuilder.getLanguageSelectFlex(), FlexMessageBuilder.getWorkerHelpFlex(lang));
+            case "contact":
+                return List.of(FlexMessageBuilder.getContactFlex(lang));
             case "account":
                 return List.of(FlexMessageBuilder.getWorkerBindingFlex(lang));
             case "cross":
@@ -127,6 +137,7 @@ final class WorkerDispatcher {
             case "help":
                 return List.of(FlexMessageBuilder.getWorkerHelpFlex(lang));
             default:
+                RichMenus.UNKNOWN_ACTIONS.incrementAndGet();
                 System.err.println("⚠️ [worker] 未知的 postback 動作: " + action);
                 return List.of(FlexMessageBuilder.getWorkerHelpFlex(lang));
         }

@@ -1,0 +1,95 @@
+{
+  "size": {
+    "width": 2500,
+    "height": 1686
+  },
+  "selected": true,
+  "name": "智農派工（工作者）已綁定選單（id）",
+  "chatBarText": "📋 Menu kerja",
+  "areas": [
+    {
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "Tugas hari ini",
+        "data": "a=task",
+        "displayText": "Tugas hari ini"
+      }
+    },
+    {
+      "bounds": {
+        "x": 833,
+        "y": 0,
+        "width": 834,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "Absen",
+        "data": "a=clock",
+        "displayText": "Absen"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1667,
+        "y": 0,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "Cuaca & titik kumpul",
+        "data": "a=weather",
+        "displayText": "Cuaca & titik kumpul"
+      }
+    },
+    {
+      "bounds": {
+        "x": 0,
+        "y": 843,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "Gaji",
+        "data": "a=salary",
+        "displayText": "Gaji"
+      }
+    },
+    {
+      "bounds": {
+        "x": 833,
+        "y": 843,
+        "width": 834,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "Kehadiran",
+        "data": "a=attendance",
+        "displayText": "Kehadiran"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1667,
+        "y": 843,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "Bahasa & panduan",
+        "data": "a=lang_help",
+        "displayText": "Bahasa & panduan"
+      }
+    }
+  ]
+}

@@ -19,6 +19,9 @@ line.worker.channel.access.token=請填入工作者帳號的_Channel_Access_Toke
 line.farmer.basic.id=
 line.worker.basic.id=
 
+# 合作社服務專線：工作者帳號「聯絡合作社」顯示撥號按鈕；未填時只顯示勞動部 1955 專線
+coop.contact.phone=
+
 # 帳號綁定頁的 LIFF ID；未填時綁定按鈕連到既有登入頁（LIFF 綁定頁於 P4 製作）
 liff.bind.id=
 

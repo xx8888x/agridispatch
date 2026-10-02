@@ -1,7 +1,9 @@
 package com.agridispatch.linebot;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 智農派工 - 農場主帳號分派器（規格 4.1）
@@ -11,6 +13,10 @@ final class FarmerDispatcher {
     private FarmerDispatcher() {}
 
     private static final Channel CH = Channel.FARMER;
+
+    /** 支援的 postback 動作（圖文選單 data 的 a=，TestSimulator 據此檢核選單） */
+    static final Set<String> ACTIONS = Set.of("orders", "legalize", "weather", "early_bird", "machinery_book",
+            "rates", "calendar", "rates_calendar", "account", "help", "cross");
 
     /** 黑轉白身分代碼（postback t=）→ FlexMessageBuilder.LEGALIZE_TYPES 的指令關鍵字 */
     private static final Map<String, String> LEGALIZE_KEYS = Map.of(
@@ -76,6 +82,15 @@ final class FarmerDispatcher {
             case "rates":
             case "calendar":
                 return backendOrHelp(action, userId, text);
+            case "rates_calendar": {
+                // 圖文選單「費率與產曆」：兩張卡一起回
+                List<String> out = new ArrayList<>();
+                for (String a : List.of("rates", "calendar")) {
+                    List<String> reply = BackendClient.query(CH, userId, a, "");
+                    if (reply != null) out.addAll(reply);
+                }
+                return out.isEmpty() ? List.of(FlexMessageBuilder.getFarmerHelpFlex()) : out;
+            }
             case "account":
                 return List.of(FlexMessageBuilder.getFarmerBindingFlex());
             case "cross":
@@ -83,6 +98,7 @@ final class FarmerDispatcher {
             case "help":
                 return List.of(FlexMessageBuilder.getFarmerHelpFlex());
             default:
+                RichMenus.UNKNOWN_ACTIONS.incrementAndGet();
                 System.err.println("⚠️ [farmer] 未知的 postback 動作: " + action);
                 return List.of(FlexMessageBuilder.getFarmerHelpFlex());
         }

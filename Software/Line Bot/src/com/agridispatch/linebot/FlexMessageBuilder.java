@@ -223,6 +223,17 @@ public class FlexMessageBuilder {
                 List.of(uriButton(I18n.t(lang, "crew.eval"), webPageUrl("worker-local-evaluation.html"), "#2563EB"))));
     }
 
+    /** 工作者帳號「聯絡合作社」：帶班師傅、合作社專線（Config.COOP_CONTACT_PHONE）、勞動部 1955 專線 */
+    public static String getContactFlex(String lang) {
+        List<String> buttons = new java.util.ArrayList<>();
+        if (Config.COOP_CONTACT_PHONE != null) {
+            buttons.add(uriButton(I18n.t(lang, "contact.call"), "tel:" + Config.COOP_CONTACT_PHONE.replaceAll("[^0-9+]", ""), "#9F1239"));
+        }
+        buttons.add(uriButton(I18n.t(lang, "contact.1955"), "tel:1955", "#475569"));
+        return wrapFlex(I18n.t(lang, "contact.title"), simpleBubble("#9F1239", "智農派工（工作者）", I18n.t(lang, "contact.title"),
+                List.of(I18n.t(lang, "contact.body"), I18n.t(lang, "contact.hotline")), buttons));
+    }
+
     /** W-02 打卡、W-05 出勤紀錄：開啟既有工人頁 */
     public static String getWorkerLinkFlex(String lang, String keyPrefix, String url) {
         return wrapFlex(I18n.t(lang, keyPrefix + ".title"), simpleBubble("#047857", "智農派工（工作者）",

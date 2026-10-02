@@ -12,7 +12,8 @@ import java.util.Base64;
 
 /**
  * 智農派工 - 後端即時查詢轉發 (純 Java 零依賴)
- * 工班名冊、產曆、費率等需要真實資料的查詢由 Spring Boot 後端 (/api/line/webhook) 產生 Flex 卡片，
+ * 農場主帳號的訂單、產曆、費率等需要真實資料的查詢由 Spring Boot 後端 (/api/line/webhook) 產生 Flex 卡片，
+ * （工班名冊不再經 LINE 提供，規格 4.4）
  * 本類別把使用者訊息轉送過去並取回第一則回覆；後端離線或拒絕時回傳 null，由呼叫端改用本地卡片。
  */
 public class BackendQueryClient {
@@ -27,14 +28,15 @@ public class BackendQueryClient {
         String body = "{\"events\":[{\"type\":\"message\",\"source\":{\"userId\":\"" + escape(userId)
                 + "\"},\"message\":{\"type\":\"text\",\"text\":\"" + escape(text) + "\"}}]}";
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(Config.BACKEND_API_BASE + "/line/webhook"))
                     .timeout(Duration.ofSeconds(3))
-                    .header("Content-Type", "application/json; charset=UTF-8")
-                    // 與後端共用同一個 LINE channel secret 簽章；後端 demo 模式未設金鑰時不驗證
-                    .header("X-Line-Signature", sign(body))
-                    .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
-                    .build();
+                    .header("Content-Type", "application/json; charset=UTF-8");
+            // 過渡期（P1）：以農場主帳號的 channel secret 簽章，後端 demo 模式未設金鑰時不驗證；
+            // P2 改呼叫 /api/line/internal/query 並以 X-Internal-Key 驗證（規格 6.3）
+            String secret = Channel.FARMER.secret();
+            if (!secret.isBlank()) builder.header("X-Line-Signature", sign(secret, body));
+            HttpRequest request = builder.POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8)).build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (response.statusCode() != 200) {
                 System.err.println("⚠️ 後端查詢失敗 [HTTP " + response.statusCode() + "]，改用本地卡片");
@@ -47,9 +49,9 @@ public class BackendQueryClient {
         }
     }
 
-    private static String sign(String body) throws Exception {
+    private static String sign(String secret, String body) throws Exception {
         Mac mac = Mac.getInstance("HmacSHA256");
-        mac.init(new SecretKeySpec(Config.CHANNEL_SECRET.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+        mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
         return Base64.getEncoder().encodeToString(mac.doFinal(body.getBytes(StandardCharsets.UTF_8)));
     }
 

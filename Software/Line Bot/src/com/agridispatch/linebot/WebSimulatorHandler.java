@@ -183,6 +183,20 @@ public class WebSimulatorHandler implements HttpHandler {
                 <h2 class="text-sm font-bold text-emerald-400 mb-3 flex items-center gap-2">
                   ⚡ 快速指令測試 (點擊立即於模擬器送出)
                 </h2>
+                <div class="grid grid-cols-2 gap-2 text-xs mb-3">
+                  <label class="flex flex-col gap-1 text-slate-400">官方帳號
+                    <select id="sim-channel" onchange="onChannelChange()" class="p-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+                      <option value="farmer">👨‍🌾 智農派工（農場主）</option>
+                      <option value="worker">🧑‍🌾 智農派工（工作者）</option>
+                    </select>
+                  </label>
+                  <label class="flex flex-col gap-1 text-slate-400">模擬身分
+                    <select id="sim-as" class="p-2 rounded-lg bg-slate-900 border border-slate-700 text-white"></select>
+                  </label>
+                </div>
+                <button onclick="simulateFollow()" class="w-full mb-3 p-2 rounded-lg bg-emerald-900 hover:bg-emerald-800 border border-emerald-700 text-xs font-bold transition">
+                  ➕ 模擬加好友（follow 事件）
+                </button>
                 <div class="grid grid-cols-2 gap-2 text-xs">
                   <button onclick="sendKeyword('派工')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left font-medium transition">
                     📋 派工單 (農場主視角)
@@ -234,7 +248,7 @@ public class WebSimulatorHandler implements HttpHandler {
                     <b class="text-white">至 LINE Developers 後台設定 Webhook</b><br/>
                     <span class="text-slate-400">登入 <a href="https://developers.line.biz/" target="_blank" class="text-emerald-400 underline">LINE Developers Console</a> 進入您的 Messaging API Channel：</span>
                     <ul class="list-disc list-inside ml-2 mt-1 text-slate-400">
-                      <li><b>Webhook URL</b> 填入：<code>https://xxxx.ngrok-free.app/callback</code></li>
+                      <li><b>Webhook URL</b> 農場主帳號填 <code>https://xxxx.ngrok-free.app/callback/farmer</code>，工作者帳號填 <code>…/callback/worker</code></li>
                       <li>開啟 <b>Use webhook</b> 開關</li>
                       <li>點擊 <b>Verify</b> 驗證成功 (Success)</li>
                     </ul>
@@ -242,7 +256,7 @@ public class WebSimulatorHandler implements HttpHandler {
 
                   <li class="pl-1">
                     <b class="text-white">填入金鑰至 config.properties</b><br/>
-                    <span class="text-slate-400">在 <code>Software/Line Bot/config.properties</code> 填入您的 Channel Secret 與 Channel Access Token。</span>
+                    <span class="text-slate-400">在 <code>Software/Line Bot/config.properties</code> 填入兩個帳號各自的 Channel Secret 與 Channel Access Token（<code>line.farmer.channel.*</code>、<code>line.worker.channel.*</code>）。</span>
                   </li>
 
                   <li class="pl-1">
@@ -271,15 +285,48 @@ public class WebSimulatorHandler implements HttpHandler {
               // Append user message
               appendUserMessage(text);
 
-              // Send to backend /mock/chat
+              await postMock({ text: text });
+            }
+
+            // 依帳號提供可選的示範身分（見 IdentityStore.preset）
+            const SIM_PRESETS = {
+              farmer: [['farmer', '已綁定農場主'], ['unbound', '未綁定']],
+              worker: [['vn', '🇻🇳 越南籍移工'], ['id', '🇮🇩 印尼籍移工'], ['th', '🇹🇭 泰國籍（暫用中文）'],
+                       ['local', '本勞（中高齡）'], ['foreman', '本土帶班師傅'], ['machinery', '農機機耕師'], ['machinery_leader', '機耕隊組長'], ['unbound', '未綁定']]
+            };
+            function renderPresets() {
+              const ch = document.getElementById('sim-channel').value;
+              document.getElementById('sim-as').innerHTML = SIM_PRESETS[ch]
+                .map(([v, label]) => `<option value="${v}">${label}</option>`).join('');
+              return ch;
+            }
+            function onChannelChange() {
+              const ch = renderPresets();
+              appendBotText(ch === 'farmer' ? '已切換到「智農派工（農場主）」帳號' : '已切換到「智農派工（工作者）」帳號');
+            }
+
+            async function simulateFollow() {
+              appendUserMessage('（加入好友）');
+              await postMock({ event: 'follow' });
+            }
+
+            // 送到 /mock/chat：帶上帳號與示範身分，一次取回全部回覆訊息
+            async function postMock(fields) {
+              const channel = document.getElementById('sim-channel').value;
+              const payload = Object.assign({ channel: channel, as: document.getElementById('sim-as').value,
+                                              userId: 'U_WEB_SIM_' + channel, multi: true }, fields);
               try {
                 const res = await fetch('/mock/chat', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ text: text })
+                  body: JSON.stringify(payload)
                 });
+                if (!res.ok) {
+                  appendBotText('❌ ' + (await res.text()));
+                  return;
+                }
                 const data = await res.json();
-                appendBotReply(data);
+                (data.messages || []).forEach(appendBotReply);
               } catch (e) {
                 appendBotText("❌ 伺服器通訊異常，請確認 Java 後台仍在運行中。");
               }
@@ -425,6 +472,8 @@ public class WebSimulatorHandler implements HttpHandler {
               if (!str) return '';
               return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             }
+
+            renderPresets();
           </script>
         </body>
         </html>

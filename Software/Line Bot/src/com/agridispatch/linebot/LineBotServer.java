@@ -6,7 +6,7 @@ import java.util.concurrent.Executors;
 
 /**
  * 智農派工 (AgriDispatch) - Java LINE Bot 主伺服器
- * 純 Java 零第三方依賴實現，支援高效能執行緒池與 Webhook 處理
+ * 純 Java 零第三方依賴實現；同一個程式服務農場主、工作者兩個官方帳號（各自一條 webhook 路徑）
  */
 public class LineBotServer {
 
@@ -15,14 +15,16 @@ public class LineBotServer {
             int port = Config.PORT;
             HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
-            WebhookHandler webhookHandler = new WebhookHandler();
+            // LINE Webhook：每個官方帳號一條路徑（規格 6.2）
+            server.createContext("/callback/farmer", new WebhookHandler(Channel.FARMER, false));
+            server.createContext("/callback/worker", new WebhookHandler(Channel.WORKER, false));
+            // 舊路徑過渡期視同農場主帳號（兩個帳號都改設新路徑後移除）
+            WebhookHandler legacyHandler = new WebhookHandler(Channel.FARMER, true);
+            server.createContext("/callback", legacyHandler);
+            server.createContext("/webhook", legacyHandler);
 
-            // LINE Webhook 官方回調路徑 (同時支援 /callback 與 /webhook)
-            server.createContext("/callback", webhookHandler);
-            server.createContext("/webhook", webhookHandler);
-
-            // 本地模擬發言與除錯 API
-            server.createContext("/mock/chat", webhookHandler);
+            // 本地模擬發言與除錯 API（僅 Mock 模式）
+            server.createContext("/mock/chat", new MockChatHandler());
 
             // 網頁版 LINE 互動模擬器 (開啟 http://localhost:5000/ 即直接呈現手機聊天室介面)
             WebSimulatorHandler webSimulatorHandler = new WebSimulatorHandler();
@@ -31,12 +33,11 @@ public class LineBotServer {
 
             // 健康檢查路徑
             server.createContext("/health", exchange -> {
-                String resp = "{\"status\":\"UP\",\"mode\":\"" + (Config.IS_MOCK_MODE ? "MOCK" : "PRODUCTION") + "\"}";
-                byte[] b = resp.getBytes();
-                exchange.getResponseHeaders().set("Content-Type", "application/json");
-                exchange.sendResponseHeaders(200, b.length);
-                exchange.getResponseBody().write(b);
-                exchange.close();
+                HttpUtils.applyCors(exchange, "GET, OPTIONS", "Content-Type");
+                String resp = "{\"status\":\"UP\",\"mode\":\"" + overallMode() + "\",\"channels\":{"
+                        + "\"farmer\":\"" + Config.modeLabel(Channel.FARMER) + "\","
+                        + "\"worker\":\"" + Config.modeLabel(Channel.WORKER) + "\"}}";
+                HttpUtils.sendJson(exchange, 200, resp);
             });
 
             // 設定讀取與動態更新 API (管理端點，須以 X-Admin-Key 驗證身分)
@@ -69,18 +70,31 @@ public class LineBotServer {
                     String body = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
 
                     java.util.Map<String, Object> fields = SimpleJson.parseObject(body);
+                    Channel channel = fields.get("channel") == null ? Channel.FARMER : Channel.fromKey(String.valueOf(fields.get("channel")));
+                    if (channel == null) {
+                        HttpUtils.sendJson(exchange, 400, "{\"success\":false,\"message\":\"channel 必須是 farmer 或 worker\"}");
+                        return;
+                    }
                     String secret = fields.get("channelSecret") != null ? String.valueOf(fields.get("channelSecret")) : null;
                     String token = fields.get("channelAccessToken") != null ? String.valueOf(fields.get("channelAccessToken")) : null;
                     String backend = fields.get("backendApiBase") != null ? String.valueOf(fields.get("backendApiBase")) : null;
 
-                    boolean ok = Config.updateConfig(secret, token, backend);
-                    String resp = "{\"success\":" + ok + ",\"mode\":\"" + (Config.IS_MOCK_MODE ? "MOCK" : "PRODUCTION") + "\",\"message\":\"LINE 設定已更新\"}";
+                    boolean ok = Config.updateConfig(channel, secret, token, backend);
+                    String resp = "{\"success\":" + ok + ",\"channel\":\"" + channel.key + "\",\"mode\":\"" + Config.modeLabel(channel)
+                            + "\",\"message\":\"" + channel.displayName + " 設定已更新\"}";
                     HttpUtils.sendJson(exchange, 200, resp);
                 } else if ("GET".equalsIgnoreCase(method)) {
-                    // GET 一律僅回傳遮罩後的值，不外洩完整金鑰
-                    String maskedSecret = Config.CHANNEL_SECRET.length() > 6 ? Config.CHANNEL_SECRET.substring(0, 3) + "..." + Config.CHANNEL_SECRET.substring(Config.CHANNEL_SECRET.length() - 3) : "******";
-                    String maskedToken = Config.CHANNEL_ACCESS_TOKEN.length() > 10 ? Config.CHANNEL_ACCESS_TOKEN.substring(0, 5) + "..." + Config.CHANNEL_ACCESS_TOKEN.substring(Config.CHANNEL_ACCESS_TOKEN.length() - 5) : "******";
-                    String resp = "{\"status\":\"UP\",\"mode\":\"" + (Config.IS_MOCK_MODE ? "MOCK" : "PRODUCTION") + "\",\"port\":" + Config.PORT + ",\"channelSecretMasked\":\"" + maskedSecret + "\",\"channelAccessTokenMasked\":\"" + maskedToken + "\",\"backendApiBase\":\"" + Config.BACKEND_API_BASE + "\"}";
+                    // GET 一律僅回傳遮罩後的值，不外洩完整金鑰；mode 為兩帳號總覽（MOCK／PRODUCTION／MIXED）
+                    StringBuilder ch = new StringBuilder();
+                    for (Channel c : Channel.values()) {
+                        if (ch.length() > 0) ch.append(",");
+                        ch.append("\"").append(c.key).append("\":{\"mode\":\"").append(Config.modeLabel(c))
+                          .append("\",\"channelSecretMasked\":\"").append(mask(c.secret(), 3))
+                          .append("\",\"channelAccessTokenMasked\":\"").append(mask(c.accessToken(), 5))
+                          .append("\",\"basicIdConfigured\":").append(c.addFriendUrl() != null).append("}");
+                    }
+                    String resp = "{\"status\":\"UP\",\"mode\":\"" + overallMode() + "\",\"port\":" + Config.PORT
+                            + ",\"channels\":{" + ch + "},\"backendApiBase\":\"" + Config.BACKEND_API_BASE + "\"}";
                     HttpUtils.sendJson(exchange, 200, resp);
                 } else {
                     HttpUtils.sendText(exchange, 405, "Method Not Allowed");
@@ -94,10 +108,10 @@ public class LineBotServer {
             System.out.println("==================================================================");
             System.out.println("🌱 智農派工 (AgriDispatch) - LINE Bot Java 伺服器已成功啟動！");
             System.out.println("📡 監聽埠號: http://localhost:" + port);
-            System.out.println("🔗 Webhook 接收路徑: http://localhost:" + port + "/callback");
+            System.out.println("🔗 農場主帳號 Webhook: http://localhost:" + port + "/callback/farmer  【" + Config.modeLabel(Channel.FARMER) + "】");
+            System.out.println("🔗 工作者帳號 Webhook: http://localhost:" + port + "/callback/worker  【" + Config.modeLabel(Channel.WORKER) + "】");
             System.out.println("🛠️ 本地測試除錯路徑: http://localhost:" + port + "/mock/chat");
             System.out.println("🔍 健康檢查路徑:     http://localhost:" + port + "/health");
-            System.out.println("⚙️ 目前運行模式:     " + (Config.IS_MOCK_MODE ? "【本地模擬模式 (Mock Mode)】" : "【正式生產模式 (Production)】"));
             System.out.println("🌐 CORS 允許來源:    " + Config.ALLOWED_ORIGINS);
             System.out.println("🔑 /api/config 管理金鑰: " + (Config.ADMIN_KEY == null ? "未設定 (API 已停用)" : "已設定"));
             System.out.println("☕ Java 執行環境:    " + System.getProperty("java.version") + " (" + System.getProperty("java.vendor") + ")");
@@ -109,5 +123,16 @@ public class LineBotServer {
             System.err.println("❌ LINE Bot 伺服器啟動失敗: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    /** 兩個帳號的總體模式：都 Mock → MOCK、都正式 → PRODUCTION、其餘 → MIXED */
+    static String overallMode() {
+        boolean f = Channel.FARMER.isMock(), w = Channel.WORKER.isMock();
+        return f && w ? "MOCK" : (!f && !w ? "PRODUCTION" : "MIXED");
+    }
+
+    private static String mask(String v, int keep) {
+        if (v == null || v.length() <= keep * 2) return "******";
+        return v.substring(0, keep) + "..." + v.substring(v.length() - keep);
     }
 }

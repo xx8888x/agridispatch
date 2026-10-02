@@ -11,13 +11,17 @@ import java.util.Properties;
 /**
  * 智農派工 - LINE Bot 配置載入器
  * 依序優先載入：環境變數 -> config.properties -> 預設值
+ *
+ * 兩個官方帳號（Channel.FARMER、Channel.WORKER）各自一組 secret／token：
+ *   LINE_FARMER_CHANNEL_SECRET / line.farmer.channel.secret
+ *   LINE_FARMER_CHANNEL_ACCESS_TOKEN / line.farmer.channel.access.token
+ *   LINE_WORKER_CHANNEL_SECRET / line.worker.channel.secret
+ *   LINE_WORKER_CHANNEL_ACCESS_TOKEN / line.worker.channel.access.token
+ * 過渡相容：只設定舊的 LINE_CHANNEL_SECRET／LINE_CHANNEL_ACCESS_TOKEN（line.channel.*）時，視為農場主帳號。
  */
 public class Config {
-    public static String CHANNEL_ACCESS_TOKEN = "mock_token_agridispatch_line_bot";
-    public static String CHANNEL_SECRET = "mock_secret_88888888";
     public static int PORT = 5000;
     public static String BACKEND_API_BASE = "http://localhost:3000/api";
-    public static boolean IS_MOCK_MODE = true;
 
     /**
      * Flex 卡片按鈕連結的前端網站根網址 (其下為 農業派遣主網站/、linebot/ 等子站)。
@@ -34,23 +38,47 @@ public class Config {
     public static String ADMIN_KEY = null;
 
     /**
+     * Line Bot 與後端互相呼叫內部端點的共用金鑰（規格 6.3，P2 起使用）。未設定時為 null。
+     * 來源：環境變數 AGRI_LINEBOT_INTERNAL_KEY，或 config.properties 的 internal.key。
+     */
+    public static String INTERNAL_KEY = null;
+
+    /**
+     * 帳號綁定頁的 LIFF ID（規格 5.3）。未設定時，綁定按鈕改連到既有的登入頁。
+     * 來源：環境變數 LIFF_BIND_ID，或 config.properties 的 liff.bind.id。
+     */
+    public static String LIFF_BIND_ID = null;
+
+    /**
      * CORS 允許的來源白名單 (取代先前的 Access-Control-Allow-Origin: *)。
      * 來源：環境變數 CORS_ALLOWED_ORIGINS，或 config.properties 的 cors.allowed.origins (以逗號分隔)。
      */
     public static List<String> ALLOWED_ORIGINS = Collections.unmodifiableList(
             List.of("http://localhost:3000", "http://127.0.0.1:3000"));
 
+    /** 是否以舊的單一帳號設定（LINE_CHANNEL_*／line.channel.*）當作農場主帳號 */
+    public static boolean LEGACY_FARMER_CONFIG = false;
+
     static {
         loadConfig();
     }
 
+    private static File propFile() {
+        File f = new File("config.properties");
+        return f.exists() ? f : new File("Software/Line Bot/config.properties");
+    }
+
+    /** 環境變數優先，其次 properties；皆無回傳 null */
+    private static String pick(Properties prop, String envName, String propName) {
+        String env = System.getenv(envName);
+        if (env != null && !env.isBlank()) return env.trim();
+        String v = prop.getProperty(propName);
+        return (v == null || v.isBlank()) ? null : v.trim();
+    }
+
     public static void loadConfig() {
         Properties prop = new Properties();
-        File propFile = new File("config.properties");
-        if (!propFile.exists()) {
-            propFile = new File("Software/Line Bot/config.properties");
-        }
-
+        File propFile = propFile();
         if (propFile.exists()) {
             try (InputStream input = new FileInputStream(propFile)) {
                 prop.load(input);
@@ -59,40 +87,51 @@ public class Config {
             }
         }
 
-        // 優先取用環境變數，若無則讀取 properties，最後回退至預設值
-        String envToken = System.getenv("LINE_CHANNEL_ACCESS_TOKEN");
-        CHANNEL_ACCESS_TOKEN = envToken != null ? envToken : prop.getProperty("line.channel.access.token", CHANNEL_ACCESS_TOKEN);
+        // 兩個官方帳號
+        String legacySecret = pick(prop, "LINE_CHANNEL_SECRET", "line.channel.secret");
+        String legacyToken = pick(prop, "LINE_CHANNEL_ACCESS_TOKEN", "line.channel.access.token");
+        String farmerSecret = pick(prop, "LINE_FARMER_CHANNEL_SECRET", "line.farmer.channel.secret");
+        String farmerToken = pick(prop, "LINE_FARMER_CHANNEL_ACCESS_TOKEN", "line.farmer.channel.access.token");
+        LEGACY_FARMER_CONFIG = false;
+        if (farmerSecret == null && farmerToken == null && (legacySecret != null || legacyToken != null)) {
+            farmerSecret = legacySecret;
+            farmerToken = legacyToken;
+            LEGACY_FARMER_CONFIG = !Channel.isPlaceholder(legacySecret) && !Channel.isPlaceholder(legacyToken);
+        }
+        Channel.FARMER.secret = farmerSecret == null ? "" : farmerSecret;
+        Channel.FARMER.accessToken = farmerToken == null ? "" : farmerToken;
+        Channel.FARMER.basicId = nvl(pick(prop, "LINE_FARMER_BASIC_ID", "line.farmer.basic.id"));
 
-        String envSecret = System.getenv("LINE_CHANNEL_SECRET");
-        CHANNEL_SECRET = envSecret != null ? envSecret : prop.getProperty("line.channel.secret", CHANNEL_SECRET);
+        String workerSecret = pick(prop, "LINE_WORKER_CHANNEL_SECRET", "line.worker.channel.secret");
+        String workerToken = pick(prop, "LINE_WORKER_CHANNEL_ACCESS_TOKEN", "line.worker.channel.access.token");
+        Channel.WORKER.secret = workerSecret == null ? "" : workerSecret;
+        Channel.WORKER.accessToken = workerToken == null ? "" : workerToken;
+        Channel.WORKER.basicId = nvl(pick(prop, "LINE_WORKER_BASIC_ID", "line.worker.basic.id"));
 
-        String envPort = System.getenv("PORT");
-        String portStr = envPort != null ? envPort : prop.getProperty("server.port", "5000");
+        String portStr = pick(prop, "PORT", "server.port");
         try {
-            PORT = Integer.parseInt(portStr);
+            PORT = portStr == null ? 5000 : Integer.parseInt(portStr);
         } catch (Exception e) {
             PORT = 5000;
         }
 
-        String envBackend = System.getenv("BACKEND_API_BASE");
-        BACKEND_API_BASE = envBackend != null ? envBackend : prop.getProperty("backend.api.base", BACKEND_API_BASE);
+        String backend = pick(prop, "BACKEND_API_BASE", "backend.api.base");
+        if (backend != null) BACKEND_API_BASE = backend;
 
-        String envWebBase = System.getenv("WEB_BASE_URL");
-        String webBase = (envWebBase != null && !envWebBase.isBlank())
-                ? envWebBase
-                : prop.getProperty("web.base.url", WEB_BASE_URL);
-        WEB_BASE_URL = webBase.trim().replaceAll("/+$", "");
+        String webBase = pick(prop, "WEB_BASE_URL", "web.base.url");
+        if (webBase != null) WEB_BASE_URL = webBase.replaceAll("/+$", "");
 
-        String envAdminKey = System.getenv("LINEBOT_ADMIN_KEY");
-        String adminKey = (envAdminKey != null && !envAdminKey.isBlank())
-                ? envAdminKey
-                : prop.getProperty("admin.key", "");
-        ADMIN_KEY = (adminKey == null || adminKey.isBlank()) ? null : adminKey;
+        ADMIN_KEY = pick(prop, "LINEBOT_ADMIN_KEY", "admin.key");
+        if (ADMIN_KEY != null && ADMIN_KEY.startsWith("請填入")) ADMIN_KEY = null;
 
-        String envCors = System.getenv("CORS_ALLOWED_ORIGINS");
-        String corsStr = (envCors != null && !envCors.isBlank())
-                ? envCors
-                : prop.getProperty("cors.allowed.origins", "http://localhost:3000,http://127.0.0.1:3000");
+        INTERNAL_KEY = pick(prop, "AGRI_LINEBOT_INTERNAL_KEY", "internal.key");
+        if (INTERNAL_KEY != null && INTERNAL_KEY.startsWith("請填入")) INTERNAL_KEY = null;
+
+        LIFF_BIND_ID = pick(prop, "LIFF_BIND_ID", "liff.bind.id");
+        if (LIFF_BIND_ID != null && LIFF_BIND_ID.startsWith("請填入")) LIFF_BIND_ID = null;
+
+        String corsStr = pick(prop, "CORS_ALLOWED_ORIGINS", "cors.allowed.origins");
+        if (corsStr == null) corsStr = "http://localhost:3000,http://127.0.0.1:3000";
         List<String> origins = new ArrayList<>();
         for (String o : corsStr.split(",")) {
             String trimmed = o.trim();
@@ -104,8 +143,10 @@ public class Config {
                 ? List.of("http://localhost:3000", "http://127.0.0.1:3000")
                 : Collections.unmodifiableList(origins);
 
-        IS_MOCK_MODE = "mock_secret_88888888".equals(CHANNEL_SECRET) || "mock_token_agridispatch_line_bot".equals(CHANNEL_ACCESS_TOKEN);
-
+        if (LEGACY_FARMER_CONFIG) {
+            System.out.println("⚠️ 偵測到舊的單一帳號設定 (LINE_CHANNEL_SECRET／line.channel.*)，已視為【農場主帳號】。");
+            System.out.println("   請改用 LINE_FARMER_CHANNEL_* 與 LINE_WORKER_CHANNEL_*（見 config.properties.example）。");
+        }
         if (ADMIN_KEY == null) {
             System.out.println("⚠️ 尚未設定管理金鑰，/api/config 設定 API 已停用 (回應 403)。");
             System.out.println("   如需啟用，請設定環境變數 LINEBOT_ADMIN_KEY=<您的管理金鑰>，");
@@ -113,43 +154,56 @@ public class Config {
         }
     }
 
-    public static synchronized boolean updateConfig(String secret, String token, String backend) {
+    /** 兩個帳號都是 Mock 模式 */
+    public static boolean allMock() {
+        return Channel.FARMER.isMock() && Channel.WORKER.isMock();
+    }
+
+    public static String modeLabel(Channel c) {
+        return c.isMock() ? "MOCK" : "PRODUCTION";
+    }
+
+    /**
+     * /api/config POST：更新指定帳號的金鑰與後端位址並寫回 config.properties
+     */
+    public static synchronized boolean updateConfig(Channel channel, String secret, String token, String backend) {
         try {
             Properties prop = new Properties();
-            File propFile = new File("config.properties");
-            if (!propFile.exists()) {
-                propFile = new File("Software/Line Bot/config.properties");
-            }
-
+            File propFile = propFile();
             if (propFile.exists()) {
                 try (InputStream input = new FileInputStream(propFile)) {
                     prop.load(input);
                 }
             }
 
+            String prefix = "line." + channel.key + ".channel.";
             if (secret != null && !secret.isBlank()) {
-                prop.setProperty("line.channel.secret", secret);
-                CHANNEL_SECRET = secret;
+                prop.setProperty(prefix + "secret", secret.trim());
+                channel.secret = secret.trim();
             }
             if (token != null && !token.isBlank()) {
-                prop.setProperty("line.channel.access.token", token);
-                CHANNEL_ACCESS_TOKEN = token;
+                prop.setProperty(prefix + "access.token", token.trim());
+                channel.accessToken = token.trim();
             }
             if (backend != null && !backend.isBlank()) {
-                prop.setProperty("backend.api.base", backend);
-                BACKEND_API_BASE = backend;
+                prop.setProperty("backend.api.base", backend.trim());
+                BACKEND_API_BASE = backend.trim();
             }
 
             try (java.io.FileOutputStream out = new java.io.FileOutputStream(propFile)) {
                 prop.store(out, "Updated via LineBot Configuration API");
             }
 
-            IS_MOCK_MODE = "mock_secret_88888888".equals(CHANNEL_SECRET) || "mock_token_agridispatch_line_bot".equals(CHANNEL_ACCESS_TOKEN);
-            System.out.println("🔄 LINE Bot 設定已更新，目前運行模式: " + (IS_MOCK_MODE ? "【本地模擬模式】" : "【正式生產模式】"));
+            System.out.println("🔄 LINE Bot 設定已更新：" + channel.displayName + " → "
+                    + (channel.isMock() ? "【本地模擬模式】" : "【正式生產模式】"));
             return true;
         } catch (Exception e) {
             System.err.println("更新設定失敗: " + e.getMessage());
             return false;
         }
+    }
+
+    private static String nvl(String s) {
+        return s == null ? "" : s;
     }
 }

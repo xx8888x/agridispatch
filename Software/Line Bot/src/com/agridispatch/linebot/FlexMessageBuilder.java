@@ -5,10 +5,11 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 /**
  * 智農派工 - Flex Message 構造器
- * 負責產生 8 大情境的 Flex Message JSON 結構，提供給 LINE Messaging API 回覆或推播
+ * 負責產生兩個官方帳號（農場主／工作者）各情境的 Flex Message JSON 結構，提供給 LINE Messaging API 回覆或推播
  */
 public class FlexMessageBuilder {
 
@@ -89,83 +90,173 @@ public class FlexMessageBuilder {
                 loadTemplateOrFallback("08_salary_bonus.json", "{}"));
     }
 
-    /**
-     * 7. 帳號綁定引導卡
-     */
-    public static String getBindingFlex(String userId) {
-        String bubble = """
-        {
-          "type": "bubble",
-          "header": {
-            "type": "box",
-            "layout": "vertical",
-            "backgroundColor": "#0F766E",
-            "paddingAll": "20px",
-            "contents": [
-              { "type": "text", "text": "🔗 帳號身分綁定", "color": "#FFFFFF", "size": "lg", "weight": "bold" }
-            ]
-          },
-          "body": {
-            "type": "box",
-            "layout": "vertical",
-            "spacing": "md",
-            "paddingAll": "20px",
-            "contents": [
-              { "type": "text", "text": "綁定您的 LINE 帳號以接收專屬派工與津貼推播！", "size": "sm", "color": "#334155", "wrap": true },
-              { "type": "text", "text": "LINE ID: %s", "size": "xs", "color": "#64748B" }
-            ]
-          },
-          "footer": {
-            "type": "box",
-            "layout": "vertical",
-            "spacing": "sm",
-            "paddingAll": "16px",
-            "contents": [
-              { "type": "button", "style": "primary", "color": "#059669", "action": { "type": "uri", "label": "👨‍🌾 農場主身分綁定", "uri": "https://agridispatch.tw/web/app.html#farmer" } },
-              { "type": "button", "style": "primary", "color": "#3B82F6", "action": { "type": "uri", "label": "🇻🇳 外籍移工身分綁定", "uri": "https://agridispatch.tw/web/app.html#worker_foreign" } }
-            ]
-          }
+    // =========================================================================
+    // 帳號綁定、服務導覽、跨帳號引導（規格 4.1、4.2、4.3、5.3）
+    // =========================================================================
+
+    /** 綁定頁網址：設定 LIFF_BIND_ID 時走 LIFF（規格 5.3），否則連到既有登入頁；網址不帶任何個資 */
+    static String bindUrl(Channel channel, String role) {
+        if (Config.LIFF_BIND_ID != null) {
+            return "https://liff.line.me/" + Config.LIFF_BIND_ID + "?channel=" + channel.key + "&role=" + role;
         }
-        """.formatted(escapeJson(userId != null ? userId : "U_DEMO"));
-        return wrapFlex("🔗 智農派工系統 - LINE 帳號綁定", bubble);
+        return switch (role) {
+            case Identity.WORKER_LOCAL -> webPageUrl("worker-local-login.html");
+            case Identity.WORKER_FOREIGN -> webPageUrl("worker-foreign-login.html");
+            default -> webPageUrl("farmer-login.html");
+        };
+    }
+
+    /** 工人頁（打卡、出勤）：本勞與外勞各自一頁 */
+    static String workerPageUrl(Identity identity) {
+        return webPageUrl(identity.isForeign() ? "worker-foreign.html" : "worker-local.html");
+    }
+
+    /** F-07 農場主帳號綁定卡（不顯示 LINE userId） */
+    public static String getFarmerBindingFlex() {
+        return wrapFlex("🔗 智農派工 - 農場主帳號綁定", simpleBubble("#0F766E", "智農派工（農場主）", "🔗 帳號綁定",
+                List.of("綁定後可查看您的訂單與派工確認單、天候對訂單的影響，並使用黑轉白服務。"),
+                List.of(uriButton("👨‍🌾 農場主帳號綁定", bindUrl(Channel.FARMER, Identity.FARMER), "#059669"))));
+    }
+
+    /** W-07 工作者帳號綁定卡：本勞、外勞兩種入口 */
+    public static String getWorkerBindingFlex(String lang) {
+        return wrapFlex(I18n.t(lang, "bind.title"), simpleBubble("#0F766E", "智農派工（工作者）", I18n.t(lang, "bind.title"),
+                List.of(I18n.t(lang, "bind.desc")),
+                List.of(uriButton(I18n.t(lang, "bind.local"), bindUrl(Channel.WORKER, Identity.WORKER_LOCAL), "#059669"),
+                        uriButton(I18n.t(lang, "bind.foreign"), bindUrl(Channel.WORKER, Identity.WORKER_FOREIGN), "#3B82F6"))));
+    }
+
+    /** F-08 農場主服務導覽（只列農場主功能） */
+    public static String getFarmerHelpFlex() {
+        return wrapFlex("🌱 智農派工（農場主）- 服務導覽", simpleBubble("#047857", "智農派工（農場主）", "🌱 服務導覽",
+                List.of("請點下方選單，或輸入下列文字：",
+                        "• 「派工」「訂單」：我的訂單與派工確認單",
+                        "• 「黑轉白」：現有工班依身分轉為合法聘僱",
+                        "• 「早鳥」：產季早鳥保證工時包",
+                        "• 「避險」：天候對訂單的影響",
+                        "• 「機耕」：無人機代噴與農機預約",
+                        "• 「費率」「產曆」：服務費率與全台產曆",
+                        "• 「綁定」：帳號綁定"),
+                List.of()));
+    }
+
+    /** W-08 工作者使用說明（依語言） */
+    public static String getWorkerHelpFlex(String lang) {
+        return wrapFlex(I18n.t(lang, "help.title"), simpleBubble("#047857", "智農派工（工作者）", I18n.t(lang, "help.title"),
+                List.of(I18n.t(lang, "help.intro"), I18n.t(lang, "help.task"), I18n.t(lang, "help.clock"),
+                        I18n.t(lang, "help.weather"), I18n.t(lang, "help.salary"), I18n.t(lang, "help.attendance"),
+                        I18n.t(lang, "help.lang")),
+                List.of()));
     }
 
     /**
-     * 8. 服務導覽與說明選單
+     * 4.3 跨帳號引導：使用者在 from 帳號問了另一個帳號的功能，只回引導、不回功能內容
      */
-    public static String getHelpMenuFlex() {
+    public static String getCrossChannelFlex(Channel from, String lang) {
+        Channel to = from == Channel.FARMER ? Channel.WORKER : Channel.FARMER;
+        String title, body, label;
+        if (from == Channel.FARMER) {
+            title = "此帳號提供農場主使用";
+            body = "工作人員（本勞、外勞）的任務、打卡、薪資與多語介面，請加入「" + to.displayName + "」帳號。";
+            label = "加入工作者帳號";
+        } else {
+            title = I18n.t(lang, "cross.title");
+            body = I18n.t(lang, "cross.body");
+            label = I18n.t(lang, "cross.add");
+        }
+        String url = to.addFriendUrl();
+        List<String> buttons = url == null ? List.of() : List.of(uriButton(label, url, "#06C755"));
+        return wrapFlex(title, simpleBubble("#475569", from.displayName, "ℹ️ " + title, List.of(body), buttons));
+    }
+
+    /** W-06 語言選擇（三語並列；按鈕送出語言名稱，與選單 postback a=lang 效果相同） */
+    public static String getLanguageSelectFlex() {
+        return wrapFlex("🌐 請選擇語言 / Chọn ngôn ngữ / Pilih bahasa", simpleBubble("#4338CA", "智農派工（工作者）",
+                "🌐 請選擇語言 / Chọn ngôn ngữ / Pilih bahasa", List.of(),
+                List.of(messageButton("繁體中文", "繁體中文"),
+                        messageButton("Tiếng Việt", "Tiếng Việt"),
+                        messageButton("Bahasa Indonesia", "Bahasa Indonesia"))));
+    }
+
+    /** F-05 機耕代噴預約（農場主視角；機耕師的工單見 getMachineryTaskFlex） */
+    public static String getMachineryBookingFlex() {
+        return wrapFlex("🚜 機耕代噴預約", simpleBubble("#334155", "智農派工（農場主）", "🚜 機耕代噴預約",
+                List.of("• 大疆 T50 植保機代噴（雙證照機耕師）",
+                        "• 曳引機整地、深耕",
+                        "線上填寫田區、作物與希望日期，由合作社排程後回覆。"),
+                List.of(uriButton("📅 前往預約", webPageUrl("farmer.html"), "#06C755"))));
+    }
+
+    /** W-03 天候與集合通知（工人視角，依語言；P1 為示範資料，P2 起取本人當日班次） */
+    public static String getWorkerWeatherFlex(String lang) {
         String bubble = """
         {
           "type": "bubble",
-          "header": {
-            "type": "box",
-            "layout": "vertical",
-            "backgroundColor": "#047857",
-            "paddingAll": "20px",
-            "contents": [
-              { "type": "text", "text": "智農派工 AgriDispatch", "color": "#A7F3D0", "size": "xs", "weight": "bold" },
-              { "type": "text", "text": "🌱 LINE 官方助理服務導覽", "color": "#FFFFFF", "size": "lg", "weight": "bold" }
-            ]
-          },
-          "body": {
-            "type": "box",
-            "layout": "vertical",
-            "spacing": "sm",
-            "paddingAll": "20px",
-            "contents": [
-              { "type": "text", "text": "您可以直接輸入以下關鍵字或點擊下方選單：", "size": "xs", "color": "#475569" },
-              { "type": "text", "text": "• 輸入「派工」：查看今日出工或派工確認單", "size": "sm", "weight": "bold", "color": "#1E293B" },
-              { "type": "text", "text": "• 輸入「避險」：查看突發暴雨冷鏈避險通報", "size": "sm", "weight": "bold", "color": "#1E293B" },
-              { "type": "text", "text": "• 輸入「早鳥」：試算產季早鳥保證工時包", "size": "sm", "weight": "bold", "color": "#1E293B" },
-              { "type": "text", "text": "• 輸入「機耕」：查看無人機代噴與農機排程", "size": "sm", "weight": "bold", "color": "#1E293B" },
-              { "type": "text", "text": "• 輸入「薪資」：查詢農業部 8,800 元獎勵與薪資", "size": "sm", "weight": "bold", "color": "#1E293B" },
-              { "type": "text", "text": "• 輸入「黑轉白」：現有工班依身分轉為合法聘僱", "size": "sm", "weight": "bold", "color": "#1E293B" },
-              { "type": "text", "text": "• 輸入「越南語」/「印尼語」：切換多語系介面", "size": "sm", "weight": "bold", "color": "#1E293B" }
-            ]
-          }
+          "header": { "type": "box", "layout": "vertical", "backgroundColor": "#1D4ED8", "paddingAll": "20px", "contents": [
+            { "type": "text", "text": "%s", "color": "#FFFFFF", "size": "lg", "weight": "bold", "wrap": true },
+            { "type": "text", "text": "%s", "color": "#DBEAFE", "size": "sm", "wrap": true }
+          ]},
+          "body": { "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "20px", "contents": [
+            { "type": "box", "layout": "baseline", "contents": [
+              { "type": "text", "text": "%s", "size": "sm", "color": "#64748B", "flex": 2, "wrap": true },
+              { "type": "text", "text": "%s", "size": "sm", "color": "#1E293B", "weight": "bold", "flex": 4, "wrap": true }
+            ]},
+            { "type": "box", "layout": "baseline", "contents": [
+              { "type": "text", "text": "%s", "size": "sm", "color": "#64748B", "flex": 2, "wrap": true },
+              { "type": "text", "text": "%s", "size": "sm", "color": "#1E293B", "weight": "bold", "flex": 4, "wrap": true }
+            ]},
+            { "type": "text", "text": "%s", "size": "sm", "color": "#1E293B", "wrap": true },
+            { "type": "text", "text": "%s", "size": "xxs", "color": "#94A3B8" }
+          ]}
         }
-        """;
-        return wrapFlex("🌱 智農派工官方助理 - 服務導覽", bubble);
+        """.formatted(escapeJson(I18n.t(lang, "weather.title")), escapeJson(I18n.t(lang, "weather.status")),
+                escapeJson(I18n.t(lang, "weather.place.label")), escapeJson(I18n.t(lang, "weather.place")),
+                escapeJson(I18n.t(lang, "weather.time.label")), escapeJson(I18n.t(lang, "weather.time")),
+                escapeJson(I18n.t(lang, "weather.note")), escapeJson(I18n.t(lang, "weather.demo")));
+        return wrapFlex(I18n.t(lang, "weather.title"), bubble);
+    }
+
+    /** W-01 附加：帶班師傅與工班組長的工班出勤摘要（P1 為示範資料） */
+    public static String getCrewSummaryFlex(String lang) {
+        return wrapFlex(I18n.t(lang, "crew.title"), simpleBubble("#1E40AF", "智農派工（工作者）", I18n.t(lang, "crew.title"),
+                List.of(I18n.t(lang, "crew.body")),
+                List.of(uriButton(I18n.t(lang, "crew.eval"), webPageUrl("worker-local-evaluation.html"), "#2563EB"))));
+    }
+
+    /** W-02 打卡、W-05 出勤紀錄：開啟既有工人頁 */
+    public static String getWorkerLinkFlex(String lang, String keyPrefix, String url) {
+        return wrapFlex(I18n.t(lang, keyPrefix + ".title"), simpleBubble("#047857", "智農派工（工作者）",
+                I18n.t(lang, keyPrefix + ".title"), List.of(I18n.t(lang, keyPrefix + ".desc")),
+                List.of(uriButton(I18n.t(lang, keyPrefix + ".open"), url, "#06C755"))));
+    }
+
+    /** 標題列＋若干段文字＋若干按鈕的通用卡片 */
+    private static String simpleBubble(String headerBg, String subtitle, String title, List<String> lines, List<String> buttons) {
+        StringBuilder body = new StringBuilder();
+        for (String line : lines) {
+            if (body.length() > 0) body.append(",\n");
+            body.append("""
+                { "type": "text", "text": "%s", "size": "sm", "color": "#1E293B", "wrap": true }""".formatted(escapeJson(line)));
+        }
+        String bodyBlock = lines.isEmpty() ? "" : """
+          ,
+          "body": { "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "20px", "contents": [
+        %s
+          ]}""".formatted(body);
+        String footer = buttons.isEmpty() ? "" : """
+          ,
+          "footer": { "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "16px", "contents": [
+        %s
+          ]}""".formatted(String.join(",\n", buttons));
+        return """
+        {
+          "type": "bubble",
+          "header": { "type": "box", "layout": "vertical", "backgroundColor": "%s", "paddingAll": "20px", "contents": [
+            { "type": "text", "text": "%s", "color": "#D1FAE5", "size": "xs", "weight": "bold" },
+            { "type": "text", "text": "%s", "color": "#FFFFFF", "size": "lg", "weight": "bold", "wrap": true }
+          ]}%s%s
+        }
+        """.formatted(headerBg, escapeJson(subtitle), escapeJson(title), bodyBlock, footer);
     }
 
     /**

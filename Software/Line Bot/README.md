@@ -1,6 +1,6 @@
 # 智農派工 (AgriDispatch) - Java LINE Bot 服務引擎
 
-本專案為「智農派工 (AgriDispatch)」的專屬 LINE 官方帳號後端服務，採用 **Java 17+ (原生零第三方相依)** 開發，支援 LINE Messaging API Webhook 簽章驗證（HMAC-SHA256）、六宮格圖文選單（Rich Menu）、8 大核心情境 Flex Message 卡片生成，以及繁中、🇻🇳 越南語、🇮🇩 印尼語多語系動態切換。
+本專案為「智農派工 (AgriDispatch)」的 LINE 官方帳號後端服務。依 `07_系統分析及文件/05_LINE官方帳號拆分規格.md`，同一支程式服務**兩個官方帳號**：「智農派工（農場主）」與「智農派工（工作者）」（本勞與外勞共用、多語），各自一條 webhook 路徑與一組金鑰。採用 **Java 17+ (原生零第三方相依)** 開發，支援 LINE Messaging API Webhook 簽章驗證（HMAC-SHA256）、六宮格圖文選單（Rich Menu）、8 大核心情境 Flex Message 卡片生成，以及繁中、🇻🇳 越南語、🇮🇩 印尼語多語系動態切換。
 
 ---
 
@@ -11,13 +11,21 @@ Software\Line Bot\
 ├── src/                               # Java 核心原始碼
 │   └── com/agridispatch/linebot/
 │       ├── LineBotServer.java         # 主伺服器 (內建 HttpServer，監聽 :5000)
-│       ├── WebhookHandler.java        # Webhook 處理器 (HMAC-SHA256 簽章防偽與事件分發)
-│       ├── LineBotDispatcher.java     # 智慧對話大腦 (多語系與關鍵字派工邏輯)
-│       ├── FlexMessageBuilder.java    # 8 大情境 Flex Message 卡片構造器
-│       ├── LineApiClient.java         # LINE Messaging API HTTP 客戶端 (Reply / Push / Broadcast)
+│       ├── Channel.java               # 兩個官方帳號（farmer／worker）與各自的金鑰、Mock 判斷
+│       ├── WebhookHandler.java        # Webhook 處理器 (每帳號一個實例，以該帳號 secret 驗 HMAC-SHA256 簽章)
+│       ├── MockChatHandler.java       # /mock/chat 本地模擬發言 (僅 Mock 模式)
+│       ├── BotEvent.java              # 事件模型 (follow／unfollow／文字／postback)
+│       ├── LineBotDispatcher.java     # 分發入口：依帳號交給下列兩個分派器
+│       ├── FarmerDispatcher.java      # 農場主帳號功能 F-01～F-08
+│       ├── WorkerDispatcher.java      # 工作者帳號功能 W-01～W-08 (多語)
+│       ├── Identity.java、IdentityStore.java  # 使用者身分與語言 (P1 暫存記憶體，P2 改存後端)
+│       ├── I18n.java                  # 工作者帳號多語文字 (讀 i18n/*.properties)
+│       ├── FlexMessageBuilder.java    # Flex Message 卡片構造器
+│       ├── LineApiClient.java         # LINE Messaging API HTTP 客戶端 (每帳號一個；工作者帳號禁止 Broadcast)
 │       ├── Config.java                # 設定檔讀取器 (支援 properties 與環境變數)
 │       ├── TestSimulator.java         # 本地離線模擬測試工具 (免聯網即測即看)
 │       └── RichMenuUploader.java      # 六宮格 Rich Menu 一鍵上傳發布工具
+├── i18n/                              # 工作者帳號文字：worker_zh／vi／id.properties (UTF-8；越、印尼語待母語校對)
 ├── flex_templates/                    # 8 大情境 Flex Message JSON 範本 (相容 LINE Bot Designer)
 │   ├── 01_farmer_order.json           # 枋山愛文芒果派工確認單
 │   ├── 02_worker_task_zh.json         # 移工每日任務卡 (繁體中文)
@@ -51,18 +59,16 @@ Software\Line Bot\
 如果您尚未申請 LINE Developers 官方帳號，或者只想快速查看所有卡片與回覆效果：
 1. 直接雙擊執行 `test_local.bat`。
 2. 系統會自動編譯並啟動測試模擬器。
-3. 模擬器會先自動執行核心指令檢測，接著進入互動模式。
-4. 您可以直接輸入以下關鍵字測試：
-   - 輸入 `派工`：查看農場主履約派工單。
-   - 輸入 `避險`：查看突發暴雨冷鏈避險快訊。
-   - 輸入 `早鳥`：查看產季早鳥保證工時包（315 元/hr、鎖定名額・優先排班）。
-   - 輸入 `機耕`：查看本國機耕師代噴工單。
-   - 輸入 `薪資`：查看農業部 8,800 元獎勵與保障薪資。
-   - 輸入 `越南語` 接著輸入 `nhiệm vụ`：切換越南語並查看越語出工任務卡。
-   - 輸入 `印尼語` 接著輸入 `tugas`：切換印尼語並查看印尼語出工任務卡。
-   - 輸入 `帳號綁定`：查看 LINE 帳號身分綁定卡片。
-   - 輸入 `黑轉白`（或含「黑工」的句子）：現有工班依身分分流卡片；點選身分按鈕會送出 `黑轉白：失聯移工` 等訊息並回覆轉換路徑。
-     卡片按鈕連到 `web.base.url`（預設 `http://localhost:3000/demo`）下的轉換中心頁，實機 LINE 須改成公開 https 網址。
+3. 模擬器會先執行兩個帳號的自動檢核（約 40 項，只跑檢核可用 `java -cp bin com.agridispatch.linebot.TestSimulator --check`，失敗時結束碼為 1），接著進入互動模式。
+4. 互動模式預設在**農場主帳號**，可用指令切換：
+   - `/farmer`、`/worker`：切換帳號。
+   - `/as <身分>`：設定示範身分 `farmer`、`local`（中高齡本勞）、`foreman`（帶班師傅）、`machinery`（機耕師）、`machinery_leader`（機耕隊組長）、`vn`、`id`、`th`、`unbound`（未綁定）。
+   - `/follow [語言]`：模擬加好友，可帶 LINE 介面語言（例 `/follow vi`）。
+   - `/pb <data>`：模擬圖文選單 postback（例 `/pb a=lang&v=vi`）。
+5. 農場主帳號可輸入：`派工`（派工確認單）、`黑轉白`（身分分流；點身分按鈕送出 `黑轉白：失聯移工` 等訊息）、`早鳥`、`避險`、`機耕`（代噴預約）、`費率`／`產曆`（轉後端查詢）、`帳號綁定`。
+   Mock 模式下未指定身分的使用者視為已綁定的示範農場主。卡片按鈕連到 `web.base.url`（預設 `http://localhost:3000/demo`），實機 LINE 須改成公開 https 網址。
+6. 工作者帳號（先 `/worker`、`/as vn`）可輸入：`nhiệm vụ`／`任務`（今日任務）、`chấm công`／`打卡`、`thời tiết`／`天氣`（集合通知）、`lương`／`薪資`、`出勤`、`切換語言`、`帳號綁定`。
+7. 在一個帳號問另一個帳號的功能（例如工作者帳號輸入「黑轉白」「早鳥」「費率」），只會收到「請加入另一個帳號」的引導，不會回覆該功能內容。
 
 ---
 
@@ -70,7 +76,7 @@ Software\Line Bot\
 1. 直接雙擊執行 `run.bat`。
 2. 伺服器將在 `http://localhost:5000` 啟動。
 3. 控制台將顯示：
-   - 📡 Webhook 路徑：`http://localhost:5000/callback`
+   - 📡 Webhook 路徑：農場主帳號 `http://localhost:5000/callback/farmer`、工作者帳號 `http://localhost:5000/callback/worker`（舊的 `/callback`、`/webhook` 過渡期視同農場主帳號）
    - 🛠️ 本地除錯路徑：`http://localhost:5000/mock/chat`
    - 🔍 健康檢查路徑：`http://localhost:5000/health`
 
@@ -78,6 +84,7 @@ Software\Line Bot\
 ```powershell
 Invoke-RestMethod -Uri "http://localhost:5000/health"
 ```
+回應的 `channels` 列出兩個帳號各自的模式（`MOCK`／`PRODUCTION`），`mode` 為總覽（兩個都正式才是 `PRODUCTION`，只有一個正式為 `MIXED`）。
 
 ---
 
@@ -94,23 +101,29 @@ Invoke-RestMethod -Uri "http://localhost:5000/health"
 ---
 
 ### 方式四：連接真實 LINE 官方帳號（線上實機測試）
-若您已在 [LINE Developers Console](https://developers.line.biz/) 建立了 Messaging API Channel：
+若您已在 [LINE Developers Console](https://developers.line.biz/) 的**同一個 Provider** 底下建立了農場主、工作者兩個 Messaging API Channel：
 1. **設定金鑰**：
    複製 `config.properties.example` 為 `config.properties`（該檔已列於 .gitignore，不會被提交），並填入：
    ```properties
-   line.channel.access.token=您的_Channel_Access_Token
-   line.channel.secret=您的_Channel_Secret
+   line.farmer.channel.secret=農場主帳號的_Channel_Secret
+   line.farmer.channel.access.token=農場主帳號的_Channel_Access_Token
+   line.worker.channel.secret=工作者帳號的_Channel_Secret
+   line.worker.channel.access.token=工作者帳號的_Channel_Access_Token
+   line.farmer.basic.id=@農場主帳號BasicID   # 選填：「請加入另一個帳號」按鈕
+   line.worker.basic.id=@工作者帳號BasicID
    admin.key=您自訂的高強度管理金鑰   # 用於保護 /api/config，詳見下方「管理端點與金鑰」
    ```
-   （也可改用環境變數 `LINE_CHANNEL_ACCESS_TOKEN` / `LINE_CHANNEL_SECRET` / `LINEBOT_ADMIN_KEY`，優先權高於 config.properties；請注意 Java 程式**不會**自動讀取 `.env` 檔，`.env`/`.env.example` 僅作為應設定哪些變數的文件參考。）
+   （也可改用環境變數 `LINE_FARMER_CHANNEL_SECRET`、`LINE_FARMER_CHANNEL_ACCESS_TOKEN`、`LINE_WORKER_CHANNEL_SECRET`、`LINE_WORKER_CHANNEL_ACCESS_TOKEN`、`LINE_FARMER_BASIC_ID`、`LINE_WORKER_BASIC_ID`、`LINEBOT_ADMIN_KEY`，優先權高於 config.properties；請注意 Java 程式**不會**自動讀取 `.env` 檔，`.env`/`.env.example` 僅作為應設定哪些變數的文件參考。）
+   舊的 `line.channel.*`／`LINE_CHANNEL_*` 仍可用，會被視為農場主帳號並在啟動時警告；未填金鑰的帳號維持 Mock 模式。
 2. **啟動本機伺服器**：
    雙擊 `run.bat`（監聽 Port 5000，可用環境變數 `PORT` 覆寫）。
 3. **建立外網穿透**：
    - 方式 A：於專案根目錄雙擊 `..\..\start_line_tunnel.bat`（使用 `npx localtunnel`，免額外帳號）。
    - 方式 B：或自行執行 `ngrok http 5000` 取得 HTTPS 轉發網址（例如：`https://xxxx.ngrok-free.app`）。
 4. **設定 LINE Developers Webhook**：
-   - 進入 LINE Developers Console -> 您的 Channel -> **Messaging API**。
-   - **Webhook URL** 依實際路由填入（程式同時支援 `/callback` 與 `/webhook`，兩者行為相同，建議統一使用 `/callback`）：`https://xxxx.loca.lt/callback`（或您的 ngrok 網址）。
+   - 進入 LINE Developers Console -> 各 Channel -> **Messaging API**。
+   - **Webhook URL**：農場主帳號填 `https://xxxx.loca.lt/callback/farmer`，工作者帳號填 `https://xxxx.loca.lt/callback/worker`（或您的 ngrok 網址）。
+   - 關閉 LINE Official Account Manager 的「自動回應訊息」與「加入好友的歡迎訊息」，改由本程式回覆。
    - 啟用 **Use webhook**。
    - 點擊 **Verify** 確認回傳 Success。
 5. **在手機 LINE 上測試**：
@@ -126,7 +139,8 @@ Invoke-RestMethod -Uri "http://localhost:5000/health"
 - 設定方式：環境變數 `LINEBOT_ADMIN_KEY=<您的金鑰>`，或 `config.properties` 加入 `admin.key=<您的金鑰>`（環境變數優先）。
 - 呼叫時需於 HTTP 標頭帶上 `X-Admin-Key: <您的金鑰>`，伺服器以 constant-time 比對驗證，不會因為金鑰部分正確而洩漏比對進度。
 - **⚠️ 重要**：透過 localtunnel / ngrok 對外穿透時，所有外部請求在本機端的來源位址一律顯示為 `127.0.0.1`，因此「僅允許本機連線」**不是**有效的保護機制，請務必設定 `admin.key`／`LINEBOT_ADMIN_KEY`，且不要使用範例值。
-- `GET /api/config` 一律只回傳**遮罩後**的金鑰片段（例如 `abc...xyz`），不會回傳完整明文金鑰。
+- `GET /api/config` 一律只回傳**遮罩後**的金鑰片段（例如 `abc...xyz`），依 `channels.farmer`、`channels.worker` 分列，不會回傳完整明文金鑰。
+- `POST /api/config` 的 body 以 `channel`（`farmer`／`worker`，預設 `farmer`）指定要更新哪個帳號：`{"channel":"worker","channelSecret":"…","channelAccessToken":"…"}`。
 
 ### CORS 白名單
 `Access-Control-Allow-Origin` 已從先前的 `*`（允許任意網域）改為白名單機制：
@@ -135,11 +149,15 @@ Invoke-RestMethod -Uri "http://localhost:5000/health"
 - 正式上線請改為您實際的前端網域（建議使用 `https://`）。
 
 ### `/mock/chat` 除錯端點
-此端點僅供本地離線模擬測試使用，**只有在模擬模式（Mock Mode，即金鑰仍為預設的 `mock_*` 值）下才會回應**；一旦填入真實 LINE 金鑰進入正式模式，此端點會回應 403，避免正式環境曝露內部對話邏輯供外部匿名呼叫。
+此端點僅供本地離線模擬測試使用，**只有在所指定的帳號為模擬模式（Mock Mode，金鑰未填或仍為範例值）時才會回應**；該帳號填入真實金鑰後，此端點對該帳號回應 403，避免正式環境曝露內部對話邏輯供外部匿名呼叫。
+
+Body 欄位（JSON）：`channel`（`farmer` 預設／`worker`）、`userId`、`text`、`postback`（例 `a=lang&v=vi`）、`event`（`follow`／`unfollow`）、`as`（示範身分，同 TestSimulator 的 `/as`）、`lineLanguage`（模擬加好友時的 LINE 介面語言）、`multi`（`true` 時回傳 `{"channel":…,"messages":[…]}`，否則只回第一則訊息物件，相容舊版模擬器）。
 
 ---
 
 ## 🎛️ 六宮格圖文選單 (Rich Menu)
+
+> ⚠️ 過渡期說明：以下兩份選單目前都上傳到**農場主帳號**（`RichMenuUploader` 使用農場主帳號金鑰）。依規格第捌章，P3 會改為兩帳號共 6 份選單（`farmer_guest`、`farmer_main`、`worker_guest`、`worker_main_zh／vi／id`），選單按鈕改用 postback。
 
 選單規格：`2500 x 1686` 像素，配置如下：
 

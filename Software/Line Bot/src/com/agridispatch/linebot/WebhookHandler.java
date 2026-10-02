@@ -13,91 +13,86 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 智農派工 - LINE Webhook 處理器
- * 負責校驗 X-Line-Signature (HMAC-SHA256)、解析 Event、並調用 Dispatcher 產出回覆
+ * 智農派工 - LINE Webhook 處理器（每個官方帳號一個實例）
+ * 以該帳號的 channel secret 校驗 X-Line-Signature (HMAC-SHA256)、解析 Event、交給 LineBotDispatcher 產出回覆。
+ *
+ * 路徑（規格 6.2）：/callback/farmer、/callback/worker；舊的 /callback、/webhook 過渡期視同農場主帳號。
  */
 public class WebhookHandler implements HttpHandler {
-    private final LineApiClient lineClient = new LineApiClient();
+    private final Channel channel;
+    private final boolean legacyPath;
+
+    public WebhookHandler(Channel channel, boolean legacyPath) {
+        this.channel = channel;
+        this.legacyPath = legacyPath;
+    }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod().toUpperCase();
-        String path = exchange.getRequestURI().getPath();
 
-        // CORS 白名單 (取代先前的 Access-Control-Allow-Origin: *)
-        // /callback、/webhook 為 LINE 伺服器對伺服器呼叫，非瀏覽器，CORS 與其無關，套用白名單無副作用
+        // /callback/* 為 LINE 伺服器對伺服器呼叫，非瀏覽器，CORS 與其無關，套用白名單無副作用
         HttpUtils.applyCors(exchange, "GET, POST, OPTIONS", "Content-Type, X-Line-Signature");
 
         if ("OPTIONS".equals(method)) {
             exchange.sendResponseHeaders(204, -1);
             return;
         }
-
         if (!"POST".equals(method)) {
             sendResponse(exchange, 405, "Method Not Allowed");
             return;
         }
+        if (legacyPath) {
+            String path = exchange.getRequestURI().getPath().replaceAll("/+$", "");
+            if (!"/callback".equals(path) && !"/webhook".equals(path)) {
+                sendResponse(exchange, 404, "Not Found: 請使用 /callback/farmer 或 /callback/worker");
+                return;
+            }
+            System.err.println("⚠️ 收到舊路徑 " + exchange.getRequestURI().getPath()
+                    + " 的 webhook，已視為農場主帳號；請在 LINE Developers 改設 /callback/farmer 或 /callback/worker");
+        }
 
-        // 讀取請求內容
         byte[] bodyBytes = exchange.getRequestBody().readAllBytes();
         String body = new String(bodyBytes, StandardCharsets.UTF_8);
 
-        // 判斷是否為本地除錯路徑 /mock/chat；此路徑僅供本地離線模擬使用，正式金鑰模式一律停用
-        if (path.endsWith("/mock/chat")) {
-            if (!Config.IS_MOCK_MODE) {
-                sendResponse(exchange, 403, "Forbidden: /mock/chat 僅於本地模擬模式 (Mock Mode) 開放");
-                return;
-            }
-            handleMockChat(exchange, body);
-            return;
-        }
-
-        // 驗證 LINE Webhook HMAC-SHA256 簽章
         String signature = exchange.getRequestHeaders().getFirst("X-Line-Signature");
         if (!verifySignature(bodyBytes, signature)) {
-            System.err.println("⚠️ 簽章驗證失敗 (Invalid X-Line-Signature)");
+            System.err.println("⚠️ 簽章驗證失敗 (" + channel.key + "，Invalid X-Line-Signature)");
             sendResponse(exchange, 403, "Forbidden: Invalid Signature");
             return;
         }
 
-        // 解析 Webhook 事件
         try {
             processEvents(body);
             sendResponse(exchange, 200, "OK");
         } catch (Exception e) {
-            System.err.println("處理 Webhook 事件異常: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("處理 Webhook 事件異常 (" + channel.key + "): " + e.getMessage());
             sendResponse(exchange, 500, "Internal Server Error");
         }
     }
 
     /**
-     * 驗證 HMAC-SHA256 簽章 (constant-time 比對，避免逐位元比對造成的時間側錄攻擊)
+     * 以本帳號的 channel secret 驗證 HMAC-SHA256 簽章 (constant-time 比對)；Mock 模式允許通過
      */
     private boolean verifySignature(byte[] bodyBytes, String signature) {
-        if (Config.IS_MOCK_MODE) {
-            return true; // 模擬模式允許通過
+        if (channel.isMock()) {
+            return true;
         }
-        if (signature == null || Config.CHANNEL_SECRET == null || Config.CHANNEL_SECRET.isBlank()) {
+        if (signature == null || channel.secret().isBlank()) {
             return false;
         }
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secretKey = new SecretKeySpec(Config.CHANNEL_SECRET.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-            mac.init(secretKey);
-            byte[] hash = mac.doFinal(bodyBytes);
-            byte[] expectedBytes = Base64.getEncoder().encode(hash);
-            byte[] providedBytes = signature.getBytes(StandardCharsets.UTF_8);
-            return MessageDigest.isEqual(expectedBytes, providedBytes);
+            mac.init(new SecretKeySpec(channel.secret().getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            byte[] expectedBytes = Base64.getEncoder().encode(mac.doFinal(bodyBytes));
+            return MessageDigest.isEqual(expectedBytes, signature.trim().getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
         }
     }
 
     /**
-     * 解析 LINE Webhook Events：body 為 { "events": [ {...}, {...} ] } 結構，
-     * 使用 SimpleJson 正確解析整個陣列，逐一處理「每一筆」事件 (先前僅用全域 Regex 抓第一筆，會漏掉其餘事件)。
+     * 解析 { "events": [ {...}, {...} ] }，逐一處理每一筆事件；單筆失敗不影響其餘事件
      */
     @SuppressWarnings("unchecked")
     private void processEvents(String body) {
@@ -110,79 +105,68 @@ public class WebhookHandler implements HttpHandler {
         if (!(eventsObj instanceof List)) {
             return; // 無 events 陣列 (例如 LINE Verify 測試請求) 時安靜略過
         }
-
         for (Object evObj : (List<Object>) eventsObj) {
-            if (!(evObj instanceof Map)) {
-                continue;
-            }
+            if (!(evObj instanceof Map)) continue;
             try {
                 handleSingleEvent((Map<String, Object>) evObj);
             } catch (Exception e) {
-                // 單筆事件處理失敗不應影響其餘事件
-                System.err.println("處理單筆 Webhook 事件時發生例外: " + e.getMessage());
+                System.err.println("處理單筆 Webhook 事件時發生例外 (" + channel.key + "): " + e.getMessage());
             }
         }
     }
 
     @SuppressWarnings("unchecked")
     private void handleSingleEvent(Map<String, Object> event) {
-        String type = String.valueOf(event.getOrDefault("type", ""));
-        if (!"message".equals(type)) {
-            return; // 目前僅處理文字訊息事件，follow/unfollow/postback 等其他事件類型暫略過
+        String userId = null;
+        if (event.get("source") instanceof Map<?, ?> source && source.get("userId") != null) {
+            userId = String.valueOf(source.get("userId"));
         }
+        if (userId == null) return; // 群組／聊天室事件不處理
 
-        Object messageObj = event.get("message");
-        if (!(messageObj instanceof Map)) {
-            return;
-        }
-        Map<String, Object> message = (Map<String, Object>) messageObj;
-        if (!"text".equals(String.valueOf(message.getOrDefault("type", "")))) {
-            return; // 目前僅支援文字訊息，貼圖/圖片/位置等訊息類型暫略過
-        }
-        String text = String.valueOf(message.getOrDefault("text", ""));
+        BotEvent ev = toBotEvent(channel, userId, event);
+        if (ev == null) return;
 
-        Object replyTokenObj = event.get("replyToken");
-        String replyToken = replyTokenObj != null ? String.valueOf(replyTokenObj) : "";
+        System.out.println("📩 [" + channel.key + "] " + ev.type() + " 使用者: " + maskUserId(userId)
+                + (ev.type() == BotEvent.Type.TEXT ? " 內容: " + ev.text() : "")
+                + (ev.type() == BotEvent.Type.POSTBACK ? " 動作: " + ev.action() : ""));
 
-        String userId = "U_DEFAULT";
-        Object sourceObj = event.get("source");
-        if (sourceObj instanceof Map) {
-            Object uid = ((Map<String, Object>) sourceObj).get("userId");
-            if (uid != null) {
-                userId = String.valueOf(uid);
-            }
-        }
-
-        System.out.println("📩 收到 LINE 訊息: [使用者: " + userId + "] 內容: " + text);
-
-        if (!text.isEmpty() && !replyToken.isEmpty()) {
-            String replyMessageJson = LineBotDispatcher.dispatch(userId, text);
-            lineClient.replyMessage(replyToken, replyMessageJson);
+        List<String> replies = LineBotDispatcher.handle(ev);
+        Object replyToken = event.get("replyToken");
+        if (replyToken != null && !replies.isEmpty()) {
+            LineApiClient.of(channel).replyMessages(String.valueOf(replyToken), replies);
         }
     }
 
-    /**
-     * 本地除錯模擬發言 API
-     */
+    /** LINE 事件 → BotEvent；不處理的事件類型回傳 null */
     @SuppressWarnings("unchecked")
-    private void handleMockChat(HttpExchange exchange, String body) throws IOException {
-        String trimmed = body == null ? "" : body.trim();
-        String text;
-        if (trimmed.startsWith("{")) {
-            Object parsed = SimpleJson.parse(trimmed);
-            Object t = (parsed instanceof Map) ? ((Map<String, Object>) parsed).get("text") : null;
-            text = t != null ? String.valueOf(t) : "";
-        } else {
-            text = trimmed;
+    static BotEvent toBotEvent(Channel channel, String userId, Map<String, Object> event) {
+        String type = String.valueOf(event.getOrDefault("type", ""));
+        switch (type) {
+            case "follow":
+                // 工作者帳號依 LINE 介面語言預設越語／印尼語（規格 3.2）；P2 起改由後端記錄
+                String profileLang = channel == Channel.WORKER ? LineApiClient.of(channel).getProfileLanguage(userId) : null;
+                return BotEvent.follow(channel, userId, profileLang);
+            case "unfollow":
+                return BotEvent.of(channel, userId, BotEvent.Type.UNFOLLOW);
+            case "postback":
+                Object pb = event.get("postback");
+                String data = pb instanceof Map ? String.valueOf(((Map<String, Object>) pb).getOrDefault("data", "")) : "";
+                return BotEvent.postback(channel, userId, data);
+            case "message":
+                Object msg = event.get("message");
+                if (msg instanceof Map && "text".equals(String.valueOf(((Map<String, Object>) msg).get("type")))) {
+                    return BotEvent.text(channel, userId, String.valueOf(((Map<String, Object>) msg).getOrDefault("text", "")));
+                }
+                return BotEvent.of(channel, userId, BotEvent.Type.OTHER_MESSAGE);
+            default:
+                return null;
         }
+    }
 
-        String replyJson = LineBotDispatcher.dispatch("U_MOCK_USER", text);
-        byte[] respBytes = replyJson.getBytes(StandardCharsets.UTF_8);
-        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-        exchange.sendResponseHeaders(200, respBytes.length);
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(respBytes);
-        }
+    /** LINE userId 視為個資：log 只印前 6 碼（規格第拾章第 2 點） */
+    static String maskUserId(String userId) {
+        if (userId == null) return "";
+        return userId.length() <= 6 ? "******" : userId.substring(0, 6) + "****";
     }
 
     private void sendResponse(HttpExchange exchange, int status, String message) throws IOException {

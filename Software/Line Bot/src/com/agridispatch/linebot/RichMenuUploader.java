@@ -31,12 +31,13 @@ public class RichMenuUploader {
         String baseName = farmer ? "rich_menu_farmer" : "rich_menu";
         List<String> userIds = farmer ? Arrays.asList(args).subList(1, args.length) : List.of();
 
-        String token = Config.CHANNEL_ACCESS_TOKEN;
-        if (Config.IS_MOCK_MODE) {
+        // P1：現有兩份選單都屬農場主帳號；P3 改為一次上傳兩帳號共 6 份選單（規格第捌章）
+        String token = Channel.FARMER.accessToken();
+        if (Channel.FARMER.isMock()) {
             System.out.println("====================================================");
-            System.out.println("⚠️ 目前處於本地模擬模式 (未填寫真實 LINE Channel Access Token)");
+            System.out.println("⚠️ 農場主帳號目前處於本地模擬模式 (未填寫真實 LINE Channel Access Token)");
             System.out.println("如需發布至真實 LINE 官方帳號：");
-            System.out.println("1. 請於 config.properties 設定真實 LINE_CHANNEL_ACCESS_TOKEN");
+            System.out.println("1. 請於 config.properties 設定 line.farmer.channel.access.token (或環境變數 LINE_FARMER_CHANNEL_ACCESS_TOKEN)");
             System.out.println("2. 準備 2500x1686 的 " + baseName + ".png 或 .jpg 底圖 (1MB 以內)");
             System.out.println("3. 重新執行此程式進行上傳綁定");
             System.out.println("====================================================");

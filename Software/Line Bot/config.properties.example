@@ -3,11 +3,28 @@
 # 請複製此檔為 config.properties 並填入您自己的金鑰 (config.properties 已列於 .gitignore，不會被提交)
 # ========================================================
 
-# LINE Developers -> Messaging API -> Channel access token (long-lived)
-line.channel.access.token=請填入您的_Channel_Access_Token
+# ------------------------------------------------------------------
+# 兩個 LINE 官方帳號（規格：07_系統分析及文件/05_LINE官方帳號拆分規格.md 第貳章）
+# 兩個 channel 必須建在同一個 Provider 底下。未填或仍為範例值的帳號會以本地模擬模式 (Mock Mode) 運作。
+# Channel secret：LINE Developers -> Basic settings；Channel access token：Messaging API -> Channel access token (long-lived)
+# Webhook URL：農場主帳號設 https://<公開網域>/callback/farmer，工作者帳號設 https://<公開網域>/callback/worker
+# 舊的 line.channel.secret／line.channel.access.token 仍可用，會被視為農場主帳號（過渡期）。
+# ------------------------------------------------------------------
+line.farmer.channel.secret=請填入農場主帳號的_Channel_Secret
+line.farmer.channel.access.token=請填入農場主帳號的_Channel_Access_Token
+line.worker.channel.secret=請填入工作者帳號的_Channel_Secret
+line.worker.channel.access.token=請填入工作者帳號的_Channel_Access_Token
 
-# LINE Developers -> Basic settings -> Channel secret
-line.channel.secret=請填入您的_Channel_Secret
+# 官方帳號 Basic ID（例 @123abcde），用於「請加入另一個帳號」的加好友按鈕；未填則不顯示按鈕
+line.farmer.basic.id=
+line.worker.basic.id=
+
+# 帳號綁定頁的 LIFF ID（P2 起使用）；未填時綁定按鈕連到既有登入頁
+liff.bind.id=
+
+# Line Bot 與後端互相呼叫內部端點的共用金鑰（P2 起使用）；須與後端 AGRI_LINEBOT_INTERNAL_KEY 相同，
+# 且不得與 admin.key、channel secret 相同
+internal.key=
 
 # 本地伺服器監聽埠號 (預設 5000)
 server.port=5000

@@ -1,6 +1,6 @@
 # 智農派工 LINE 官方帳號拆分規格（方案 B：農場主／工作者雙帳號）
 
-> **文件版本**：v1.0.0（2026-10-02，草案）
+> **文件版本**：v1.0.1（2026-10-02，草案；P1 實作後修正 6.2、拾.5 的 `/mock/chat` 規則）
 > **適用範圍**：`Software/Line Bot/`（port 5000）、`Software/backend/`（port 3000）的 LINE 相關程式、`Software/demo/linebot/line.html` 模擬器、科技後台 LINE 設定頁
 > **相關文件**：`01_系統分析與架構設計規格書.md` 第陸章（LINE 子系統現況）、`02_資料庫實體關聯圖與資料字典(ERD).md`（`line_users`）、`03_認證與API安全規格.md`（端點權限）、`Software/android/docs/角色與人力分類表.md`（身分與國別代碼）
 > **狀態**：本規格只定義目標設計，程式尚未修改。實作完成後須同步更新上列 01、02、03 文件與 `Software/Line Bot/README.md`。
@@ -261,7 +261,7 @@ flowchart LR
 | `POST /callback/farmer` | 農場主帳號 webhook，以 `LINE_FARMER_CHANNEL_SECRET` 驗簽 |
 | `POST /callback/worker` | 工作者帳號 webhook，以 `LINE_WORKER_CHANNEL_SECRET` 驗簽 |
 | `POST /callback`、`POST /webhook` | 過渡期視同 `/callback/farmer`，log 警告；全部帳號改設新路徑後移除 |
-| `POST /mock/chat` | 沿用（僅 Mock 模式）；body 增加 `channel`（預設 `farmer`）、`userId`、`postback` 欄位以便模擬 |
+| `POST /mock/chat` | 沿用（僅在所指定的帳號為 Mock 模式時回應，否則 403）；body 增加 `channel`（預設 `farmer`）、`userId`、`postback`、`event`（follow／unfollow）、`as`（示範身分）、`lineLanguage`、`multi`（回傳全部訊息）欄位以便模擬 |
 | `GET /health` | 回傳兩個帳號各自的模式（MOCK／PRODUCTION） |
 
 ### 6.3 內部端點（皆需 `X-Internal-Key`，constant-time 比對；未設定金鑰時整組停用並回 403）
@@ -425,7 +425,7 @@ LINE 官方帳號依「每月主動推播則數」計費，**回覆訊息（Repl
 2. LINE userId 視為個資：log 只印前 6 碼＋遮罩；不得放入網址參數或 postback。
 3. 工作者帳號不回覆任何費率、訂單金額或其他農場主資訊；農場主帳號不回覆工人個人資料（姓名僅限派到本人訂單的工班領班，是否顯示【待確認】）。
 4. 黑轉白（F-02）只在農場主帳號且已綁定時回覆；卡片保留現行「※ 示範流程；標示【待確認】處以律師或主管機關意見為準」字樣。
-5. `/mock/chat` 維持只在 Mock 模式開放；兩帳號皆為正式模式時回 403。
+5. `/mock/chat` 維持只在 Mock 模式開放：所指定的帳號為正式模式時回 403。
 6. 內部端點金鑰 `AGRI_LINEBOT_INTERNAL_KEY` 不得與 `LINEBOT_ADMIN_KEY`、channel secret 相同；未設定時內部端點整組停用。
 
 ---

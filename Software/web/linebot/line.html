@@ -554,6 +554,18 @@
     let currentUserName = '陳建龍 (阿龍班長)';
     let isRichMenuOpen = true;
 
+    // 農場主與工作者分屬兩個 LINE 官方帳號（07_系統分析及文件/05_LINE官方帳號拆分規格.md）：
+    // 依目前身分決定送往哪個帳號，並帶上示範身分（as），Java LINE Bot 依此回覆該帳號的功能
+    const LINEBOT_ACCOUNT_BY_ROLE = {
+      farmer: { channel: 'farmer', as: 'farmer' },
+      worker_foreign: { channel: 'worker', as: 'vn' },
+      worker_local: { channel: 'worker', as: 'machinery_leader' },
+      admin_tech: { channel: 'farmer', as: 'farmer' }
+    };
+    function lineBotAccount() {
+      return LINEBOT_ACCOUNT_BY_ROLE[currentRole] || LINEBOT_ACCOUNT_BY_ROLE.farmer;
+    }
+
     // =========================================================================
     // 依身分切換圖文選單 (Dynamic Multi-Persona Rich Menu System)
     // =========================================================================
@@ -797,7 +809,7 @@
         const res = await fetch(`${LINEBOT_BASE}/mock/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: currentUserId, text: text }),
+          body: JSON.stringify(Object.assign({ userId: currentUserId, text: text }, lineBotAccount())),
           signal: AbortSignal.timeout(1500)
         });
         if (res.ok) reply = await res.json();
@@ -918,7 +930,7 @@
           const res5000 = await fetch(`${LINEBOT_BASE}/mock/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: currentUserId, text: text }),
+            body: JSON.stringify(Object.assign({ userId: currentUserId, text: text }, lineBotAccount())),
             signal: AbortSignal.timeout(1800)
           });
           if (res5000.ok) {
@@ -1007,7 +1019,7 @@
         const res = await fetch(`${LINEBOT_BASE}/mock/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: currentUserId, text: '查訂單' }),
+          body: JSON.stringify(Object.assign({ userId: currentUserId, text: '查訂單' }, lineBotAccount())),
           signal: AbortSignal.timeout(2500)
         });
         if (res.ok) {
@@ -1082,10 +1094,12 @@
       if (!badge || !text) return;
 
       try {
-        const res = await fetch(`${LINEBOT_BASE}/api/config`, { signal: AbortSignal.timeout(2000) });
+        // /health 為公開端點（/api/config 需管理金鑰）；mode 為兩個官方帳號的總覽 MOCK／PRODUCTION／MIXED
+        const res = await fetch(`${LINEBOT_BASE}/health`, { signal: AbortSignal.timeout(2000) });
         if (res.ok) {
           const cfg = await res.json();
-          text.innerText = cfg.mode === 'PRODUCTION' ? '正式生產 (Port 5000)' : '模擬模式 (Port 5000)';
+          text.innerText = cfg.mode === 'PRODUCTION' ? '正式生產 (Port 5000)'
+            : (cfg.mode === 'MIXED' ? '部分正式 (Port 5000)' : '模擬模式 (Port 5000)');
           badge.className = 'text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1 font-bold';
           return;
         }

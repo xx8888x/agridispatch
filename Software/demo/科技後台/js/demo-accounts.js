@@ -38,10 +38,10 @@ window.AGRI_DEMO_ACCOUNTS = {
       en: 'Enter password (Default 123456)'
     },
     profiles: [
-      { identifier: 'AD88123451', password: '123456', workerId: 'W001', flag: '🇻🇳', name: '阮文雄 (A組長)' },
-      { identifier: 'AD77234561', password: '123456', workerId: 'W006', flag: '🇮🇩', name: 'Budi (B組長)' },
-      { identifier: 'AD66345671', password: '123456', workerId: 'W020', flag: '🇹🇭', name: 'Somchai (D組)' },
-      { identifier: 'AD55456781', password: '123456', workerId: 'W023', flag: '🇵🇭', name: 'Maria (B組)' }
+      { identifier: 'AD88123451', password: '123456', workerId: 'W001', name: '阮文雄 (A組長)' },
+      { identifier: 'AD77234561', password: '123456', workerId: 'W006', name: 'Budi (B組長)' },
+      { identifier: 'AD66345671', password: '123456', workerId: 'W020', name: 'Somchai (D組)' },
+      { identifier: 'AD55456781', password: '123456', workerId: 'W023', name: 'Maria (B組)' }
     ]
   },
   workerLocal: {

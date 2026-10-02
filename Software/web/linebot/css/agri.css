@@ -286,6 +286,8 @@
 }
 .ad-card--interactive:hover { border-color: var(--ad-primary); }
 .ad-card--interactive:focus-visible { outline: none; box-shadow: var(--ad-ring); }
+.ad-card--interactive.is-selected { border-color: var(--ad-primary); background: var(--ad-primary-soft); }
+button.ad-card--interactive { font: inherit; color: inherit; text-align: left; width: 100%; }
 .ad-card--flat { background: transparent; }
 .ad-card--accent { border-color: var(--ad-accent); }
 .ad-card__head {
@@ -334,6 +336,7 @@
 }
 .ad-stat--accent .ad-stat__value { color: var(--ad-accent-text); }
 .ad-stat--primary .ad-stat__value { color: var(--ad-primary-text); }
+.ad-stat--danger .ad-stat__value { color: var(--ad-danger-text); }
 .ad-stat-grid {
   display: grid;
   gap: var(--ad-sp-3);
@@ -595,6 +598,8 @@ a.ad-pill { text-decoration: none; }
 }
 .ad-seg__btn:hover { color: var(--ad-text); }
 .ad-seg__btn.is-active { background: var(--ad-primary); color: var(--ad-on-primary); }
+.ad-seg__btn--danger.is-active { background: var(--ad-danger); color: #fff; }
+.ad-seg__btn:disabled { opacity: .4; cursor: not-allowed; }
 @media (max-width: 480px) {
   .ad-hide-sm { display: none !important; }
   .ad-header__brand { gap: 8px; }
@@ -818,6 +823,7 @@ a.ad-row:focus-visible, button.ad-row:focus-visible { outline: none; box-shadow:
 /* 進度條（不用漸層） */
 .ad-progress { height: 8px; border-radius: var(--ad-radius-pill); background: var(--ad-surface-2); overflow: hidden; }
 .ad-progress__bar { height: 100%; border-radius: var(--ad-radius-pill); background: var(--ad-primary); }
+.ad-progress__bar--danger { background: var(--ad-danger); }
 
 /* 可切換的標籤（評價標籤等多選） */
 .ad-chip {
@@ -884,4 +890,9 @@ html.is-demo [data-demo-only].ad-pill { display: inline-flex !important; }
 @media (prefers-reduced-motion: reduce) {
   .ad-live { animation: none; }
   .ad-btn, .ad-card--interactive, .ad-choice, .ad-drawer, .ad-drawer__backdrop { transition: none; }
+}
+
+/* 手機有底部導覽列時，toast 不要蓋住它 */
+@media (max-width: 767px) {
+  .ad-has-tabbar .ad-toast { bottom: calc(72px + env(safe-area-inset-bottom)); }
 }

@@ -12,6 +12,9 @@
     if (window.AgriAuth) window.AgriAuth.requireRole(['farmer', 'admin_tech'], 'farmer-login.html');
   </script>
   <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <!-- 設計系統（操作列用；證明書本體是紙本單據，維持白底列印樣式） -->
+  <script src="js/agri-theme.js"></script>
+  <link rel="stylesheet" href="css/agri.css">
   <script>
     if (typeof tailwind === 'undefined') {
       document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
@@ -28,17 +31,18 @@
 </head>
 <body class="bg-slate-200 text-slate-900 min-h-screen antialiased">
 
-  <div class="no-print bg-slate-900 text-slate-100">
-    <div class="max-w-4xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-      <a href="farmer.html#orders" class="text-xs text-slate-300 hover:text-white">← 回我的派工訂單</a>
-      <div class="flex items-center gap-3">
-        <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
-          <input id="maskNames" type="checkbox" checked onchange="render()" class="accent-emerald-500"> 遮蔽工人姓名（提供給通路時建議勾選）
+  <header class="ad-header no-print" style="color: var(--ad-text);">
+    <div class="ad-container ad-header__inner" style="max-width: 896px;">
+      <a href="farmer.html#orders" class="ad-btn ad-btn--ghost ad-btn--sm">← 回我的訂單</a>
+      <div class="ad-header__actions" style="gap: 16px;">
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ad-text-2); cursor: pointer;">
+          <input id="maskNames" type="checkbox" checked onchange="render()" style="width: 18px; height: 18px; accent-color: var(--ad-primary);">
+          <span>遮蔽工人姓名<span class="ad-hide-sm">（提供給通路時建議勾選）</span></span>
         </label>
-        <button id="printBtn" type="button" onclick="window.print()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">🖨️ 列印／存成 PDF</button>
+        <button id="printBtn" type="button" onclick="window.print()" class="ad-btn ad-btn--primary ad-btn--sm">列印／存成 PDF</button>
       </div>
     </div>
-  </div>
+  </header>
 
   <div class="sheet max-w-4xl mx-auto my-6 bg-white shadow-2xl border border-slate-300 p-8 sm:p-10" id="sheet">
     <p class="text-sm text-slate-500">載入中…</p>
@@ -85,7 +89,7 @@
 
       const allPermit = cert.workers.every(w => w.days.every(d => d.permitValid));
       const allInsured = cert.workers.every(w => w.days.every(d => d.insured));
-      const check = (ok, text) => `<li class="flex items-start gap-2"><span class="${ok ? 'text-emerald-700' : 'text-rose-700'} font-black">${ok ? '✔' : '✘'}</span><span>${text}</span></li>`;
+      const check = (ok, text) => `<li class="flex items-start gap-2"><span class="${ok ? 'text-emerald-700' : 'text-rose-700'} font-black">${ok ? '✓' : '✗'}</span><span>${text}</span></li>`;
 
       const rows = cert.workers.map(w => {
         const byDate = Object.fromEntries(w.days.map(d => [d.date, d]));
@@ -94,7 +98,7 @@
           if (!d) return '<td class="border border-slate-300 px-1.5 py-1 text-center text-slate-300">—</td>';
           const bad = !d.permitValid || !d.insured;
           const txt = d.hours == null ? '進行中' : `${d.hours}h`;
-          return `<td class="border border-slate-300 px-1.5 py-1 text-center ${bad ? 'bg-rose-50 text-rose-700 font-bold' : ''}">${txt}${bad ? ' ⚠' : ''}</td>`;
+          return `<td class="border border-slate-300 px-1.5 py-1 text-center ${bad ? 'bg-rose-50 text-rose-700 font-bold' : ''}">${txt}${bad ? '（異常）' : ''}</td>`;
         }).join('');
         const permit = w.nationality === '本國' ? '免（本國籍）' : esc(w.permitExpiry || '未登錄');
         return `<tr>
@@ -108,7 +112,7 @@
 
       const problems = cert.issuable ? '' : `
         <div class="no-print-keep mb-6 p-4 border-2 border-rose-500 bg-rose-50 rounded">
-          <p class="font-black text-rose-800">⛔ 目前不符合開立條件，本頁不可作為證明使用</p>
+          <p class="font-black text-rose-800">目前不符合開立條件，本頁不可作為證明使用</p>
           <ul class="mt-2 text-sm text-rose-800 list-disc list-inside">${cert.problems.map(p => `<li>${esc(p)}</li>`).join('')}</ul>
         </div>`;
 

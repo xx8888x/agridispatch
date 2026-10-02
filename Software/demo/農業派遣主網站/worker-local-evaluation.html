@@ -9,49 +9,47 @@
   <script>
     if (window.AgriAuth) window.AgriAuth.requireRole(['worker_local', 'worker_foreign', 'admin_tech'], 'worker-local-login.html');
   </script>
-  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
-  <script>
-    if (typeof tailwind === 'undefined') {
-      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
-    }
-  </script>
+  <!-- 設計系統 -->
+  <script src="js/agri-theme.js"></script>
+  <link rel="stylesheet" href="css/agri.css">
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
+<body class="ad-body min-h-screen flex flex-col">
 
-  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800">
-    <div class="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-      <a href="worker-local.html" class="text-xs text-slate-300 hover:text-white">← 回本地工／領班工作台</a>
-      <a href="worker-skills.html" class="text-xs font-bold text-emerald-300 hover:text-white">📈 我的技能進度</a>
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner" style="max-width: 768px;">
+      <a href="worker-local.html" class="ad-btn ad-btn--ghost ad-btn--sm">← 回工作台</a>
+      <a href="worker-skills.html" class="ad-btn ad-btn--ghost ad-btn--sm" style="color: var(--ad-primary-text);">我的技能進度</a>
     </div>
   </header>
 
-  <main class="flex-1 w-full max-w-3xl mx-auto px-4 py-6 space-y-5">
-    <div class="space-y-1">
-      <h1 class="text-xl font-black text-white">✅ 領班逐人評核</h1>
-      <p class="text-xs text-slate-400 leading-relaxed">每位工人下班簽核後，請依當天表現評「優／可／需加強」。評核只用於技能標籤與派工媒合，不作為扣薪或解僱依據。
+  <main class="flex-1 ad-container w-full" style="max-width: 768px; padding-block: 24px 40px; display: flex; flex-direction: column; gap: 20px;">
+    <div>
+      <h1 class="ad-display">領班逐人評核</h1>
+      <p class="ad-caption" style="margin-top: 6px;">每位工人下班簽核後，請依當天表現評「優／可／需加強」。評核只用於技能標籤與派工媒合，不作為扣薪或解僱依據。
         本人的班次須由同工班其他領班或合作社評核；超過 7 天的班次請洽合作社。</p>
     </div>
 
-    <div class="flex flex-wrap items-center gap-2 p-3 rounded-2xl bg-slate-900 border border-slate-800">
-      <label for="team" class="text-xs text-slate-400">工班</label>
-      <select id="team" onchange="load()" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-sm text-white"></select>
-      <label for="day" class="text-xs text-slate-400 ml-2">日期</label>
-      <input id="day" type="date" onchange="load()" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-sm text-white">
-      <div class="flex gap-1 ml-auto">
-        <button type="button" onclick="shiftDay(-1)" class="px-2 py-1 rounded-lg bg-slate-800 text-xs text-slate-300 border border-slate-700">◀ 前一天</button>
-        <button type="button" onclick="shiftDay(1)" class="px-2 py-1 rounded-lg bg-slate-800 text-xs text-slate-300 border border-slate-700">後一天 ▶</button>
+    <div class="ad-card" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 14px;">
+      <label for="team" class="ad-label">工班</label>
+      <select id="team" onchange="load()" class="ad-select" style="width: auto; min-width: 110px;"></select>
+      <label for="day" class="ad-label">日期</label>
+      <input id="day" type="date" onchange="load()" class="ad-input" style="width: auto;">
+      <div style="display: flex; gap: 6px; margin-left: auto;">
+        <button type="button" onclick="shiftDay(-1)" class="ad-btn ad-btn--secondary ad-btn--sm">前一天</button>
+        <button type="button" onclick="shiftDay(1)" class="ad-btn ad-btn--secondary ad-btn--sm">後一天</button>
       </div>
     </div>
 
-    <p id="msg" class="hidden text-xs"></p>
-    <div id="list" class="space-y-2"></div>
+    <p id="msg" hidden role="status"></p>
+    <div id="list" style="display: flex; flex-direction: column; gap: 8px;"></div>
   </main>
 
   <script>
+    // [值, 文字, 額外 class]：評核用分段控制，選中「需加強」以危險色標示
     const OPTIONS = [
-      ['excellent', '優', 'bg-emerald-600 text-white border-emerald-500'],
-      ['ok', '可', 'bg-sky-600 text-white border-sky-500'],
-      ['needs_improvement', '需加強', 'bg-rose-600 text-white border-rose-500']
+      ['excellent', '優', ''],
+      ['ok', '可', ''],
+      ['needs_improvement', '需加強', ' ad-seg__btn--danger']
     ];
     const base = () => (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
 
@@ -70,7 +68,8 @@
     function setMsg(text, ok) {
       const el = document.getElementById('msg');
       el.textContent = text;
-      el.className = text ? `text-xs ${ok ? 'text-emerald-300' : 'text-rose-300'}` : 'hidden text-xs';
+      el.hidden = !text;
+      el.className = text ? `ad-notice ${ok ? 'ad-notice--ok' : 'ad-notice--danger'}` : '';
     }
     function iso(d) {
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -88,25 +87,25 @@
       const team = document.getElementById('team').value;
       const day = document.getElementById('day').value;
       const list = document.getElementById('list');
-      list.innerHTML = '<p class="text-sm text-slate-500">載入中…</p>';
+      list.innerHTML = '<p class="ad-caption">載入中…</p>';
       try {
         const data = await api(`/evaluations/teams/${encodeURIComponent(team)}?date=${encodeURIComponent(day)}`);
         if (!data.shifts.length) {
-          list.innerHTML = '<p class="p-6 text-center text-sm text-slate-500 rounded-2xl bg-slate-900 border border-slate-800">這一天沒有出勤紀錄</p>';
+          list.innerHTML = '<div class="ad-empty"><div class="ad-empty__title">這一天沒有出勤紀錄</div>換一天或換工班看看。</div>';
           return;
         }
         list.innerHTML = data.shifts.map(s => {
           const locked = s.self ? '本人班次，請由其他領班或合作社評核' : (!s.clockOut ? '尚未下班簽核' : '');
-          const buttons = OPTIONS.map(([val, label, on]) => `
+          const buttons = OPTIONS.map(([val, label, extra]) => `
             <button type="button" data-id="${s.attendanceId}" data-rating="${val}" onclick="rate(this)" ${locked ? 'disabled' : ''}
-              class="px-3 py-1.5 rounded-lg text-xs font-bold border transition ${s.rating === val ? on : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'} disabled:opacity-40 disabled:cursor-not-allowed">${label}</button>`).join('');
-          return `<div class="p-4 rounded-2xl bg-slate-900 border ${s.rating ? 'border-slate-700' : 'border-amber-500/40'} flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <div class="text-sm font-bold text-white">${esc(s.name)} <span class="text-[11px] text-slate-500 font-mono">${esc(s.workerId)}</span></div>
-                <div class="text-[11px] text-slate-400">${esc(s.clockIn)}–${esc(s.clockOut || '進行中')}${s.hours != null ? `・${s.hours} 小時` : ''}${s.orderId ? `・${esc(s.orderId)}` : ''}</div>
-                ${locked ? `<div class="text-[11px] text-amber-300 mt-0.5">${locked}</div>` : (!s.rating ? '<div class="text-[11px] text-amber-300 mt-0.5">尚未評核</div>' : '')}
+              class="ad-seg__btn${extra}${s.rating === val ? ' is-active' : ''}" style="padding: 0 14px;" aria-pressed="${s.rating === val}">${label}</button>`).join('');
+          return `<div class="ad-card" style="padding: 16px; ${s.rating ? '' : 'border-color: var(--ad-accent);'} display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
+              <div style="min-width: 0;">
+                <div class="ad-heading" style="font-size: 15px;">${esc(s.name)} <span class="ad-caption ad-num" style="font-weight: 400;">${esc(s.workerId)}</span></div>
+                <div class="ad-caption ad-num">${esc(s.clockIn)}–${esc(s.clockOut || '進行中')}${s.hours != null ? `・${s.hours} 小時` : ''}${s.orderId ? `・${esc(s.orderId)}` : ''}</div>
+                ${locked ? `<div class="ad-caption" style="color: var(--ad-accent-text);">${locked}</div>` : (!s.rating ? '<div class="ad-caption" style="color: var(--ad-accent-text);">尚未評核</div>' : '')}
               </div>
-              <div class="flex gap-1.5 shrink-0">${buttons}</div>
+              <div class="ad-seg" role="group" aria-label="評核">${buttons}</div>
             </div>`;
         }).join('');
       } catch (e) {
@@ -124,7 +123,7 @@
           body: JSON.stringify({ rating: btn.dataset.rating })
         });
         await load();
-        setMsg('✓ 已儲存評核', true);
+        setMsg('已儲存評核', true);
       } catch (e) {
         setMsg(`評核未儲存：${e.message}`, false);
         btn.disabled = false;

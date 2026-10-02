@@ -125,25 +125,25 @@
                 <div class="ad-field">
                   <label class="ad-label ad-label--req" for="fCropType">作物</label>
                   <select id="fCropType" class="ad-select" onchange="calcFarmerForm()">
-                    <option value="mango" data-rate="2200" selected>愛文芒果 (枋山/玉井)</option>
-                    <option value="pineapple" data-rate="2200">金鑽鳳梨 (高樹/大樹)</option>
-                    <option value="waxapple" data-rate="2200">黑珍珠蓮霧 (佳冬/林邊)</option>
-                    <option value="tea" data-rate="2800">高山茶 (阿里山/杉林溪)</option>
-                    <option value="pomelo" data-rate="2200">麻豆文旦 (麻豆/花蓮)</option>
-                    <option value="strawberry" data-rate="2400">溫室草莓／彩椒 (大湖/彰雲)</option>
-                    <option value="taoyuan_veg" data-rate="2400">溫室有機蔬菜 (八德/大溪)</option>
-                    <option value="rice" data-rate="2000">水稻／雜糧</option>
+                    <option value="mango" selected>愛文芒果 (枋山/玉井)</option>
+                    <option value="pineapple">金鑽鳳梨 (高樹/大樹)</option>
+                    <option value="waxapple">黑珍珠蓮霧 (佳冬/林邊)</option>
+                    <option value="tea">高山茶 (阿里山/杉林溪)</option>
+                    <option value="pomelo">麻豆文旦 (麻豆/花蓮)</option>
+                    <option value="strawberry">溫室草莓／彩椒 (大湖/彰雲)</option>
+                    <option value="taoyuan_veg">溫室有機蔬菜 (八德/大溪)</option>
+                    <option value="rice">水稻／雜糧</option>
                   </select>
                 </div>
                 <div class="ad-field">
                   <label class="ad-label ad-label--req" for="fCategory">派工類別</label>
                   <select id="fCategory" class="ad-select" onchange="calcFarmerForm()">
-                    <option value="harvest_grading" data-rate="2200" data-hint="外展農事工・NT$ 2,200／人日" selected>採收搬運與套袋</option>
-                    <option value="pruning_bagging" data-rate="2800" data-hint="專業技職工・NT$ 2,800／人日">嫁接與高空修剪</option>
-                    <option value="tillage_planting" data-rate="2400" data-hint="溫室巡檢工・NT$ 2,400／人日">設施溫室精緻管理</option>
-                    <option value="drone_pest_control" data-rate="3600" data-hint="無人機專隊・NT$ 3,600／組日">大型無人機精準植保</option>
-                    <option value="cold_chain_pack" data-rate="2000" data-hint="採後冷鏈工・NT$ 2,000／人日">蔬果清洗分級包裝</option>
-                    <option value="typhoon_emergency" data-rate="2600" data-hint="機動應急隊・NT$ 2,600／人日">產銷班應急代工</option>
+                    <option value="harvest_grading" data-hint="外展農事工，採收、搬運、套袋" selected>採收搬運與套袋</option>
+                    <option value="pruning_bagging" data-hint="專業技職工，嫁接、修剪、疏果">嫁接與高空修剪</option>
+                    <option value="tillage_planting" data-hint="溫室巡檢工，整地、定植、日常管理">設施溫室精緻管理</option>
+                    <option value="drone_pest_control" data-hint="無人機專隊，噴藥、施肥">大型無人機精準植保</option>
+                    <option value="cold_chain_pack" data-hint="採後冷鏈工，清洗、預冷、分級包裝">蔬果清洗分級包裝</option>
+                    <option value="typhoon_emergency" data-hint="機動應急隊，颱風前夕 24 小時搶收（時薪 360 元）">產銷班應急代工</option>
                   </select>
                   <span id="fCategoryHint" class="ad-hint"></span>
                 </div>
@@ -157,29 +157,19 @@
 
             <!-- 步驟 2：什麼時候、幾個人 -->
             <li style="display: flex; flex-direction: column; gap: 16px;">
-              <h3 class="ad-heading" style="line-height: 28px;">什麼時候、幾個人</h3>
-              <div class="ad-form-grid ad-form-grid--3">
-                <div class="ad-field">
-                  <label class="ad-label ad-label--req" for="fStartDate">起工日期</label>
-                  <input type="date" id="fStartDate" class="ad-input" required>
-                </div>
-                <div class="ad-field">
-                  <label class="ad-label ad-label--req" for="fDaysCount">工作天數</label>
-                  <input type="number" id="fDaysCount" class="ad-input ad-num" inputmode="numeric" min="1" max="60" value="4" oninput="calcFarmerForm()">
-                </div>
-                <div class="ad-field">
-                  <label class="ad-label ad-label--req" for="fWorkersCount">每日工人數</label>
-                  <input type="number" id="fWorkersCount" class="ad-input ad-num" inputmode="numeric" min="1" max="30" value="4" oninput="calcFarmerForm()">
-                </div>
+              <h3 class="ad-heading" style="line-height: 28px;">什麼時候開工</h3>
+              <div class="ad-field" style="max-width: 240px;">
+                <label class="ad-label ad-label--req" for="fStartDate">起工日期</label>
+                <input type="date" id="fStartDate" class="ad-input" required oninput="calcFarmerForm()">
               </div>
               <div class="ad-field">
-                <span class="ad-label" id="fPlanLabel">計價</span>
+                <span class="ad-label" id="fPlanLabel">計價方式</span>
                 <div class="ad-seg" role="radiogroup" aria-labelledby="fPlanLabel" id="fPlanSeg" style="align-self: flex-start;">
                   <label class="ad-seg__btn is-active"><input type="radio" name="fPlan" value="early_bird" checked onchange="calcFarmerForm()">早鳥工時包</label>
-                  <label class="ad-seg__btn"><input type="radio" name="fPlan" value="flexible" onchange="calcFarmerForm()">彈性計時</label>
-                  <label class="ad-seg__btn"><input type="radio" name="fPlan" value="lump_sum" onchange="calcFarmerForm()">成果統包</label>
+                  <label class="ad-seg__btn"><input type="radio" name="fPlan" value="hourly_flex" onchange="calcFarmerForm()">彈性計時</label>
+                  <label class="ad-seg__btn"><input type="radio" name="fPlan" value="turnkey" onchange="calcFarmerForm()">成果統包</label>
                 </div>
-                <span id="fPlanHint" class="ad-hint">315 元/hr，預付 20% 保證出工</span>
+                <span id="fPlanHint" class="ad-hint">315 元/小時，預付 20% 鎖定名額</span>
               </div>
             </li>
 
@@ -241,29 +231,30 @@
             <h2 class="ad-heading">即時報價</h2>
             <span id="fOutSavings" class="ad-caption" style="color: var(--ad-accent-text);">早鳥 315 元/hr・鎖定名額・優先排班</span>
           </div>
+          <p id="fQuoteNote" class="ad-caption" style="margin: -4px 0 12px;">金額由系統依作物與面積即時試算，送出後以合作社確認為準。</p>
 
           <div class="ad-stat-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
             <div class="ad-stat">
               <div class="ad-stat__label">作業總工時</div>
-              <div id="fOutHours" class="ad-stat__value">128 小時</div>
+              <div id="fOutHours" class="ad-stat__value">—</div>
             </div>
             <div class="ad-stat">
-              <div class="ad-stat__label">建議編制</div>
-              <div id="fOutWorkers" class="ad-stat__value ad-stat--primary" style="font-size: 1rem; color: var(--ad-primary-text);">4 人 × 4 天 (5 分地)</div>
+              <div class="ad-stat__label">建議編制（系統依面積估）</div>
+              <div id="fOutWorkers" class="ad-stat__value ad-stat--primary" style="font-size: 1rem; color: var(--ad-primary-text);">—</div>
             </div>
             <div class="ad-stat">
               <div class="ad-stat__label">牌告金額</div>
-              <div id="fOutStandard" class="ad-stat__value" style="color: var(--ad-text-2);">NT$ 40,320</div>
+              <div id="fOutStandard" class="ad-stat__value" style="color: var(--ad-text-2);">—</div>
             </div>
             <div class="ad-stat ad-stat--accent" style="border-color: var(--ad-accent);">
               <div class="ad-stat__label">應付總額</div>
-              <div id="fOutFinal" class="ad-stat__value">NT$ 40,320</div>
+              <div id="fOutFinal" class="ad-stat__value">—</div>
             </div>
           </div>
 
           <div class="ad-card__foot" style="justify-content: space-between;">
-            <span class="ad-caption">定金 20%（鎖定名額）</span>
-            <strong id="fOutDeposit" class="ad-price ad-price--accent">NT$ 8,064</strong>
+            <span id="fDepositLabel" class="ad-caption">定金 20%（鎖定名額）</span>
+            <strong id="fOutDeposit" class="ad-price ad-price--accent">—</strong>
           </div>
         </div>
 
@@ -294,7 +285,7 @@
           <ol class="ad-steps">
             <li>
               <strong class="ad-heading" style="font-size: 15px; display: block;">線上填單，鎖定早鳥配額</strong>
-              <span class="ad-caption">填作物、面積、小工頭與人數，315 元/hr 鎖定名額、優先排班。</span>
+              <span class="ad-caption">填作物、面積與起工日，系統即時報價；早鳥 315 元/hr 鎖定名額、優先排班。</span>
             </li>
             <li>
               <strong class="ad-heading" style="font-size: 15px; display: block;">合作社 2 小時內電話確認</strong>
@@ -720,12 +711,13 @@
     }
 
     // 工時包（?pkg=）：文宣 brochure.html 與簡報 pitch.html 的四張 DM，帶進來就先把表單填好
-    // 人數×天數依 DM 建議編制；作業地點只在 demo 模式帶入示範地址，正式版保留農場主自己填的
+    // 面積取「每分地標準工時 × 面積」最接近 DM 工時的值（溫室 6 分地 = 120 小時剛好吻合，其餘為近似），報價一律以系統試算為準；
+    // 作業地點只在 demo 模式帶入示範地址，正式版保留農場主自己填的
     const PACKAGES = {
-      'dm-mango-2026':      { name: '屏東枋山愛文芒果 60 工時包', crop: 'mango',       category: 'harvest_grading',    acreage: 3.5, workers: 4, days: 2, location: '屏東縣枋山鄉愛文芒果合作園區 2 號地' },
-      'dm-greenhouse-2026': { name: '八德設施有機溫室 120 工時包', crop: 'taoyuan_veg', category: 'tillage_planting',   acreage: 3,   workers: 6, days: 4, location: '桃園市八德區興豐路有機水耕農場 1 號棚' },
-      'dm-drone-2026':      { name: 'T50 無人機與機耕深耕包',      crop: 'rice',        category: 'drone_pest_control', acreage: 5,   workers: 2, days: 1, location: '嘉義縣太保市有機米契作產銷示範田' },
-      'dm-coldchain-2026':  { name: '旗山高樹採後冷鏈 80 工時包',  crop: 'pineapple',   category: 'cold_chain_pack',    acreage: 4,   workers: 5, days: 2, location: '高雄市旗山區高樹冷鏈集貨預冷中心' }
+      'dm-mango-2026':      { name: '屏東枋山愛文芒果 60 工時包', crop: 'mango',       category: 'harvest_grading',    acreage: 2, location: '屏東縣枋山鄉愛文芒果合作園區 2 號地' },
+      'dm-greenhouse-2026': { name: '八德設施有機溫室 120 工時包', crop: 'taoyuan_veg', category: 'tillage_planting',   acreage: 6, location: '桃園市八德區興豐路有機水耕農場 1 號棚' },
+      'dm-drone-2026':      { name: 'T50 無人機與機耕深耕包',      crop: 'rice',        category: 'drone_pest_control', acreage: 2.5, location: '嘉義縣太保市有機米契作產銷示範田' },
+      'dm-coldchain-2026':  { name: '旗山高樹採後冷鏈 80 工時包',  crop: 'pineapple',   category: 'cold_chain_pack',    acreage: 3, location: '高雄市旗山區高樹冷鏈集貨預冷中心' }
     };
 
     function applyPackage(id) {
@@ -738,15 +730,13 @@
       setIf('fCropType', p.crop);
       setIf('fCategory', p.category);
       document.getElementById('fAcreage').value = p.acreage;
-      document.getElementById('fWorkersCount').value = p.workers;
-      document.getElementById('fDaysCount').value = p.days;
       const early = document.querySelector('input[name="fPlan"][value="early_bird"]');
       if (early) early.checked = true;
       if (p.location && document.documentElement.classList.contains('is-demo')) {
         document.getElementById('fFarmLocation').value = p.location;
       }
       document.getElementById('fPkgName').textContent = p.name;
-      document.getElementById('fPkgMeta').textContent = `${p.workers} 人 × ${p.days} 天・早鳥 315 元/hr，底下都填好了，確認後送出即可`;
+      document.getElementById('fPkgMeta').textContent = `已填好作物、類別與面積；金額依面積即時試算，確認後送出即可`;
       document.getElementById('fPkgCard').hidden = false;
       return true;
     }
@@ -764,12 +754,6 @@
       document.getElementById('fForemanFields').hidden = document.getElementById('fLeadSelf').checked;
     }
 
-    const PLAN_HINT = {
-      early_bird: '315 元/hr，預付 20% 保證出工',
-      flexible: '臨時需求，依牌價計費',
-      lump_sum: '驗收合格後一次結清'
-    };
-
     function syncFarmerAsLead() {
       const name = document.getElementById('fFarmerName').value;
       const phone = document.getElementById('fFarmerPhone').value;
@@ -778,47 +762,134 @@
       document.getElementById('fForemanNotes').value = '農場主本人親自現場帶隊指揮調度';
     }
 
-    // 早鳥工時包不打折：統一 315 元/hr（每人日 8 小時 = 2,520 元）；無人機專隊按組日計價，不適用
-    function earlyBirdDayRate(planVal, category, dayRate) {
-      return planVal === 'early_bird' && category !== 'drone_pest_control' ? 315 * 8 : dayRate;
+    // ===== 報價 =====
+    // 金額一律以後端 POST /api/orders/calculate 為準（作物每分地工時 × 面積 × 方案時薪），訂單成立時後端用同一套算法，
+    // 所以畫面報價 = 成立金額。只有連不上後端的 demo 離線展示才用 localQuote（鏡像 OrderService.calculateOrder，
+    // 作物參數取自 SeedService 的作物表；後端調整費率時這張表要跟著改）。
+    const OFFLINE_CROPS = {
+      mango: [28, 4, 300], pineapple: [26, 3, 300], waxapple: [30, 4, 300], tea: [34, 4, 320],
+      pomelo: [24, 3, 300], strawberry: [25, 3, 310], taoyuan_veg: [20, 3, 290], rice: [12, 2, 290]
+    };
+    const PLAN_NAME = {
+      early_bird: '早鳥預購包 (315/hr・鎖定名額)',
+      hourly_flex: '彈性工時約 (310/hr・免定金)',
+      turnkey: '專案統包一口價 (95 折・驗收付款)'
+    };
+    const PLAN_HINT = {
+      early_bird: '315 元/小時，預付 20% 鎖定名額',
+      hourly_flex: '310 元/小時，免定金，隨叫隨派',
+      turnkey: '依作物費率 95 折，預付 30%，驗收後結清'
+    };
+
+    function localQuote(cropId, area, plan, category) {
+      const [baseHours, workersPerFen, cropRate] = OFFLINE_CROPS[cropId] || [20, 3, 290];
+      const hours = Math.round(baseHours * area);
+      const workers = Math.max(2, Math.round(workersPerFen * (area > 3 ? 1.5 : 1)));
+      let rate = cropRate;
+      if (plan === 'early_bird' && category !== 'typhoon_emergency') rate = 315;
+      else if (plan === 'hourly_flex' && category !== 'typhoon_emergency') rate = 310;
+      if (category === 'typhoon_emergency') rate = Math.max(rate, 360);
+      const standard = Math.round(hours * rate);
+      const actual = plan === 'turnkey' ? Math.round(standard * 0.95) : standard;
+      const deposit = plan === 'early_bird' ? Math.round(actual * 0.2) : (plan === 'turnkey' ? Math.round(actual * 0.3) : 0);
+      return {
+        totalHours: hours, suggestedWorkers: workers, estDays: Math.round((hours / (workers * 8)) * 10) / 10,
+        unitRate: rate, standardTotal: standard, actualTotal: actual, deposit, savings: standard - actual, offline: true
+      };
+    }
+
+    function currentQuoteInput() {
+      const catSelect = document.getElementById('fCategory');
+      const planRadio = document.querySelector('input[name="fPlan"]:checked');
+      return {
+        cropId: document.getElementById('fCropType').value,
+        area: parseFloat(document.getElementById('fAcreage').value) || 0,
+        plan: planRadio ? planRadio.value : 'early_bird',
+        dispatchCategory: catSelect.value,
+        categoryHint: catSelect.options[catSelect.selectedIndex].getAttribute('data-hint') || ''
+      };
+    }
+
+    async function fetchQuote(q) {
+      if (!(q.area > 0)) throw new Error('請輸入面積');
+      try {
+        const res = await fetch(`${(window.AgriAuth && window.AgriAuth.API_BASE) || '/api'}/orders/calculate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cropId: q.cropId, area: q.area, plan: q.plan, dispatchCategory: q.dispatchCategory })
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) throw Object.assign(new Error(body.error || `HTTP ${res.status}`), { fromServer: true });
+        return body.data;
+      } catch (err) {
+        const demo = !window.AGRI_CONFIG || window.AGRI_CONFIG.mode !== 'production';
+        if (err.fromServer || !demo) throw err;
+        return localQuote(q.cropId, q.area, q.plan, q.dispatchCategory);   // 連不上後端：demo 離線試算
+      }
+    }
+
+    // 預估完工日 = 起工日 + 建議天數（進位，含開工當天）
+    function endDateFor(startStr, estDays) {
+      if (!startStr) return null;
+      const d = new Date(startStr + 'T00:00:00');
+      d.setDate(d.getDate() + Math.max(1, Math.ceil(estDays || 1)) - 1);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    let lastQuote = null;
+    let quoteSeq = 0;
+    let quoteTimer = null;
+
+    function renderQuote(q, input) {
+      const money = (n) => `NT$ ${Number(n).toLocaleString()}`;
+      document.getElementById('fOutHours').innerText = `${q.totalHours} 小時`;
+      document.getElementById('fOutWorkers').innerText = `${q.suggestedWorkers} 人 × ${Math.max(1, Math.ceil(q.estDays))} 天 (${input.area} 分地)`;
+      const stdEl = document.getElementById('fOutStandard');
+      stdEl.innerText = money(q.standardTotal);
+      stdEl.classList.toggle('line-through', q.savings > 0);
+      document.getElementById('fOutFinal').innerText = money(q.actualTotal);
+      document.getElementById('fOutDeposit').innerText = q.deposit > 0 ? money(q.deposit) : '免定金';
+      document.getElementById('fDepositLabel').textContent = q.deposit > 0
+        ? `定金 ${Math.round((q.deposit / q.actualTotal) * 100)}%（鎖定名額）` : '定金';
+      document.getElementById('fOutSavings').innerText = q.savings > 0
+        ? `已省下 ${money(q.savings)} (5% 優惠)`
+        : (input.plan === 'early_bird' ? '早鳥 315 元/hr・鎖定名額・優先排班' : '標準費率計價');
+      document.getElementById('fQuoteNote').textContent = q.offline
+        ? '離線試算：未連上伺服器，金額僅供參考。'
+        : '金額由系統依作物與面積即時試算，送出後以合作社確認為準。';
+      document.getElementById('fSubmitBtn').disabled = false;
+    }
+
+    function renderQuoteError(msg) {
+      ['fOutHours', 'fOutWorkers', 'fOutStandard', 'fOutFinal', 'fOutDeposit'].forEach((id) => { document.getElementById(id).innerText = '—'; });
+      document.getElementById('fQuoteNote').textContent = msg;
     }
 
     function calcFarmerForm() {
-      const catSelect = document.getElementById('fCategory');
-      const unitRate = parseInt(catSelect.options[catSelect.selectedIndex].getAttribute('data-rate') || '2200', 10);
-      const days = Math.max(1, parseInt(document.getElementById('fDaysCount').value || '4', 10));
-      const workers = Math.max(1, parseInt(document.getElementById('fWorkersCount').value || '4', 10));
-      const acreage = parseFloat(document.getElementById('fAcreage').value || '5');
-
-      const planRadio = document.querySelector('input[name="fPlan"]:checked');
-      const planVal = planRadio ? planRadio.value : 'early_bird';
-
-      const totalHours = workers * days * 8;
-      const stdAmount = workers * days * earlyBirdDayRate(planVal, catSelect.value, unitRate);
-
-      const discountRate = planVal === 'lump_sum' ? 0.05 : 0;
-
-      const discountAmt = Math.round(stdAmount * discountRate);
-      const finalAmt = stdAmount - discountAmt;
-      const depositAmt = Math.round(finalAmt * 0.20);
-
-      document.getElementById('fOutHours').innerText = `${totalHours} 小時`;
-      document.getElementById('fOutWorkers').innerText = `${workers} 人 × ${days} 天 (${acreage} 分地)`;
+      const input = currentQuoteInput();
       const hintEl = document.getElementById('fCategoryHint');
-      if (hintEl) hintEl.textContent = catSelect.options[catSelect.selectedIndex].getAttribute('data-hint') || '';
-      const stdEl = document.getElementById('fOutStandard');
-      stdEl.innerText = `NT$ ${stdAmount.toLocaleString()}`;
-      stdEl.classList.toggle('line-through', discountAmt > 0);
-      document.getElementById('fOutFinal').innerText = `NT$ ${finalAmt.toLocaleString()}`;
-      document.getElementById('fOutDeposit').innerText = `NT$ ${depositAmt.toLocaleString()}`;
-      document.getElementById('fOutSavings').innerText = discountAmt > 0 ? `已省下 NT$ ${discountAmt.toLocaleString()} (${Math.round(discountRate * 100)}% 優惠)` : (planVal === 'early_bird' ? '早鳥 315 元/hr・鎖定名額・優先排班' : '標準費率計價');
-      // 計價分段控制：選中的那格亮起，底下一行說明跟著換
+      if (hintEl) hintEl.textContent = input.categoryHint;
       document.querySelectorAll('#fPlanSeg .ad-seg__btn').forEach((lab) => {
-        const input = lab.querySelector('input');
-        lab.classList.toggle('is-active', !!(input && input.checked));
+        const radio = lab.querySelector('input');
+        lab.classList.toggle('is-active', !!(radio && radio.checked));
       });
       const planHint = document.getElementById('fPlanHint');
-      if (planHint) planHint.textContent = PLAN_HINT[planVal] || '';
+      if (planHint) planHint.textContent = PLAN_HINT[input.plan] || '';
+
+      clearTimeout(quoteTimer);
+      const seq = ++quoteSeq;
+      quoteTimer = setTimeout(async () => {
+        try {
+          const q = await fetchQuote(input);
+          if (seq !== quoteSeq) return;          // 只採用最後一次輸入的報價
+          lastQuote = { q, input };
+          renderQuote(q, input);
+        } catch (err) {
+          if (seq !== quoteSeq) return;
+          lastQuote = null;
+          renderQuoteError(err.message || '報價暫時無法取得');
+        }
+      }, 200);
     }
 
     async function submitFarmerBooking(e) {
@@ -831,21 +902,21 @@
       const leadSelf = document.getElementById('fLeadSelf');
       if (leadSelf && leadSelf.checked) syncFarmerAsLead();
 
+      // 送單前再取一次報價（確保欄位剛改完也是最新）；後端建單時會用同一套算法重算金額
+      const input = currentQuoteInput();
+      let quote;
+      try {
+        quote = await fetchQuote(input);
+      } catch (err) {
+        if (window.AgriDocs) AgriDocs.notify('預約未送出', err.message || '報價暫時無法取得', { channel: 'dispatch' });
+        btn.disabled = false;
+        btn.textContent = BOOK_LABEL;
+        return;
+      }
+      const startStr = document.getElementById('fStartDate').value || null;
       const orderId = 'ORD-2026-' + Math.floor(1000 + Math.random() * 9000);
       const catSelect = document.getElementById('fCategory');
       const cropSelect = document.getElementById('fCropType');
-      const unitRate = parseInt(catSelect.options[catSelect.selectedIndex].getAttribute('data-rate') || '2200', 10);
-      const days = parseInt(document.getElementById('fDaysCount').value || '4', 10);
-      const workers = parseInt(document.getElementById('fWorkersCount').value || '4', 10);
-      const acreage = parseFloat(document.getElementById('fAcreage').value || '5');
-      const planRadio = document.querySelector('input[name="fPlan"]:checked');
-      const planVal = planRadio ? planRadio.value : 'early_bird';
-
-      const totalHours = workers * days * 8;
-      const stdAmount = workers * days * earlyBirdDayRate(planVal, catSelect.value, unitRate);
-      const discountRate = planVal === 'lump_sum' ? 0.05 : 0;
-      const finalAmt = stdAmount - Math.round(stdAmount * discountRate);
-      const depositAmt = Math.round(finalAmt * 0.20);
 
       const payload = {
         id: orderId,
@@ -854,32 +925,25 @@
         farmLocation: document.getElementById('fFarmLocation').value,
         cropId: cropSelect.value,
         cropName: cropSelect.options[cropSelect.selectedIndex].text.split(' ')[0] || cropSelect.value,
-        area: acreage,
-        plan: planVal,
-        planName: planVal === 'early_bird' ? '早鳥預購包 (315/hr・鎖定名額)' : (planVal === 'lump_sum' ? '專案統包一口價' : '彈性工時約'),
+        area: input.area,
+        plan: input.plan,
+        planName: PLAN_NAME[input.plan] || input.plan,
         dispatchCategory: catSelect.value,
         categoryName: catSelect.options[catSelect.selectedIndex].text,
-        transportZone: '南部核心產區',
-        transportSurcharge: 0,
-        totalHours: totalHours,
-        suggestedWorkers: workers,
-        unitRate: unitRate,
-        standardAmount: stdAmount,
-        finalAmount: finalAmt,
-        depositAmount: depositAmt,
+        transportZone: 'core_35km',
+        transportSurcharge: quote.transportSurcharge || 0,
+        totalHours: quote.totalHours,
+        suggestedWorkers: quote.suggestedWorkers,
+        unitRate: quote.unitRate,
+        standardAmount: quote.standardTotal,
+        finalAmount: quote.actualTotal,
+        depositAmount: quote.deposit,
         depositPaid: false,
-        status: 'pending',
+        status: quote.deposit > 0 ? 'pending' : 'confirmed',
         assignedTeamId: '待分派',
-        // 工期：開工日＋預估天數（含開工當天）；後端用於派工撞期檢查與打卡判斷
-        startDate: document.getElementById('fStartDate').value || null,
-        endDate: (() => {
-          const start = document.getElementById('fStartDate').value;
-          const days = Math.max(1, parseInt(document.getElementById('fDaysCount').value, 10) || 1);
-          if (!start) return null;
-          const d = new Date(start + 'T00:00:00');
-          d.setDate(d.getDate() + days - 1);
-          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        })(),
+        // 工期：開工日＋系統建議天數（含開工當天）；後端用於派工撞期檢查與打卡判斷
+        startDate: startStr,
+        endDate: endDateFor(startStr, quote.estDays),
         foremanName: document.getElementById('fForemanName').value,
         foremanPhone: document.getElementById('fForemanPhone').value,
         foremanNotes: document.getElementById('fForemanNotes').value,
@@ -1049,11 +1113,8 @@
       tomorrow.setDate(tomorrow.getDate() + 1);
       document.getElementById('fStartDate').value = tomorrow.toISOString().split('T')[0];
       const qs = new URLSearchParams(window.location.search);
-      // 從文宣／簡報帶入工時包（?pkg=dm-mango-2026）；不認得的值忽略。先套工時包，後面的參數可再覆蓋
+      // 從文宣／簡報帶入工時包（?pkg=dm-mango-2026）；不認得的值忽略。先套工時包，?category= 可再覆蓋
       applyPackage(qs.get('pkg'));
-      // 從黑轉白轉換中心帶入補位人數（?workers=N）
-      const qsWorkers = parseInt(qs.get('workers'), 10);
-      if (qsWorkers > 0) document.getElementById('fWorkersCount').value = Math.min(30, qsWorkers);
       // 從各入口預選派工類別（?category=cold_chain_pack，例如「冷鏈與物流」入口）；不認得的值忽略
       const qsCategory = qs.get('category');
       const categorySelect = document.getElementById('fCategory');

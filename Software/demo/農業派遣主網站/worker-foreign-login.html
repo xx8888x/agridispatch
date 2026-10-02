@@ -58,11 +58,10 @@
         </a>
         <div class="ad-header__actions">
           <div class="ad-seg" role="group" aria-label="Language">
+          <!-- 只顯示已開放國別的語言（與 App 一致）；泰國等開放後再加回，字典保留 -->
+          <button type="button" class="ad-seg__btn" :class="{ 'is-active': lang === 'zh' }" @click="setLang('zh')" title="中文" lang="zh">中</button>
           <button type="button" class="ad-seg__btn" :class="{ 'is-active': lang === 'vi' }" @click="setLang('vi')" title="Tiếng Việt" lang="vi">VI</button>
           <button type="button" class="ad-seg__btn" :class="{ 'is-active': lang === 'id' }" @click="setLang('id')" title="Bahasa Indonesia" lang="id">ID</button>
-          <button type="button" class="ad-seg__btn" :class="{ 'is-active': lang === 'th' }" @click="setLang('th')" title="ไทย" lang="th">TH</button>
-          <button type="button" class="ad-seg__btn" :class="{ 'is-active': lang === 'en' }" @click="setLang('en')" title="English / Filipino" lang="en">EN</button>
-          <button type="button" class="ad-seg__btn" :class="{ 'is-active': lang === 'zh' }" @click="setLang('zh')" title="中文" lang="zh">中</button>
           </div>
           <a href="login.html" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only :aria-label="t.switchRole"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ad-icon ad-icon--sm"><path d="M8 3 4 7l4 4"></path><path d="M4 7h16"></path><path d="m16 21 4-4-4-4"></path><path d="M20 17H4"></path></svg><span class="ad-hide-sm">{{ t.switchRole }}</span></a>
         </div>
@@ -340,13 +339,16 @@
         const lang = ref('vi'); // Default to Vietnamese for foreign workers
 
         // 語言優先順序：App 身分 > 網址參數 ?lang=vi|id（身分選擇頁帶入）> 預設 vi
+        // 未開放的語言（th、en 等）一律退回預設 vi
+        const OFFERED_LANGS = ['zh', 'vi', 'id'];
+        const pickLang = (l) => (OFFERED_LANGS.includes(l) ? l : 'vi');
         const urlLang = new URLSearchParams(window.location.search).get('lang');
-        if (urlLang && translations[urlLang]) lang.value = urlLang;
+        if (urlLang) lang.value = pickLang(urlLang);
 
         // Android App 會提供使用者選的語言（AgriNativeBridge 或 'agri:app-profile' 事件），覆寫網址參數
         const applyProfileLang = (profile) => {
           const appLang = profile && profile.language;
-          if (appLang && translations[appLang]) lang.value = appLang;
+          if (appLang) lang.value = pickLang(appLang);
         };
         if (window.AgriNativeBridge && typeof window.AgriNativeBridge.getAppProfile === 'function') {
           try {

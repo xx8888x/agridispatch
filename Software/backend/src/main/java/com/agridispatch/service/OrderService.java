@@ -35,9 +35,24 @@ public class OrderService {
     private final LineNotifyService lineNotifyService;
     private final Object idLock = new Object();
 
+    private final com.agridispatch.repository.BrochureRepository brochureRepository;
+
+    /**
+     * 工時包（文宣 DM）對應的作物與派工類別、預設面積：{cropId, dispatchCategory, area}。
+     * 金額、工時、定金、建議人數取自該 DM 本身（Brochure），所以文宣標價就是成立金額；
+     * 管理後台改 DM 價格，之後成立的訂單隨之改變。不在表內的 DM（自訂文宣）尚未開放線上預約。
+     */
+    private static final Map<String, String[]> PACKAGE_SPECS = Map.of(
+            "dm-mango-2026", new String[]{"mango", "harvest_grading", "3.5"},
+            "dm-greenhouse-2026", new String[]{"taoyuan_veg", "tillage_planting", "3.0"},
+            "dm-drone-2026", new String[]{"rice", "drone_pest_control", "5.0"},
+            "dm-coldchain-2026", new String[]{"pineapple", "cold_chain_pack", "4.0"});
+
     public OrderService(OrderRepository orderRepository, CropRepository cropRepository, AgriSettings settings,
-                        InsuranceService insuranceService, LineNotifyService lineNotifyService) {
+                        InsuranceService insuranceService, LineNotifyService lineNotifyService,
+                        com.agridispatch.repository.BrochureRepository brochureRepository) {
         this.orderRepository = orderRepository;
+        this.brochureRepository = brochureRepository;
         this.cropRepository = cropRepository;
         this.settings = settings;
         this.insuranceService = insuranceService;
@@ -117,6 +132,39 @@ public class OrderService {
 
     public Map<String, Object> calculateOrder(String cropId, double area, String plan, String zone, String dispatchCategory) {
         return calculateOrder(cropId, area, plan, zone, dispatchCategory, null);
+    }
+
+    /** 工時包試算：工時、價格、定金取自 DM；人數預設為 DM 建議編制，可由 requestedWorkers 覆寫 */
+    public Map<String, Object> calculatePackage(String packageId, String zone, Integer requestedWorkers) {
+        String[] spec = PACKAGE_SPECS.get(packageId);
+        if (spec == null) {
+            throw ApiException.badRequest("此工時包尚未開放線上預約：" + packageId);
+        }
+        com.agridispatch.entity.Brochure b = brochureRepository.findById(packageId)
+                .filter(x -> "active".equals(x.getStatus()))
+                .orElseThrow(() -> ApiException.badRequest("工時包已下架或不存在：" + packageId));
+        if (b.getHours() <= 0) {
+            throw ApiException.badRequest("工時包資料不完整：" + packageId);
+        }
+        int crew = requestedWorkers != null ? requestedWorkers : Math.max(1, b.getWorkers());
+        // 沿用面積試算取得作物／類別名稱、建議工班；金額與工時再以 DM 覆寫
+        Map<String, Object> data = new LinkedHashMap<>(calculateOrder(spec[0], Double.parseDouble(spec[2]), "early_bird",
+                zone, spec[1], crew));
+        int surcharge = (int) data.get("transportSurcharge");
+        String name = "【工時包】" + b.getTitle();
+        data.put("packageId", packageId);
+        data.put("plan", "early_bird");
+        data.put("planName", name.length() > 100 ? name.substring(0, 100) : name);
+        data.put("totalHours", b.getHours());
+        data.put("suggestedWorkers", crew);
+        data.put("requestedWorkers", requestedWorkers);
+        data.put("estDays", Math.round((b.getHours() / (crew * 8.0)) * 10.0) / 10.0);
+        data.put("unitRate", (int) Math.round(b.getDiscountPrice() / (double) b.getHours()));
+        data.put("standardTotal", b.getOriginalPrice() + surcharge);
+        data.put("actualTotal", b.getDiscountPrice() + surcharge);
+        data.put("deposit", b.getDepositAmount());
+        data.put("savings", Math.max(0, b.getOriginalPrice() - b.getDiscountPrice()));
+        return data;
     }
 
     /**
@@ -367,6 +415,7 @@ public class OrderService {
         order.setForemanNotes(input.getForemanNotes());
         order.setAssignedTeamId(input.getAssignedTeamId());
         order.setRequestedWorkers(input.getRequestedWorkers());   // 範圍由試算驗證
+        order.setPackageId(input.getPackageId() == null || input.getPackageId().isBlank() ? null : input.getPackageId().trim());
         validatePeriod(input.getStartDate(), input.getEndDate());
         order.setStartDate(input.getStartDate());
         order.setEndDate(input.getEndDate());
@@ -429,6 +478,9 @@ public class OrderService {
         if (pricingChanged && existing.isDepositPaid()) {
             throw ApiException.conflict("已付定金的訂單不可變更作物、面積或方案，請聯繫調度中心");
         }
+        if (pricingChanged && existing.getPackageId() != null) {
+            existing.setPackageId(null);   // 改成自訂規格：之後依作物與面積計價，不再適用工時包固定價
+        }
 
         // 每日工人數：不影響金額；0 = 改回由系統估算。已排定的訂單只有 admin 能改（可能影響已安排的出工名單）
         boolean crewChanged = false;
@@ -466,8 +518,7 @@ public class OrderService {
 
         if (crewChanged && !pricingChanged) {
             // 只改人數：金額與狀態不動，只重算編制人數（同時驗證範圍）
-            Map<String, Object> calc = calculateOrder(existing.getCropId(), existing.getArea(), existing.getPlan(),
-                    existing.getTransportZone(), existing.getDispatchCategory(), existing.getRequestedWorkers());
+            Map<String, Object> calc = quoteFor(existing);
             existing.setSuggestedWorkers((int) calc.get("suggestedWorkers"));
         }
         if (pricingChanged) {
@@ -500,9 +551,24 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    private Map<String, Object> applyPricing(Order order) {
-        Map<String, Object> calc = calculateOrder(order.getCropId(), order.getArea(), order.getPlan(),
+    /** 依訂單目前規格取得報價：有工時包就用 DM 固定價，否則依作物與面積 */
+    private Map<String, Object> quoteFor(Order order) {
+        if (order.getPackageId() != null) {
+            return calculatePackage(order.getPackageId(), order.getTransportZone(), order.getRequestedWorkers());
+        }
+        return calculateOrder(order.getCropId(), order.getArea(), order.getPlan(),
                 order.getTransportZone(), order.getDispatchCategory(), order.getRequestedWorkers());
+    }
+
+    private Map<String, Object> applyPricing(Order order) {
+        Map<String, Object> calc = quoteFor(order);
+        if (order.getPackageId() != null) {
+            // 工時包的作物、類別、面積、方案由 DM 決定，不接受前端另傳
+            order.setCropId((String) calc.get("cropId"));
+            order.setDispatchCategory((String) calc.get("dispatchCategory"));
+            order.setArea((double) calc.get("area"));
+            order.setPlan("early_bird");
+        }
         order.setCropName((String) calc.get("cropName"));
         order.setPlanName((String) calc.get("planName"));
         order.setCategoryName((String) calc.get("categoryName"));

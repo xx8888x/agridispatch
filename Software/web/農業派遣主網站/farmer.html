@@ -715,15 +715,22 @@
       });
     }
 
-    // 工時包（?pkg=）：文宣 brochure.html 與簡報 pitch.html 的四張 DM，帶進來就先把表單填好
-    // 面積取「每分地標準工時 × 面積」最接近 DM 工時的值（溫室 6 分地 = 120 小時剛好吻合，其餘為近似），報價一律以系統試算為準；
-    // 作業地點只在 demo 模式帶入示範地址，正式版保留農場主自己填的
+    // 工時包（?pkg=）：文宣 brochure.html 與簡報 pitch.html 的四張 DM。帶進來就鎖定規格並用 DM 固定價，
+    // 後端依 packageId 取該 DM 的工時、價格、定金建單，所以文宣標價 = 成立金額（管理後台改 DM 價格會跟著變）。
+    // 下面的 hours／original／price／deposit 只供連不上後端的 demo 離線展示用，與 SeedService 的 DM 標準資料同步。
+    // 人數預設為 DM 建議編制，可改（只影響完工天數，不影響價格）；作業地點只在 demo 模式帶示範地址。
     const PACKAGES = {
-      'dm-mango-2026':      { name: '屏東枋山愛文芒果 60 工時包', crop: 'mango',       category: 'harvest_grading',    acreage: 2, workers: 4, location: '屏東縣枋山鄉愛文芒果合作園區 2 號地' },
-      'dm-greenhouse-2026': { name: '八德設施有機溫室 120 工時包', crop: 'taoyuan_veg', category: 'tillage_planting',   acreage: 6, workers: 6, location: '桃園市八德區興豐路有機水耕農場 1 號棚' },
-      'dm-drone-2026':      { name: 'T50 無人機與機耕深耕包',      crop: 'rice',        category: 'drone_pest_control', acreage: 2.5, workers: 2, location: '嘉義縣太保市有機米契作產銷示範田' },
-      'dm-coldchain-2026':  { name: '旗山高樹採後冷鏈 80 工時包',  crop: 'pineapple',   category: 'cold_chain_pack',    acreage: 3, workers: 5, location: '高雄市旗山區高樹冷鏈集貨預冷中心' }
+      'dm-mango-2026':      { name: '屏東枋山愛文芒果 60 工時包', crop: 'mango',       category: 'harvest_grading',    acreage: 3.5, workers: 4, hours: 60,  original: 18900, price: 18900, deposit: 3780, location: '屏東縣枋山鄉愛文芒果合作園區 2 號地' },
+      'dm-greenhouse-2026': { name: '八德設施有機溫室 120 工時包', crop: 'taoyuan_veg', category: 'tillage_planting',   acreage: 3,   workers: 6, hours: 120, original: 37800, price: 37800, deposit: 7560, location: '桃園市八德區興豐路有機水耕農場 1 號棚' },
+      'dm-drone-2026':      { name: 'T50 無人機與機耕深耕包',      crop: 'rice',        category: 'drone_pest_control', acreage: 5,   workers: 2, hours: 30,  original: 28800, price: 25200, deposit: 5040, location: '嘉義縣太保市有機米契作產銷示範田' },
+      'dm-coldchain-2026':  { name: '旗山高樹採後冷鏈 80 工時包',  crop: 'pineapple',   category: 'cold_chain_pack',    acreage: 4,   workers: 5, hours: 80,  original: 25200, price: 25200, deposit: 5040, location: '高雄市旗山區高樹冷鏈集貨預冷中心' }
     };
+    let activePkg = null;   // 目前套用的工時包 id；null = 自訂規格（依作物與面積計價）
+
+    function setPackageLock(locked) {
+      ['fCropType', 'fCategory', 'fAcreage'].forEach((id) => { document.getElementById(id).disabled = locked; });
+      document.querySelectorAll('input[name="fPlan"]').forEach((r) => { r.disabled = locked && r.value !== 'early_bird'; });
+    }
 
     function applyPackage(id) {
       const p = PACKAGES[id];
@@ -741,18 +748,23 @@
       if (p.location && document.documentElement.classList.contains('is-demo')) {
         document.getElementById('fFarmLocation').value = p.location;
       }
+      activePkg = id;
+      setPackageLock(true);
       document.getElementById('fPkgName').textContent = p.name;
-      document.getElementById('fPkgMeta').textContent = `已填好作物、類別、面積與 ${p.workers} 人；金額依面積即時試算，確認後送出即可`;
+      document.getElementById('fPkgMeta').textContent = `固定 ${p.hours} 工時・NT$ ${p.price.toLocaleString()}，作物與計價已鎖定，只要選開工日；想改規格按「自己填」`;
       document.getElementById('fPkgCard').hidden = false;
       return true;
     }
 
     function clearPackage() {
+      activePkg = null;
+      setPackageLock(false);
       document.getElementById('fPkgCard').hidden = true;
       const url = new URL(window.location);
       url.searchParams.delete('pkg');
       window.history.replaceState({}, '', url);
       document.getElementById('fCropType').focus();
+      calcFarmerForm();
     }
 
     // 勾「工人報到時直接聯絡我」就收起小工頭欄位，送單時由農場主資料帶入
@@ -804,6 +816,17 @@
       };
     }
 
+    // 工時包離線試算：工時、價格、定金固定取自 DM（鏡像後端 calculatePackage）
+    function localPackageQuote(id, workers) {
+      const p = PACKAGES[id];
+      const crew = workers || p.workers;
+      return {
+        packageId: id, totalHours: p.hours, suggestedWorkers: crew, requestedWorkers: workers || null,
+        estDays: Math.round((p.hours / (crew * 8)) * 10) / 10, unitRate: Math.round(p.price / p.hours),
+        standardTotal: p.original, actualTotal: p.price, deposit: p.deposit, savings: Math.max(0, p.original - p.price), offline: true
+      };
+    }
+
     function currentQuoteInput() {
       const catSelect = document.getElementById('fCategory');
       const planRadio = document.querySelector('input[name="fPlan"]:checked');
@@ -812,7 +835,8 @@
         area: parseFloat(document.getElementById('fAcreage').value) || 0,
         plan: planRadio ? planRadio.value : 'early_bird',
         dispatchCategory: catSelect.value,
-        workers: parseInt(document.getElementById('fWorkersCount').value, 10) || null,   // 沒填 = 由系統估算
+        packageId: activePkg,
+        workers: parseInt(document.getElementById('fWorkersCount').value, 10) || null,   // 沒填 = 由系統估算（工時包預設 DM 建議編制）
         categoryHint: catSelect.options[catSelect.selectedIndex].getAttribute('data-hint') || ''
       };
     }
@@ -823,7 +847,7 @@
         const res = await fetch(`${(window.AgriAuth && window.AgriAuth.API_BASE) || '/api'}/orders/calculate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cropId: q.cropId, area: q.area, plan: q.plan, dispatchCategory: q.dispatchCategory, workers: q.workers })
+          body: JSON.stringify({ cropId: q.cropId, area: q.area, plan: q.plan, dispatchCategory: q.dispatchCategory, workers: q.workers, packageId: q.packageId })
         });
         const body = await res.json().catch(() => ({}));
         if (!res.ok || body.success === false) throw Object.assign(new Error(body.error || `HTTP ${res.status}`), { fromServer: true });
@@ -832,6 +856,7 @@
         const demo = !window.AGRI_CONFIG || window.AGRI_CONFIG.mode !== 'production';
         if (err.fromServer || !demo) throw err;
         if (q.workers && (q.workers < 1 || q.workers > 30)) throw new Error('每日工人數必須介於 1 ～ 30');
+        if (q.packageId) return localPackageQuote(q.packageId, q.workers);
         return localQuote(q.cropId, q.area, q.plan, q.dispatchCategory, q.workers);   // 連不上後端：demo 離線試算
       }
     }
@@ -861,7 +886,7 @@
       document.getElementById('fDepositLabel').textContent = q.deposit > 0
         ? `定金 ${Math.round((q.deposit / q.actualTotal) * 100)}%（鎖定名額）` : '定金';
       document.getElementById('fOutSavings').innerText = q.savings > 0
-        ? `已省下 ${money(q.savings)} (5% 優惠)`
+        ? `已省下 ${money(q.savings)} (${Math.round((q.savings / q.standardTotal) * 100)}% 優惠)`
         : (input.plan === 'early_bird' ? '早鳥 315 元/hr・鎖定名額・優先排班' : '標準費率計價');
       document.getElementById('fQuoteNote').textContent = q.offline
         ? '離線試算：未連上伺服器，金額僅供參考。'
@@ -936,7 +961,8 @@
         cropName: cropSelect.options[cropSelect.selectedIndex].text.split(' ')[0] || cropSelect.value,
         area: input.area,
         plan: input.plan,
-        planName: PLAN_NAME[input.plan] || input.plan,
+        packageId: activePkg,
+        planName: activePkg ? `【工時包】${PACKAGES[activePkg].name}` : (PLAN_NAME[input.plan] || input.plan),
         dispatchCategory: catSelect.value,
         categoryName: catSelect.options[catSelect.selectedIndex].text,
         transportZone: 'core_35km',
@@ -1131,7 +1157,7 @@
       // 從各入口預選派工類別（?category=cold_chain_pack，例如「冷鏈與物流」入口）；不認得的值忽略
       const qsCategory = qs.get('category');
       const categorySelect = document.getElementById('fCategory');
-      if (qsCategory && [...categorySelect.options].some(o => o.value === qsCategory)) categorySelect.value = qsCategory;
+      if (!activePkg && qsCategory && [...categorySelect.options].some(o => o.value === qsCategory)) categorySelect.value = qsCategory;
       toggleLeadSelf();
       calcFarmerForm();
       // 預設顯示「發起派工」（與分頁按鈕的初始樣式一致）；#orders 直接開啟訂單列表

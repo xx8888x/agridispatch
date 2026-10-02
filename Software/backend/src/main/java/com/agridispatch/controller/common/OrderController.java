@@ -57,7 +57,10 @@ public class OrderController {
             }
         }
 
-        Map<String, Object> result = orderService.calculateOrder(cropId, area, plan, zone, dispatchCategory, requestedWorkers);
+        Object pkg = req.get("packageId");
+        Map<String, Object> result = (pkg != null && !pkg.toString().isBlank())
+                ? orderService.calculatePackage(pkg.toString().trim(), zone, requestedWorkers)
+                : orderService.calculateOrder(cropId, area, plan, zone, dispatchCategory, requestedWorkers);
         return ResponseEntity.ok(Map.of("success", true, "data", result));
     }
 

@@ -43,6 +43,10 @@ public class Order {
     @jakarta.persistence.Column(name = "crew_worker_ids", length = 400)
     private String crewWorkerIds;
 
+    /** 工時包（文宣 DM）編號；有值表示金額、工時依該 DM 固定價計，null 表示依作物與面積計價 */
+    @jakarta.persistence.Column(name = "package_id", length = 40)
+    private String packageId;
+
     /** 農場主指定的每日工人數；null 表示由系統依面積估算（suggestedWorkers）。不影響金額，只決定編制人數與預估天數 */
     @jakarta.persistence.Column(name = "requested_workers")
     private Integer requestedWorkers;
@@ -57,6 +61,8 @@ public class Order {
 
     public Order() {}
 
+    public String getPackageId() { return packageId; }
+    public void setPackageId(String packageId) { this.packageId = packageId; }
     public Integer getRequestedWorkers() { return requestedWorkers; }
     public void setRequestedWorkers(Integer requestedWorkers) { this.requestedWorkers = requestedWorkers; }
     public java.time.LocalDate getStartDate() { return startDate; }

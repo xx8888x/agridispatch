@@ -11,16 +11,11 @@
     <string name="weather_alert_title">Kích hoạt phòng tránh thời tiết</string>
     <string name="weather_alert_msg">Mưa lớn! Chuyển ngay đến kho lạnh đóng gói Bình Nam!</string>
 
-    <string name="role_pick_title">Vui lòng chọn vai trò của bạn</string>
-    <string name="role_pick_back">← Quay lại</string>
+    <string name="role_pick_title">Bạn là ai?</string>
+    <string name="role_pick_back">Quay lại</string>
     <string name="role_pick_farmer">Tôi là chủ nông trại</string>
-    <string name="role_pick_farmer_desc">Đặt công, gói giờ mùa vụ, xem chấm công và hóa đơn</string>
+    <string name="role_pick_farmer_desc">Tôi cần thuê người làm</string>
     <string name="role_pick_worker_local">Tôi là lao động Đài Loan</string>
-    <string name="role_pick_worker_local_desc">Trung niên, phụ nữ tái việc làm, sinh viên, thợ cả, thợ máy nông nghiệp</string>
-    <string name="role_pick_worker_foreign">Tôi là lao động nước ngoài</string>
-    <string name="role_pick_worker_foreign_desc">外籍移工 · Pekerja asing</string>
-    <string name="local_pick_title">Chọn loại công việc</string>
-    <string name="nation_pick_title">Chọn quốc tịch · 請選擇國籍</string>
-    <string name="nation_equal_pay">Cùng việc cùng lương: mọi quốc tịch đều theo lương tối thiểu và bảo hiểm theo luật.</string>
+    <string name="role_pick_worker_local_desc">Tôi muốn nhận việc nông nghiệp</string>
     <string name="admin_only_in_server_app">Trang quản trị chỉ dùng trên ứng dụng AgriDispatch Admin</string>
 </resources>

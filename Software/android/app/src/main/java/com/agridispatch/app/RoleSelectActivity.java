@@ -1,27 +1,32 @@
 package com.agridispatch.app;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import com.agridispatch.app.profile.ClientRole;
-import com.agridispatch.app.profile.LocalWorkerType;
+import com.agridispatch.app.profile.LocalTrack;
 import com.agridispatch.app.profile.Nationality;
 import com.agridispatch.app.profile.ProfileStore;
 import com.agridispatch.app.profile.UserProfile;
 
 /**
  * 智農派工 (AgriDispatch) - 客戶端原生身分選擇畫面
- * 第一步：農場主 / 本地工人 (本勞) / 外籍移工 (外勞)
- * 第二步：本勞選類型 (中高齡、二度就業、大專生、帶班師傅、機耕師)；外勞選國別 (越南、印尼；泰國、菲律賓未開放)
+ * 依設計系統「不讓使用者思考」(文件/07_系統分析及文件/04_UI設計系統規範.md)：
+ * 第一頁只問「你是誰」：農場主／本國工人／各國外籍工人 (外籍卡片標題用工人母語，一次點選就完成)；
+ * 本國工人才有第二頁「做哪種工作」(一般農務／帶班師傅／農機操作，三者進不同頁面)。
  * 選定後寫入 ProfileStore 並開啟 MainActivity 載入對應登入頁。僅客戶端 (client flavor) 宣告此 Activity。
  */
 public class RoleSelectActivity extends AppCompatActivity {
@@ -44,12 +49,12 @@ public class RoleSelectActivity extends AppCompatActivity {
 
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
-        scroll.setBackgroundColor(ContextCompat.getColor(this, R.color.slate_950));
+        scroll.setBackgroundColor(color(R.color.ad_bg));
 
         list = new LinearLayout(this);
         list.setOrientation(LinearLayout.VERTICAL);
         int pad = dp(20);
-        list.setPadding(pad, dp(16), pad, pad);
+        list.setPadding(pad, dp(24), pad, pad);
         scroll.addView(list);
         setContentView(scroll);
         SystemBarInsets.apply(getWindow(), scroll);
@@ -60,43 +65,28 @@ public class RoleSelectActivity extends AppCompatActivity {
     private void showRoles() {
         onSubStep = false;
         list.removeAllViews();
-        addHeader(null, getString(R.string.app_name), getString(R.string.role_pick_title));
-        for (ClientRole role : ClientRole.values()) {
-            addOption(role.icon, getString(role.labelRes), getString(role.descRes), true, v -> {
-                if (role == ClientRole.FARMER) {
-                    finishWith(UserProfile.farmer());
-                } else if (role == ClientRole.WORKER_LOCAL) {
-                    showLocalTypes();
-                } else {
-                    showNationalities();
-                }
-            });
-        }
-    }
-
-    private void showLocalTypes() {
-        onSubStep = true;
-        list.removeAllViews();
-        addBack();
-        ClientRole role = ClientRole.WORKER_LOCAL;
-        addHeader(role.icon, getString(role.labelRes), getString(R.string.local_pick_title));
-        for (LocalWorkerType type : LocalWorkerType.values()) {
-            addOption(type.icon, getString(type.labelRes), getString(type.descRes), true,
-                    v -> finishWith(UserProfile.localWorker(type)));
-        }
-    }
-
-    private void showNationalities() {
-        onSubStep = true;
-        list.removeAllViews();
-        addBack();
-        ClientRole role = ClientRole.WORKER_FOREIGN;
-        addHeader(role.icon, getString(role.labelRes), getString(R.string.nation_pick_title));
+        addHeader(getString(R.string.app_name), getString(R.string.role_pick_title));
+        addOption(iconView(ClientRole.FARMER.iconRes), getString(ClientRole.FARMER.labelRes),
+                getString(ClientRole.FARMER.descRes), v -> finishWith(UserProfile.farmer()));
+        addOption(iconView(ClientRole.WORKER_LOCAL.iconRes), getString(ClientRole.WORKER_LOCAL.labelRes),
+                getString(ClientRole.WORKER_LOCAL.descRes), v -> showLocalTracks());
         for (Nationality n : Nationality.values()) {
-            addOption(n.flag, n.label, getString(n.descRes), n.offered,
-                    v -> finishWith(UserProfile.foreignWorker(n)));
+            if (n.offered) {
+                addOption(badgeView(n.badge), n.nativeTitle, getString(n.descRes),
+                        v -> finishWith(UserProfile.foreignWorker(n)));
+            }
         }
-        addFootnote(getString(R.string.nation_equal_pay));
+    }
+
+    private void showLocalTracks() {
+        onSubStep = true;
+        list.removeAllViews();
+        addBack();
+        addHeader(getString(R.string.role_pick_worker_local), getString(R.string.track_pick_title));
+        for (LocalTrack track : LocalTrack.values()) {
+            addOption(iconView(track.iconRes), getString(track.labelRes), getString(track.descRes),
+                    v -> finishWith(UserProfile.localWorker(track)));
+        }
     }
 
     private void finishWith(UserProfile profile) {
@@ -120,70 +110,65 @@ public class RoleSelectActivity extends AppCompatActivity {
         }
     }
 
-    // ---- 版面元件 ----
-    // 卡片統一為「固定寬度圖示欄｜標題＋說明｜右箭頭」三欄，所有文字左緣對齊。
+    // ---- 版面元件 (對應 agri.css：.ad-display／.ad-card--interactive／.ad-icon-box／.ad-heading／.ad-caption) ----
 
-    private void addHeader(String icon, String title, String subtitle) {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        if (icon != null) {
-            TextView i = text(icon, 24, R.color.white, false);
-            i.setPadding(0, 0, dp(10), 0);
-            row.addView(i);
-        }
-        row.addView(text(title, 24, R.color.white, true));
-        list.addView(row);
-
-        TextView s = text(subtitle, 15, R.color.slate_400, false);
-        s.setPadding(0, dp(6), 0, dp(20));
+    private void addHeader(String title, String subtitle) {
+        list.addView(text(title, 28, R.color.ad_text, true));
+        TextView s = text(subtitle, 15, R.color.ad_text_2, false);
+        s.setPadding(0, dp(6), 0, dp(24));
         list.addView(s);
     }
 
+    /** 上一步：圖示＋文字，整列可點，高度 ≥ 44dp */
     private void addBack() {
-        TextView b = text(getString(R.string.role_pick_back), 15, R.color.brand_primary, false);
-        b.setMinHeight(dp(48));
-        b.setGravity(Gravity.CENTER_VERTICAL);
-        b.setOnClickListener(v -> showRoles());
-        list.addView(b, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setMinimumHeight(dp(44));
+        row.setPadding(0, 0, dp(12), 0);
+        ImageView arrow = new ImageView(this);
+        arrow.setImageResource(R.drawable.ic_arrow_left);
+        row.addView(arrow, new LinearLayout.LayoutParams(dp(20), dp(20)));
+        TextView t = text(getString(R.string.role_pick_back), 15, R.color.ad_primary_text, true);
+        t.setPadding(dp(6), 0, 0, 0);
+        row.addView(t);
+        row.setBackground(ripple(null));
+        row.setOnClickListener(v -> showRoles());
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.bottomMargin = dp(8);
+        list.addView(row, lp);
     }
 
-    private void addOption(String icon, String title, String desc, boolean enabled, View.OnClickListener onClick) {
+    /** 可點卡片：圖示框｜標題＋說明｜右箭頭 */
+    private void addOption(View icon, String title, String desc, View.OnClickListener onClick) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.HORIZONTAL);
         card.setGravity(Gravity.CENTER_VERTICAL);
-        card.setMinimumHeight(dp(84));
+        card.setMinimumHeight(dp(72));
         card.setPadding(dp(16), dp(14), dp(12), dp(14));
         GradientDrawable bg = new GradientDrawable();
-        bg.setCornerRadius(dp(14));
-        bg.setColor(ContextCompat.getColor(this, R.color.slate_900));
-        bg.setStroke(dp(1), ContextCompat.getColor(this, enabled ? R.color.brand_dark : R.color.slate_700));
-        card.setBackground(bg);
-        card.setAlpha(enabled ? 1f : 0.45f);
-        card.setEnabled(enabled);
-        if (enabled) {
-            card.setClickable(true);
-            card.setOnClickListener(onClick);
-        }
+        bg.setCornerRadius(dp(12));
+        bg.setColor(color(R.color.ad_surface));
+        bg.setStroke(dp(1), color(R.color.ad_border));
+        card.setBackground(ripple(bg));
+        card.setClickable(true);
+        card.setOnClickListener(onClick);
 
-        TextView iconView = text(icon, 26, R.color.white, false);
-        iconView.setGravity(Gravity.CENTER);
-        card.addView(iconView, new LinearLayout.LayoutParams(dp(44), LinearLayout.LayoutParams.WRAP_CONTENT));
+        card.addView(icon, new LinearLayout.LayoutParams(dp(40), dp(40)));
 
         LinearLayout texts = new LinearLayout(this);
         texts.setOrientation(LinearLayout.VERTICAL);
-        texts.setPadding(dp(12), 0, dp(8), 0);
-        texts.addView(text(title, 17, R.color.white, true));
-        TextView d = text(desc, 13, R.color.slate_400, false);
-        d.setPadding(0, dp(4), 0, 0);
-        d.setLineSpacing(dp(2), 1f);
+        texts.setPadding(dp(14), 0, dp(8), 0);
+        texts.addView(text(title, 16, R.color.ad_text, true));
+        TextView d = text(desc, 13, R.color.ad_text_2, false);
+        d.setPadding(0, dp(2), 0, 0);
         texts.addView(d);
         card.addView(texts, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        TextView chevron = text(enabled ? "›" : "", 26, R.color.slate_400, false);
-        chevron.setGravity(Gravity.CENTER);
-        card.addView(chevron, new LinearLayout.LayoutParams(dp(20), LinearLayout.LayoutParams.WRAP_CONTENT));
+        ImageView chevron = new ImageView(this);
+        chevron.setImageResource(R.drawable.ic_chevron_right);
+        card.addView(chevron, new LinearLayout.LayoutParams(dp(20), dp(20)));
 
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -191,22 +176,54 @@ public class RoleSelectActivity extends AppCompatActivity {
         list.addView(card, lp);
     }
 
-    private void addFootnote(String note) {
-        TextView f = text(note, 12, R.color.slate_400, false);
-        f.setPadding(dp(4), dp(8), dp(4), 0);
-        f.setLineSpacing(dp(2), 1f);
-        list.addView(f);
+    /** .ad-icon-box：40dp、圓角 8、主色淡底，內放 24dp lucide 圖示 */
+    private View iconView(int iconRes) {
+        FrameLayout box = iconBox();
+        ImageView img = new ImageView(this);
+        img.setImageResource(iconRes);
+        box.addView(img, new FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER));
+        return box;
+    }
+
+    /** 外籍工人卡片的語言代碼框 (VI／ID)，與網頁語言切換字樣一致 */
+    private View badgeView(String badge) {
+        FrameLayout box = iconBox();
+        TextView t = text(badge, 15, R.color.ad_primary_text, true);
+        box.addView(t, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
+        return box;
+    }
+
+    private FrameLayout iconBox() {
+        FrameLayout box = new FrameLayout(this);
+        GradientDrawable bg = new GradientDrawable();
+        bg.setCornerRadius(dp(8));
+        bg.setColor(color(R.color.ad_primary_soft));
+        box.setBackground(bg);
+        return box;
+    }
+
+    /** 點擊回饋：按下時出現淡色漣漪 */
+    private RippleDrawable ripple(GradientDrawable content) {
+        GradientDrawable mask = new GradientDrawable();
+        mask.setCornerRadius(dp(12));
+        mask.setColor(0xFFFFFFFF);
+        return new RippleDrawable(ColorStateList.valueOf(color(R.color.ad_surface_2)), content, mask);
     }
 
     private TextView text(String value, int sp, int colorRes, boolean bold) {
         TextView t = new TextView(this);
         t.setText(value);
-        t.setTextColor(ContextCompat.getColor(this, colorRes));
+        t.setTextColor(color(colorRes));
         t.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
         if (bold) {
             t.setTypeface(Typeface.DEFAULT_BOLD);
         }
         return t;
+    }
+
+    private int color(int res) {
+        return ContextCompat.getColor(this, res);
     }
 
     private int dp(int value) {

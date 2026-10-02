@@ -10,7 +10,9 @@ import android.content.SharedPreferences;
 public final class ProfileStore {
     private static final String PREFS = "AgriDispatchProfile";
     private static final String KEY_ROLE = "role";
-    private static final String KEY_LOCAL_TYPE = "local_type";
+    private static final String KEY_LOCAL_TRACK = "local_track";
+    /** 1.0.6 以前存的本勞細分類型，讀取時轉成軌別 */
+    private static final String KEY_LOCAL_TYPE_LEGACY = "local_type";
     private static final String KEY_NATIONALITY = "nationality";
 
     private ProfileStore() {
@@ -27,8 +29,12 @@ public final class ProfileStore {
             return UserProfile.farmer();
         }
         if (ClientRole.WORKER_LOCAL.name().equals(role)) {
-            LocalWorkerType t = LocalWorkerType.fromName(p.getString(KEY_LOCAL_TYPE, ""));
-            return t == null ? null : UserProfile.localWorker(t);
+            LocalTrack track = LocalTrack.fromName(p.getString(KEY_LOCAL_TRACK, ""));
+            if (track == null) {
+                LocalWorkerType legacy = LocalWorkerType.fromName(p.getString(KEY_LOCAL_TYPE_LEGACY, ""));
+                track = legacy == null ? null : legacy.track;
+            }
+            return track == null ? null : UserProfile.localWorker(track);
         }
         if (ClientRole.WORKER_FOREIGN.name().equals(role)) {
             Nationality n = Nationality.fromName(p.getString(KEY_NATIONALITY, ""));
@@ -41,7 +47,8 @@ public final class ProfileStore {
     public static void save(Context context, UserProfile profile) {
         prefs(context).edit()
                 .putString(KEY_ROLE, profile.role == null ? "" : profile.role.name())
-                .putString(KEY_LOCAL_TYPE, profile.localType == null ? "" : profile.localType.name())
+                .putString(KEY_LOCAL_TRACK, profile.localTrack == null ? "" : profile.localTrack.name())
+                .remove(KEY_LOCAL_TYPE_LEGACY)
                 .putString(KEY_NATIONALITY, profile.nationality == null ? "" : profile.nationality.name())
                 .apply();
     }

@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="brand_primary">#10B981</color>
+    <!-- 設計系統 token，與前端 css/agri.css（深色）一致；見 文件/07_系統分析及文件/04_UI設計系統規範.md -->
+    <color name="ad_primary">#059669</color>
+    <color name="ad_primary_text">#34D399</color>
+    <color name="ad_primary_soft">#1F10B981</color>
+    <color name="ad_bg">#020617</color>
+    <color name="ad_surface">#0F172A</color>
+    <color name="ad_surface_2">#1E293B</color>
+    <color name="ad_border">#1E293B</color>
+    <color name="ad_text">#F1F5F9</color>
+    <color name="ad_text_2">#94A3B8</color>
+    <color name="ad_text_3">#64748B</color>
+
+    <color name="brand_primary">#059669</color>
     <color name="brand_dark">#047857</color>
     <color name="slate_900">#0F172A</color>
     <color name="slate_950">#020617</color>

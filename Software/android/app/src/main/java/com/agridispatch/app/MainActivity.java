@@ -94,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
 
         // 滿版顯示，WebView 外包一層深色容器並依系統列 insets 內縮 (見 SystemBarInsets)
         FrameLayout container = new FrameLayout(this);
-        container.setBackgroundColor(ContextCompat.getColor(this, R.color.slate_950));
+        container.setBackgroundColor(ContextCompat.getColor(this, R.color.ad_bg));
         bindingWebView = new WebView(this);
         container.addView(bindingWebView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));

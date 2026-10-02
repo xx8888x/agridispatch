@@ -29,25 +29,9 @@
   </script>
   <!-- Preloaded Demo Database -->
   <script src="js/demo-data.js"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#ecfdf5',
-              100: '#d1fae5',
-              500: '#10b981',
-              600: '#059669',
-              700: '#047857',
-              800: '#065f46',
-              900: '#064e3b',
-            }
-          }
-        }
-      }
-    }
-  </script>
+  <!-- 設計系統：共用 tailwind.config、demo 模式標記、抽屜（Vue 區塊內圖示用內嵌 SVG） -->
+  <script src="js/agri-theme.js"></script>
+  <link rel="stylesheet" href="css/agri.css">
   <style>
     [v-cloak] { display: none; }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -65,138 +49,50 @@
     }, 1500);
   </script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
-
-  <!-- 舊版頁面提示：功能已由 admin.html 管理後台取代 -->
-  <div class="bg-amber-500 text-slate-950 text-xs sm:text-sm font-bold text-center py-2 px-4">
-    ⚠️ 舊版頁面，請改用 <a href="admin.html" class="underline">admin.html</a> 管理後台
-  </div>
+<body class="ad-body ad-has-tabbar min-h-screen flex flex-col">
 
   <div id="app" v-cloak class="flex flex-col min-h-screen">
-    <!-- Header -->
-    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <a href="../農業派遣主網站/index.html" class="flex items-center gap-2">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-brand-600/30">
-              <span class="text-xl">🌱</span>
-            </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="font-extrabold text-lg tracking-tight text-white">智農派工</span>
-                <span class="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 font-semibold">Vue 3 + Spring Boot</span>
-              </div>
-              <p class="text-[11px] text-slate-400">Hibernate ORM ╳ RESTful CRUD ╳ 響應式調度管理</p>
-            </div>
-          </a>
-        </div>
-
-        <!-- Navigation Tabs -->
-        <nav class="hidden md:flex items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700/60 shadow-inner text-xs">
-          <button @click="activeTab = 'workers'" :class="tabClass('workers')">
-            <span>👷</span> 農工人力 ({{ workers.length }})
-          </button>
-          <button @click="activeTab = 'orders'" :class="tabClass('orders')">
-            <span>📋</span> 派工訂單 ({{ orders.length }})
-          </button>
-          <button @click="activeTab = 'crops'" :class="tabClass('crops')">
-            <span>🌾</span> 作物基準 ({{ crops.length }})
-          </button>
-          <button @click="activeTab = 'dispatch'" :class="tabClass('dispatch')">
-            <span>🛰️</span> 工班與天候
-          </button>
-          <button @click="activeTab = 'talents'" :class="tabClass('talents')">
-            <span>🌟</span> 人才儲備 ({{ talents.length }})
-          </button>
-          <button @click="activeTab = 'calendar'" :class="tabClass('calendar')">
-            <span>📅</span> 全台產曆
-          </button>
+    <header class="ad-header">
+      <div class="ad-container ad-header__inner" style="max-width: 1280px;">
+        <a href="admin.html" class="ad-header__brand">
+          <span class="ad-header__logo"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ad-icon"><path d="M7 20h10"></path><path d="M10 20c5.5-2.5.8-6.4 3-10"></path><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"></path><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"></path></svg></span>
+          智農派工
+          <span class="ad-header__role">訂單總台</span>
+        </a>
+        <nav class="ad-nav" aria-label="資料管理">
+          <button type="button" class="ad-nav__link" :class="{ 'is-active': activeTab === 'workers' }" @click="activeTab = 'workers'">農工人力 ({{ workers.length }})</button>
+          <button type="button" class="ad-nav__link" :class="{ 'is-active': activeTab === 'orders' }" @click="activeTab = 'orders'">派工訂單 ({{ orders.length }})</button>
+          <button type="button" class="ad-nav__link" :class="{ 'is-active': activeTab === 'crops' }" @click="activeTab = 'crops'">作物基準 ({{ crops.length }})</button>
+          <button type="button" class="ad-nav__link" :class="{ 'is-active': activeTab === 'dispatch' }" @click="activeTab = 'dispatch'">工班與天候</button>
+          <button type="button" class="ad-nav__link" :class="{ 'is-active': activeTab === 'talents' }" @click="activeTab = 'talents'">人才儲備 ({{ talents.length }})</button>
+          <button type="button" class="ad-nav__link" :class="{ 'is-active': activeTab === 'calendar' }" @click="activeTab = 'calendar'">全台產曆</button>
         </nav>
-
-        <!-- Right Quick Links & Status -->
-        <div class="flex items-center gap-2">
-          <!-- 全站 Demo 導覽選單 (Demo Jumper) -->
-          <div class="relative group shrink-0">
-            <button class="px-2.5 py-1.5 rounded-lg text-xs bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 transition flex items-center gap-1 font-medium whitespace-nowrap shrink-0" title="切換至其他 Demo 頁面">
-              <span>🌐</span> Demo 頁面 (16 頁) ▾
-            </button>
-            <div class="absolute right-0 mt-1 w-64 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-1.5 hidden group-hover:block z-50">
-              <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">三大前線角色專區</div>
-              <a href="../農業派遣主網站/farmer.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-emerald-300 transition">
-                <span>👨‍🌾</span> 農場主專屬工作台 (farmer.html)
-              </a>
-              <a href="../農業派遣主網站/worker-foreign.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-purple-300 transition">
-                <span>👷</span> 外展移工多語工作台 (worker-foreign.html)
-              </a>
-              <a href="../農業派遣主網站/worker-local.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-blue-300 transition">
-                <span>🚜</span> 本國領班與機耕 (worker-local.html)
-              </a>
-              <a href="../農業派遣主網站/worker-local.html?role=labor" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-green-300 transition">
-                <span>🧑‍🌾</span> 合作社農業勞務員 (worker-local.html)
-              </a>
-              <div class="border-t border-slate-800 my-1"></div>
-              <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">調度戰情與生態系統</div>
-              <a href="../農業派遣主網站/index.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-emerald-300 transition">
-                <span>🏠</span> 首頁形象官網 (index.html)
-              </a>
-              <a href="admin.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-indigo-300 transition">
-                <span>💻</span> 科技營運後台 (admin.html)
-              </a>
-              <a href="../農業派遣主網站/app.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-300 transition">
-                <span>📱</span> 四大角色整合戰情 (app.html)
-              </a>
-              <a href="../農業派遣主網站/farmers_map.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-emerald-300 transition">
-                <span>🗺️</span> 全台農會產地地圖 (farmers_map.html)
-              </a>
-              <a href="../linebot/line.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-[#06C755] transition">
-                <span>💬</span> LINE Bot 助理體驗館 (line.html)
-              </a>
-              
-              <a href="../農業派遣主網站/brochure.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-amber-300 transition">
-                <span>📑</span> 產品文宣 DM 精選館 (brochure.html)
-              </a>
-              <div class="border-t border-slate-800 my-1"></div>
-              <a href="../農業派遣主網站/login.html" class="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-indigo-300 transition font-bold">
-                <span>🔑</span> 五大身分登入門戶 (login.html)
-              </a>
-            </div>
-          </div>
-          <!-- 產品文宣與展示 (後台專用) -->
-          <div class="relative group">
-            <button class="px-2.5 py-1.5 rounded-lg text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition flex items-center gap-1 font-medium" title="檢視對外宣傳資產與DM">
-              <span>📄</span> 產品文宣 ▾
-            </button>
-            <div class="absolute right-0 mt-1 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-1 hidden group-hover:block z-50">
-              <a href="../農業派遣主網站/brochure.html" target="_blank" class="flex items-center gap-2 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 hover:text-amber-300 transition">
-                <span>📑</span> 早鳥保證出工 DM
-              </a>
-              
-            </div>
-          </div>
-          <a href="../農業派遣主網站/login.html" class="px-2.5 py-1.5 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center gap-1" title="切換農場主、外勞或本地勞工登入">
-            <span>👤</span> 登入門戶
-          </a>
-          <div class="w-2.5 h-2.5 rounded-full" :class="backendOnline ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'" :title="backendOnline ? '後端連線正常' : '後端離線或連線中'"></div>
+        <div class="ad-header__actions">
+          <span class="ad-pill" :class="backendOnline ? 'ad-pill--ok' : 'ad-pill--warn'" :title="backendOnline ? '後端連線正常' : '後端離線或連線中'"><span class="ad-pill__dot"></span>{{ backendOnline ? '已連線' : '離線' }}</span>
+          <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only @click="openDemoNav" aria-label="示範導覽"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ad-icon ad-icon--sm"><rect width="7" height="7" x="3" y="3" rx="1"></rect><rect width="7" height="7" x="14" y="3" rx="1"></rect><rect width="7" height="7" x="14" y="14" rx="1"></rect><rect width="7" height="7" x="3" y="14" rx="1"></rect></svg><span class="ad-hide-sm">示範導覽</span></button>
+          <a href="admin.html" class="ad-btn ad-btn--secondary ad-btn--sm">回後台</a>
         </div>
-      </div>
-
-      <!-- Mobile Tab Bar -->
-      <div class="md:hidden flex items-center justify-around border-t border-slate-800 py-2 px-2 bg-slate-900/95 text-xs overflow-x-auto">
-        <button @click="activeTab = 'workers'" :class="mobileTabClass('workers')">農工管理</button>
-        <button @click="activeTab = 'orders'" :class="mobileTabClass('orders')">派工訂單</button>
-        <button @click="activeTab = 'crops'" :class="mobileTabClass('crops')">作物庫</button>
-        <button @click="activeTab = 'dispatch'" :class="mobileTabClass('dispatch')">工班調度</button>
-        <button @click="activeTab = 'talents'" :class="mobileTabClass('talents')">人才儲備</button>
-        <button @click="activeTab = 'calendar'" :class="mobileTabClass('calendar')">全台產曆</button>
       </div>
     </header>
 
-    <!-- Toast Notification Banner -->
-    <div v-if="toast.show" class="fixed top-20 right-4 z-50 transition-all duration-300 transform translate-y-0 max-w-md">
-      <div :class="toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'" class="px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-white/20">
-        <span class="text-lg">{{ toast.type === 'success' ? '✅' : '⚠️' }}</span>
-        <div class="text-xs font-medium">{{ toast.message }}</div>
-      </div>
+    <!-- 手機底部導覽（桌機隱藏）：六個分頁可橫向捲動 -->
+    <nav class="ad-tabbar" aria-label="資料管理" style="overflow-x: auto; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(76px, 1fr);">
+      <button type="button" class="ad-tabbar__item" :class="{ 'is-active': activeTab === 'workers' }" @click="activeTab = 'workers'">農工人力</button>
+      <button type="button" class="ad-tabbar__item" :class="{ 'is-active': activeTab === 'orders' }" @click="activeTab = 'orders'">派工訂單</button>
+      <button type="button" class="ad-tabbar__item" :class="{ 'is-active': activeTab === 'crops' }" @click="activeTab = 'crops'">作物基準</button>
+      <button type="button" class="ad-tabbar__item" :class="{ 'is-active': activeTab === 'dispatch' }" @click="activeTab = 'dispatch'">工班與天候</button>
+      <button type="button" class="ad-tabbar__item" :class="{ 'is-active': activeTab === 'talents' }" @click="activeTab = 'talents'">人才儲備</button>
+      <button type="button" class="ad-tabbar__item" :class="{ 'is-active': activeTab === 'calendar' }" @click="activeTab = 'calendar'">全台產曆</button>
+    </nav>
+
+    <!-- 舊版頁面提示：功能已由 admin.html 管理後台取代 -->
+    <div class="ad-container w-full" style="max-width: 1280px; padding-top: 16px;">
+      <div class="ad-notice ad-notice--warn">舊版頁面，日常請改用 <a href="admin.html" style="text-decoration: underline;">admin.html</a> 管理後台。</div>
+    </div>
+
+    <!-- Toast -->
+    <div v-if="toast.show" class="ad-toast" :style="toast.type === 'success' ? 'bottom: calc(80px + env(safe-area-inset-bottom));' : 'bottom: calc(80px + env(safe-area-inset-bottom)); border-color: var(--ad-danger);'" role="status">
+      <div>{{ toast.message }}</div>
     </div>
 
     <!-- Main Content Area -->
@@ -255,7 +151,7 @@
               <span class="text-2xl font-black text-blue-400 font-mono">100%</span>
               <span class="text-slate-400">合規</span>
             </div>
-            <span class="text-[10px] text-blue-300 mt-1">🛡️ 全員附法定保險名冊</span>
+            <span class="text-[10px] text-blue-300 mt-1">全員附法定保險名冊</span>
           </div>
         </div>
 
@@ -263,21 +159,20 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60">
           <div>
             <h2 class="text-lg font-bold text-white flex items-center gap-2">
-              <span>👷</span> 外展農工與派遣名冊 (Foreign & Local Worker Dispatch Roster)
+              外展農工與派遣名冊 (Foreign & Local Worker Dispatch Roster)
               <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono">已篩選 {{ filteredWorkers.length }} 位</span>
             </h2>
             <p class="text-xs text-slate-400 mt-1">完整收錄農業部外展在籍移工、居留證號 (ARC)、護照、派遣狀態與工班即時動態</p>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
             <button @click="exportWorkerCSV()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/40 font-bold text-xs shadow transition flex items-center gap-1.5" title="匯出勞動部與主管機關查驗名冊">
-              <span>📄</span> 匯出送審名冊 (CSV)
+              匯出送審名冊 (CSV)
             </button>
-            <button @click="openWorkerModal()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition flex items-center gap-1.5">
-              <span>➕</span> 登錄新移工/農工
+            <button @click="openWorkerModal()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition flex items-center gap-1.5">
+              <span></span> 登錄新移工/農工
             </button>
             <button @click="fetchWorkers()" class="p-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition" title="重新整理">
-              <span>🔄</span>
-            </button>
+              </button>
           </div>
         </div>
 
@@ -287,19 +182,19 @@
             全部人員 ({{ workers.length }})
           </button>
           <button @click="workerNationalityFilter = '越南'" :class="workerNationalityFilter === '越南' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
-            <span>🇻🇳</span> 越南籍 ({{ workers.filter(w => w.nationality === '越南').length }})
+            越南籍 ({{ workers.filter(w => w.nationality === '越南').length }})
           </button>
           <button @click="workerNationalityFilter = '印尼'" :class="workerNationalityFilter === '印尼' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
-            <span>🇮🇩</span> 印尼籍 ({{ workers.filter(w => w.nationality === '印尼').length }})
+            印尼籍 ({{ workers.filter(w => w.nationality === '印尼').length }})
           </button>
           <button @click="workerNationalityFilter = '泰國'" :class="workerNationalityFilter === '泰國' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
-            <span>🇹🇭</span> 泰國籍 ({{ workers.filter(w => w.nationality === '泰國').length }})
+            泰國籍 ({{ workers.filter(w => w.nationality === '泰國').length }})
           </button>
           <button @click="workerNationalityFilter = '菲律賓'" :class="workerNationalityFilter === '菲律賓' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
-            <span>🇵🇭</span> 菲律賓籍 ({{ workers.filter(w => w.nationality === '菲律賓').length }})
+            菲律賓籍 ({{ workers.filter(w => w.nationality === '菲律賓').length }})
           </button>
           <button @click="workerNationalityFilter = '本國'" :class="workerNationalityFilter === '本國' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
-            <span>🇹🇼</span> 本國籍 ({{ workers.filter(w => w.nationality === '本國').length }})
+            本國籍 ({{ workers.filter(w => w.nationality === '本國').length }})
           </button>
         </div>
 
@@ -356,16 +251,16 @@
                   <td class="px-4 py-3">
                     <div class="font-bold text-white flex items-center gap-1.5">
                       {{ w.chineseName }}
-                      <span v-if="w.leader" class="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold">組長 ⭐</span>
+                      <span v-if="w.leader" class="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold">組長 </span>
                     </div>
                     <div class="text-[11px] text-slate-400 font-sans">{{ w.name }}</div>
-                    <div v-if="w.phone" class="text-[10px] text-slate-500 font-mono mt-0.5">📞 {{ w.phone }}</div>
+                    <div v-if="w.phone" class="text-[10px] text-slate-500 font-mono mt-0.5">{{ w.phone }}</div>
                   </td>
 
                   <!-- Nationality & Passport -->
                   <td class="px-4 py-3">
                     <div class="flex items-center gap-1 font-medium text-slate-200">
-                      <span>{{ flagFor(w.nationality) }}</span>
+                      <span class="font-mono text-[10px] text-slate-400">{{ flagFor(w.nationality) }}</span>
                       <span>{{ w.nationality }}</span>
                     </div>
                     <div class="text-[10px] text-slate-400 font-mono mt-0.5">
@@ -392,7 +287,7 @@
                     <div class="flex items-center gap-1.5">
                       <span :class="w.dispatchStatus === 'hedged_indoor' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : (w.dispatchStatus === 'standby' ? 'bg-slate-700 text-slate-300 border-slate-600' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40')"
                             class="px-2 py-0.5 rounded border text-[10px] font-bold">
-                        {{ w.dispatchStatus === 'hedged_indoor' ? '🏢 室內冷鏈' : (w.dispatchStatus === 'standby' ? '🟡 待命' : '🟢 田間作業') }}
+                        {{ w.dispatchStatus === 'hedged_indoor' ? '室內冷鏈' : (w.dispatchStatus === 'standby' ? '待命' : '田間作業') }}
                       </span>
                     </div>
                     <div class="text-[11px] text-slate-300 mt-1 max-w-xs truncate" :title="w.currentTask">
@@ -409,7 +304,7 @@
                   <!-- Insurance -->
                   <td class="px-4 py-3">
                     <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-medium flex items-center gap-1 w-max">
-                      <span>🛡️</span> {{ w.insuranceStatus || '已納保' }}
+                      {{ w.insuranceStatus || '已納保' }}
                     </span>
                   </td>
 
@@ -443,26 +338,25 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60">
           <div>
             <h2 class="text-lg font-bold text-white flex items-center gap-2">
-              <span>📋</span> 派工訂單與智慧試算
+              派工訂單與智慧試算
               <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">共 {{ orders.length }} 筆訂單</span>
             </h2>
             <p class="text-xs text-slate-400">支援【早鳥 315 元/hr 鎖定名額】、【在地彈性時薪】與【專業成果代耕】三大商業模型</p>
           </div>
           <div class="flex items-center gap-2">
-            <button @click="showOrderCalc = !showOrderCalc" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition flex items-center gap-1.5">
-              <span>🧮</span> {{ showOrderCalc ? '收起試算器' : '開啟智慧試算下單' }}
+            <button @click="showOrderCalc = !showOrderCalc" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition flex items-center gap-1.5">
+              {{ showOrderCalc ? '收起試算器' : '開啟智慧試算下單' }}
             </button>
             <button @click="fetchOrders()" class="p-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition" title="重新整理">
-              <span>🔄</span>
-            </button>
+              </button>
           </div>
         </div>
 
         <!-- Interactive Order Calculator (Collapsible) -->
-        <div v-if="showOrderCalc" class="bg-gradient-to-br from-slate-800 to-slate-850 p-5 rounded-2xl border border-emerald-500/40 shadow-2xl space-y-4">
+        <div v-if="showOrderCalc" class="bg-slate-800 p-5 rounded-2xl border border-emerald-500/40 space-y-4">
           <div class="flex items-center justify-between border-b border-slate-700 pb-3">
             <div class="font-bold text-sm text-emerald-400 flex items-center gap-2">
-              <span>⚡</span> 產季工時智慧試算與快速下單系統
+              產季工時智慧試算與快速下單系統
             </div>
             <span class="text-xs text-slate-400">即時連動 Spring Boot 試算引擎</span>
           </div>
@@ -481,12 +375,12 @@
             <div>
               <label class="block text-slate-300 font-semibold mb-1">3. 農事派工類別</label>
               <select v-model="calcForm.dispatchCategory" @change="calculateOrderLive()" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-emerald-500/50 text-emerald-300 font-semibold focus:outline-none focus:border-emerald-500">
-                <option value="harvest_grading">🥬 【採收分級】田間採收與外銷分級</option>
-                <option value="tillage_planting">🌱 【整地種植】曳引機深耕與定植</option>
-                <option value="pruning_bagging">✂️ 【田間管理】修枝疏果與引蔓套袋</option>
-                <option value="drone_pest_control">🛸 【科技植保】無人機精準噴藥施肥</option>
-                <option value="cold_chain_pack">❄️ 【冷鏈包裝】室內預冷與生鮮截切</option>
-                <option value="typhoon_emergency">🚨 【緊急救火】防颱搶收 24H 馳援</option>
+                <option value="harvest_grading">【採收分級】田間採收與外銷分級</option>
+                <option value="tillage_planting">【整地種植】曳引機深耕與定植</option>
+                <option value="pruning_bagging">【田間管理】修枝疏果與引蔓套袋</option>
+                <option value="drone_pest_control">【科技植保】無人機精準噴藥施肥</option>
+                <option value="cold_chain_pack">【冷鏈包裝】室內預冷與生鮮截切</option>
+                <option value="typhoon_emergency">【緊急救火】防颱搶收 24H 馳援</option>
               </select>
             </div>
             <div>
@@ -511,8 +405,8 @@
             <div>
               <div class="text-slate-400">派工類別 / 建議工班</div>
               <div class="text-xs font-bold text-emerald-300 mt-1 flex flex-col gap-0.5">
-                <span>{{ calcResult.categoryName }}</span>
-                <span class="text-slate-400 font-normal">👉 {{ calcResult.suggestedTeamName }}</span>
+                <span>{{ plain(calcResult.categoryName) }}</span>
+                <span class="text-slate-400 font-normal">{{ calcResult.suggestedTeamName }}</span>
               </div>
             </div>
             <div>
@@ -554,7 +448,6 @@
             <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-amber-500/40 space-y-2.5 shadow-inner">
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
-                  <span class="text-base">👷‍♂️</span>
                   <div>
                     <span class="font-bold text-amber-300 text-xs">現場派工小工頭（現場對口／帶工領班）</span>
                     <span class="text-[10px] text-slate-400 ml-1.5 hidden sm:inline">農場主可填寫現場指派之工頭或班長，引導外展移工進場作業</span>
@@ -562,7 +455,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                   <button type="button" @click="syncForemanAsFarmer()" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-semibold transition flex items-center gap-1">
-                    <span>⚡</span> 同農場主本人帶隊
+                    同農場主本人帶隊
                   </button>
                 </div>
               </div>
@@ -585,8 +478,8 @@
           </div>
 
           <div class="flex justify-end pt-1">
-            <button @click="submitOrder()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-xl shadow-emerald-600/30 transition flex items-center gap-2">
-              <span>🚀</span> 確認建立派工訂單
+            <button @click="submitOrder()" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition flex items-center gap-2">
+              確認建立派工訂單
             </button>
           </div>
         </div>
@@ -597,22 +490,22 @@
             全部類別 ({{ orders.length }})
           </button>
           <button @click="orderCategoryFilter = 'harvest_grading'" :class="orderCategoryFilter === 'harvest_grading' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
-            <span>🥬</span> 採收分級 ({{ orders.filter(o => o.dispatchCategory === 'harvest_grading').length }})
+            採收分級 ({{ orders.filter(o => o.dispatchCategory === 'harvest_grading').length }})
           </button>
           <button @click="orderCategoryFilter = 'tillage_planting'" :class="orderCategoryFilter === 'tillage_planting' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
-            <span>🌱</span> 整地定植 ({{ orders.filter(o => o.dispatchCategory === 'tillage_planting').length }})
+            整地定植 ({{ orders.filter(o => o.dispatchCategory === 'tillage_planting').length }})
           </button>
           <button @click="orderCategoryFilter = 'pruning_bagging'" :class="orderCategoryFilter === 'pruning_bagging' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
-            <span>✂️</span> 修枝套袋 ({{ orders.filter(o => o.dispatchCategory === 'pruning_bagging').length }})
+            修枝套袋 ({{ orders.filter(o => o.dispatchCategory === 'pruning_bagging').length }})
           </button>
           <button @click="orderCategoryFilter = 'drone_pest_control'" :class="orderCategoryFilter === 'drone_pest_control' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
-            <span>🛸</span> 科技植保 ({{ orders.filter(o => o.dispatchCategory === 'drone_pest_control').length }})
+            科技植保 ({{ orders.filter(o => o.dispatchCategory === 'drone_pest_control').length }})
           </button>
           <button @click="orderCategoryFilter = 'cold_chain_pack'" :class="orderCategoryFilter === 'cold_chain_pack' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
-            <span>❄️</span> 冷鏈包裝 ({{ orders.filter(o => o.dispatchCategory === 'cold_chain_pack').length }})
+            冷鏈包裝 ({{ orders.filter(o => o.dispatchCategory === 'cold_chain_pack').length }})
           </button>
           <button @click="orderCategoryFilter = 'typhoon_emergency'" :class="orderCategoryFilter === 'typhoon_emergency' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
-            <span>🚨</span> 防颱搶收 ({{ orders.filter(o => o.dispatchCategory === 'typhoon_emergency').length }})
+            防颱搶收 ({{ orders.filter(o => o.dispatchCategory === 'typhoon_emergency').length }})
           </button>
         </div>
 
@@ -642,12 +535,12 @@
                     <div class="text-[10px] text-slate-500">{{ o.phone }}</div>
                     <div v-if="o.foremanName" class="mt-1 flex items-center gap-1 flex-wrap">
                       <span class="px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[10px] font-medium inline-flex items-center gap-1">
-                        <span>👷‍♂️</span> 工頭: {{ o.foremanName }}
+                        工頭: {{ o.foremanName }}
                       </span>
                       <span v-if="o.foremanPhone" class="text-slate-400 font-mono text-[10px]">({{ o.foremanPhone }})</span>
                     </div>
                     <div v-if="o.foremanNotes" class="text-[10px] text-slate-400 truncate max-w-xs mt-0.5" :title="o.foremanNotes">
-                      💬 {{ o.foremanNotes }}
+                      {{ o.foremanNotes }}
                     </div>
                   </td>
                   <td class="px-4 py-3">
@@ -656,7 +549,7 @@
                   </td>
                   <td class="px-4 py-3">
                     <span :class="categoryBadge(o.dispatchCategory)" class="px-2 py-0.5 rounded border text-[10px] font-bold inline-block">
-                      {{ o.categoryName || '🥬 【採收分級】' }}
+                      {{ o.categoryName || '【採收分級】' }}
                     </span>
                   </td>
                   <td class="px-4 py-3">
@@ -706,18 +599,17 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60">
           <div>
             <h2 class="text-lg font-bold text-white flex items-center gap-2">
-              <span>🌾</span> 作物工時、牌價與避險基準庫
+              作物工時、牌價與避險基準庫
               <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">共 {{ crops.length }} 種作物</span>
             </h2>
             <p class="text-xs text-slate-400">設定每分地基準工時、工時單價牌價與雨天室內冷鏈替代作業 SOP</p>
           </div>
           <div class="flex items-center gap-2">
-            <button @click="openCropModal()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition flex items-center gap-1.5">
-              <span>➕</span> 新增作物基準
+            <button @click="openCropModal()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition flex items-center gap-1.5">
+              <span></span> 新增作物基準
             </button>
             <button @click="fetchCrops()" class="p-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition" title="重新整理">
-              <span>🔄</span>
-            </button>
+              </button>
           </div>
         </div>
 
@@ -774,11 +666,10 @@
       <!-- ============================================================= -->
       <section v-if="activeTab === 'dispatch'" class="space-y-6">
         <!-- Weather Switcher Banner -->
-        <div :class="dispatch.isRainMode ? 'from-rose-950/60 via-slate-900 to-slate-900 border-rose-500/50' : 'from-emerald-950/60 via-slate-900 to-slate-900 border-emerald-500/50'" class="p-6 rounded-2xl bg-gradient-to-r border shadow-2xl transition-all duration-500">
+        <div :class="dispatch.isRainMode ? 'border-rose-500/50' : 'border-emerald-500/50'" class="p-6 rounded-2xl bg-slate-900 border">
           <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
               <div class="flex items-center gap-3">
-                <span class="text-2xl">{{ dispatch.isRainMode ? '🌧️' : '☀️' }}</span>
                 <div>
                   <h2 class="text-xl font-black text-white">智慧天候避險大腦 (Weather Risk Mitigation)</h2>
                   <p class="text-xs font-mono" :class="dispatch.isRainMode ? 'text-rose-400' : 'text-emerald-400'">
@@ -789,8 +680,8 @@
               <p class="text-xs text-slate-300 mt-2 max-w-2xl">{{ dispatch.weatherMessage }}</p>
             </div>
 
-            <button @click="toggleWeather()" :class="dispatch.isRainMode ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-600/30' : 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/30'" class="px-5 py-3 rounded-xl text-white font-extrabold text-xs shadow-xl transition flex items-center gap-2">
-              <span>⚡</span> {{ dispatch.isRainMode ? '恢復晴天田間作業模式' : '啟動暴雨冷鏈避險模式' }}
+            <button @click="toggleWeather()" :class="dispatch.isRainMode ? 'bg-amber-600 hover:bg-amber-500 ' : 'bg-rose-600 hover:bg-rose-500 '" class="px-5 py-3 rounded-xl text-white font-extrabold text-xs shadow-xl transition flex items-center gap-2">
+              {{ dispatch.isRainMode ? '恢復晴天田間作業模式' : '啟動暴雨冷鏈避險模式' }}
             </button>
           </div>
         </div>
@@ -800,7 +691,6 @@
           <div v-for="t in dispatch.teams" :key="t.id" class="bg-slate-800/70 p-5 rounded-2xl border border-slate-700/60 shadow-lg space-y-3">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <span class="text-lg">🚜</span>
                 <h3 class="font-extrabold text-white text-sm">{{ t.name }}</h3>
               </div>
               <span :class="teamStatusBadge(t.status)" class="px-2.5 py-0.5 rounded-full text-xs font-bold">
@@ -826,8 +716,7 @@
             <!-- Current Active Location & Task -->
             <div class="text-xs space-y-1.5 p-3 rounded-xl" :class="t.status === 'hedged_indoor' ? 'bg-amber-950/20 border border-amber-500/30' : 'bg-slate-850/60 border border-slate-700/30'">
               <div class="font-bold flex items-center gap-1.5" :class="t.status === 'hedged_indoor' ? 'text-amber-400' : 'text-emerald-400'">
-                <span>{{ t.status === 'hedged_indoor' ? '🏢 室內冷鏈工單' : '🌾 田間出勤工單' }}</span>
-              </div>
+                </div>
               <div class="text-slate-200 font-medium">{{ t.status === 'hedged_indoor' ? t.hedgeLocation : t.normalLocation }}</div>
               <div class="text-slate-400 text-[11px]">{{ t.status === 'hedged_indoor' ? t.hedgeTask : t.normalTask }}</div>
             </div>
@@ -842,18 +731,17 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60">
           <div>
             <h2 class="text-lg font-bold text-white flex items-center gap-2">
-              <span>🌟</span> 本地與外展農業儲備人才庫
+              本地與外展農業儲備人才庫
               <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">共 {{ talents.length }} 位</span>
             </h2>
             <p class="text-xs text-slate-400">登記本國機耕師、無人機代噴手、中途轉出移工與在地彈性工</p>
           </div>
           <div class="flex items-center gap-2">
-            <button @click="openTalentModal()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition flex items-center gap-1.5">
-              <span>➕</span> 登錄新人才
+            <button @click="openTalentModal()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition flex items-center gap-1.5">
+              <span></span> 登錄新人才
             </button>
             <button @click="fetchTalents()" class="p-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition" title="重新整理">
-              <span>🔄</span>
-            </button>
+              </button>
           </div>
         </div>
 
@@ -865,8 +753,8 @@
                 <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">個資已授權</span>
               </div>
               <h3 class="font-extrabold text-base text-white mt-1">{{ tal.name }}</h3>
-              <div class="text-xs font-medium text-amber-300 mt-0.5">{{ tal.categoryName }}</div>
-              <div class="text-xs text-slate-400 font-mono mt-1">📞 {{ tal.phone }}</div>
+              <div class="text-xs font-medium text-amber-300 mt-0.5">{{ plain(tal.categoryName) }}</div>
+              <div class="text-xs text-slate-400 font-mono mt-1">{{ tal.phone }}</div>
               <p class="text-xs text-slate-300 bg-slate-900/60 p-3 rounded-xl border border-slate-700/40 mt-3">{{ tal.experience }}</p>
             </div>
 
@@ -887,7 +775,7 @@
           <div>
             <div class="flex items-center gap-3">
               <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                <span>📅</span> 全台 52 週農作物產曆動態調度大腦
+                全台 52 週農作物產曆動態調度大腦
               </h2>
               <!-- Year Selector -->
               <div class="flex items-center bg-slate-900 rounded-xl px-2 py-1 border border-slate-700 text-xs font-mono">
@@ -902,15 +790,13 @@
           <div class="flex items-center gap-2 flex-wrap">
             <!-- Auto-Cycle Button -->
             <button @click="toggleAutoCycle()" :class="isAutoCycling ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-slate-700 text-slate-300 border-slate-600'" class="px-3.5 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5">
-              <span :class="isAutoCycling ? 'animate-spin' : ''">🔄</span>
               <span>{{ isAutoCycling ? '自動輪播中 (4秒)' : '開啟自動輪播' }}</span>
             </button>
             <a href="../農業派遣主網站/farmers_map.html" target="_blank" class="px-3.5 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 text-xs font-bold transition flex items-center gap-1.5">
-              <span>🗺️</span> 64 處農會地圖
+              64 處農會地圖
             </a>
             <button @click="fetchCalendar()" class="p-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition" title="重新整理">
-              <span>🔄</span>
-            </button>
+              </button>
           </div>
         </div>
 
@@ -919,7 +805,7 @@
           <div class="flex items-center gap-1.5 flex-wrap">
             <span class="text-slate-400 font-bold px-1">時序月份：</span>
             <button v-for="m in 12" :key="m" @click="selectCalendarMonth(m)"
-                    :class="calendarMonth === m ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'"
+                    :class="calendarMonth === m ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'"
                     class="px-3 py-1.5 rounded-lg transition font-mono">
               {{ m }}月
             </button>
@@ -935,7 +821,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h3 class="text-base font-extrabold text-white flex items-center gap-2">
-                <span>🚨</span> 要到來的收穫日・全台搶工倒數雷達
+                要到來的收穫日・全台搶工倒數雷達
                 <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-mono font-bold">
                   基準：{{ calendarYear }} 年 {{ calendarMonth }} 月
                 </span>
@@ -948,7 +834,7 @@
           <!-- Harvest Grid -->
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div v-for="h in calendarHarvests" :key="h.id"
-                 :class="h.countdownDays <= 15 ? 'border-rose-500/60 shadow-lg shadow-rose-950/30 bg-slate-800/90' : 'border-slate-700/60 bg-slate-800/70'"
+                 :class="h.countdownDays <= 15 ? 'border-rose-500/60 bg-slate-800/90' : 'border-slate-700/60 bg-slate-800/70'"
                  class="p-5 rounded-2xl border shadow-lg space-y-3 flex flex-col justify-between hover:border-emerald-500/50 transition">
               <div class="space-y-2">
                 <div class="flex items-center justify-between gap-1">
@@ -956,16 +842,16 @@
                         class="text-[11px] px-2.5 py-0.5 rounded-full border font-bold font-mono">
                     {{ h.statusLabel }} ({{ h.countdownDays }} 天)
                   </span>
-                  <span class="text-[10px] text-slate-400 font-mono">{{ h.harvestDateStr || (h.harvestYear + '年' + h.month + '月' + h.day + '日') }}</span>
+                  <span class="text-[10px] text-slate-400 font-mono">{{ h.harvestDateStr || h.period }}</span>
                 </div>
 
                 <h4 class="font-extrabold text-base text-white flex items-center gap-1.5">
-                  <span>🌾</span> {{ h.cropName }}
+                  {{ h.cropName }}
                 </h4>
 
                 <div class="text-xs space-y-1.5 bg-slate-900/60 p-3 rounded-xl border border-slate-700/40">
                   <div class="flex items-center justify-between">
-                    <span class="text-slate-400">📍 產區：<span class="text-slate-200">{{ h.region }}</span></span>
+                    <span class="text-slate-400">產區：<span class="text-slate-200">{{ h.region }}</span></span>
                     <span class="text-emerald-400 font-bold font-mono text-[11px]">{{ h.harvestWindow }}</span>
                   </div>
                   <div class="text-slate-300 text-[11px] leading-relaxed">{{ h.taskDescription }}</div>
@@ -977,8 +863,8 @@
                   <span class="text-slate-400">建議工班：</span>
                   <span class="text-emerald-300 font-semibold">{{ teamName(h.suggestedTeamId) }} (需 {{ h.neededWorkers }} 人)</span>
                 </div>
-                <button @click="quickOrderFromHarvest(h)" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-1.5">
-                  <span>⚡</span> 依此收穫日直接預約派工 (早鳥鎖定名額)
+                <button @click="quickOrderFromHarvest(h)" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs transition flex items-center justify-center gap-1.5">
+                  依此收穫日直接預約派工 (早鳥鎖定名額)
                 </button>
               </div>
             </div>
@@ -988,7 +874,7 @@
         <!-- 4 Quarters Overview Cards -->
         <div class="space-y-3 pt-4 border-t border-slate-800">
           <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
-            <span>📊</span> 全年四季出工率與跨區調度策略
+            全年四季出工率與跨區調度策略
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div v-for="q in calendarQuarters" :key="q.quarter" class="bg-slate-800/70 p-5 rounded-2xl border border-slate-700/60 shadow-lg space-y-3 flex flex-col justify-between hover:border-emerald-500/40 transition">
@@ -1011,7 +897,7 @@
         <!-- 12 Months Detail Cards Grid -->
         <div class="space-y-3 pt-4 border-t border-slate-800">
           <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
-            <span>🌾</span> 12 個月全台農事產曆總覽
+            12 個月全台農事產曆總覽
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div v-for="m in calendarMonths" :key="m.month"
@@ -1043,8 +929,8 @@
               </div>
 
               <div class="pt-2 border-t border-slate-700/50 flex justify-end">
-                <button @click="quickOrderFromCalendar(m)" class="w-full py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5">
-                  <span>⚡</span> 依此月份快速試算下單
+                <button @click="quickOrderFromCalendar(m)" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5">
+                  依此月份快速試算下單
                 </button>
               </div>
             </div>
@@ -1062,7 +948,7 @@
     <div v-if="workerModal.show" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
       <div class="bg-slate-850 rounded-2xl border border-slate-700 max-w-lg w-full p-6 space-y-4 shadow-2xl">
         <h3 class="font-extrabold text-base text-white flex items-center gap-2">
-          <span>👷</span> {{ workerModal.isEdit ? '編輯農工資料' : '新增農工' }}
+          {{ workerModal.isEdit ? '編輯農工資料' : '新增農工' }}
         </h3>
         <div class="grid grid-cols-2 gap-3 text-xs max-h-[70vh] overflow-y-auto custom-scrollbar pr-1">
           <div>
@@ -1080,11 +966,11 @@
           <div>
             <label class="text-slate-400 block mb-1">國籍</label>
             <select v-model="workerModal.form.nationality" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
-              <option value="越南">越南 🇻🇳</option>
-              <option value="印尼">印尼 🇮🇩</option>
-              <option value="泰國">泰國 🇹🇭</option>
-              <option value="菲律賓">菲律賓 🇵🇭</option>
-              <option value="本國">本國 🇹🇼</option>
+              <option value="越南">越南 </option>
+              <option value="印尼">印尼 </option>
+              <option value="泰國">泰國 </option>
+              <option value="菲律賓">菲律賓 </option>
+              <option value="本國">本國 </option>
             </select>
           </div>
           <div>
@@ -1123,9 +1009,9 @@
           <div>
             <label class="text-slate-400 block mb-1">目前派遣狀態</label>
             <select v-model="workerModal.form.dispatchStatus" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
-              <option value="dispatched_field">🟢 田間作業 (dispatched_field)</option>
-              <option value="hedged_indoor">🏢 室內冷鏈避險 (hedged_indoor)</option>
-              <option value="standby">🟡 待命 (standby)</option>
+              <option value="dispatched_field">田間作業 (dispatched_field)</option>
+              <option value="hedged_indoor">室內冷鏈避險 (hedged_indoor)</option>
+              <option value="standby">待命 (standby)</option>
             </select>
           </div>
           <div>
@@ -1164,7 +1050,7 @@
     <div v-if="cropModal.show" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
       <div class="bg-slate-850 rounded-2xl border border-slate-700 max-w-lg w-full p-6 space-y-4 shadow-2xl">
         <h3 class="font-extrabold text-base text-white flex items-center gap-2">
-          <span>🌾</span> {{ cropModal.isEdit ? '編輯作物基準' : '新增作物基準' }}
+          {{ cropModal.isEdit ? '編輯作物基準' : '新增作物基準' }}
         </h3>
         <div class="grid grid-cols-2 gap-3 text-xs">
           <div>
@@ -1211,7 +1097,7 @@
     <div v-if="orderModal.show" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
       <div class="bg-slate-850 rounded-2xl border border-slate-700 max-w-lg w-full p-6 space-y-4 shadow-2xl">
         <h3 class="font-extrabold text-base text-white flex items-center gap-2">
-          <span>📋</span> 編輯訂單 ({{ orderModal.form.id }})
+          編輯訂單 ({{ orderModal.form.id }})
         </h3>
         <div class="grid grid-cols-2 gap-3 text-xs">
           <div>
@@ -1248,21 +1134,21 @@
           <div>
             <label class="text-slate-400 block mb-1">農事派工類別</label>
             <select v-model="orderModal.form.dispatchCategory" @change="onOrderCategoryChange()" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
-              <option value="harvest_grading">🥬 【採收分級】田間採收與外銷分級</option>
-              <option value="tillage_planting">🌱 【整地種植】曳引機深耕與定植</option>
-              <option value="pruning_bagging">✂️ 【田間管理】修枝疏果與引蔓套袋</option>
-              <option value="drone_pest_control">🛸 【科技植保】無人機精準噴藥施肥</option>
-              <option value="cold_chain_pack">❄️ 【冷鏈包裝】室內預冷與生鮮截切</option>
-              <option value="typhoon_emergency">🚨 【緊急救火】防颱搶收 24H 馳援</option>
+              <option value="harvest_grading">【採收分級】田間採收與外銷分級</option>
+              <option value="tillage_planting">【整地種植】曳引機深耕與定植</option>
+              <option value="pruning_bagging">【田間管理】修枝疏果與引蔓套袋</option>
+              <option value="drone_pest_control">【科技植保】無人機精準噴藥施肥</option>
+              <option value="cold_chain_pack">【冷鏈包裝】室內預冷與生鮮截切</option>
+              <option value="typhoon_emergency">【緊急救火】防颱搶收 24H 馳援</option>
             </select>
           </div>
           <div class="col-span-2 p-3 rounded-xl bg-slate-900/90 border border-amber-500/40 space-y-2">
             <div class="flex items-center justify-between">
               <span class="font-bold text-amber-300 text-xs flex items-center gap-1">
-                <span>👷‍♂️</span> 現場派工小工頭（現場帶工窗口）
+                現場派工小工頭（現場帶工窗口）
               </span>
               <button type="button" @click="syncModalForemanAsFarmer()" class="px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[10px] font-semibold transition">
-                ⚡ 同農場主本人帶隊
+                同農場主本人帶隊
               </button>
             </div>
             <div class="grid grid-cols-2 gap-2 text-xs">
@@ -1296,7 +1182,7 @@
     <div v-if="talentModal.show" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
       <div class="bg-slate-850 rounded-2xl border border-slate-700 max-w-lg w-full p-6 space-y-4 shadow-2xl">
         <h3 class="font-extrabold text-base text-white flex items-center gap-2">
-          <span>🌟</span> {{ talentModal.isEdit ? '編輯人才資料' : '登錄新人才' }}
+          {{ talentModal.isEdit ? '編輯人才資料' : '登錄新人才' }}
         </h3>
         <div class="grid grid-cols-2 gap-3 text-xs">
           <div>
@@ -1344,13 +1230,18 @@
           : 'http://localhost:3000/api';
 
         const backendOnline = ref(true);
+        // 示範導覽抽屜（demo 模式才存在；production 時為空操作）
+        const openDemoNav = () => { if (window.demoNav) window.demoNav.open(); };
         const activeTab = ref('workers');
 
         const initialData = (typeof DEFAULT_ADMIN_DATA !== 'undefined') ? DEFAULT_ADMIN_DATA : null;
 
         // Data Collections (Pre-populated from canonical database seeds)
         const workers = ref(initialData ? JSON.parse(JSON.stringify(initialData.workers || [])) : []);
-        const orders = ref(initialData ? JSON.parse(JSON.stringify(initialData.orders || [])) : []);
+        // 後端／示範資料的文字可能帶 emoji，進入畫面前先濾除
+        const plain = (s) => String(s == null ? '' : s).replace(/[\u{1F1E6}-\u{1F1FF}\u{1F300}-\u{1FAFF}\u2600-\u2604\u2606-\u26FF\u2705\u2728\u2744\u2702\u23F1\u23F0\u2B50\u2764\uFE0F\u200D]+\s*/gu, '').trim();
+        const plainRow = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, typeof v === 'string' ? plain(v) : v]));
+        const orders = ref(initialData ? JSON.parse(JSON.stringify(initialData.orders || [])).map(plainRow) : []);
         const crops = ref(initialData ? JSON.parse(JSON.stringify(initialData.crops || [])) : []);
         const talents = ref(initialData ? JSON.parse(JSON.stringify(initialData.talents || [])) : []);
         const orderCategories = ref(initialData ? JSON.parse(JSON.stringify(initialData.orderCategories || [])) : []);
@@ -1425,7 +1316,7 @@
             const res = await fetch(`${API_BASE}/orders`);
             const json = await res.json();
             if (json.success && json.data && json.data.length > 0) {
-              orders.value = json.data;
+              orders.value = json.data.map(plainRow);
             }
           } catch (e) { console.error(e); }
         };
@@ -1529,7 +1420,7 @@
             if (typeof window.AgriNativeBridge.alertHarvest === 'function') {
               window.AgriNativeBridge.alertHarvest(harvest.cropName, harvest.countdownDays);
             } else if (typeof window.AgriNativeBridge.showToast === 'function') {
-              window.AgriNativeBridge.showToast(`🚨 【${harvest.cropName}】距離採收尚有 ${harvest.countdownDays} 天！`);
+              window.AgriNativeBridge.showToast(`【${harvest.cropName}】距離採收尚有 ${harvest.countdownDays} 天！`);
             }
             if (typeof window.AgriNativeBridge.vibrate === 'function') {
               window.AgriNativeBridge.vibrate(200);
@@ -1807,7 +1698,7 @@
             planName: calcForm.plan === 'early_bird' ? '【Tier 1】產季早鳥工時包 (鎖定名額・優先排班)' : (calcForm.plan === 'hourly_flex' ? '【Tier 2】在地彈性兼職包 (隨叫隨派)' : '【Tier 3】專業成果統包代耕 (驗收付款)'),
             transportZone: calcForm.zone,
             dispatchCategory: calcForm.dispatchCategory || 'harvest_grading',
-            categoryName: calcResult.value ? calcResult.value.categoryName : '🥬 【採收分級】田間採收與外銷分級',
+            categoryName: calcResult.value ? calcResult.value.categoryName : '【採收分級】田間採收與外銷分級',
             assignedTeamId: calcResult.value ? calcResult.value.suggestedTeam : 'team_a',
             totalHours: calcResult.value ? calcResult.value.totalHours : 100,
             suggestedWorkers: calcResult.value ? calcResult.value.suggestedWorkers : 3,
@@ -1939,7 +1830,7 @@
           dispatch.isRainMode = nextState;
           if (nextState) {
             dispatch.currentWeather = '暴雨警戒 23°C (北部滯留鋒面)';
-            dispatch.weatherMessage = '⚡ 突發暴雨避險啟動：全體工班已專車轉派八德蔬果預冷冷鏈包裝線，出勤率 100%，零閒置虧損！';
+            dispatch.weatherMessage = '突發暴雨避險啟動：全體工班已專車轉派八德蔬果預冷冷鏈包裝線，出勤率 100%，零閒置虧損！';
             dispatch.teams.forEach(t => t.status = 'hedged_indoor');
           } else {
             dispatch.currentWeather = '晴朗 28°C';
@@ -2036,18 +1927,6 @@
         // ==========================================
         // UI HELPERS
         // ==========================================
-        const tabClass = (tab) => {
-          return activeTab.value === tab
-            ? 'px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold shadow transition flex items-center gap-1.5'
-            : 'px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium transition flex items-center gap-1.5';
-        };
-
-        const mobileTabClass = (tab) => {
-          return activeTab.value === tab
-            ? 'px-2 py-1 text-emerald-400 font-bold border-b-2 border-emerald-400 whitespace-nowrap'
-            : 'px-2 py-1 text-slate-400 font-medium whitespace-nowrap';
-        };
-
         const teamName = (teamId) => {
           const m = {
             team_a: '工班 A 組 (桃園溫室)',
@@ -2074,13 +1953,13 @@
         };
 
         const flagFor = (nationality) => {
-          if (!nationality) return '🌐';
-          if (nationality.includes('越南')) return '🇻🇳';
-          if (nationality.includes('印尼')) return '🇮🇩';
-          if (nationality.includes('泰國')) return '🇹🇭';
-          if (nationality.includes('菲律賓')) return '🇵🇭';
-          if (nationality.includes('本國') || nationality.includes('台灣') || nationality.includes('臺灣')) return '🇹🇼';
-          return '🌐';
+          if (!nationality) return '—';
+          if (nationality.includes('越南')) return 'VN';
+          if (nationality.includes('印尼')) return 'ID';
+          if (nationality.includes('泰國')) return 'TH';
+          if (nationality.includes('菲律賓')) return 'PH';
+          if (nationality.includes('本國') || nationality.includes('台灣') || nationality.includes('臺灣')) return 'TW';
+          return '—';
         };
 
         const exportWorkerCSV = () => {
@@ -2149,7 +2028,7 @@
         };
 
         const teamStatusName = (status) => {
-          return status === 'hedged_indoor' ? '🌧️ 室內冷鏈避險中' : '☀️ 田間出勤作業中';
+          return status === 'hedged_indoor' ? '室內冷鏈避險中' : '田間出勤作業中';
         };
 
         const categoryBadge = (cat) => {
@@ -2286,8 +2165,8 @@
           saveTalent,
           deleteTalent,
           seedData,
-          tabClass,
-          mobileTabClass,
+          openDemoNav,
+          plain,
           teamName,
           tierName,
           tierBadge,
@@ -2303,6 +2182,7 @@
         };
       }
     }).mount('#app');
+    window.demoNav = AgriTheme.demoNav({ main: '../農業派遣主網站/', tech: '', line: '../linebot/' });
   </script>
 </body>
 </html>

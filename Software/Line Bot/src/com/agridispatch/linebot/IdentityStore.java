@@ -4,46 +4,86 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 智農派工 - 使用者身分與語言的暫存區（P1）
+ * 智農派工 - 使用者身分與語言
  *
- * ⚠️ P1 只存在記憶體，重啟後遺失；P2 改為呼叫後端 /api/line/internal/identity、follow-state，
- *    身分與語言改存 line_users（規格 6.3、6.5）。呼叫端只透過本類別存取，P2 只需替換實作。
+ * 來源優先順序：
+ *   1. 示範身分覆寫（僅 /mock/chat 的 "as"、TestSimulator 使用）
+ *   2. 後端 line_users（BackendClient；規格 6.3、6.5）—— 綁定與語言重啟不遺失
+ *   3. 後端不可用（未設定內部金鑰、離線）時退回本機記憶體（重啟後遺失）
  *
- * Mock 模式下，農場主帳號未設定身分的使用者視為已綁定的示範農場主（路演不必先綁定）；
- * 工作者帳號一律從未綁定開始，可用 /mock/chat 的 "as" 欄位指定示範身分（見 presets）。
+ * Mock 模式下，農場主帳號未綁定的使用者視為已綁定的示範農場主（路演不必先綁定）；
+ * 工作者帳號一律依實際綁定狀態，可用 "as" 指定示範身分（見 preset）。
  */
 public final class IdentityStore {
     private IdentityStore() {}
 
-    private static final Map<String, Identity> store = new ConcurrentHashMap<>();
+    private static final Map<String, Identity> overrides = new ConcurrentHashMap<>();
+    private static final Map<String, Identity> local = new ConcurrentHashMap<>();
 
     private static String key(Channel channel, String userId) {
         return channel.key + ":" + (userId == null ? "" : userId);
     }
 
     public static Identity get(Channel channel, String userId) {
-        Identity id = store.get(key(channel, userId));
-        if (id != null) return id;
-        if (channel == Channel.FARMER && channel.isMock()) {
+        Identity o = overrides.get(key(channel, userId));
+        if (o != null) return o;
+        Identity fromBackend = BackendClient.identity(channel, userId);
+        Identity id = fromBackend != null ? fromBackend : local.get(key(channel, userId));
+        if ((id == null || !id.bound()) && channel == Channel.FARMER && channel.isMock()) {
             return preset("farmer");
         }
-        return Identity.unbound("zh", false);
+        return id != null ? id : Identity.unbound("zh", false);
     }
 
-    /** 是否已有紀錄（follow 時用來判斷要不要依 LINE 介面語言預設） */
-    public static boolean has(Channel channel, String userId) {
-        return store.containsKey(key(channel, userId));
+    /** 目前的示範身分覆寫；沒有則為 null */
+    public static Identity overridden(Channel channel, String userId) {
+        return overrides.get(key(channel, userId));
     }
 
-    public static void put(Channel channel, String userId, Identity identity) {
-        store.put(key(channel, userId), identity);
+    /** 設定示範身分覆寫（僅 Mock 模式的 /mock/chat、TestSimulator 使用） */
+    public static void override(Channel channel, String userId, Identity identity) {
+        overrides.put(key(channel, userId), identity);
+    }
+
+    /**
+     * 加好友：記錄追蹤；工作者帳號未主動選過語言時，以 LINE 介面語言（vi／id）為預設（規格 3.2 第 3 點）
+     */
+    public static void recordFollow(Channel channel, String userId, String profileLang) {
+        String lang = channel == Channel.WORKER && profileLang != null && !"zh".equals(profileLang)
+                && I18n.SUPPORTED.contains(profileLang) ? profileLang : null;
+        String k = key(channel, userId);
+        Identity o = overrides.get(k);
+        if (o != null) {
+            if (lang != null && !o.bound() && !o.langLocked()) overrides.put(k, o.withLang(lang, false));
+            return;
+        }
+        if (BackendClient.followState(channel, userId, true, lang, false)) return;
+        Identity cur = local.get(k);
+        if (cur == null) cur = Identity.unbound("zh", false);
+        if (lang != null && !cur.bound() && !cur.langLocked()) cur = cur.withLang(lang, false);
+        local.put(k, cur);
+    }
+
+    /** 封鎖：記錄不再追蹤（推播時排除，規格第柒章第 2 點） */
+    public static void recordUnfollow(Channel channel, String userId) {
+        if (overrides.containsKey(key(channel, userId))) return;
+        BackendClient.followState(channel, userId, false, null, false);
     }
 
     /** 使用者主動選擇語言（W-06）：固定下來，不再被國籍或 LINE 介面語言覆蓋 */
     public static Identity setLang(Channel channel, String userId, String lang) {
-        Identity updated = get(channel, userId).withLang(lang, true);
-        put(channel, userId, updated);
-        return updated;
+        String k = key(channel, userId);
+        Identity o = overrides.get(k);
+        if (o != null) {
+            Identity updated = o.withLang(lang, true);
+            overrides.put(k, updated);
+            return updated;
+        }
+        if (!BackendClient.followState(channel, userId, null, lang, true)) {
+            Identity cur = local.get(k);
+            local.put(k, (cur != null ? cur : Identity.unbound("zh", false)).withLang(lang, true));
+        }
+        return get(channel, userId);
     }
 
     /**
@@ -54,7 +94,7 @@ public final class IdentityStore {
         if (name == null) return null;
         return switch (name.trim().toLowerCase()) {
             case "farmer" -> new Identity(true, Identity.FARMER, null, null, false, "zh", false);
-            case "local" -> new Identity(true, Identity.WORKER_LOCAL, "SENIOR", null, false, "zh", false);
+            case "local" -> new Identity(true, Identity.WORKER_LOCAL, "LABOR", null, false, "zh", false);
             case "foreman" -> new Identity(true, Identity.WORKER_LOCAL, "FOREMAN", null, true, "zh", false);
             case "machinery" -> new Identity(true, Identity.WORKER_LOCAL, "MACHINERY", null, false, "zh", false);
             case "machinery_leader" -> new Identity(true, Identity.WORKER_LOCAL, "MACHINERY", null, true, "zh", false);

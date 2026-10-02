@@ -19,11 +19,12 @@ line.worker.channel.access.token=請填入工作者帳號的_Channel_Access_Toke
 line.farmer.basic.id=
 line.worker.basic.id=
 
-# 帳號綁定頁的 LIFF ID（P2 起使用）；未填時綁定按鈕連到既有登入頁
+# 帳號綁定頁的 LIFF ID；未填時綁定按鈕連到既有登入頁（LIFF 綁定頁於 P4 製作）
 liff.bind.id=
 
-# Line Bot 與後端互相呼叫內部端點的共用金鑰（P2 起使用）；須與後端 AGRI_LINEBOT_INTERNAL_KEY 相同，
-# 且不得與 admin.key、channel secret 相同
+# Line Bot 與後端互相呼叫內部端點的共用金鑰；須與後端 AGRI_LINEBOT_INTERNAL_KEY 相同，
+# 且不得與 admin.key、channel secret 相同。未填時不連後端：身分與語言暫存記憶體（重啟後遺失）、查詢改用本地卡片。
+# start_all.bat 未設定此環境變數時會自動產生一組給後端與 Line Bot 共用。
 internal.key=
 
 # 本地伺服器監聽埠號 (預設 5000)

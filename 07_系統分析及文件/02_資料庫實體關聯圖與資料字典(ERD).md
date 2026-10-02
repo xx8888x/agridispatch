@@ -1,6 +1,6 @@
 # 智農派工 (AgriDispatch) - 資料庫實體關聯圖與資料字典 (ERD)
 
-> **文件版本**：v3.4.0（2026-10-01，依 `Software/backend/src/main/java/com/agridispatch/entity/*.java` 實際 JPA 實體更新：新增 `team_ratings`、`insurance_records`、`skill_reviews`、`clock_ins.orderId` 與領班評核欄位、`orders.crewWorkerIds`、`orders.startDate`／`endDate`，補列 `farmers`、`financial_ledger`、`line_users`、`line_messages`；v3.0.0 為 2026-09-23）
+> **文件版本**：v3.5.0（2026-10-02，`line_users` 改為 LINE 雙帳號結構並開始使用，見 2.14）；v3.4.0（2026-10-01，依 `Software/backend/src/main/java/com/agridispatch/entity/*.java` 實際 JPA 實體更新：新增 `team_ratings`、`insurance_records`、`skill_reviews`、`clock_ins.orderId` 與領班評核欄位、`orders.crewWorkerIds`、`orders.startDate`／`endDate`，補列 `farmers`、`financial_ledger`、`line_users`、`line_messages`；v3.0.0 為 2026-09-23）
 > **資料庫**：H2 檔案資料庫（`Software/backend/data/agridispatch_db`），Hibernate `ddl-auto: update` 自動建表
 > **Visio 圖檔**：同資料夾的 `.vdx` / `.vsdx` 為 v2.0 舊版，**以本文件的 Mermaid 圖為準**
 
@@ -214,14 +214,19 @@ erDiagram
         datetime settlementDate
     }
     line_users {
-        string id PK "保留實體・程式未使用"
-        string lineUserId
-        string username
+        string id PK
+        string channel "farmer / worker"
+        string lineUserId "與 channel 合併唯一"
+        string username "綁定的平台帳號・未綁定為空"
+        string refId "F001 / W001"
         string displayName
-        string role
-        string lang
+        string role "farmer / worker_*"
+        string lang "zh / vi / id"
+        string langLocked "Y＝使用者主動選過"
         string isBound "Y / N"
         datetime boundAt
+        string followed "Y / N"
+        datetime followChangedAt
     }
     line_messages {
         string id PK "保留實體・程式未使用"
@@ -245,6 +250,7 @@ erDiagram
     dispatch_teams ||..o{ team_ratings : "teamId"
     workers ||..o{ insurance_records : "workerId"
     workers ||..o{ skill_reviews : "workerId"
+    users ||..o{ line_users : "refId（綁定）"
 ```
 
 ---
@@ -437,8 +443,29 @@ erDiagram
 
 > 熟手標籤本身**不存表**，每次依出勤、評價、領班評核即時計算（見第參章）；本表只記錄暫停後的人工複核，複核時間點之前的評價與評核不再觸發暫停。API：`/api/skills`、`/api/evaluations`。
 
-### 2.14 保留實體（程式尚未使用）
-`farmers`、`financial_ledger`、`line_users`、`line_messages` 為對應 Oracle 早期設計的 JPA 實體（2026-09-29 加入），目前沒有任何 Service／Controller 讀寫，H2 會因 `ddl-auto: update` 自動建立空表。農場主目前以 `users`（role=`farmer`）加 `orders.farmerId` 表示；雙軌分帳尚未落地成帳本資料。
+### 2.14 LINE 官方帳號使用者 `line_users`（實體 `LineUser`，2026-10-02 起使用）
+一筆＝一個 LINE userId 在一個官方帳號（農場主 `farmer`／工作者 `worker`）的追蹤、語言與綁定狀態；規格見 `05_LINE官方帳號拆分規格.md` 6.5。由 `LineBindingService` 讀寫：LINE Bot 經 `/api/line/internal/*` 記錄加好友／封鎖與語言，使用者經 `POST /api/line/bind`（LIFF ID token）綁定。
+
+| 欄位 | 型別 | 說明 |
+| :--- | :--- | :--- |
+| `id` | String(32) PK | UUID（去除連字號） |
+| `channel` | String(10) | `farmer`／`worker`；與 `line_user_id` 合併唯一 |
+| `line_user_id` | String(64) | LINE userId（同一 Provider 下兩帳號相同） |
+| `username` | String(32) | 綁定的平台帳號（`users.username` 或農工工號）；未綁定為空 |
+| `ref_id` | String(32) | 綁定時的 token.ref（農場主 F001、農工 W001）；查本人訂單、同一人判斷用 |
+| `display_name` | String(100) | LINE 顯示名稱，僅供後台辨識 |
+| `role` | String(32) | `farmer`／`worker_foreign`／`worker_local`；須與 channel 相符 |
+| `lang` | String(10) | `zh`／`vi`／`id`；未鎖定時已綁定外勞依國籍（VN→vi、ID→id） |
+| `lang_locked` | String(1) | `Y`＝使用者主動選過語言，不再被國籍或 LINE 介面語言覆蓋 |
+| `is_bound` | String(1) | `Y`／`N`；解除綁定時清空 username／ref_id／role／bound_at |
+| `bound_at` | DateTime | 綁定時間 |
+| `followed` | String(1) | `Y` 追蹤中／`N` 已封鎖（推播時排除） |
+| `follow_changed_at` | DateTime | 最近一次加好友／封鎖時間 |
+
+> 同一人（同身分同 ref_id）在同一帳號只能綁一個 LINE userId，由 Service 檢查；Oracle 另以函數索引 `uk_line_users_username_channel` 保證（username 非空時）。2026-09-29 建立的舊結構空表，後端啟動時由 `LineUsersLegacyTableMigration` 自動刪除後重建（有資料則不動並記錯誤 log）。
+
+### 2.15 保留實體（程式尚未使用）
+`farmers`、`financial_ledger`、`line_messages` 為對應 Oracle 早期設計的 JPA 實體（2026-09-29 加入），目前沒有任何 Service／Controller 讀寫，H2 會因 `ddl-auto: update` 自動建立空表。農場主目前以 `users`（role=`farmer`）加 `orders.farmerId` 表示；雙軌分帳尚未落地成帳本資料。
 
 ---
 

@@ -26,6 +26,9 @@ public class LineBotServer {
             // 本地模擬發言與除錯 API（僅 Mock 模式）
             server.createContext("/mock/chat", new MockChatHandler());
 
+            // 後端呼叫的內部端點（X-Internal-Key，規格 6.3）
+            server.createContext("/internal", new InternalHandler());
+
             // 網頁版 LINE 互動模擬器 (開啟 http://localhost:5000/ 即直接呈現手機聊天室介面)
             WebSimulatorHandler webSimulatorHandler = new WebSimulatorHandler();
             server.createContext("/", webSimulatorHandler);
@@ -112,6 +115,9 @@ public class LineBotServer {
             System.out.println("🔗 工作者帳號 Webhook: http://localhost:" + port + "/callback/worker  【" + Config.modeLabel(Channel.WORKER) + "】");
             System.out.println("🛠️ 本地測試除錯路徑: http://localhost:" + port + "/mock/chat");
             System.out.println("🔍 健康檢查路徑:     http://localhost:" + port + "/health");
+            System.out.println("🗄️ 身分與語言來源:   " + (Config.INTERNAL_KEY == null
+                    ? "本機記憶體（未設定 AGRI_LINEBOT_INTERNAL_KEY，重啟後遺失）"
+                    : "後端 " + Config.BACKEND_API_BASE + "/line/internal/*"));
             System.out.println("🌐 CORS 允許來源:    " + Config.ALLOWED_ORIGINS);
             System.out.println("🔑 /api/config 管理金鑰: " + (Config.ADMIN_KEY == null ? "未設定 (API 已停用)" : "已設定"));
             System.out.println("☕ Java 執行環境:    " + System.getProperty("java.version") + " (" + System.getProperty("java.vendor") + ")");

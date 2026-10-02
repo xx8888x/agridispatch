@@ -1,5 +1,7 @@
 package com.agridispatch.controller.linebot;
 
+import com.agridispatch.common.ApiException;
+import com.agridispatch.entity.LineUser;
 import com.agridispatch.entity.Order;
 import com.agridispatch.entity.Worker;
 import com.agridispatch.entity.Crop;
@@ -9,6 +11,7 @@ import com.agridispatch.repository.CropRepository;
 import com.agridispatch.common.LaborConstants;
 import com.agridispatch.config.AgriSettings;
 import com.agridispatch.service.CalendarService;
+import com.agridispatch.service.LineBindingService;
 import com.agridispatch.service.OrderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -41,6 +44,7 @@ public class LineController {
     private final CalendarService calendarService;
     private final AgriSettings settings;
     private final ObjectMapper objectMapper;
+    private final LineBindingService lineBindingService;
 
     /** LINE Channel Secret / Access Token：由 agri.line.* 或環境變數 LINE_CHANNEL_SECRET / LINE_CHANNEL_ACCESS_TOKEN 提供，預設空值 */
     private volatile String channelSecret;
@@ -52,6 +56,7 @@ public class LineController {
                           CalendarService calendarService,
                           AgriSettings settings,
                           ObjectMapper objectMapper,
+                          LineBindingService lineBindingService,
                           @Value("${agri.line.channel-secret:}") String channelSecret,
                           @Value("${agri.line.channel-access-token:}") String channelAccessToken) {
         this.orderRepository = orderRepository;
@@ -60,6 +65,7 @@ public class LineController {
         this.calendarService = calendarService;
         this.settings = settings;
         this.objectMapper = objectMapper;
+        this.lineBindingService = lineBindingService;
         this.channelSecret = channelSecret == null ? "" : channelSecret.trim();
         this.channelAccessToken = channelAccessToken == null ? "" : channelAccessToken.trim();
     }
@@ -84,6 +90,10 @@ public class LineController {
         }
     }
 
+    /**
+     * 舊版查詢入口（已停用，過渡期保留）：LINE Bot 已改呼叫 /api/line/internal/*（規格 05 第 6.3 節），之後移除
+     */
+    @Deprecated
     @PostMapping("/webhook")
     @SuppressWarnings("unchecked")
     public ResponseEntity<?> handleWebhook(@RequestBody(required = false) byte[] rawBody,
@@ -147,6 +157,86 @@ public class LineController {
         }
         Object uid = event.get("userId");
         return uid != null ? uid.toString() : "ANONYMOUS";
+    }
+
+    // =========================================================================
+    // LINE Bot 內部端點（規格 05 第 6.3 節）：X-Internal-Key 驗證；未設定金鑰時整組停用（403）
+    // =========================================================================
+
+    @PostMapping("/internal/identity")
+    public ResponseEntity<?> internalIdentity(@RequestHeader(value = "X-Internal-Key", required = false) String key,
+                                              @RequestBody Map<String, Object> req) {
+        requireInternalKey(key);
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("success", true);
+        res.putAll(lineBindingService.identity(str(req.get("channel")), str(req.get("lineUserId"))));
+        return ResponseEntity.ok(res);
+    }
+
+    @PostMapping("/internal/follow-state")
+    public ResponseEntity<?> internalFollowState(@RequestHeader(value = "X-Internal-Key", required = false) String key,
+                                                 @RequestBody Map<String, Object> req) {
+        requireInternalKey(key);
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("success", true);
+        res.putAll(lineBindingService.followState(str(req.get("channel")), str(req.get("lineUserId")),
+                bool(req.get("followed")), str(req.get("lang")), bool(req.get("langLocked")), str(req.get("displayName"))));
+        return ResponseEntity.ok(res);
+    }
+
+    /**
+     * 依帳號與身分限制可回答的動作（規格 4.1、4.2）：
+     * 農場主帳號 orders（限已綁定、只回本人訂單）、rates、calendar；其餘與工作者帳號暫回空清單，由 LINE Bot 用本地卡片
+     */
+    @PostMapping("/internal/query")
+    public ResponseEntity<?> internalQuery(@RequestHeader(value = "X-Internal-Key", required = false) String key,
+                                           @RequestBody Map<String, Object> req) {
+        requireInternalKey(key);
+        String channel = str(req.get("channel"));
+        if (channel == null || !LineBindingService.CHANNELS.contains(channel)) {
+            throw ApiException.badRequest("channel 必須是 farmer 或 worker");
+        }
+        String action = str(req.get("action"));
+        String text = Optional.ofNullable(str(req.get("text"))).orElse("").trim().toLowerCase();
+        List<Map<String, Object>> messages = new ArrayList<>();
+        if (LineUser.CHANNEL_FARMER.equals(channel) && action != null) {
+            switch (action) {
+                case "orders" -> lineBindingService.boundUser(channel, str(req.get("lineUserId")))
+                        .filter(u -> "farmer".equals(u.getRole()) && u.getRefId() != null)
+                        .ifPresent(u -> {
+                            List<Order> mine = orderRepository.findAll().stream()
+                                    .filter(o -> u.getRefId().equalsIgnoreCase(o.getFarmerId())).toList();
+                            messages.add(mine.isEmpty()
+                                    ? buildTextReply("目前查不到您名下的訂單。可到網站「我要派工」下單，或輸入「服務導覽」查看功能。")
+                                    : buildOrderQueryFlex(text, mine));
+                        });
+                case "rates" -> messages.add(buildRateQueryFlex());
+                case "calendar" -> messages.add(buildCalendarQueryFlex(text));
+                default -> { }
+            }
+        }
+        return ResponseEntity.ok(Map.of("success", true, "messages", messages));
+    }
+
+    private void requireInternalKey(String provided) {
+        String expected = settings.getLinebotInternalKey();
+        if (expected == null) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "內部端點未啟用：請設定 AGRI_LINEBOT_INTERNAL_KEY");
+        }
+        if (provided == null || !MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8),
+                provided.trim().getBytes(StandardCharsets.UTF_8))) {
+            throw ApiException.forbidden();
+        }
+    }
+
+    private static String str(Object o) {
+        return o == null ? null : String.valueOf(o);
+    }
+
+    private static Boolean bool(Object o) {
+        if (o == null) return null;
+        if (o instanceof Boolean b) return b;
+        return "true".equalsIgnoreCase(String.valueOf(o));
     }
 
     @PostMapping("/simulate-push")
@@ -336,7 +426,11 @@ public class LineController {
      * 1. 訂單進度查詢結果卡片
      */
     private Map<String, Object> buildOrderQueryFlex(String query) {
-        List<Order> orders = orderRepository.findAll();
+        return buildOrderQueryFlex(query, orderRepository.findAll());
+    }
+
+    /** 從指定的訂單中挑出符合單號或作物名稱者（無符合則取第一筆）產生卡片 */
+    private Map<String, Object> buildOrderQueryFlex(String query, List<Order> orders) {
         Order target = orders.isEmpty() ? null : orders.get(0);
         for (Order o : orders) {
             if (query.contains(o.getId().toLowerCase()) || (o.getCropName() != null && query.contains(o.getCropName()))) {

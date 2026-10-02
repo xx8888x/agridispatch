@@ -1,6 +1,7 @@
 # 智農派工 LINE 官方帳號拆分規格（方案 B：農場主／工作者雙帳號）
 
-> **文件版本**：v1.0.1（2026-10-02，草案；P1 實作後修正 6.2、拾.5 的 `/mock/chat` 規則）
+> **文件版本**：v1.0.2（2026-10-02，草案；P1 實作後修正 6.2、拾.5 的 `/mock/chat` 規則；P2 實作後補 6.3 `langLocked`、6.5 `ref_id` 欄、5.3 demo 假 token）
+> **實作進度**：P1 ✅（Line Bot 雙帳號骨架）、P2 ✅（後端 `line_users`、內部端點、綁定 API；LIFF 綁定頁屬 P4）
 > **適用範圍**：`Software/Line Bot/`（port 5000）、`Software/backend/`（port 3000）的 LINE 相關程式、`Software/demo/linebot/line.html` 模擬器、科技後台 LINE 設定頁
 > **相關文件**：`01_系統分析與架構設計規格書.md` 第陸章（LINE 子系統現況）、`02_資料庫實體關聯圖與資料字典(ERD).md`（`line_users`）、`03_認證與API安全規格.md`（端點權限）、`Software/android/docs/角色與人力分類表.md`（身分與國別代碼）
 > **狀態**：本規格只定義目標設計，程式尚未修改。實作完成後須同步更新上列 01、02、03 文件與 `Software/Line Bot/README.md`。
@@ -231,6 +232,8 @@ sequenceDiagram
 3. 一個 LINE userId 在同一帳號只能綁一個平台帳號；一個平台帳號在同一帳號只能綁一個 LINE userId。重複綁定回 409，須先解除。
 4. 綁定頁沿用既有登入頁的錯誤訊息規則（不提示預設密碼）。綁定頁網址不得帶個資參數。
 5. 工作者帳號的綁定頁依 3.2 語言顯示；外籍移工綁定前須顯示個資告知與同意（越語、印尼語版本）【待確認：告知文字與同意方式】。
+6. 「同一個平台帳號」以「同身分且同 `ref_id`」判斷：同一位工人以工號（W001）或 users 帳號（worker_foreign → W001）登入視為同一人。
+7. 未設定 `LINE_LOGIN_CHANNEL_ID` 時：production 回 503；demo 模式接受 `mock:U+32位十六進位` 假 token（路演與自動測試用），正式環境不得以此綁定。
 
 ### 5.4 解除綁定
 
@@ -271,7 +274,7 @@ flowchart LR
 | Method | Path | Body | 回應 |
 |---|---|---|---|
 | POST | `/api/line/internal/identity` | `{channel, lineUserId}` | `{bound, role, subRole, nationality, isLeader, lang, menuKey}`；未綁定回 `bound:false` 與已記錄的語言 |
-| POST | `/api/line/internal/follow-state` | `{channel, lineUserId, followed, lang?, displayName?}` | `{success}`；語言選擇（W-06）也走此端點 |
+| POST | `/api/line/internal/follow-state` | `{channel, lineUserId, followed?, lang?, langLocked?, displayName?}` | `{success, ...identity}`；語言選擇（W-06）帶 `langLocked:true`；加好友時的 LINE 介面語言不帶（未鎖定才採用） |
 | POST | `/api/line/internal/query` | `{channel, lineUserId, action, text?}` | `{success, messages:[LINE 訊息物件]}`；後端依 channel 與身分限制可回答的 action（4.1、4.2），不符回 `messages:[]` |
 
 **Line Bot 提供（後端呼叫）**
@@ -282,6 +285,8 @@ flowchart LR
 | POST | `/internal/push` | `{channel, to:[lineUserId...], messages:[...]}` | 1 人用 Push，多人用 Multicast（每次最多 500 人，Line Bot 自動分批）；**不提供 broadcast** |
 
 - 現行 `POST /api/line/webhook`（以 channel secret 驗簽）在 `internal/query` 上線後標為停用，過渡期保留、之後移除；`03_認證與API安全規格.md` 的公開端點清單同步修改。
+- P2 起 `/internal/richmenu/link` 已可呼叫並驗證參數，但各選單的 richMenuId 要到 P3 建立後才實際連結（回傳 `linked:false`）；`/internal/push` 於 P5 加入。
+- 本機開發：`start_all.bat` 未設定 `AGRI_LINEBOT_INTERNAL_KEY` 時每次啟動產生一組，後端與 LINE Bot 共用；LINE Bot 未設定金鑰或後端離線時，身分改存記憶體（P1 行為）。
 - 後端 `GET/POST /api/line/config` 改為顯示兩個帳號的設定狀態（向 Line Bot `/health` 取得），後端不再保存 channel token。
 
 ### 6.4 後端對外端點（新增）
@@ -295,7 +300,7 @@ flowchart LR
 
 ### 6.5 資料表 `line_users` 修改
 
-此表目前沒有程式讀寫（ERD 2.14 保留實體），可直接調整：
+此表原本沒有程式讀寫（ERD 舊版 2.14 保留實體），可直接調整（P2 已實作，ERD v3.5.0 2.14）：
 
 | 欄位 | 型別 | 變更 | 說明 |
 |---|---|---|---|
@@ -303,6 +308,7 @@ flowchart LR
 | `channel` | String(10) | **新增**，NOT NULL | `farmer` ／ `worker` |
 | `line_user_id` | String(64) | 唯一約束改為 (`line_user_id`, `channel`) | |
 | `username` | String(32) | 改為可空 | 未綁定時為空 |
+| `ref_id` | String(32) | **新增** | 綁定時的 token.ref（F001、W001）；查本人訂單與判斷同一人（P2 實作時補） |
 | `display_name` | String(100) | 改為可空 | 取自 LINE profile，僅供後台辨識 |
 | `role` | String(32) | 改為可空 | 綁定時寫入平台身分 |
 | `lang` | String(10) | 不變 | `zh` ／ `vi` ／ `id`（保留 `th`、`tl`） |

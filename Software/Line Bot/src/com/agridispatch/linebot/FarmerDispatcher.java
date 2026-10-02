@@ -56,12 +56,9 @@ final class FarmerDispatcher {
         switch (action) {
             case "orders": {
                 if (!me.isFarmer()) return bindingRequired();
-                // 訂單編號類查詢交給後端（P2 起限本人訂單）；後端離線時改用派工確認單範本
-                if (!text.isEmpty() && has(text.toLowerCase(), "訂單", "單號", "ord-", "進度")) {
-                    String reply = BackendQueryClient.query(userId, text);
-                    if (reply != null) return List.of(reply);
-                }
-                return List.of(FlexMessageBuilder.getFarmerOrderFlex());
+                // 後端只回本人訂單（規格 4.1）；後端離線或沒有綁定資料（Mock 示範農場主）時改用派工確認單範本
+                List<String> reply = BackendClient.query(CH, userId, "orders", text);
+                return reply != null && !reply.isEmpty() ? reply : List.of(FlexMessageBuilder.getFarmerOrderFlex());
             }
             case "legalize": {
                 if (!me.isFarmer()) return bindingRequired();
@@ -77,9 +74,8 @@ final class FarmerDispatcher {
             case "machinery_book":
                 return List.of(FlexMessageBuilder.getMachineryBookingFlex());
             case "rates":
-                return backendOrHelp(userId, text.isEmpty() ? "查費率" : text);
             case "calendar":
-                return backendOrHelp(userId, text.isEmpty() ? "查產曆" : text);
+                return backendOrHelp(action, userId, text);
             case "account":
                 return List.of(FlexMessageBuilder.getFarmerBindingFlex());
             case "cross":
@@ -92,9 +88,9 @@ final class FarmerDispatcher {
         }
     }
 
-    private static List<String> backendOrHelp(String userId, String text) {
-        String reply = BackendQueryClient.query(userId, text);
-        return List.of(reply != null ? reply : FlexMessageBuilder.getFarmerHelpFlex());
+    private static List<String> backendOrHelp(String action, String userId, String text) {
+        List<String> reply = BackendClient.query(CH, userId, action, text);
+        return reply != null && !reply.isEmpty() ? reply : List.of(FlexMessageBuilder.getFarmerHelpFlex());
     }
 
     private static List<String> bindingRequired() {

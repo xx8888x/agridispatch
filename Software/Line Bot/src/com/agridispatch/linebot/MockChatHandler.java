@@ -58,8 +58,8 @@ public class MockChatHandler implements HttpHandler {
                 return;
             }
             // 使用者在同一 userId 主動選過的語言保留，不被示範身分覆蓋
-            Identity before = IdentityStore.has(channel, userId) ? IdentityStore.get(channel, userId) : null;
-            IdentityStore.put(channel, userId, before != null && before.langLocked()
+            Identity before = IdentityStore.overridden(channel, userId);
+            IdentityStore.override(channel, userId, before != null && before.langLocked()
                     ? preset.withLang(before.lang(), true) : preset);
         }
 

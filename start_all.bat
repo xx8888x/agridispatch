@@ -8,6 +8,12 @@ echo.
 set ROOT_DIR=%~dp0
 cd /d "%ROOT_DIR%"
 
+rem LINE Bot 與後端互相呼叫內部端點的共用金鑰（07_系統分析及文件/05_LINE官方帳號拆分規格.md 6.3）
+rem 未設定時每次啟動產生一組，由下面兩個視窗共用；兩邊金鑰不同時 LINE Bot 會改用記憶體暫存身分
+if not defined AGRI_LINEBOT_INTERNAL_KEY (
+    for /f %%k in ('powershell -NoProfile -Command "[guid]::NewGuid().Guid"') do set "AGRI_LINEBOT_INTERNAL_KEY=%%k"
+)
+
 rem 後端位置：單體 Software\backend；若為拆分版（子專案）則改用 農業派遣主網站
 set BACKEND_DIR=%ROOT_DIR%Software\backend
 if not exist "%BACKEND_DIR%\compile.bat" set BACKEND_DIR=%ROOT_DIR%Software\backend\農業派遣主網站
@@ -28,6 +34,7 @@ echo [2/2] 檢查 LINE Bot 伺服器 (Port: 5000)...
 netstat -ano | findstr ":5000 " | findstr "LISTENING" >nul
 if %errorlevel% equ 0 (
     echo       ✅ LINE Bot 服務引擎已在運行中 (Port: 5000)
+    echo       ⚠️ 若後端是本次才啟動，兩者內部金鑰不同；請關閉 LINE Bot 視窗後重新執行本檔
 ) else (
     echo       🚀 正在啟動 LINE Bot 服務引擎...
     start "AgriDispatch-LineBot-5000" /D "%ROOT_DIR%Software\Line Bot" cmd /k "call run.bat"

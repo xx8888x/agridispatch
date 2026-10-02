@@ -54,7 +54,8 @@ public class AuthInterceptor implements HandlerInterceptor {
             new String[]{"GET", "/api/dispatch/overview"},
             new String[]{"GET", "/api/dispatch/weather-state"},
             new String[]{"POST", "/api/payments/ecpay/notify"},  // 以 CheckMacValue 驗證
-            new String[]{"POST", "/api/line/webhook"}             // 以 X-Line-Signature 驗證
+            new String[]{"POST", "/api/line/webhook"},            // 以 X-Line-Signature 驗證（已停用，過渡期保留）
+            new String[]{"POST", "/api/line/internal/**"}         // LINE Bot 內部端點：以 X-Internal-Key 驗證（LineController）
     );
 
     /** 僅 admin_tech：{method("*" = 任意), pattern} */
@@ -72,6 +73,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             new String[]{"POST", "/api/dispatch/**"}, new String[]{"PUT", "/api/dispatch/**"},
             new String[]{"DELETE", "/api/dispatch/**"},
             new String[]{"*", "/api/line/config"},
+            new String[]{"GET", "/api/line/bindings"}, new String[]{"DELETE", "/api/line/bindings/**"},
             new String[]{"POST", "/api/notifications/send"},
             new String[]{"PUT", "/api/orders/*/status"},
             new String[]{"POST", "/api/auth/reset-password"},

@@ -36,16 +36,11 @@ final class WorkerDispatcher {
     }
 
     /**
-     * 加好友：依規格 3.2 決定語言（主動選擇 > 國籍 > LINE 介面語言 > 中文）
+     * 加好友：語言依規格 3.2（主動選擇 > 國籍 > LINE 介面語言 > 中文）
      */
     private static List<String> follow(BotEvent ev) {
+        // 追蹤狀態與 LINE 介面語言已由 LineBotDispatcher 記錄（IdentityStore.recordFollow）
         Identity me = IdentityStore.get(CH, ev.userId());
-        // LINE 介面語言格式如 zh-TW、vi、id；只取主語言碼
-        String profileLang = ev.profileLang() == null ? null : ev.profileLang().split("-")[0].toLowerCase();
-        if (!me.langLocked() && !me.bound() && I18n.SUPPORTED.contains(String.valueOf(profileLang))) {
-            me = me.withLang(profileLang, false);
-            IdentityStore.put(CH, ev.userId(), me);
-        }
         String lang = me.lang();
         if (me.isWorker()) {
             return List.of(FlexMessageBuilder.wrapText(I18n.t(lang, "welcome.bound")),

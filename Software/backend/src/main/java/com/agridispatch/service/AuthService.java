@@ -220,7 +220,7 @@ public class AuthService {
     }
 
     /** 本地工子角色：machinery（機耕/飛手）、foreman（帶隊領班）、labor（勞務員/兼職） */
-    static String workerSubRole(Worker w) {
+    public static String workerSubRole(Worker w) {
         if ("tier3_turnkey".equals(w.getTier())) return "machinery";
         if (w.isLeader()) return "foreman";
         return "labor";

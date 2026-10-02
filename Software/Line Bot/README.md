@@ -18,7 +18,9 @@ Software\Line Bot\
 │       ├── LineBotDispatcher.java     # 分發入口：依帳號交給下列兩個分派器
 │       ├── FarmerDispatcher.java      # 農場主帳號功能 F-01～F-08
 │       ├── WorkerDispatcher.java      # 工作者帳號功能 W-01～W-08 (多語)
-│       ├── Identity.java、IdentityStore.java  # 使用者身分與語言 (P1 暫存記憶體，P2 改存後端)
+│       ├── Identity.java、IdentityStore.java  # 使用者身分與語言 (存後端 line_users；後端不可用時暫存記憶體)
+│       ├── BackendClient.java         # 呼叫後端 /api/line/internal/* (X-Internal-Key)
+│       ├── InternalHandler.java       # 後端呼叫的 /internal/richmenu/link (X-Internal-Key)
 │       ├── I18n.java                  # 工作者帳號多語文字 (讀 i18n/*.properties)
 │       ├── FlexMessageBuilder.java    # Flex Message 卡片構造器
 │       ├── LineApiClient.java         # LINE Messaging API HTTP 客戶端 (每帳號一個；工作者帳號禁止 Broadcast)
@@ -130,6 +132,14 @@ Invoke-RestMethod -Uri "http://localhost:5000/health"
    拿起手機加入官方帳號好友，發送「派工」、「避險」或點選選單，即可在真實 LINE 收到精美的 Flex Message！
 
 ---
+
+## 🗄️ 身分、語言與帳號綁定（後端 line_users）
+
+- 加好友／封鎖、使用者選的語言、綁定狀態都存在後端 `line_users`（規格 6.5），重啟不遺失。Line Bot 以 `X-Internal-Key` 呼叫後端 `POST /api/line/internal/identity`、`/follow-state`、`/query`。
+- 金鑰：環境變數 `AGRI_LINEBOT_INTERNAL_KEY`（或 `config.properties` 的 `internal.key`），**後端與 Line Bot 必須相同**。`start_all.bat` 未設定時會自動產生一組給兩邊共用。
+- 未設定金鑰或後端離線時，Line Bot 退回本機記憶體（重啟後遺失）、訂單／費率／產曆改用本地卡片，啟動 log 會標示「身分與語言來源」。
+- 綁定由使用者在綁定頁（P4 製作 LIFF 頁）登入平台帳號後呼叫後端 `POST /api/line/bind`；後端綁定或解除後會呼叫 Line Bot `POST /internal/richmenu/link` 切換圖文選單（P3 建立選單前只記錄、回 `linked:false`）。
+- 本機測試綁定（後端 demo 模式、未設定 `LINE_LOGIN_CHANNEL_ID`）：以平台帳號登入取得 token 後，`POST /api/line/bind`，body `{"channel":"worker","idToken":"mock:U0123456789abcdef0123456789abcdef"}`；之後用同一個 userId 呼叫 `/mock/chat`（不帶 `as`）即可看到依綁定身分回覆。
 
 ## 🔐 管理端點與金鑰（/api/config）
 

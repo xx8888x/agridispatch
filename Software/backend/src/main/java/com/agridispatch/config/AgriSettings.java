@@ -33,6 +33,18 @@ public class AgriSettings {
     @Value("${agri.payment.provider:mock}")
     private String paymentProvider;
 
+    /** LINE Login channel ID：驗證 LIFF 帳號綁定的 ID token（環境變數 LINE_LOGIN_CHANNEL_ID，規格 05 第 5.3 節） */
+    @Value("${agri.line.login-channel-id:}")
+    private String lineLoginChannelId;
+
+    /** 與 LINE Bot 互相呼叫內部端點的共用金鑰（環境變數 AGRI_LINEBOT_INTERNAL_KEY，規格 05 第 6.3 節）；未設定時內部端點停用 */
+    @Value("${agri.linebot.internal-key:}")
+    private String linebotInternalKey;
+
+    /** LINE Bot 服務位址（環境變數 AGRI_LINEBOT_BASE_URL），用於通知切換圖文選單 */
+    @Value("${agri.linebot.base-url:http://localhost:5000}")
+    private String linebotBaseUrl;
+
     public boolean isDemoEnabled() { return demoEnabled; }
 
     public String getTokenSecret() { return tokenSecret; }
@@ -44,6 +56,18 @@ public class AgriSettings {
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .toList();
+    }
+
+    public String getLineLoginChannelId() { return blankToNull(lineLoginChannelId); }
+
+    public String getLinebotInternalKey() { return blankToNull(linebotInternalKey); }
+
+    public String getLinebotBaseUrl() {
+        return linebotBaseUrl == null ? "http://localhost:5000" : linebotBaseUrl.trim().replaceAll("/+$", "");
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s.trim();
     }
 
     public String getPaymentProvider() {

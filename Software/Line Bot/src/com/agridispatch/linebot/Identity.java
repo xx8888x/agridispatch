@@ -2,11 +2,11 @@ package com.agridispatch.linebot;
 
 /**
  * 智農派工 - LINE 使用者在某個官方帳號的身分（規格第參章）
- * 身分代碼沿用後端 users.role 與 Android ClientRole／LocalWorkerType／Nationality。
+ * 身分代碼沿用後端 users.role、/api/line/internal/identity 與 Android Nationality。
  *
  * @param bound       是否已綁定平台帳號
  * @param role        farmer / worker_local / worker_foreign；未綁定為 null
- * @param subRole     本勞細分：SENIOR / RETURNING_WOMEN / STUDENT / FOREMAN / MACHINERY；其餘為 null
+ * @param subRole     本勞細分（後端 AuthService.workerSubRole 大寫）：MACHINERY / FOREMAN / LABOR；其餘為 null
  * @param nationality 外勞國別：VN / ID / TH / PH；其餘為 null
  * @param isLeader    是否為工班組長（與 FOREMAN 同樣可看到工班出勤摘要）
  * @param lang        zh / vi / id

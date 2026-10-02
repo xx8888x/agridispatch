@@ -57,7 +57,7 @@ public class TestSimulator {
                 if (preset == null) {
                     System.out.println("未知身分：" + line.substring(4));
                 } else {
-                    IdentityStore.put(channel, userId, preset);
+                    IdentityStore.override(channel, userId, preset);
                     System.out.println("已設定身分：" + preset);
                 }
                 continue;
@@ -127,7 +127,7 @@ public class TestSimulator {
 
         // 主動選擇的語言不被國籍覆蓋（規格 3.2 第 1 點）
         String uid = "U_CHECK_LOCK";
-        IdentityStore.put(W, uid, IdentityStore.preset("vn"));
+        IdentityStore.override(W, uid, IdentityStore.preset("vn"));
         LineBotDispatcher.handle(BotEvent.text(W, uid, "中文"));
         failed += expect("W-06 越南籍改中文後任務卡為中文", LineBotDispatcher.handle(BotEvent.text(W, uid, "任務")), 0, "今日派工任務卡");
 
@@ -150,7 +150,7 @@ public class TestSimulator {
 
     private static int check(String name, Channel channel, String as, Ev ev, int index, String expected) {
         String userId = "U_CHECK_" + (++seq);
-        if (as != null) IdentityStore.put(channel, userId, IdentityStore.preset(as));
+        if (as != null) IdentityStore.override(channel, userId, IdentityStore.preset(as));
         return expect(name, LineBotDispatcher.handle(ev.make(channel, userId)), index, expected);
     }
 

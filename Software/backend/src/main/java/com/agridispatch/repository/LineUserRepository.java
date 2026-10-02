@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface LineUserRepository extends JpaRepository<LineUser, String> {
-    Optional<LineUser> findByLineUserId(String lineUserId);
-    Optional<LineUser> findByUsername(String username);
-    List<LineUser> findByRole(String role);
+    Optional<LineUser> findByChannelAndLineUserId(String channel, String lineUserId);
+    List<LineUser> findAllByChannelAndIsBound(String channel, String isBound);
+    List<LineUser> findAllByOrderByChannelAscBoundAtDesc();
 }

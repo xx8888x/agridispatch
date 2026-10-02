@@ -46,3 +46,9 @@ agri:
   line:
     channel-secret: ${LINE_CHANNEL_SECRET:}
     channel-access-token: ${LINE_CHANNEL_ACCESS_TOKEN:}
+    # LIFF 帳號綁定：LINE Login channel ID（驗證 ID token 的 aud）；未設定時綁定 API 回 503（demo 模式可用 mock:<userId> 測試）
+    login-channel-id: ${LINE_LOGIN_CHANNEL_ID:}
+  # LINE Bot（Software/Line Bot，port 5000）內部端點：共用金鑰未設定時 /api/line/internal/** 一律 403
+  linebot:
+    internal-key: ${AGRI_LINEBOT_INTERNAL_KEY:}
+    base-url: ${AGRI_LINEBOT_BASE_URL:http://localhost:5000}

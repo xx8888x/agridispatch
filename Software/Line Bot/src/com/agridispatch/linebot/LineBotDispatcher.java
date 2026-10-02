@@ -13,6 +13,13 @@ public final class LineBotDispatcher {
     public static final int MAX_REPLY_MESSAGES = 5;
 
     public static List<String> handle(BotEvent ev) {
+        // 追蹤狀態先記錄到後端（規格 5.1）；LINE 介面語言格式如 zh-TW、vi、id，只取主語言碼
+        if (ev.type() == BotEvent.Type.FOLLOW) {
+            String pl = ev.profileLang() == null ? null : ev.profileLang().split("-")[0].toLowerCase();
+            IdentityStore.recordFollow(ev.channel(), ev.userId(), pl);
+        } else if (ev.type() == BotEvent.Type.UNFOLLOW) {
+            IdentityStore.recordUnfollow(ev.channel(), ev.userId());
+        }
         List<String> out = switch (ev.channel()) {
             case FARMER -> FarmerDispatcher.handle(ev);
             case WORKER -> WorkerDispatcher.handle(ev);

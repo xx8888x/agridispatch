@@ -361,23 +361,47 @@ CREATE TABLE financial_ledger (
 COMMENT ON TABLE financial_ledger IS '雙軌利潤分流帳本：科技公司18%技術費與合作社82%人事成本清算';
 
 -- ====================================================================
--- 10. LINE 使用者綁定表 (LINE_USERS)
+-- 10. LINE 官方帳號使用者表 (LINE_USERS)
+--     雙帳號（農場主 farmer／工作者 worker）：一筆＝一個 LINE userId 在一個帳號的追蹤、語言與綁定狀態
+--     規格：07_系統分析及文件/05_LINE官方帳號拆分規格.md 6.5（實體 LineUser.java）
 -- ====================================================================
 CREATE TABLE line_users (
     id                 VARCHAR2(32)   NOT NULL,
+    channel            VARCHAR2(10)   NOT NULL,
     line_user_id       VARCHAR2(64)   NOT NULL,
-    username           VARCHAR2(32)   NOT NULL,
-    display_name       VARCHAR2(100)  NOT NULL,
-    role               VARCHAR2(32)   NOT NULL,
+    username           VARCHAR2(32),
+    ref_id             VARCHAR2(32),
+    display_name       VARCHAR2(100),
+    role               VARCHAR2(32),
     lang               VARCHAR2(10)   DEFAULT 'zh' NOT NULL,
-    is_bound           CHAR(1)        DEFAULT 'Y' NOT NULL,
-    bound_at           TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
+    lang_locked        CHAR(1)        DEFAULT 'N' NOT NULL,
+    is_bound           CHAR(1)        DEFAULT 'N' NOT NULL,
+    bound_at           TIMESTAMP,
+    followed           CHAR(1)        DEFAULT 'Y' NOT NULL,
+    follow_changed_at  TIMESTAMP,
     CONSTRAINT pk_line_users PRIMARY KEY (id),
-    CONSTRAINT uk_line_user_id UNIQUE (line_user_id),
-    CONSTRAINT chk_line_is_bound CHECK (is_bound IN ('Y', 'N'))
+    CONSTRAINT uk_line_users_user_channel UNIQUE (line_user_id, channel),
+    CONSTRAINT chk_line_channel CHECK (channel IN ('farmer', 'worker')),
+    CONSTRAINT chk_line_lang CHECK (lang IN ('zh', 'vi', 'id', 'th', 'tl')),
+    CONSTRAINT chk_line_lang_locked CHECK (lang_locked IN ('Y', 'N')),
+    CONSTRAINT chk_line_is_bound CHECK (is_bound IN ('Y', 'N')),
+    CONSTRAINT chk_line_followed CHECK (followed IN ('Y', 'N')),
+    -- 已綁定必有平台帳號與身分；未綁定三欄皆空
+    CONSTRAINT chk_line_bound_fields CHECK (
+        (is_bound = 'Y' AND username IS NOT NULL AND role IS NOT NULL AND bound_at IS NOT NULL)
+        OR (is_bound = 'N' AND username IS NULL AND role IS NULL)),
+    -- 帳號與身分相符：農場主帳號只綁 farmer，工作者帳號只綁 worker_*（規格 5.3 第 2 點）
+    CONSTRAINT chk_line_role_channel CHECK (role IS NULL
+        OR (channel = 'farmer' AND role = 'farmer')
+        OR (channel = 'worker' AND role IN ('worker_foreign', 'worker_local')))
 );
 
-COMMENT ON TABLE line_users IS 'LINE 使用者綁定表：記錄 LINE 官方帳號與系統帳號對應及多語系設定';
+-- 同一個平台帳號在同一個 LINE 官方帳號只能綁一個 LINE userId（username 為空的未綁定列不受限）
+CREATE UNIQUE INDEX uk_line_users_username_channel ON line_users (
+    CASE WHEN username IS NOT NULL THEN username END,
+    CASE WHEN username IS NOT NULL THEN channel END);
+
+COMMENT ON TABLE line_users IS 'LINE 官方帳號使用者：農場主／工作者兩帳號的追蹤狀態、語言與平台帳號綁定';
 
 -- ====================================================================
 -- 11. LINE 推播歷程表 (LINE_MESSAGES)
@@ -653,11 +677,15 @@ INSERT INTO weather_states VALUES ('WS-001', 'sunny', '全台晴朗炎熱', 'N',
 -- 8. 雙軌財務帳本
 INSERT INTO financial_ledger VALUES ('LED-001', 'ORD-2026-001', 52920, 9526, 43394, 8800, SYSTIMESTAMP);
 
--- 9. LINE 使用者綁定
-INSERT INTO line_users VALUES ('LU-001', 'U1001_FARMER', 'farmer', '陳建龍 (阿龍班長)', 'farmer', 'zh', 'Y', SYSTIMESTAMP);
-INSERT INTO line_users VALUES ('LU-002', 'U2001_WORKER_VN', 'worker_foreign', 'Nguyễn Văn Hùng', 'worker_foreign', 'vi', 'Y', SYSTIMESTAMP);
-INSERT INTO line_users VALUES ('LU-003', 'U3001_WORKER_TW', 'worker_local', '陳建宏 (機耕師)', 'worker_local', 'zh', 'Y', SYSTIMESTAMP);
-INSERT INTO line_users VALUES ('LU-004', 'U4001_ADMIN', 'admin_tech', '智農調度總監', 'admin_tech', 'zh', 'Y', SYSTIMESTAMP);
+-- 9. LINE 官方帳號使用者（admin_tech 不使用 LINE）
+INSERT INTO line_users (id, channel, line_user_id, username, ref_id, display_name, role, lang, lang_locked, is_bound, bound_at, followed)
+    VALUES ('LU-001', 'farmer', 'U1001_FARMER', 'farmer', 'F001', '陳建龍 (阿龍班長)', 'farmer', 'zh', 'N', 'Y', SYSTIMESTAMP, 'Y');
+INSERT INTO line_users (id, channel, line_user_id, username, ref_id, display_name, role, lang, lang_locked, is_bound, bound_at, followed)
+    VALUES ('LU-002', 'worker', 'U2001_WORKER_VN', 'W001', 'W001', 'Nguyễn Văn Hùng', 'worker_foreign', 'vi', 'N', 'Y', SYSTIMESTAMP, 'Y');
+INSERT INTO line_users (id, channel, line_user_id, username, ref_id, display_name, role, lang, lang_locked, is_bound, bound_at, followed)
+    VALUES ('LU-003', 'worker', 'U3001_WORKER_TW', 'W012', 'W012', '陳建宏 (機耕師)', 'worker_local', 'zh', 'N', 'Y', SYSTIMESTAMP, 'Y');
+INSERT INTO line_users (id, channel, line_user_id, display_name, lang, lang_locked, is_bound, followed)
+    VALUES ('LU-004', 'worker', 'U5001_GUEST_ID', 'Siti (未綁定・印尼語介面)', 'id', 'N', 'N', 'Y');
 
 -- 10. LINE 推播歷程
 INSERT INTO line_messages VALUES ('LMSG-1726826610001', 'U1001_FARMER', 'SYSTEM_BROADCAST', 'farmer', 'early_bird',

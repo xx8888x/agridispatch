@@ -4,13 +4,15 @@
 
 ## 目錄
 
-- `00_`～`07_`：商業、財務、契約、文宣、招募、Pitch、系統文件。**.md 是原始檔**，改完用 `python tools/md2docx.py <檔案.md>` 重新產生同名 .docx。
+- 根目錄只放三個資料夾：`Software/`（軟體）、`文件/`（文件）、`其它/`（其它）；另有 `CLAUDE.md`、`.gitignore`、啟動用 .bat。
+- `文件/`：`00_`～`07_` 為商業、財務、契約、文宣、招募、Pitch、系統文件。**.md 是原始檔**，改完用 `python 文件/tools/md2docx.py <檔案.md>` 重新產生同名 .docx；`文件/tools/` 放文件用工具（md2docx、make_charts）。
+- `其它/`：非專案主線的資料（外勞仲介名冊 xlsx、農場派遣人力成本分析資料夾與壓縮檔、暫存檔）。
 - `Software/backend/`：Spring Boot 3.2 + JPA + H2 **單體**（port 3000），controller 依前端分 `front/admin/linebot/common` 套件；同時提供 `/demo/*`、`/web/*` 靜態頁。（9/29 曾拆成三個微服務，因無法運作已於 e01b140 改回，勿再拆。）
 - `Software/Line Bot/`：純 Java LINE Bot（port 5000）。
 - `Software/demo/`：**前端唯一原始碼**（demo 模式，路演用），分三個子資料夾：`農業派遣主網站/`（前台與各角色頁）、`科技後台/`（admin、vue-crud）、`linebot/`（line.html），各自有一份 `css/`、`js/`；根目錄 `index.html`、`_redirects` 轉址到主網站。跨資料夾連結用 `../<資料夾>/`。
 - `Software/web/`：正式版（production 模式），由同步腳本產生。
 - `Software/android/`：WebView 殼，啟動頁 `www/農業派遣主網站/index.html`；`app/src/main/assets/www/` 由同步腳本產生（demo 模式）。
-- `07_系統分析及文件/03_認證與API安全規格.md`：前後端認證與授權約定，改 API 前先讀。
+- `文件/07_系統分析及文件/03_認證與API安全規格.md`：前後端認證與授權約定，改 API 前先讀。
 
 ## 規則
 

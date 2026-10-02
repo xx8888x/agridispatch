@@ -162,8 +162,8 @@
               ? `<button type="button" data-team="${esc(t.teamId)}" onclick="pickTeam(this.dataset.team)" class="ad-btn ad-btn--secondary ad-btn--sm" style="flex-shrink: 0;">選這個工班</button>`
               : '<span class="ad-pill ad-pill--danger" style="flex-shrink: 0;">不符資格</span>'}
           </div>
-          <ul class="ad-caption" style="margin: 8px 0 0; padding: 0; list-style: none; color: var(--ad-text-2);">${t.reasons.map(r => `<li>・${esc(r)}</li>`).join('')}</ul>
-          ${t.blockers.length ? `<div class="ad-caption" style="margin-top: 4px; color: var(--ad-danger-text);">${t.blockers.map(esc).join('；')}</div>` : ''}
+          <ul class="ad-caption" style="margin: 8px 0 0; padding: 0; list-style: none; color: var(--ad-text-2);">${t.reasons.map(r => `<li>・${esc(plain(r))}</li>`).join('')}</ul>
+          ${t.blockers.length ? `<div class="ad-caption" style="margin-top: 4px; color: var(--ad-danger-text);">${t.blockers.map(b => esc(plain(b))).join('；')}</div>` : ''}
         </div>`).join('');
     }
 
@@ -213,13 +213,13 @@
           <input type="checkbox" value="${esc(c.workerId)}" ${checked.has(c.workerId) ? 'checked' : ''} onchange="updateCount()">
           <div style="flex: 1; min-width: 0;">
             <div class="ad-heading" style="font-size: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">${esc(c.name)} <span class="ad-caption ad-num" style="font-weight: 400;">${esc(c.workerId)}</span>${c.leader ? '<span class="ad-pill">領班</span>' : ''} ${roleBadge(c)}</div>
-            <div class="ad-caption">${esc(c.levelLabel)}・同類 ${c.hours} 小時・領班評「優」${Math.round(c.excellentRate * 100)}%・「需加強」${Math.round(c.needsImprovementRate * 100)}%</div>
+            <div class="ad-caption">${esc(plain(c.levelLabel))}・同類 ${c.hours} 小時・領班評「優」${Math.round(c.excellentRate * 100)}%・「需加強」${Math.round(c.needsImprovementRate * 100)}%</div>
           </div>
           ${c.recommended ? '<span class="ad-caption" style="color: var(--ad-primary-text); flex-shrink: 0;">系統建議</span>' : ''}
         </label>`).join('') + (d.excluded.length ? `
         <div class="ad-card ad-card--inset ad-caption" style="padding: 12px;">
           <div class="ad-heading" style="font-size: 14px; margin-bottom: 4px;">不列入名單（資格不符）</div>
-          ${d.excluded.map(c => `<div>・${esc(c.name)}（${esc(c.workerId)}）：${esc(c.excludedReason)}</div>`).join('')}
+          ${d.excluded.map(c => `<div>・${esc(c.name)}（${esc(c.workerId)}）：${esc(plain(c.excludedReason))}</div>`).join('')}
         </div>` : '');
       document.getElementById('crewFooter').innerHTML = `
         <div class="ad-card" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px;">

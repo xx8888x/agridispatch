@@ -46,6 +46,7 @@
   - 內部端點 `POST /api/line/internal/identity`、`/follow-state`、`/query` 只給 LINE Bot 呼叫：`X-Internal-Key` 須與 `AGRI_LINEBOT_INTERNAL_KEY` 相同（constant-time 比對），**未設定金鑰時整組回 403**。`query` 依帳號與身分限制：農場主帳號 `orders` 限已綁定且只回本人訂單（`orders.farmerId == line_users.ref_id`）、`rates`／`calendar` 公開；工作者帳號目前一律回空清單。不回工班名冊。
   - `POST /api/line/bind`（需登入）`{channel, idToken}`：LINE userId **只取自後端向 LINE 驗證過的 ID token**（`LINE_LOGIN_CHANNEL_ID`）；未設定時 production 回 503，demo 模式接受 `mock:U+32位十六進位` 假 token。身分須與帳號相符（farmer↔`farmer`、worker↔`worker_*`），否則 409；同一個 LINE userId 或同一人（同身分同 refId）在同一帳號只能有一筆綁定，重複 409。
   - `DELETE /api/line/bind/{channel}`：本人解除；`GET /api/line/bindings`、`DELETE /api/line/bindings/{id}`：僅 admin，清單的 LINE userId 只顯示前 6 碼。
+  - `/api/line/notify/**`（僅 admin）：`GET status`（工作者帳號推播時段）、`POST tomorrow`（立即發送明日出工通知）、`POST farmer-broadcast`（農場主帳號方案通知；工作者帳號不做 broadcast）。訂單狀態、定金、天候警戒的推播由原本的操作自動觸發，只推給已綁定且未封鎖的本人／出工名單。
   - `GET /api/line/config`（僅 admin）另回 `internalKeyConfigured`、`loginChannelConfigured` 與 `linebot`（後端讀 LINE Bot 公開 `/health`：兩帳號模式、選單是否已上傳、加好友按鈕與共用金鑰是否設定；只有旗標，不含任何金鑰值）。
 - **本人或 admin_tech**：`/api/workers/{id}/**`、`/api/attendance/*/{workerId}`、打卡（worker 只能替自己打卡）。
 - **farmer**：只能查詢 / 付款自己的訂單（`order.farmerId == token.ref`；舊資料無 farmerId 時 demo 模式放行）。

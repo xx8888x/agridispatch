@@ -30,14 +30,16 @@ public class OrderService {
     private final CropRepository cropRepository;
     private final AgriSettings settings;
     private final InsuranceService insuranceService;
+    private final LineNotifyService lineNotifyService;
     private final Object idLock = new Object();
 
     public OrderService(OrderRepository orderRepository, CropRepository cropRepository, AgriSettings settings,
-                        InsuranceService insuranceService) {
+                        InsuranceService insuranceService, LineNotifyService lineNotifyService) {
         this.orderRepository = orderRepository;
         this.cropRepository = cropRepository;
         this.settings = settings;
         this.insuranceService = insuranceService;
+        this.lineNotifyService = lineNotifyService;
     }
 
     public List<Order> getAllOrders() {
@@ -300,7 +302,9 @@ public class OrderService {
             }
         }
         order.setStatus(newStatus);
-        return orderRepository.save(order);
+        Order saved = orderRepository.save(order);
+        lineNotifyService.orderStatusChanged(saved); // LINE 農場主帳號通知（背景執行，規格 05 第柒章）
+        return saved;
     }
 
     /** 定金付款成功（僅由 PaymentService 呼叫） */
@@ -309,7 +313,9 @@ public class OrderService {
         if (PENDING.equals(order.getStatus())) {
             order.setStatus(CONFIRMED);
         }
-        return orderRepository.save(order);
+        Order saved = orderRepository.save(order);
+        lineNotifyService.depositPaid(saved); // LINE 農場主帳號通知（背景執行）
+        return saved;
     }
 
     // =========================================================================

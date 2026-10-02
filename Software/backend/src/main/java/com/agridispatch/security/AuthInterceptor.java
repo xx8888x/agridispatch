@@ -74,6 +74,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             new String[]{"DELETE", "/api/dispatch/**"},
             new String[]{"*", "/api/line/config"},
             new String[]{"GET", "/api/line/bindings"}, new String[]{"DELETE", "/api/line/bindings/**"},
+            new String[]{"*", "/api/line/notify/**"},
             new String[]{"POST", "/api/notifications/send"},
             new String[]{"PUT", "/api/orders/*/status"},
             new String[]{"POST", "/api/auth/reset-password"},

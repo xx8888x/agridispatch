@@ -3,8 +3,10 @@ package com.agridispatch;
 import org.springframework.boot.SpringBootVersion;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
+@EnableScheduling // LINE 明日出工通知排程（LineNotifyService）
 public class AgriDispatchApplication {
 
     public static void main(String[] args) {

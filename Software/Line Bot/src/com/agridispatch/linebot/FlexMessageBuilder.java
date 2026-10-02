@@ -94,16 +94,17 @@ public class FlexMessageBuilder {
     // 帳號綁定、服務導覽、跨帳號引導（規格 4.1、4.2、4.3、5.3）
     // =========================================================================
 
-    /** 綁定頁網址：設定 LIFF_BIND_ID 時走 LIFF（規格 5.3），否則連到既有登入頁；網址不帶任何個資 */
-    static String bindUrl(Channel channel, String role) {
+    /**
+     * 綁定頁網址（規格 5.3）：設定 LIFF_BIND_ID 時走 LIFF，否則直接開 line-bind.html。網址不帶個資；
+     * 只有該帳號為 Mock 模式時才附上模擬用的 userId（mockUid），讓模擬器綁定後接得上同一個聊天使用者。
+     */
+    static String bindUrl(Channel channel, String role, String lang, String userId) {
+        String q = "channel=" + channel.key + "&role=" + role + (lang == null ? "" : "&lang=" + I18n.normalize(lang));
         if (Config.LIFF_BIND_ID != null) {
-            return "https://liff.line.me/" + Config.LIFF_BIND_ID + "?channel=" + channel.key + "&role=" + role;
+            return "https://liff.line.me/" + Config.LIFF_BIND_ID + "?" + q;
         }
-        return switch (role) {
-            case Identity.WORKER_LOCAL -> webPageUrl("worker-local-login.html");
-            case Identity.WORKER_FOREIGN -> webPageUrl("worker-foreign-login.html");
-            default -> webPageUrl("farmer-login.html");
-        };
+        if (channel.isMock() && userId != null && userId.matches("U[0-9a-f]{32}")) q += "&mockUid=" + userId;
+        return webPageUrl("line-bind.html?" + q);
     }
 
     /** 工人頁（打卡、出勤）：本勞與外勞各自一頁 */
@@ -112,18 +113,18 @@ public class FlexMessageBuilder {
     }
 
     /** F-07 農場主帳號綁定卡（不顯示 LINE userId） */
-    public static String getFarmerBindingFlex() {
+    public static String getFarmerBindingFlex(String userId) {
         return wrapFlex("🔗 智農派工 - 農場主帳號綁定", simpleBubble("#0F766E", "智農派工（農場主）", "🔗 帳號綁定",
                 List.of("綁定後可查看您的訂單與派工確認單、天候對訂單的影響，並使用黑轉白服務。"),
-                List.of(uriButton("👨‍🌾 農場主帳號綁定", bindUrl(Channel.FARMER, Identity.FARMER), "#059669"))));
+                List.of(uriButton("👨‍🌾 農場主帳號綁定", bindUrl(Channel.FARMER, Identity.FARMER, null, userId), "#059669"))));
     }
 
     /** W-07 工作者帳號綁定卡：本勞、外勞兩種入口 */
-    public static String getWorkerBindingFlex(String lang) {
+    public static String getWorkerBindingFlex(String lang, String userId) {
         return wrapFlex(I18n.t(lang, "bind.title"), simpleBubble("#0F766E", "智農派工（工作者）", I18n.t(lang, "bind.title"),
                 List.of(I18n.t(lang, "bind.desc")),
-                List.of(uriButton(I18n.t(lang, "bind.local"), bindUrl(Channel.WORKER, Identity.WORKER_LOCAL), "#059669"),
-                        uriButton(I18n.t(lang, "bind.foreign"), bindUrl(Channel.WORKER, Identity.WORKER_FOREIGN), "#3B82F6"))));
+                List.of(uriButton(I18n.t(lang, "bind.local"), bindUrl(Channel.WORKER, Identity.WORKER_LOCAL, lang, userId), "#059669"),
+                        uriButton(I18n.t(lang, "bind.foreign"), bindUrl(Channel.WORKER, Identity.WORKER_FOREIGN, lang, userId), "#3B82F6"))));
     }
 
     /** F-08 農場主服務導覽（只列農場主功能） */

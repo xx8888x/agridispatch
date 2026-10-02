@@ -56,7 +56,7 @@ final class WorkerDispatcher {
                 + "\n\n" + I18n.t("id", "welcome.guest");
         return List.of(FlexMessageBuilder.wrapText(welcome),
                 FlexMessageBuilder.getLanguageSelectFlex(),
-                FlexMessageBuilder.getWorkerBindingFlex(lang));
+                FlexMessageBuilder.getWorkerBindingFlex(lang, ev.userId()));
     }
 
     /** 文字中指定的語言；沒有指定回傳 null */
@@ -90,7 +90,7 @@ final class WorkerDispatcher {
         String lang = me.lang();
         switch (action) {
             case "task": {
-                if (!me.isWorker()) return bindingRequired(lang);
+                if (!me.isWorker()) return bindingRequired(lang, userId);
                 List<String> out = new ArrayList<>();
                 if (me.isMachinery()) {
                     if (!"zh".equals(lang)) out.add(FlexMessageBuilder.wrapText(I18n.t(lang, "fallback.zh")));
@@ -102,13 +102,13 @@ final class WorkerDispatcher {
                 return out;
             }
             case "clock":
-                if (!me.isWorker()) return bindingRequired(lang);
+                if (!me.isWorker()) return bindingRequired(lang, userId);
                 return List.of(FlexMessageBuilder.getWorkerLinkFlex(lang, "clock", FlexMessageBuilder.workerPageUrl(me)));
             case "weather":
-                if (!me.isWorker()) return bindingRequired(lang);
+                if (!me.isWorker()) return bindingRequired(lang, userId);
                 return List.of(FlexMessageBuilder.getWorkerWeatherFlex(lang));
             case "salary": {
-                if (!me.isWorker()) return bindingRequired(lang);
+                if (!me.isWorker()) return bindingRequired(lang, userId);
                 // 8,800 元就業獎勵的適用對象【待確認】；確認前維持現行卡片內容
                 List<String> out = new ArrayList<>();
                 if (!"zh".equals(lang)) out.add(FlexMessageBuilder.wrapText(I18n.t(lang, "fallback.zh")));
@@ -116,13 +116,13 @@ final class WorkerDispatcher {
                 return out;
             }
             case "attendance":
-                if (!me.isWorker()) return bindingRequired(lang);
+                if (!me.isWorker()) return bindingRequired(lang, userId);
                 return List.of(FlexMessageBuilder.getWorkerLinkFlex(lang, "attendance", FlexMessageBuilder.workerPageUrl(me)));
             case "lang": {
                 String v = I18n.normalize(params.get("v"));
                 Identity updated = IdentityStore.setLang(CH, userId, v);
                 return List.of(FlexMessageBuilder.wrapText(I18n.t(v, "lang.switched")),
-                        updated.isWorker() ? FlexMessageBuilder.getWorkerHelpFlex(v) : FlexMessageBuilder.getWorkerBindingFlex(v));
+                        updated.isWorker() ? FlexMessageBuilder.getWorkerHelpFlex(v) : FlexMessageBuilder.getWorkerBindingFlex(v, userId));
             }
             case "lang_select":
                 return List.of(FlexMessageBuilder.getLanguageSelectFlex());
@@ -131,7 +131,7 @@ final class WorkerDispatcher {
             case "contact":
                 return List.of(FlexMessageBuilder.getContactFlex(lang));
             case "account":
-                return List.of(FlexMessageBuilder.getWorkerBindingFlex(lang));
+                return List.of(FlexMessageBuilder.getWorkerBindingFlex(lang, userId));
             case "cross":
                 return List.of(FlexMessageBuilder.getCrossChannelFlex(CH, lang));
             case "help":
@@ -143,8 +143,8 @@ final class WorkerDispatcher {
         }
     }
 
-    private static List<String> bindingRequired(String lang) {
+    private static List<String> bindingRequired(String lang, String userId) {
         return List.of(FlexMessageBuilder.wrapText(I18n.t(lang, "bind.required")),
-                FlexMessageBuilder.getWorkerBindingFlex(lang));
+                FlexMessageBuilder.getWorkerBindingFlex(lang, userId));
     }
 }

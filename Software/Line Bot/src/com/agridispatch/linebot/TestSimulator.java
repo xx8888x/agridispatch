@@ -172,12 +172,22 @@ public class TestSimulator {
         LineBotDispatcher.handle(BotEvent.text(W, uid, "中文"));
         failed += expect("W-06 越南籍改中文後任務卡為中文", LineBotDispatcher.handle(BotEvent.text(W, uid, "任務")), 0, "今日派工任務卡");
 
-        // 回覆不得帶出 LINE userId（規格第拾章第 2 點）
+        // 回覆不得帶出 LINE userId（規格第拾章第 2 點）；只有 Mock 模式的綁定頁網址附模擬用 mockUid
         String secretUid = "U0123456789abcdef0123456789abcdef";
-        List<String> bind = LineBotDispatcher.handle(BotEvent.text(F, secretUid, "帳號綁定"));
-        boolean leaked = String.join("", bind).contains(secretUid);
-        System.out.printf("  %s %-36s%n", leaked ? "❌" : "✅", "綁定卡不顯示 LINE userId");
-        if (leaked) failed++;
+        String mockCard = FlexMessageBuilder.getFarmerBindingFlex(secretUid);
+        failed += expectEq("Mock 模式綁定頁網址帶 mockUid", String.valueOf(mockCard.contains("line-bind.html?channel=farmer")
+                && mockCard.contains("mockUid=" + secretUid)), "true");
+        String savedSecret = F.secret, savedToken = F.accessToken, savedWs = W.secret, savedWt = W.accessToken;
+        try {
+            // 暫時視為正式模式
+            F.secret = "real_secret_for_check"; F.accessToken = "real_token_for_check";
+            W.secret = "real_secret_for_check"; W.accessToken = "real_token_for_check";
+            String prodCard = FlexMessageBuilder.getFarmerBindingFlex(secretUid) + FlexMessageBuilder.getWorkerBindingFlex("vi", secretUid);
+            failed += expectEq("正式模式綁定卡不含 LINE userId", String.valueOf(!prodCard.contains(secretUid)), "true");
+        } finally {
+            F.secret = savedSecret; F.accessToken = savedToken;
+            W.secret = savedWs; W.accessToken = savedWt;
+        }
 
         System.out.println(failed == 0 ? "✅ 自動檢核全部通過！" : "❌ 自動檢核失敗 " + failed + " 項");
         return failed;

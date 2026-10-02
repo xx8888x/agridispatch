@@ -31,7 +31,7 @@ final class FarmerDispatcher {
                     ? List.of(FlexMessageBuilder.wrapText("👨‍🌾 歡迎回來！請點下方選單查看訂單與派工確認單。"),
                               FlexMessageBuilder.getFarmerHelpFlex())
                     : List.of(FlexMessageBuilder.wrapText("👨‍🌾 歡迎加入「" + CH.displayName + "」！完成帳號綁定後即可查看您的訂單與派工確認單。"),
-                              FlexMessageBuilder.getFarmerBindingFlex());
+                              FlexMessageBuilder.getFarmerBindingFlex(ev.userId()));
             case OTHER_MESSAGE -> List.of(FlexMessageBuilder.wrapText("目前只看得懂文字訊息，請點下方選單或輸入文字。"),
                     FlexMessageBuilder.getFarmerHelpFlex());
             case POSTBACK -> run(ev.action(), ev.postback(), "", me, ev.userId());
@@ -61,19 +61,19 @@ final class FarmerDispatcher {
     private static List<String> run(String action, Map<String, String> params, String text, Identity me, String userId) {
         switch (action) {
             case "orders": {
-                if (!me.isFarmer()) return bindingRequired();
+                if (!me.isFarmer()) return bindingRequired(userId);
                 // 後端只回本人訂單（規格 4.1）；後端離線或沒有綁定資料（Mock 示範農場主）時改用派工確認單範本
                 List<String> reply = BackendClient.query(CH, userId, "orders", text);
                 return reply != null && !reply.isEmpty() ? reply : List.of(FlexMessageBuilder.getFarmerOrderFlex());
             }
             case "legalize": {
-                if (!me.isFarmer()) return bindingRequired();
+                if (!me.isFarmer()) return bindingRequired(userId);
                 String key = params.get("t");
                 String typeText = key != null && LEGALIZE_KEYS.containsKey(key) ? LEGALIZE_KEYS.get(key) : text;
                 return List.of(FlexMessageBuilder.getLegalizeFlex(typeText));
             }
             case "weather":
-                if (!me.isFarmer()) return bindingRequired();
+                if (!me.isFarmer()) return bindingRequired(userId);
                 return List.of(FlexMessageBuilder.getWeatherHedgeFlex());
             case "early_bird":
                 return List.of(FlexMessageBuilder.getEarlyBirdFlex());
@@ -92,7 +92,7 @@ final class FarmerDispatcher {
                 return out.isEmpty() ? List.of(FlexMessageBuilder.getFarmerHelpFlex()) : out;
             }
             case "account":
-                return List.of(FlexMessageBuilder.getFarmerBindingFlex());
+                return List.of(FlexMessageBuilder.getFarmerBindingFlex(userId));
             case "cross":
                 return List.of(FlexMessageBuilder.getCrossChannelFlex(CH, "zh"));
             case "help":
@@ -109,9 +109,9 @@ final class FarmerDispatcher {
         return reply != null && !reply.isEmpty() ? reply : List.of(FlexMessageBuilder.getFarmerHelpFlex());
     }
 
-    private static List<String> bindingRequired() {
+    private static List<String> bindingRequired(String userId) {
         return List.of(FlexMessageBuilder.wrapText("這項功能需要先綁定農場主帳號。"),
-                FlexMessageBuilder.getFarmerBindingFlex());
+                FlexMessageBuilder.getFarmerBindingFlex(userId));
     }
 
     static boolean has(String text, String... keywords) {

@@ -12,6 +12,7 @@ import com.agridispatch.common.LaborConstants;
 import com.agridispatch.config.AgriSettings;
 import com.agridispatch.service.CalendarService;
 import com.agridispatch.service.LineBindingService;
+import com.agridispatch.service.LineBotClient;
 import com.agridispatch.service.OrderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -45,6 +46,7 @@ public class LineController {
     private final AgriSettings settings;
     private final ObjectMapper objectMapper;
     private final LineBindingService lineBindingService;
+    private final LineBotClient lineBotClient;
 
     /** LINE Channel Secret / Access Token：由 agri.line.* 或環境變數 LINE_CHANNEL_SECRET / LINE_CHANNEL_ACCESS_TOKEN 提供，預設空值 */
     private volatile String channelSecret;
@@ -57,6 +59,7 @@ public class LineController {
                           AgriSettings settings,
                           ObjectMapper objectMapper,
                           LineBindingService lineBindingService,
+                          LineBotClient lineBotClient,
                           @Value("${agri.line.channel-secret:}") String channelSecret,
                           @Value("${agri.line.channel-access-token:}") String channelAccessToken) {
         this.orderRepository = orderRepository;
@@ -66,6 +69,7 @@ public class LineController {
         this.settings = settings;
         this.objectMapper = objectMapper;
         this.lineBindingService = lineBindingService;
+        this.lineBotClient = lineBotClient;
         this.channelSecret = channelSecret == null ? "" : channelSecret.trim();
         this.channelAccessToken = channelAccessToken == null ? "" : channelAccessToken.trim();
     }
@@ -281,6 +285,14 @@ public class LineController {
         res.put("channelSecretMasked", channelSecret.isEmpty() ? "" : "********");
         res.put("channelAccessTokenMasked", channelAccessToken.isEmpty() ? "" : "********");
         res.put("webhookPath", "/api/line/webhook");
+        // LINE 雙帳號（規格 05 第 6.3 節）：channel token 只在 LINE Bot，後端只回設定狀態
+        res.put("internalKeyConfigured", settings.getLinebotInternalKey() != null);
+        res.put("loginChannelConfigured", settings.getLineLoginChannelId() != null);
+        Map<String, Object> bot = lineBotClient.health();
+        Map<String, Object> linebot = new LinkedHashMap<>();
+        linebot.put("reachable", bot != null);
+        if (bot != null) linebot.putAll(bot);
+        res.put("linebot", linebot);
         return ResponseEntity.ok(res);
     }
 

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 - 綁定 LINE 帳號</title>
+  <!-- 執行模式設定（demo / production，每份副本各自一份）；LIFF ID 為 AGRI_CONFIG.liffBindId -->
+  <script src="js/app-config.js"></script>
+  <script src="js/api-client.js"></script>
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
+  <script src="js/agri-theme.js"></script>
+  <script src="js/vendor/lucide.min.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/agri.css">
+</head>
+<!--
+  LINE 帳號綁定頁（規格 文件/07_系統分析及文件/05_LINE官方帳號拆分規格.md 5.3）
+  網址參數：channel=farmer|worker、role=farmer|worker_local|worker_foreign（選填）、lang=zh|vi|id（選填）
+  - 設定 AGRI_CONFIG.liffBindId 時以 LIFF 取得 ID token，後端向 LINE 驗證後才採用 LINE userId
+  - 未設定且為 demo 模式：以模擬 LINE 帳號（mock:U…）綁定，可用 mockUid= 指定（LINE 模擬器用）
+  - 網址不帶任何個資
+-->
+<body class="ad-body min-h-screen flex flex-col">
+
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner">
+      <span class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role" id="account-name">LINE</span>
+      </span>
+      <div class="ad-header__actions">
+        <div class="ad-seg" id="lang-seg" role="group" aria-label="語言" hidden>
+          <button type="button" class="ad-seg__btn" data-lang="zh">中</button>
+          <button type="button" class="ad-seg__btn" data-lang="vi">VI</button>
+          <button type="button" class="ad-seg__btn" data-lang="id">ID</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="ad-container flex-1 w-full" style="max-width: 480px; padding-top: 24px; padding-bottom: 40px;">
+    <h1 class="ad-display" data-i18n="title" style="margin-bottom: 8px;">綁定 LINE 帳號</h1>
+    <p class="ad-caption" id="intro" style="margin-bottom: 20px;"></p>
+
+    <div id="notice" class="ad-notice" hidden style="margin-bottom: 16px;"></div>
+
+    <!-- 綁定表單 -->
+    <form id="bind-form" class="ad-card" style="padding: 20px; display: flex; flex-direction: column; gap: 16px;" novalidate hidden>
+      <div class="ad-notice ad-caption" id="demo-note" data-demo-only hidden></div>
+
+      <fieldset id="role-field" class="ad-field" hidden>
+        <legend class="ad-label" data-i18n="chooseRole">您的身分</legend>
+        <label class="ad-choice"><input type="radio" name="role" value="worker_local"> <span data-i18n="roleLocal">本國籍工作者</span></label>
+        <label class="ad-choice"><input type="radio" name="role" value="worker_foreign"> <span data-i18n="roleForeign">外籍移工</span></label>
+      </fieldset>
+
+      <div id="session-box" class="ad-field" hidden>
+        <span class="ad-label" id="session-text"></span>
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" id="use-other" data-i18n="useOther">改用其他帳號</button>
+      </div>
+
+      <div id="login-box" style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="ad-field">
+          <label class="ad-label" for="identifier" data-i18n="account">帳號</label>
+          <input class="ad-input" id="identifier" name="identifier" autocomplete="username" required>
+          <span class="ad-hint" id="identifier-hint"></span>
+        </div>
+        <div class="ad-field">
+          <label class="ad-label" for="password" data-i18n="password">密碼</label>
+          <input class="ad-input" id="password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+      </div>
+
+      <div id="consent-box" class="ad-field" hidden>
+        <p class="ad-caption" data-i18n="consentText"></p>
+        <label class="ad-choice"><input type="checkbox" id="consent"> <span data-i18n="consent">我已閱讀並同意個人資料告知事項</span></label>
+      </div>
+
+      <button type="submit" class="ad-btn ad-btn--line ad-btn--lg ad-btn--block" id="submit-btn" data-i18n="submit">完成綁定</button>
+    </form>
+
+    <!-- 結果 -->
+    <section id="done" class="ad-card" style="padding: 20px; display: flex; flex-direction: column; gap: 12px;" hidden>
+      <h2 class="ad-title" id="done-title"></h2>
+      <p id="done-body"></p>
+      <button type="button" class="ad-btn ad-btn--line ad-btn--lg ad-btn--block" id="close-btn" data-i18n="close">回到 LINE</button>
+      <button type="button" class="ad-btn ad-btn--ghost ad-btn--block" id="unbind-btn" data-i18n="unbind">解除綁定</button>
+    </section>
+  </main>
+
+  <script>
+  (function () {
+    'use strict';
+
+    const T = {
+      zh: {
+        title: '綁定 LINE 帳號', farmerAccount: '智農派工（農場主）', workerAccount: '智農派工（工作者）',
+        introFarmer: '登入您的平台帳號，之後就能在 LINE 查看訂單與派工確認單。',
+        introWorker: '登入您的平台帳號，之後就能在 LINE 查看任務、出勤與薪資。',
+        chooseRole: '您的身分', roleLocal: '本國籍工作者', roleForeign: '外籍移工',
+        account: '帳號', hintFarmer: '平台帳號', hintWorker: '工號、居留證號、護照號碼或手機號碼', password: '密碼',
+        consent: '我已閱讀並同意個人資料告知事項',
+        consentText: '合作社會把您的 LINE 帳號與工號連結，只用來傳送任務、出勤與薪資通知。【待確認：正式告知文字與同意方式】',
+        submit: '完成綁定', working: '處理中…', loggedInAs: '目前登入：{name}', useOther: '改用其他帳號',
+        okTitle: '綁定完成', okBody: '回到 LINE 後，選單會換成您的專屬選單。', close: '回到 LINE', unbind: '解除綁定',
+        unboundTitle: '已解除綁定', unboundBody: '回到 LINE 後，選單會回到未綁定的樣子。',
+        errLogin: '帳號或密碼錯誤', errRoleFarmer: '這個帳號不是農場主帳號。工作人員請加入「智農派工（工作者）」。',
+        errRoleWorker: '這個帳號不是工作人員帳號。農場主請加入「智農派工（農場主）」。',
+        errNoLine: '請從 LINE 官方帳號的選單開啟此頁。', errNetwork: '暫時無法連線，請稍後再試。',
+        needRole: '請先選擇您的身分', needConsent: '請先勾選同意個人資料告知事項', needLogin: '請輸入帳號與密碼',
+        demoNote: '示範模式：以模擬 LINE 帳號 {uid} 綁定'
+      },
+      vi: {
+        title: 'Liên kết tài khoản LINE', farmerAccount: '智農派工（農場主）', workerAccount: '智農派工（工作者）',
+        introFarmer: '', introWorker: 'Đăng nhập tài khoản của bạn để xem nhiệm vụ, chấm công và lương trên LINE.',
+        chooseRole: 'Thân phận của bạn', roleLocal: 'Người lao động Đài Loan', roleForeign: 'Lao động di trú nước ngoài',
+        account: 'Tài khoản', hintFarmer: '', hintWorker: 'Mã số, số thẻ cư trú, số hộ chiếu hoặc số điện thoại', password: 'Mật khẩu',
+        consent: 'Tôi đã đọc và đồng ý với thông báo về dữ liệu cá nhân',
+        consentText: 'Hợp tác xã sẽ liên kết tài khoản LINE với mã số của bạn, chỉ dùng để gửi thông báo nhiệm vụ, chấm công và lương. 【待確認】',
+        submit: 'Liên kết', working: 'Đang xử lý…', loggedInAs: 'Đang đăng nhập: {name}', useOther: 'Dùng tài khoản khác',
+        okTitle: 'Đã liên kết', okBody: 'Quay lại LINE, menu sẽ chuyển sang menu dành riêng cho bạn.', close: 'Quay lại LINE', unbind: 'Hủy liên kết',
+        unboundTitle: 'Đã hủy liên kết', unboundBody: 'Quay lại LINE, menu sẽ trở về như lúc chưa liên kết.',
+        errLogin: 'Sai tài khoản hoặc mật khẩu', errRoleFarmer: '',
+        errRoleWorker: 'Tài khoản này không phải tài khoản người lao động.',
+        errNoLine: 'Vui lòng mở trang này từ menu của tài khoản LINE chính thức.', errNetwork: 'Không thể kết nối, vui lòng thử lại sau.',
+        needRole: 'Vui lòng chọn thân phận', needConsent: 'Vui lòng đánh dấu đồng ý thông báo dữ liệu cá nhân', needLogin: 'Vui lòng nhập tài khoản và mật khẩu',
+        demoNote: 'Chế độ minh họa: liên kết bằng tài khoản LINE mô phỏng {uid}'
+      },
+      id: {
+        title: 'Hubungkan akun LINE', farmerAccount: '智農派工（農場主）', workerAccount: '智農派工（工作者）',
+        introFarmer: '', introWorker: 'Masuk ke akun Anda untuk melihat tugas, absensi, dan gaji di LINE.',
+        chooseRole: 'Status Anda', roleLocal: 'Pekerja lokal (Taiwan)', roleForeign: 'Pekerja migran asing',
+        account: 'Akun', hintFarmer: '', hintWorker: 'Nomor pekerja, ARC, paspor, atau nomor telepon', password: 'Kata sandi',
+        consent: 'Saya sudah membaca dan menyetujui pemberitahuan data pribadi',
+        consentText: 'Koperasi akan menghubungkan akun LINE Anda dengan nomor pekerja, hanya untuk mengirim info tugas, absensi, dan gaji. 【待確認】',
+        submit: 'Hubungkan', working: 'Memproses…', loggedInAs: 'Masuk sebagai: {name}', useOther: 'Gunakan akun lain',
+        okTitle: 'Berhasil terhubung', okBody: 'Kembali ke LINE, menu akan berganti ke menu khusus Anda.', close: 'Kembali ke LINE', unbind: 'Putuskan',
+        unboundTitle: 'Sudah diputuskan', unboundBody: 'Kembali ke LINE, menu akan kembali seperti sebelum terhubung.',
+        errLogin: 'Akun atau kata sandi salah', errRoleFarmer: '',
+        errRoleWorker: 'Akun ini bukan akun pekerja.',
+        errNoLine: 'Silakan buka halaman ini dari menu akun LINE resmi.', errNetwork: 'Tidak dapat terhubung, coba lagi nanti.',
+        needRole: 'Silakan pilih status Anda', needConsent: 'Silakan centang persetujuan data pribadi', needLogin: 'Silakan isi akun dan kata sandi',
+        demoNote: 'Mode contoh: dihubungkan dengan akun LINE simulasi {uid}'
+      }
+    };
+
+    const CFG = window.AGRI_CONFIG || {};
+    const API = (window.AgriAuth && window.AgriAuth.API_BASE) || CFG.apiBase || '/api';
+    const qs = new URLSearchParams(location.search);
+    // LIFF 第一次轉址時，原本的參數會包在 liff.state 裡
+    function param(k) {
+      if (qs.get(k)) return qs.get(k);
+      const st = qs.get('liff.state');
+      if (!st) return null;
+      return new URLSearchParams(st.indexOf('?') >= 0 ? st.slice(st.indexOf('?') + 1) : st).get(k);
+    }
+
+    const channel = param('channel') === 'worker' ? 'worker' : 'farmer';
+    let role = channel === 'farmer' ? 'farmer'
+      : (['worker_local', 'worker_foreign'].indexOf(param('role')) >= 0 ? param('role') : null);
+    const nav = (navigator.language || '').toLowerCase();
+    let lang = channel === 'farmer' ? 'zh'
+      : (['zh', 'vi', 'id'].indexOf(param('lang')) >= 0 ? param('lang') : (nav.startsWith('vi') ? 'vi' : nav.startsWith('id') ? 'id' : 'zh'));
+
+    let idToken = null;
+    let inLiff = false;
+    let sessionToken = null;
+
+    const $ = (id) => document.getElementById(id);
+    const t = (k, vars) => {
+      let s = (T[lang] && T[lang][k]) || T.zh[k] || '';
+      Object.keys(vars || {}).forEach((v) => { s = s.replace('{' + v + '}', vars[v]); });
+      return s;
+    };
+
+    function notice(kind, text) {
+      const n = $('notice');
+      n.className = 'ad-notice' + (kind ? ' ad-notice--' + kind : '');
+      n.textContent = text;
+      n.hidden = !text;
+    }
+
+    function render() {
+      document.documentElement.lang = lang === 'zh' ? 'zh-TW' : lang;
+      document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+      $('account-name').textContent = channel === 'farmer' ? t('farmerAccount') : t('workerAccount');
+      $('intro').textContent = channel === 'farmer' ? T.zh.introFarmer : t('introWorker');
+      $('identifier-hint').textContent = channel === 'farmer' ? T.zh.hintFarmer : t('hintWorker');
+      $('lang-seg').hidden = channel === 'farmer';
+      document.querySelectorAll('#lang-seg [data-lang]').forEach((b) => b.classList.toggle('is-active', b.dataset.lang === lang));
+      $('role-field').hidden = channel === 'farmer';
+      document.querySelectorAll('input[name=role]').forEach((r) => { r.checked = r.value === role; });
+      $('consent-box').hidden = role !== 'worker_foreign';
+      const user = window.AgriAuth && window.AgriAuth.getUser();
+      if (sessionToken && user) $('session-text').textContent = t('loggedInAs', { name: user.name || user.username });
+    }
+
+    document.querySelectorAll('#lang-seg [data-lang]').forEach((b) => b.addEventListener('click', () => { lang = b.dataset.lang; render(); }));
+    document.querySelectorAll('input[name=role]').forEach((r) => r.addEventListener('change', () => { role = r.value; render(); useSessionIfFits(); }));
+
+    function roleFits(r) {
+      return channel === 'farmer' ? r === 'farmer' : (r === 'worker_local' || r === 'worker_foreign');
+    }
+
+    // 已登入且身分符合時，可直接用目前登入的帳號綁定
+    function useSessionIfFits() {
+      const user = window.AgriAuth && window.AgriAuth.getUser();
+      const token = window.AgriAuth && window.AgriAuth.getToken();
+      const fits = !!(token && user && roleFits(user.role) && (channel === 'farmer' || !role || user.role === role));
+      sessionToken = fits ? token : null;
+      $('session-box').hidden = !fits;
+      $('login-box').style.display = fits ? 'none' : 'flex';
+      if (fits && channel === 'worker' && !role) { role = user.role; }
+      render();
+    }
+    $('use-other').addEventListener('click', () => {
+      sessionToken = null;
+      $('session-box').hidden = true;
+      $('login-box').style.display = 'flex';
+    });
+
+    // ------------------------------------------------------------ 取得 LINE 身分
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src; s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    async function obtainLineIdentity() {
+      if (CFG.liffBindId) {
+        await loadScript('https://static.line-scdn.net/liff/edge/2/sdk.js');
+        await window.liff.init({ liffId: CFG.liffBindId });
+        if (!window.liff.isLoggedIn()) {
+          window.liff.login({ redirectUri: location.href });
+          return false;
+        }
+        inLiff = window.liff.isInClient();
+        idToken = window.liff.getIDToken();
+        return !!idToken;
+      }
+      if (CFG.mode === 'demo') {
+        let uid = param('mockUid');
+        if (!/^U[0-9a-f]{32}$/.test(uid || '')) {
+          try { uid = localStorage.getItem('agri_mock_line_uid'); } catch (e) { uid = null; }
+          if (!/^U[0-9a-f]{32}$/.test(uid || '')) {
+            const bytes = new Uint8Array(16);
+            crypto.getRandomValues(bytes);
+            uid = 'U' + Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+            try { localStorage.setItem('agri_mock_line_uid', uid); } catch (e) { /* ignore */ }
+          }
+        }
+        idToken = 'mock:' + uid;
+        const dn = $('demo-note');
+        dn.textContent = t('demoNote', { uid: uid.slice(0, 7) + '…' });
+        dn.hidden = false;
+        return true;
+      }
+      return false;
+    }
+
+    // ------------------------------------------------------------ 綁定
+    async function readError(res) {
+      const data = await res.json().catch(() => ({}));
+      return data.error || data.message || ('HTTP ' + res.status);
+    }
+
+    async function login() {
+      const identifier = $('identifier').value.trim();
+      const password = $('password').value;
+      if (!identifier || !password) throw new Error(t('needLogin'));
+      const res = await fetch(API + '/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, password })
+      });
+      if (res.status === 401) throw new Error(t('errLogin'));
+      if (!res.ok) throw new Error(await readError(res));
+      const data = await res.json();
+      if (!roleFits(data.user.role)) throw new Error(channel === 'farmer' ? T.zh.errRoleFarmer : t('errRoleWorker'));
+      if (window.AgriAuth) window.AgriAuth.setSession(data.token, data.user);
+      return data.token;
+    }
+
+    let boundToken = null;
+    $('bind-form').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      notice(null, '');
+      if (channel === 'worker' && !role) { notice('warn', t('needRole')); return; }
+      if (role === 'worker_foreign' && !$('consent').checked) { notice('warn', t('needConsent')); return; }
+      const btn = $('submit-btn');
+      btn.disabled = true; btn.textContent = t('working');
+      try {
+        const token = sessionToken || await login();
+        const res = await fetch(API + '/line/bind', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ channel, idToken })
+        });
+        if (!res.ok) throw new Error(await readError(res));
+        boundToken = token;
+        showDone(t('okTitle'), t('okBody'), true);
+      } catch (e) {
+        notice('danger', e && e.message ? e.message : t('errNetwork'));
+      } finally {
+        btn.disabled = false; btn.textContent = t('submit');
+      }
+    });
+
+    function showDone(title, body, canUnbind) {
+      $('bind-form').hidden = true;
+      $('done').hidden = false;
+      $('done-title').textContent = title;
+      $('done-body').textContent = body;
+      $('unbind-btn').hidden = !canUnbind;
+      $('close-btn').hidden = !inLiff;
+    }
+
+    $('unbind-btn').addEventListener('click', async () => {
+      notice(null, '');
+      try {
+        const res = await fetch(API + '/line/bind/' + channel, {
+          method: 'DELETE', headers: { 'Authorization': 'Bearer ' + boundToken }
+        });
+        if (!res.ok) throw new Error(await readError(res));
+        showDone(t('unboundTitle'), t('unboundBody'), false);
+      } catch (e) {
+        notice('danger', e && e.message ? e.message : t('errNetwork'));
+      }
+    });
+    $('close-btn').addEventListener('click', () => { if (window.liff && inLiff) window.liff.closeWindow(); });
+
+    // ------------------------------------------------------------ 啟動
+    render();
+    if (window.lucide) window.lucide.createIcons();
+    obtainLineIdentity().then((ok) => {
+      if (!ok) { if (!CFG.liffBindId) notice('danger', t('errNoLine')); return; }
+      $('bind-form').hidden = false;
+      useSessionIfFits();
+    }).catch(() => notice('danger', t('errNoLine')));
+  })();
+  </script>
+</body>
+</html>

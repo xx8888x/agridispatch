@@ -28,6 +28,7 @@ public class LineBotServer {
 
             // 圖文選單 JSON 與底圖（網頁模擬器顯示用；只開放 6 份選單檔）
             server.createContext("/rich_menu/", exchange -> {
+                HttpUtils.applyCors(exchange, "GET, OPTIONS", "Content-Type"); // 前端 LINE 模擬器跨網域讀選單 JSON
                 String name = exchange.getRequestURI().getPath().substring("/rich_menu/".length());
                 int dot = name.lastIndexOf('.');
                 String key = dot > 0 ? name.substring(0, dot) : "";
@@ -57,9 +58,22 @@ public class LineBotServer {
             // 健康檢查路徑
             server.createContext("/health", exchange -> {
                 HttpUtils.applyCors(exchange, "GET, OPTIONS", "Content-Type");
+                // 公開端點：只回狀態旗標，不含任何金鑰或 ID 值
+                StringBuilder menus = new StringBuilder();
+                for (Channel c : Channel.values()) {
+                    for (String key : RichMenus.menusOf(c)) {
+                        if (menus.length() > 0) menus.append(",");
+                        menus.append("\"").append(key).append("\":").append(RichMenus.richMenuId(key) != null);
+                    }
+                }
                 String resp = "{\"status\":\"UP\",\"mode\":\"" + overallMode() + "\",\"channels\":{"
                         + "\"farmer\":\"" + Config.modeLabel(Channel.FARMER) + "\","
-                        + "\"worker\":\"" + Config.modeLabel(Channel.WORKER) + "\"}}";
+                        + "\"worker\":\"" + Config.modeLabel(Channel.WORKER) + "\"},"
+                        + "\"basicIdConfigured\":{\"farmer\":" + (Channel.FARMER.addFriendUrl() != null)
+                        + ",\"worker\":" + (Channel.WORKER.addFriendUrl() != null) + "},"
+                        + "\"backendLinked\":" + (Config.INTERNAL_KEY != null) + ","
+                        + "\"liffConfigured\":" + (Config.LIFF_BIND_ID != null) + ","
+                        + "\"richMenusUploaded\":{" + menus + "}}";
                 HttpUtils.sendJson(exchange, 200, resp);
             });
 

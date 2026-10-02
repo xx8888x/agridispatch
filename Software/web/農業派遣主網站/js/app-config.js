@@ -8,5 +8,7 @@ window.AGRI_CONFIG = {
   mode: 'production',
   apiBase: window.location.origin.startsWith('http')
     ? `${window.location.origin}/api`
-    : 'http://localhost:3000/api'
+    : 'http://localhost:3000/api',
+  // LINE 帳號綁定頁（line-bind.html）的 LIFF ID；空字串時：demo 模式用模擬 LINE 帳號、production 顯示「請從 LINE 開啟」
+  liffBindId: ''
 };

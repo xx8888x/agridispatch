@@ -139,7 +139,7 @@ Invoke-RestMethod -Uri "http://localhost:5000/health"
 - 加好友／封鎖、使用者選的語言、綁定狀態都存在後端 `line_users`（規格 6.5），重啟不遺失。Line Bot 以 `X-Internal-Key` 呼叫後端 `POST /api/line/internal/identity`、`/follow-state`、`/query`。
 - 金鑰：環境變數 `AGRI_LINEBOT_INTERNAL_KEY`（或 `config.properties` 的 `internal.key`），**後端與 Line Bot 必須相同**。`start_all.bat` 未設定時會自動產生一組給兩邊共用。
 - 未設定金鑰或後端離線時，Line Bot 退回本機記憶體（重啟後遺失）、訂單／費率／產曆改用本地卡片，啟動 log 會標示「身分與語言來源」。
-- 綁定由使用者在綁定頁（P4 製作 LIFF 頁）登入平台帳號後呼叫後端 `POST /api/line/bind`；後端綁定或解除後會呼叫 Line Bot `POST /internal/richmenu/link` 切換圖文選單（見下方「圖文選單」）。
+- 綁定頁：`Software/demo/農業派遣主網站/line-bind.html`（LIFF ID 設在前端 `js/app-config.js` 的 `liffBindId`；Line Bot 的 `LIFF_BIND_ID` 要填同一個）。使用者在綁定頁登入平台帳號後呼叫後端 `POST /api/line/bind`；後端綁定或解除後會呼叫 Line Bot `POST /internal/richmenu/link` 切換圖文選單（見下方「圖文選單」）。
 - 本機測試綁定（後端 demo 模式、未設定 `LINE_LOGIN_CHANNEL_ID`）：以平台帳號登入取得 token 後，`POST /api/line/bind`，body `{"channel":"worker","idToken":"mock:U0123456789abcdef0123456789abcdef"}`；之後用同一個 userId 呼叫 `/mock/chat`（不帶 `as`）即可看到依綁定身分回覆。
 
 ## 🔐 管理端點與金鑰（/api/config）
@@ -185,6 +185,8 @@ Body 欄位（JSON）：`channel`（`farmer` 預設／`worker`）、`userId`、`
   - richMenuId 記在 `rich_menu/richmenu_ids.properties`（各環境不同，已列入 `rich_menu/.gitignore`）；Line Bot 會自動讀新檔。
   - 舊選單預設保留；確認新選單正常後再加 `--delete-old` 上傳一次，或到 LINE 後台刪除。
 - **切換時機**：每次使用者與帳號互動時，Line Bot 依目前身分與語言確認個人選單（已綁定 → main、未綁定 → 回到預設 guest），結果快取在記憶體；後端綁定或解除時也會呼叫 `/internal/richmenu/link` 立即切換。所以綁定、解除、改語言之後，選單會馬上換掉；重新上傳選單後，使用者下一次互動時會補連結。
+- **科技後台**：`Software/demo/科技後台/admin-line.html` 顯示兩帳號狀態（模式、選單上傳、加好友按鈕、共用金鑰、綁定頁 LINE 登入）與綁定清單，可強制解除綁定。
+- **前端 LINE 模擬器**（`Software/demo/linebot/line.html`）：手機頂部顯示目前的官方帳號；工人可選細分身分；「實際綁定」模式以固定的模擬 LINE 帳號互動，按「開啟綁定頁」綁定後，回覆與選單就依後端綁定。
 - **網頁模擬器**（`http://localhost:5000/`）：手機畫面下方顯示目前帳號與身分的選單底圖，點格子即送出該格的 postback，可以直接檢查選單切換。
 
 ---

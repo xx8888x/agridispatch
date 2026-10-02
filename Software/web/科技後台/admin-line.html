@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 - LINE 官方帳號</title>
+  <!-- 執行模式設定（demo / production，每份副本各自一份） -->
+  <script src="js/app-config.js"></script>
+  <!-- API Client：自動帶 token、demo 自動登入、production 401 導向（admin* 頁視為管理員頁） -->
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AgriAuth) window.AgriAuth.requireRole(['admin_tech'], 'admin-login.html');
+  </script>
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
+  <script src="js/agri-theme.js"></script>
+  <script src="js/vendor/lucide.min.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/agri.css">
+</head>
+<!--
+  科技後台：LINE 官方帳號（農場主／工作者）狀態與帳號綁定管理
+  規格：文件/07_系統分析及文件/05_LINE官方帳號拆分規格.md 6.4、第拾參章
+  資料：GET /api/line/config（兩帳號設定狀態）、GET /api/line/bindings、DELETE /api/line/bindings/{id}（皆僅 admin）
+-->
+<body class="ad-body min-h-screen flex flex-col">
+
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner">
+      <a href="admin.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">科技後台</span>
+      </a>
+      <div class="ad-header__actions">
+        <a href="admin.html" class="ad-btn ad-btn--ghost ad-btn--sm"><i data-lucide="arrow-left" class="ad-icon ad-icon--sm"></i>回後台</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="ad-container flex-1 w-full" style="padding-top: 24px; padding-bottom: 40px; display: flex; flex-direction: column; gap: 24px;">
+    <div>
+      <h1 class="ad-display" style="margin-bottom: 8px;">LINE 官方帳號</h1>
+      <p class="ad-caption">農場主與工作人員分屬兩個官方帳號。這裡看兩個帳號的設定狀態，以及誰綁定了哪個 LINE 帳號。</p>
+    </div>
+
+    <div id="load-error" class="ad-notice ad-notice--danger" hidden></div>
+
+    <!-- 帳號狀態 -->
+    <section>
+      <h2 class="ad-title" style="margin-bottom: 12px;">帳號狀態</h2>
+      <div class="ad-stat-grid" id="status-grid"></div>
+      <div class="ad-list" id="setup-list" style="margin-top: 12px;"></div>
+    </section>
+
+    <!-- 綁定清單 -->
+    <section>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
+        <h2 class="ad-title">帳號綁定</h2>
+        <div class="ad-tabs" role="tablist" aria-label="篩選帳號">
+          <button type="button" class="ad-tab is-active" data-filter="all">全部</button>
+          <button type="button" class="ad-tab" data-filter="farmer">農場主</button>
+          <button type="button" class="ad-tab" data-filter="worker">工作者</button>
+        </div>
+      </div>
+      <label class="ad-choice" style="margin-bottom: 12px; display: inline-flex;"><input type="checkbox" id="only-bound" checked> 只顯示已綁定</label>
+      <div class="ad-list" id="binding-list"></div>
+      <div class="ad-empty" id="binding-empty" hidden>目前沒有符合條件的綁定紀錄。</div>
+    </section>
+  </main>
+
+  <script>
+  (function () {
+    'use strict';
+    const API = (window.AgriAuth && window.AgriAuth.API_BASE) || (window.AGRI_CONFIG && window.AGRI_CONFIG.apiBase) || '/api';
+    const esc = (s) => (window.AgriUtil && window.AgriUtil.escapeHtml ? window.AgriUtil.escapeHtml(s) : String(s == null ? '' : s));
+    const $ = (id) => document.getElementById(id);
+    const ROLE = { farmer: '農場主', worker_foreign: '外籍移工', worker_local: '本國籍工作者' };
+    const LANG = { zh: '中文', vi: '越南語', id: '印尼語' };
+    const CHANNEL = { farmer: '智農派工（農場主）', worker: '智農派工（工作者）' };
+    const MENUS = { farmer: ['farmer_guest', 'farmer_main'], worker: ['worker_guest', 'worker_main_zh', 'worker_main_vi', 'worker_main_id'] };
+    let bindings = [];
+    let filter = 'all';
+
+    function showError(text) {
+      const el = $('load-error');
+      el.textContent = text;
+      el.hidden = !text;
+    }
+
+    function pill(ok, yes, no) {
+      return '<span class="ad-pill ' + (ok ? 'ad-pill--ok' : 'ad-pill--warn') + '"><span class="ad-pill__dot"></span>' + esc(ok ? yes : no) + '</span>';
+    }
+
+    function renderStatus(cfg) {
+      const bot = cfg.linebot || {};
+      const channels = bot.channels || {};
+      const uploaded = bot.richMenusUploaded || {};
+      const friend = bot.basicIdConfigured || {};
+      $('status-grid').innerHTML = ['farmer', 'worker'].map((ch) => {
+        const live = channels[ch] === 'PRODUCTION';
+        const up = MENUS[ch].filter((k) => uploaded[k]).length;
+        return '<div class="ad-stat ad-card">'
+          + '<span class="ad-stat__label">' + esc(CHANNEL[ch]) + '</span>'
+          + '<span class="ad-stat__value" style="font-size: 20px;">' + (bot.reachable ? (live ? '正式運作' : '模擬中') : '無法連線') + '</span>'
+          + '<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">'
+          + pill(live, '已填金鑰', '未填金鑰')
+          + pill(up === MENUS[ch].length, '選單 ' + up + '/' + MENUS[ch].length + ' 已上傳', '選單 ' + up + '/' + MENUS[ch].length + ' 已上傳')
+          + pill(!!friend[ch], '加好友按鈕已設定', '加好友按鈕未設定')
+          + '</div></div>';
+      }).join('');
+
+      const rows = [
+        ['LINE 機器人服務', bot.reachable, '連線正常', '連不到 LINE 機器人服務，請確認已啟動'],
+        ['機器人與後台的共用金鑰', cfg.internalKeyConfigured && bot.backendLinked, '兩邊都已設定',
+          '未設定或只設一邊：身分與語言不會存到後台（AGRI_LINEBOT_INTERNAL_KEY 兩邊要相同）'],
+        ['綁定頁的 LINE 登入', cfg.loginChannelConfigured, '已設定', '未設定：正式環境無法綁定（LINE_LOGIN_CHANNEL_ID）']
+      ];
+      $('setup-list').innerHTML = rows.map((r) => '<div class="ad-row ad-card"><div class="ad-row__main">'
+        + '<div class="ad-row__title">' + esc(r[0]) + '</div>'
+        + '<div class="ad-row__meta">' + esc(r[1] ? r[2] : r[3]) + '</div></div>'
+        + '<div class="ad-row__aside">' + pill(!!r[1], '正常', '待設定') + '</div></div>').join('');
+    }
+
+    function fmtTime(v) {
+      if (!v) return '';
+      const d = new Date(v);
+      return isNaN(d) ? String(v) : d.toLocaleString('zh-TW', { hour12: false });
+    }
+
+    function renderBindings() {
+      const onlyBound = $('only-bound').checked;
+      const rows = bindings.filter((b) => (filter === 'all' || b.channel === filter) && (!onlyBound || b.bound));
+      $('binding-empty').hidden = rows.length > 0;
+      $('binding-list').innerHTML = rows.map((b) => {
+        const who = b.bound ? esc(b.username) + (b.refId && b.refId !== b.username ? '（' + esc(b.refId) + '）' : '') : '未綁定';
+        const meta = [
+          esc(CHANNEL[b.channel] || b.channel),
+          b.bound ? esc(ROLE[b.role] || b.role) : '',
+          'LINE ' + esc(b.lineUserId) + (b.displayName ? '・' + esc(b.displayName) : ''),
+          esc(LANG[b.lang] || b.lang) + (b.langLocked ? '（自選）' : ''),
+          b.bound ? '綁定於 ' + esc(fmtTime(b.boundAt)) : ''
+        ].filter(Boolean).join('　');
+        return '<div class="ad-row ad-card"><div class="ad-row__main">'
+          + '<div class="ad-row__title">' + who + (b.followed ? '' : ' <span class="ad-pill ad-pill--danger">已封鎖</span>') + '</div>'
+          + '<div class="ad-row__meta">' + meta + '</div></div>'
+          + '<div class="ad-row__aside">' + (b.bound
+            ? '<button type="button" class="ad-btn ad-btn--danger ad-btn--sm" data-unbind="' + esc(b.id) + '">解除綁定</button>' : '')
+          + '</div></div>';
+      }).join('');
+    }
+
+    async function load() {
+      showError('');
+      try {
+        const [cfgRes, listRes] = await Promise.all([fetch(API + '/line/config'), fetch(API + '/line/bindings')]);
+        if (!cfgRes.ok || !listRes.ok) throw new Error('讀取失敗（' + cfgRes.status + '／' + listRes.status + '），請確認以管理員登入');
+        renderStatus(await cfgRes.json());
+        bindings = (await listRes.json()).bindings || [];
+        renderBindings();
+      } catch (e) {
+        showError(e && e.message && e.message.startsWith('讀取失敗') ? e.message : '連不到後台，請確認後台服務已啟動。');
+      }
+    }
+
+    document.querySelectorAll('[data-filter]').forEach((b) => b.addEventListener('click', () => {
+      filter = b.dataset.filter;
+      document.querySelectorAll('[data-filter]').forEach((x) => x.classList.toggle('is-active', x === b));
+      renderBindings();
+    }));
+    $('only-bound').addEventListener('change', renderBindings);
+
+    $('binding-list').addEventListener('click', async (ev) => {
+      const btn = ev.target.closest('[data-unbind]');
+      if (!btn) return;
+      const row = bindings.find((b) => b.id === btn.dataset.unbind);
+      if (!row || !confirm('確定解除「' + (row.username || '') + '」在' + (CHANNEL[row.channel] || '') + '的綁定？對方的 LINE 選單會回到未綁定狀態。')) return;
+      btn.disabled = true;
+      const res = await fetch(API + '/line/bindings/' + encodeURIComponent(row.id), { method: 'DELETE' }).catch(() => null);
+      if (res && res.ok) {
+        if (window.AgriTheme && window.AgriTheme.toast) window.AgriTheme.toast('已解除綁定');
+        load();
+      } else {
+        btn.disabled = false;
+        showError('解除失敗，請重新整理後再試。');
+      }
+    });
+
+    if (window.lucide) window.lucide.createIcons();
+    load();
+  })();
+  </script>
+</body>
+</html>

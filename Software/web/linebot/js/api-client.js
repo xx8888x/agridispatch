@@ -53,6 +53,7 @@
     if (file.startsWith('insurance')) return 'admin_tech'; // 保險登錄（科技後台）
     if (file.startsWith('skills')) return 'admin_tech'; // 技能標籤複核（科技後台）
     if (file.startsWith('matching')) return 'admin_tech'; // 派工媒合（科技後台）
+    if (file.startsWith('line.')) return 'admin_tech'; // LINE 體驗頁的「推播」模擬後台發送（simulate-push 需登入）
     if (file.startsWith('worker-skills')) return 'worker_local'; // 工人技能進度（demo 預設帶工領班）
     if (file.startsWith('farmer')) return 'farmer';
     if (file.startsWith('legalize') || file.startsWith('expenses')) return 'farmer'; // 農場主的工班合法化、支出明細

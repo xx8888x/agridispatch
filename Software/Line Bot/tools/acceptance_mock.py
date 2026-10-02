@@ -23,6 +23,13 @@ import urllib.error
 import urllib.request
 from datetime import date, timedelta
 
+# Windows 主控台預設 cp950，印 ✅／❌ 會 UnicodeEncodeError：改成 UTF-8 輸出
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 LINEBOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SOFTWARE = os.path.dirname(LINEBOT)
 BACKEND = os.path.join(SOFTWARE, "backend")

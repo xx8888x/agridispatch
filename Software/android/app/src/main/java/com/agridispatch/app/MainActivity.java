@@ -17,16 +17,26 @@ import android.webkit.WebViewClient;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import android.widget.Toast;
 import androidx.core.content.ContextCompat;
+import com.agridispatch.app.profile.AppSide;
+import com.agridispatch.app.profile.ProfileStore;
+import com.agridispatch.app.profile.UserProfile;
 import java.util.Locale;
 import java.util.Map;
 
 /**
  * 智農派工 (AgriDispatch) - 原生 Android 主活動 (Pure Java 實現)
+ * Server 端 (server flavor) 直接載入科技後台；客戶端 (client flavor) 依 ProfileStore 的身分載入對應登入頁，
+ * 尚未選身分時轉到 RoleSelectActivity。
  */
 public class MainActivity extends AppCompatActivity {
 
+    private static final String ASSET_WWW = "file:///android_asset/www/";
+    private static final String ASSET_WWW_PATH = "/android_asset/www/";
+
     private WebView bindingWebView;
+    private UserProfile profile;
     private PermissionCallback permissionCallback;
 
     /**
@@ -65,6 +75,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        profile = ProfileStore.load(this);
+        if (profile == null) {
+            // 客戶端尚未選擇身分 (農場主 / 本勞 / 外勞)
+            openRoleSelect();
+            return;
+        }
+
         // 初始化系統推播通知渠道 (Android 8.0+)
         NotificationHelper.initChannels(this);
 
@@ -85,8 +102,8 @@ public class MainActivity extends AppCompatActivity {
 
         configureWebView(bindingWebView);
 
-        // 載入本地離線資產，或回退至伺服器
-        bindingWebView.loadUrl("file:///android_asset/www/農業派遣主網站/index.html");
+        // 依端與身分載入本地離線資產的啟動頁
+        bindingWebView.loadUrl(ASSET_WWW + profile.entryPage());
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -116,8 +133,19 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                if (isTrustedUrl(url)) {
+                    injectProfile(view, url);
+                }
+            }
+
+            @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
+                if (interceptForSide(uri)) {
+                    return true;
+                }
                 if (isTrustedUrl(uri.toString())) {
                     return false; // 交由 WebView 自行載入 (內建 asset 或白名單正式網域)
                 }
@@ -169,6 +197,63 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     * 依端攔截站內導覽 (僅內建 asset)：
+     * 客戶端不打包科技後台，點到後台連結改提示；點到網頁的「切換角色」(login.html) 改回原生身分選擇畫面。
+     */
+    private boolean interceptForSide(Uri uri) {
+        if (!"file".equals(uri.getScheme()) || profile.side != AppSide.CLIENT) {
+            return false;
+        }
+        String path = uri.getPath();
+        if (path == null || !path.startsWith(ASSET_WWW_PATH)) {
+            return false;
+        }
+        String page = path.substring(ASSET_WWW_PATH.length());
+        if (page.startsWith("科技後台/")) {
+            Toast.makeText(this, R.string.admin_only_in_server_app, Toast.LENGTH_LONG).show();
+            return true;
+        }
+        if (page.equals("農業派遣主網站/login.html")) {
+            openRoleSelect();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 頁面載入完成後注入身分：window.AGRI_APP_PROFILE + 'agri:app-profile' 事件。
+     * 外籍移工工單頁 (worker-foreign.html) 另依國別切換介面語言 (該頁只支援 zh / vi / id)。
+     */
+    private void injectProfile(WebView view, String url) {
+        String json = profile.toJson().toString();
+        StringBuilder js = new StringBuilder()
+                .append("(function(){var p=").append(json).append(";")
+                .append("window.AGRI_APP_PROFILE=p;")
+                .append("window.dispatchEvent(new CustomEvent('agri:app-profile',{detail:p}));");
+        String lang = profile.language();
+        if (url.contains("worker-foreign.html") && ("vi".equals(lang) || "id".equals(lang))) {
+            js.append("if(typeof window.setLang==='function'){window.setLang('").append(lang).append("');}");
+        }
+        js.append("})();");
+        view.evaluateJavascript(js.toString(), null);
+    }
+
+    public UserProfile getProfile() {
+        return profile;
+    }
+
+    /** 回到原生身分選擇畫面 (僅客戶端)。 */
+    public void openRoleSelect() {
+        if (AppSide.current() != AppSide.CLIENT) {
+            return;
+        }
+        Intent intent = new Intent(this, RoleSelectActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     /**

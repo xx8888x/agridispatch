@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Server 端 (科技後台) App 名稱，與客戶端 App 區分 -->
+    <string name="app_name">智農派工後台</string>
+</resources>

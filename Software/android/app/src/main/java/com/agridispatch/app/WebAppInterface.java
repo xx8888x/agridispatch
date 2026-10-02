@@ -205,8 +205,26 @@ public class WebAppInterface {
         return sharedPrefs.getString(key, "");
     }
 
+    /**
+     * 目前 App 的端與身分 (JSON 字串)，例如
+     * {"side":"client","role":"WORKER_FOREIGN","nationality":"VN","language":"vi",...}
+     */
+    @JavascriptInterface
+    public String getAppProfile() {
+        return activity.getProfile().toJson().toString();
+    }
+
+    /** 回到原生身分選擇畫面 (僅客戶端；Server 端無作用)。 */
+    @JavascriptInterface
+    public void switchRole() {
+        activity.runOnUiThread(activity::openRoleSelect);
+    }
+
     @JavascriptInterface
     public String getSystemLanguage() {
+        // 外籍移工以選定國別的語言為準 (越南 vi、印尼 id)
+        String profileLang = activity.getProfile().language();
+        if (!"zh".equals(profileLang)) return profileLang;
         Locale locale = activity.getResources().getConfiguration().getLocales().get(0);
         String lang = locale.getLanguage();
         if ("vi".equals(lang)) return "vi";

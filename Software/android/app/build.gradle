@@ -30,6 +30,27 @@ android {
         }
     }
 
+    buildFeatures {
+        buildConfig true
+    }
+
+    // 依「端」拆成兩支 APK (分類見 docs/角色與人力分類表.md)：
+    //   server：科技後台 (科技公司代管人員)，applicationId 加 .admin，可與客戶端同機安裝
+    //   client：農場主與工人 (本勞／外勞依國別)，沿用原 applicationId
+    flavorDimensions = ['side']
+    productFlavors {
+        server {
+            dimension 'side'
+            applicationIdSuffix '.admin'
+            versionNameSuffix '-admin'
+            buildConfigField 'String', 'APP_SIDE', '"server"'
+        }
+        client {
+            dimension 'side'
+            buildConfigField 'String', 'APP_SIDE', '"client"'
+        }
+    }
+
     signingConfigs {
         if (keystorePropertiesFile.exists()) {
             release {
@@ -54,6 +75,15 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+// 客戶端 APK 不打包科技後台頁面 (assets/www/科技後台/)；Server 端打包全部前端頁面
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        if (variant.flavorName == 'client') {
+            variant.androidResources.ignoreAssetsPatterns.add('<dir>科技後台')
+        }
     }
 }
 

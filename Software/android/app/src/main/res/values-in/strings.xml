@@ -10,4 +10,17 @@
     <string name="clockin_success">Presensi berhasil! Koordinat GPS dan waktu tercatat.</string>
     <string name="weather_alert_title">Mitigasi Cuaca Aktif</string>
     <string name="weather_alert_msg">Hujan lebat! Alihkan langsung ke Gudang Cold Chain Pingnan!</string>
+
+    <string name="role_pick_title">Silakan pilih peran Anda</string>
+    <string name="role_pick_back">← Kembali</string>
+    <string name="role_pick_farmer">🧑‍🌾 Saya pemilik kebun</string>
+    <string name="role_pick_farmer_desc">Pesan pekerja, paket jam musim panen, lihat presensi dan tagihan</string>
+    <string name="role_pick_worker_local">👷 Saya pekerja lokal Taiwan</string>
+    <string name="role_pick_worker_local_desc">Paruh baya, ibu kembali bekerja, mahasiswa, mandor, operator mesin pertanian</string>
+    <string name="role_pick_worker_foreign">🌏 Saya pekerja asing</string>
+    <string name="role_pick_worker_foreign_desc">外籍移工 · Lao động nước ngoài</string>
+    <string name="local_pick_title">Pilih jenis pekerjaan</string>
+    <string name="nation_pick_title">Pilih kewarganegaraan · 請選擇國籍</string>
+    <string name="nation_equal_pay">Upah setara: semua kewarganegaraan dibayar sesuai upah minimum dan asuransi resmi.</string>
+    <string name="admin_only_in_server_app">Panel admin hanya tersedia di aplikasi AgriDispatch Admin</string>
 </resources>

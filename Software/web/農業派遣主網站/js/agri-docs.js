@@ -619,19 +619,24 @@ const AgriDocs = (function () {
         if (!banner) {
           banner = document.createElement('div');
           banner.id = bannerId;
-          banner.className = 'fixed bottom-4 right-4 z-50 p-3 rounded-2xl bg-amber-950/90 border border-amber-500/50 text-amber-200 text-xs shadow-2xl flex items-center gap-3 backdrop-blur-md animate-bounce';
+          // 一行靜態提示，不跳動；樣式內嵌，不依賴各頁是否已載入 agri.css
+          const isDemo = !(window.AGRI_CONFIG && window.AGRI_CONFIG.mode === 'production');
+          banner.setAttribute('role', 'status');
+          banner.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:60;max-width:min(92vw,480px);' +
+            'display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.4;' +
+            'background:#1e293b;color:#f1f5f9;border:1px solid #334155;box-shadow:0 1px 2px rgba(0,0,0,.35)';
           banner.innerHTML = `
-            <span>⚠️</span>
-            <div>
-              <div class="font-bold">後端伺服器 (Port 3000) 離線中</div>
-              <div class="text-[11px] text-amber-300/80">目前處於展示快取模式。可點擊重試或執行根目錄 start_all.bat</div>
-            </div>
-            <button onclick="AgriDocs.retryServer()" class="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-[11px]">
-              重試連線
+            <span>${isDemo ? '後端未連線，目前顯示示範資料。' : '伺服器連線中斷，資料可能不是最新。'}</span>
+            <button type="button" onclick="AgriDocs.retryServer()" style="flex-shrink:0;min-height:32px;padding:0 12px;border-radius:8px;border:1px solid #475569;background:#0f172a;color:#f1f5f9;font:inherit;font-size:13px;font-weight:600;cursor:pointer">
+              重試
             </button>
           `;
           document.body.appendChild(banner);
         }
+        // 手機有底部 tabbar 時往上抬，避免蓋住導覽
+        const tabbar = document.querySelector('.ad-tabbar');
+        const hasTabbar = tabbar && getComputedStyle(tabbar).display !== 'none';
+        banner.style.bottom = hasTabbar ? 'calc(72px + env(safe-area-inset-bottom))' : '16px';
       } else {
         if (banner) banner.remove();
       }

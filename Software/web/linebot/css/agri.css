@@ -514,6 +514,8 @@
   font-weight: 500;
   text-decoration: none;
 }
+button.ad-nav__link, button.ad-tabbar__item { border: 0; background: none; font: inherit; cursor: pointer; }
+a.ad-pill { text-decoration: none; }
 .ad-nav__link:hover { background: var(--ad-surface-2); color: var(--ad-text); }
 .ad-nav__link.is-active { background: var(--ad-primary-soft); color: var(--ad-primary-text); font-weight: 600; }
 

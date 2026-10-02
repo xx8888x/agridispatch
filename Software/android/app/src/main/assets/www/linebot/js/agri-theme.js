@@ -88,7 +88,75 @@
     toastTimer = setTimeout(function () { el.hidden = true; }, ms || 2400);
   }
 
-  window.AgriTheme = { mode: mode, icons: icons, drawer: drawer, toast: toast };
+  // 6. 示範導覽抽屜：全站共用一份頁面清單，由各頁呼叫 AgriTheme.demoNav() 注入。
+  //    paths 依呼叫頁所在資料夾給相對前綴；預設為「農業派遣主網站/」內的頁面。
+  //    production 模式不注入任何 DOM。
+  var DEMO_PAGES = [
+    { group: '角色工作台', items: [
+      { root: 'main', href: 'farmer.html', title: '農場主', meta: '預約、訂單、工班' },
+      { root: 'main', href: 'worker-foreign.html', title: '外展移工', meta: '今日任務、打卡、薪資（越／印／泰／中）' },
+      { root: 'main', href: 'worker-local.html', title: '帶隊領班／機耕師', meta: '帶隊、打卡、薪資' },
+      { root: 'main', href: 'worker-local.html?role=labor', title: '合作社勞務員', meta: '出勤、打卡、薪資' },
+      { root: 'tech', href: 'admin.html', title: '科技營運後台', meta: '天候戰情、派工調度、營收' },
+      { root: 'tech', href: 'vue-crud.html', title: '訂單總台', meta: '訂單新增、編輯、狀態追蹤' }
+    ] },
+    { group: '介紹與工具', items: [
+      { root: 'main', href: 'index.html', title: '首頁', meta: '農民入口' },
+      { root: 'main', href: 'pitch.html', title: '產品介紹', meta: '痛點、雙軌架構、52 週產曆' },
+      { root: 'main', href: 'brochure.html', title: '文宣 DM', meta: '四大工時包，A4 可列印' },
+      { root: 'main', href: 'farmers_map.html', title: '產地地圖', meta: '全台農會名冊與產季' },
+      { root: 'main', href: 'coldchain.html', title: '冷鏈與物流', meta: '雨天改派與預冷場' },
+      { root: 'main', href: 'legalize.html', title: '法規與合規', meta: '外展農務制度與雙軌架構' },
+      { root: 'line', href: 'line.html', title: 'LINE Bot', meta: '圖文選單與對話模擬' },
+      { root: 'main', href: 'login.html', title: '登入大廳', meta: '五種身分入口' }
+    ] }
+  ];
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function demoNav(paths) {
+    var noop = { open: function () {}, close: function () {}, toggle: function () {} };
+    if (mode === 'production') return noop;
+    var p = paths || { main: '', tech: '../科技後台/', line: '../linebot/' };
+    var id = 'ad-demo-drawer';
+    if (document.getElementById(id)) return drawer(id) || noop;
+
+    var html = '<div class="ad-card__head"><h2 class="ad-title">示範導覽</h2>' +
+      '<button type="button" class="ad-btn ad-btn--ghost ad-btn--icon ad-btn--sm" data-ad-close aria-label="關閉"><i data-lucide="x" class="ad-icon"></i></button></div>' +
+      '<p class="ad-caption" style="margin-bottom:16px">路演用。正式版不會顯示這個選單。</p>';
+    DEMO_PAGES.forEach(function (g, gi) {
+      html += '<div class="ad-caption" style="font-weight:600;margin-bottom:8px' + (gi ? ';margin-top:20px' : '') + '">' + escapeHtml(g.group) + '</div><div class="ad-list">';
+      g.items.forEach(function (it) {
+        html += '<a href="' + escapeHtml((p[it.root] || '') + it.href) + '" class="ad-row"><div class="ad-row__main">' +
+          '<div class="ad-row__title">' + escapeHtml(it.title) + '</div><div class="ad-row__meta">' + escapeHtml(it.meta) + '</div></div>' +
+          '<i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>';
+      });
+      html += '</div>';
+    });
+
+    var backdrop = document.createElement('div');
+    backdrop.className = 'ad-drawer__backdrop';
+    var aside = document.createElement('aside');
+    aside.id = id;
+    aside.className = 'ad-drawer';
+    aside.setAttribute('aria-hidden', 'true');
+    aside.setAttribute('aria-label', '示範導覽');
+    aside.setAttribute('data-demo-only', '');
+    aside.innerHTML = html;
+    document.body.appendChild(backdrop);
+    document.body.appendChild(aside);
+
+    var ctl = drawer(id) || noop;
+    aside.querySelector('[data-ad-close]').addEventListener('click', ctl.close);
+    icons(aside);
+    return ctl;
+  }
+
+  window.AgriTheme = { mode: mode, icons: icons, drawer: drawer, toast: toast, demoNav: demoNav };
 
   document.addEventListener('DOMContentLoaded', function () { icons(); });
 })();

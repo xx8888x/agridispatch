@@ -24,6 +24,15 @@
       document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
     }
   </script>
+  <!-- 設計系統：共用 tailwind.config、demo 模式標記、圖示、抽屜 -->
+  <script src="js/agri-theme.js"></script>
+  <!-- Lucide 圖示：本機 vendor 優先，CDN 備援 -->
+  <script src="js/vendor/lucide.min.js"></script>
+  <script>
+    if (typeof lucide === 'undefined') {
+      document.write('<script src="https://unpkg.com/lucide@1.47.0"><\/script>');
+    }
+  </script>
   <!-- Chart.js CDN -->
   <script src="js/vendor/chart.umd.min.js"></script>
   <script>
@@ -35,168 +44,56 @@
   <script src="js/agri-docs.js"></script>
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#ecfdf5',
-              100: '#d1fae5',
-              500: '#10b981',
-              600: '#059669',
-              700: '#047857',
-              800: '#065f46',
-              900: '#064e3b',
-            }
-          }
-        }
-      }
-    }
-  </script>
+  <link rel="stylesheet" href="css/agri.css">
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+<body class="ad-body ad-has-tabbar min-h-screen flex flex-col">
 
-  <!-- Top Navigation Header -->
-  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-      <!-- Logo & System Title -->
-      <div class="flex items-center gap-3 shrink-0">
-        <a href="index.html" class="flex items-center gap-2 group">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-brand-600/30 shrink-0">
-            <span class="text-xl">👨‍🌾</span>
-          </div>
-          <div class="whitespace-nowrap">
-            <div class="flex items-center gap-2">
-              <span class="font-extrabold text-lg tracking-tight text-white group-hover:text-brand-400 transition">智農派工</span>
-              <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold">農場主專屬工作台</span>
-            </div>
-            <p class="hidden sm:block text-[11px] text-slate-400">早鳥工時包 ╳ 6大派工類別 ╳ 自訂現場小工頭</p>
-          </div>
-        </a>
-      </div>
-
-      <!-- Center Role Switcher Links (Individual HTML Pages) -->
-      <nav class="hidden lg:flex items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700/60 shadow-inner text-xs shrink-0 whitespace-nowrap">
-        <a href="farmer.html" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold shadow transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-          <span>👨‍🌾</span> 農場主
-        </a>
-        <a href="worker-foreign.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-          <span>👷</span> 外展移工
-        </a>
-        <a href="worker-local.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-          <span>🚜</span> 本地工/領班
-        </a>
-        <a href="../科技後台/admin.html" class="px-3 py-1.5 rounded-lg bg-indigo-600/80 hover:bg-indigo-600 text-white font-bold transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20 shrink-0 whitespace-nowrap">
-          <span>💻</span> 科技後台
-        </a>
-        <a href="../linebot/line.html" class="px-3 py-1.5 rounded-lg bg-[#06C755]/20 text-emerald-300 hover:bg-[#06C755]/30 border border-emerald-500/40 font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-          <span>💬</span> LINE Bot
-        </a>
-        <a href="farmers_map.html" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-          <span>🗺️</span> 產地地圖
-        </a>
-        <a href="brochure.html" class="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-          <span>📑</span> 產品文宣 DM
-        </a>
-        <a href="../科技後台/admin.html" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 font-medium transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-          <span>📱</span> 整合戰情
-        </a>
-        
+  <!-- 表頭：一條 56px，導覽按角色（農場主）。跨角色切換只在 demo 抽屜。 -->
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner">
+      <a href="index.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">農場主</span>
+      </a>
+      <nav class="ad-nav" aria-label="農場主導覽">
+        <button type="button" id="tabBtnBooking" class="ad-nav__link is-active" data-tab="booking" onclick="switchFarmerTab('booking')">預約派工</button>
+        <button type="button" id="tabBtnOrders" class="ad-nav__link" data-tab="orders" onclick="switchFarmerTab('orders')">我的訂單 <span id="orderBadgeCount" class="ad-tab__count">2</span></button>
+        <a class="ad-nav__link" href="legalize.html">工班合法化</a>
+        <a class="ad-nav__link" href="expenses.html">支出明細</a>
       </nav>
-
-      <!-- Right User Profile -->
-      <div class="flex items-center gap-2 sm:gap-3 shrink-0 whitespace-nowrap">
-        <div class="hidden sm:flex flex-col text-right shrink-0">
-          <span id="header-user-name" class="text-xs font-bold text-emerald-400 flex items-center justify-end gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> 陳建龍 (阿龍班長)
-          </span>
-          <span id="header-farm-name" class="text-[11px] text-slate-400">屏東枋山愛文芒果合作園</span>
-        </div>
-        <a href="farmer-login.html" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1 shrink-0 whitespace-nowrap">
-          <span>🔑</span> 切換帳號
-        </a>
-        <a href="index.html" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 transition flex items-center gap-1 shrink-0 whitespace-nowrap">
-          <span>🏠</span> 首頁
-        </a>
+      <div class="ad-header__actions">
+        <a href="../linebot/line.html" class="ad-pill ad-pill--ok" title="派工確認、專車抵達、天候快訊都會推播到你的 LINE"><span class="ad-pill__dot"></span>LINE 已綁定</a>
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i>示範導覽</button>
+        <a href="farmer-login.html" class="ad-btn ad-btn--ghost ad-btn--sm ad-btn--icon" title="切換帳號" aria-label="切換帳號"><span class="ad-avatar" id="header-avatar">龍</span></a>
       </div>
-    </div>
-
-    <!-- Mobile Sub-nav -->
-    <div class="lg:hidden flex items-center justify-around border-t border-slate-800 py-2 px-2 bg-slate-900/95 overflow-x-auto no-scrollbar text-xs whitespace-nowrap gap-1">
-      <a href="farmer.html" class="px-2.5 py-1 text-emerald-400 font-bold border-b-2 border-emerald-400 shrink-0 whitespace-nowrap">👨‍🌾 農場主</a>
-      <a href="worker-foreign.html" class="px-2.5 py-1 text-slate-400 hover:text-white shrink-0 whitespace-nowrap">👷 移工端</a>
-      <a href="worker-local.html" class="px-2.5 py-1 text-slate-400 hover:text-white shrink-0 whitespace-nowrap">🚜 本地工/領班</a>
-      <a href="../科技後台/admin.html" class="px-2.5 py-1 text-indigo-400 hover:text-white shrink-0 whitespace-nowrap">💻 後台</a>
-      <a href="brochure.html" class="px-2.5 py-1 text-amber-300 font-bold shrink-0 whitespace-nowrap">📑 DM</a>
-      <a href="../linebot/line.html" class="px-2.5 py-1 text-emerald-400 font-bold flex items-center gap-0.5 shrink-0 whitespace-nowrap"><span>💬</span>LINE</a>
     </div>
   </header>
 
+  <!-- 手機底部導覽（桌機隱藏） -->
+  <nav class="ad-tabbar" aria-label="農場主導覽">
+    <button type="button" class="ad-tabbar__item is-active" data-tab="booking" onclick="switchFarmerTab('booking')"><i data-lucide="calendar-plus" class="ad-icon"></i>預約</button>
+    <button type="button" class="ad-tabbar__item" data-tab="orders" onclick="switchFarmerTab('orders')"><i data-lucide="clipboard-list" class="ad-icon"></i>訂單</button>
+    <a class="ad-tabbar__item" href="legalize.html"><i data-lucide="user-check" class="ad-icon"></i>合法化</a>
+    <a class="ad-tabbar__item" href="expenses.html"><i data-lucide="receipt" class="ad-icon"></i>支出</a>
+  </nav>
+
   <!-- Main Container -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-    
-    <!-- Title & Value Prop -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+  <main class="flex-1 ad-container w-full" style="padding-block: 24px 40px;">
+
+    <!-- 頁面標題列：標題隨頁籤切換，右側兩個關鍵數字 -->
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; margin-bottom: 24px;">
       <div>
-        <div class="flex items-center gap-2">
-          <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">農場主專屬門戶</span>
-          <h1 class="text-2xl sm:text-3xl font-black text-white">智慧農務派工與早鳥預約系統</h1>
-        </div>
-        <p class="text-slate-400 text-sm mt-1">合作社外展農工，簽約約定出工「遲到免單、放鳥雙倍賠償」，合法抵稅發票</p>
+        <h1 id="pageTitle" class="ad-display">預約派工</h1>
+        <p class="ad-caption" style="margin-top: 6px;">
+          <span id="header-user-name">陳建龍 (阿龍班長)</span> · <span id="header-farm-name">屏東枋山愛文芒果合作園</span>
+        </p>
       </div>
-      <div class="flex items-center gap-3">
-        <div class="px-4 py-2 rounded-xl bg-slate-800/80 border border-slate-700 text-right">
-          <span class="text-xs text-slate-400 block">今日在籍可用外展農工</span>
-          <span class="text-lg font-bold text-emerald-400">20 名在籍外展待命</span>
-        </div>
-        <div class="px-4 py-2 rounded-xl bg-slate-800/80 border border-slate-700 text-right">
-          <span class="text-xs text-slate-400 block">SLA 履約出工保證</span>
-          <span class="text-lg font-bold text-amber-400">99.5%</span>
-        </div>
-      </div>
+      <p class="ad-caption" style="margin: 0;">
+        今日可派 <strong class="ad-num" style="color: var(--ad-text);">20</strong> 人 · 出工保證 <strong class="ad-num" style="color: var(--ad-text);">99.5%</strong>
+      </p>
     </div>
 
-    <!-- LINE Bot Integration Banner for Farmer -->
-    <div class="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/80 to-slate-900 border border-emerald-500/40 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-[#06C755] text-white flex items-center justify-center text-xl font-bold shadow flex-shrink-0">
-          💬
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h3 class="text-sm font-black text-white">LINE 官方派工助理已連線</h3>
-            <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-bold">已綁定：陳建龍 (阿龍班長)</span>
-          </div>
-          <p class="text-xs text-slate-400 mt-0.5">派工出工確認、專車司機抵達通知、午後暴雨冷鏈避險快訊均自動推播至 LINE 官方帳號。</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-2 flex-shrink-0">
-        <a href="../linebot/line.html" class="px-4 py-2 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs shadow flex items-center gap-1.5 transition">
-          <span>📱</span> 開啟 LINE 體驗館
-        </a>
-      </div>
-    </div>
-
-    <!-- 頁籤切換列 (Two Main Tabs: Booking Steps vs Orders & Fulfillment) -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-3">
-      <div class="flex items-center gap-2 sm:gap-3">
-        <button id="tabBtnBooking" onclick="switchFarmerTab('booking')" class="px-5 py-3 rounded-2xl font-bold text-sm sm:text-base transition flex items-center gap-2 bg-emerald-600 text-white shadow-lg shadow-emerald-600/30">
-          <span>📝</span> 派工預約與線上試算步驟
-        </button>
-        <button id="tabBtnOrders" onclick="switchFarmerTab('orders')" class="px-5 py-3 rounded-2xl font-bold text-sm sm:text-base transition flex items-center gap-2 bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800">
-          <span>📋</span> 我的派工訂單與履約進度
-          <span id="orderBadgeCount" class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">2 筆</span>
-        </button>
-        <a href="legalize.html" class="px-5 py-3 rounded-2xl font-bold text-sm sm:text-base transition flex items-center gap-2 bg-slate-900 text-blue-300 hover:text-white hover:bg-slate-800 border border-blue-500/40">
-          <span>🔄</span> 現有工班黑轉白
-        </a>
-      </div>
-      <div class="hidden sm:flex items-center gap-2 text-xs text-slate-400">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span>系統狀態：正常接單・即時調度中</span>
-      </div>
-    </div>
 
     <!-- TAB 1: 派工預約與線上試算步驟 -->
     <div id="tabContentBooking" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -692,13 +589,14 @@
 
   </main>
 
-  <!-- Footer -->
-  <footer class="border-t border-slate-800 bg-slate-950 py-8 text-center text-xs text-slate-500 mt-auto">
-    <div class="max-w-7xl mx-auto px-4 space-y-2">
-      <p>© 2026 智農派工 AgriDispatch. All rights reserved. 雙軌合規農事外展派遣平台</p>
-      <p>技術代管：智農科技有限公司 ╳ 外展主體：有限責任智農農業勞務生產合作社</p>
-    </div>
+  <footer class="ad-caption" style="border-top: 1px solid var(--ad-border); padding: 20px 16px; text-align: center;">
+    © 2026 智農派工 AgriDispatch · 技術代管：智農科技有限公司 · 外展主體：有限責任智農農業勞務生產合作社
   </footer>
+
+  <script>
+    // 示範導覽抽屜（demo 模式才會出現）
+    var demoNav = AgriTheme.demoNav();
+  </script>
 
   <!-- 評價工班 Modal（PUT /api/ratings/orders/{orderId}） -->
   <div id="ratingModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4">
@@ -1055,32 +953,21 @@
       }
     }
 
+    // 頁籤切換：桌機導覽列與手機 tabbar 上所有 [data-tab] 一起更新，標題跟著換
     function switchFarmerTab(tab) {
-      const tabProgressSteps = document.getElementById('tabContentBooking');
-      const tabOrders = document.getElementById('tabContentOrders');
-      const btnProgressSteps = document.getElementById('tabBtnBooking');
-      const btnOrders = document.getElementById('tabBtnOrders');
-
-      if (tab === 'progress_steps' || tab === 'booking') {
-        if (tabProgressSteps) tabProgressSteps.classList.remove('hidden');
-        if (tabOrders) tabOrders.classList.add('hidden');
-        if (btnProgressSteps) {
-          btnProgressSteps.className = 'px-5 py-3 rounded-2xl font-bold text-sm sm:text-base transition flex items-center gap-2 bg-emerald-600 text-white shadow-lg shadow-emerald-600/30';
-        }
-        if (btnOrders) {
-          btnOrders.className = 'px-5 py-3 rounded-2xl font-bold text-sm sm:text-base transition flex items-center gap-2 bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800';
-        }
-      } else {
-        if (tabProgressSteps) tabProgressSteps.classList.add('hidden');
-        if (tabOrders) tabOrders.classList.remove('hidden');
-        if (btnOrders) {
-          btnOrders.className = 'px-5 py-3 rounded-2xl font-bold text-sm sm:text-base transition flex items-center gap-2 bg-emerald-600 text-white shadow-lg shadow-emerald-600/30';
-        }
-        if (btnProgressSteps) {
-          btnProgressSteps.className = 'px-5 py-3 rounded-2xl font-bold text-sm sm:text-base transition flex items-center gap-2 bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800';
-        }
-        renderOrdersList();
-      }
+      const isBooking = (tab === 'progress_steps' || tab === 'booking');
+      const key = isBooking ? 'booking' : 'orders';
+      const panelBooking = document.getElementById('tabContentBooking');
+      const panelOrders = document.getElementById('tabContentOrders');
+      if (panelBooking) panelBooking.classList.toggle('hidden', !isBooking);
+      if (panelOrders) panelOrders.classList.toggle('hidden', isBooking);
+      document.querySelectorAll('[data-tab]').forEach((el) => {
+        el.classList.toggle('is-active', el.dataset.tab === key);
+      });
+      const title = document.getElementById('pageTitle');
+      if (title) title.textContent = isBooking ? '預約派工' : '我的訂單';
+      if (!isBooking) renderOrdersList();
+      if (window.scrollY > 200) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function renderOrdersList() {
@@ -1094,7 +981,7 @@
       } catch (e) {}
 
       const totalCount = 2 + orders.length;
-      if (countBadge) countBadge.innerText = `${totalCount} 筆`;
+      if (countBadge) countBadge.innerText = String(totalCount);
 
       if (orders.length === 0) {
         box.innerHTML = '';
@@ -1155,8 +1042,9 @@
           const user = JSON.parse(rawUser);
           if (user.name) {
             const elName = document.getElementById('header-user-name');
-            const safeName = window.AgriUtil ? window.AgriUtil.escapeHtml(user.name) : user.name;
-            if (elName) elName.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> ${safeName}`;
+            if (elName) elName.textContent = user.name;
+            const elAvatar = document.getElementById('header-avatar');
+            if (elAvatar) elAvatar.textContent = String(user.name).trim().charAt(0) || '農';
           }
           if (user.farmName) {
             const elFarm = document.getElementById('header-farm-name');

@@ -241,41 +241,9 @@
     </div>
   </footer>
 
-  <!-- 示範導覽抽屜：只在 demo 模式出現 -->
-  <div class="ad-drawer__backdrop"></div>
-  <aside id="demo-drawer" class="ad-drawer" aria-hidden="true" aria-label="示範導覽" data-demo-only>
-    <div class="ad-card__head">
-      <h2 class="ad-title">示範導覽</h2>
-      <button type="button" class="ad-btn ad-btn--ghost ad-btn--icon ad-btn--sm" onclick="demoDrawer.close()" aria-label="關閉">
-        <i data-lucide="x" class="ad-icon"></i>
-      </button>
-    </div>
-    <p class="ad-caption" style="margin-bottom: 16px;">路演用。正式版不會顯示這個選單。</p>
-
-    <div class="ad-caption" style="font-weight: 600; margin-bottom: 8px;">角色工作台</div>
-    <div class="ad-list" style="margin-bottom: 20px;">
-      <a href="farmer.html" class="ad-row"><div class="ad-row__main"><div class="ad-row__title">農場主</div><div class="ad-row__meta">預約、訂單、工班</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
-      <a href="worker-foreign.html" class="ad-row"><div class="ad-row__main"><div class="ad-row__title">外展移工</div><div class="ad-row__meta">今日任務、打卡、薪資（越／印／泰／中）</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
-      <a href="worker-local.html" class="ad-row"><div class="ad-row__main"><div class="ad-row__title">帶隊領班／機耕師</div><div class="ad-row__meta">帶隊、打卡、薪資</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
-      <a href="worker-local.html?role=labor" class="ad-row"><div class="ad-row__main"><div class="ad-row__title">合作社勞務員</div><div class="ad-row__meta">出勤、打卡、薪資</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
-      <a href="../科技後台/admin.html" class="ad-row"><div class="ad-row__main"><div class="ad-row__title">科技營運後台</div><div class="ad-row__meta">天候戰情、派工調度、營收</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
-      <a href="../科技後台/vue-crud.html" class="ad-row"><div class="ad-row__main"><div class="ad-row__title">訂單總台</div><div class="ad-row__meta">訂單新增、編輯、狀態追蹤</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
-    </div>
-
-    <div class="ad-caption" style="font-weight: 600; margin-bottom: 8px;">介紹與工具</div>
-    <div class="ad-list">
-      <a href="pitch.html" class="ad-row"><div class="ad-row__main"><div class="ad-row__title">產品介紹</div><div class="ad-row__meta">痛點、雙軌架構、52 週產曆</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
-      <a href="brochure.html" class="ad-row"><div class="ad-row__main"><div class="ad-row__title">文宣 DM</div><div class="ad-row__meta">四大工時包，A4 可列印</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
-      <a href="farmers_map.html" class="ad-row"><div class="ad-row__main"><div class="ad-row__title">產地地圖</div><div class="ad-row__meta">全台農會名冊與產季</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
-      <a href="coldchain.html" class="ad-row"><div class="ad-row__main"><div class="ad-row__title">冷鏈與物流</div><div class="ad-row__meta">雨天改派與預冷場</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
-      <a href="legalize.html" class="ad-row"><div class="ad-row__main"><div class="ad-row__title">法規與合規</div><div class="ad-row__meta">外展農務制度與雙軌架構</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
-      <a href="../linebot/line.html" class="ad-row"><div class="ad-row__main"><div class="ad-row__title">LINE Bot</div><div class="ad-row__meta">圖文選單與對話模擬</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
-      <a href="login.html" class="ad-row"><div class="ad-row__main"><div class="ad-row__title">登入大廳</div><div class="ad-row__meta">五種身分入口</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
-    </div>
-  </aside>
-
   <script>
-    var demoDrawer = AgriTheme.drawer('demo-drawer') || { open: function () {}, close: function () {} };
+    // 示範導覽抽屜：頁面清單集中在 agri-theme.js，demo 模式才會注入
+    var demoDrawer = AgriTheme.demoNav();
   </script>
 </body>
 </html>

@@ -69,9 +69,10 @@ subst Z: /D
    或直接在 Android Studio 點擊 Run。前端頁面來自 `app/src/main/assets/www/`，由 `Software/tools/sync-frontend.js` 從 `Software/demo/` 同步產生，建置前請先執行同步。
 4. Release 建置（需先完成「Release 簽章設定」）：
    ```bat
-   gradlew.bat assembleRelease
+   gradlew.bat assembleClientRelease assembleServerRelease bundleClientRelease bundleServerRelease
    ```
-   輸出於 `app/build/outputs/apk/release/`。
+   APK（直接安裝）輸出於 `app/build/outputs/apk/<flavor>/release/app-<flavor>-release.apk`；
+   AAB（上傳 Google Play，新 App 只收 AAB）輸出於 `app/build/outputs/bundle/<flavor>Release/app-<flavor>-release.aab`。
 
 ---
 
@@ -89,6 +90,9 @@ subst Z: /D
 ---
 
 ## 🔑 Release 簽章設定
+
+> **目前狀態（2026-10-02）**：已產生上傳金鑰 `D:\AgriDispatch-keys\agridispatch-upload.jks`（PKCS12、RSA 2048、效期 30 年、別名 `agridispatch-upload`，憑證 `CN=AgriDispatch, O=AgriDispatch, C=TW`），放在 repo 外；密碼只存在本目錄的 `keystore.properties`（已 gitignore）。
+> **請把 `.jks` 與 `keystore.properties` 一起備份到密碼管理器或離線媒體**。上架時啟用 Play App Signing，此金鑰即為「上傳金鑰」，遺失時可向 Google 申請重設；客戶端與後台 App 共用同一把上傳金鑰。
 
 `app/build.gradle` 會從（本目錄下的）`keystore.properties` 讀取簽章設定；該檔已列於 `.gitignore`，不會被提交。**檔案不存在時，release 建置不會設定 signingConfig**，只會產出未簽章的 APK。
 

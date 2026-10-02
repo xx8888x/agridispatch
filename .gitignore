@@ -25,6 +25,7 @@ Software/android/app/google-services.json
 Software/android/keystore.properties
 *.jks
 *.keystore
+*.jks
 
 # 系統 / 暫存
 *.tmp

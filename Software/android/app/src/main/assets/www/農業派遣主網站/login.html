@@ -20,6 +20,15 @@
       document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
     }
   </script>
+  <!-- 設計系統：共用 tailwind.config、demo 模式標記、圖示 -->
+  <script src="js/agri-theme.js"></script>
+  <!-- Lucide 圖示：本機 vendor 優先，CDN 備援（只用在 Vue 區塊外） -->
+  <script src="js/vendor/lucide.min.js"></script>
+  <script>
+    if (typeof lucide === 'undefined') {
+      document.write('<script src="https://unpkg.com/lucide@1.47.0"><\/script>');
+    }
+  </script>
   <!-- Vue 3: Local Vendor First with CDN Fallback -->
   <script src="js/vendor/vue.global.prod.js"></script>
   <script>
@@ -27,29 +36,10 @@
       document.write('<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"><\/script>');
     }
   </script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#ecfdf5',
-              100: '#d1fae5',
-              500: '#10b981',
-              600: '#059669',
-              700: '#047857',
-              800: '#065f46',
-              900: '#064e3b',
-            }
-          }
-        }
-      }
-    }
-  </script>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/agri.css">
   <style>
     [v-cloak] { display: none; }
-    .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-    .card-hover:hover { transform: translateY(-6px); }
   </style>
   <script>
     // Failsafe: Remove v-cloak if Vue takes more than 1.5s to prevent blank screen
@@ -62,310 +52,79 @@
     }, 1500);
   </script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+<body class="ad-body min-h-screen flex flex-col">
 
-  <div id="app" v-cloak class="flex flex-col min-h-screen">
-    <!-- Header -->
-    <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-30">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        <a href="index.html" class="flex items-center gap-3 shrink-0">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-brand-600/30 shrink-0">
-            <span class="text-xl">🌱</span>
-          </div>
-          <div class="whitespace-nowrap">
-            <div class="flex items-center gap-2">
-              <span class="font-extrabold text-lg tracking-tight text-white">智農派工</span>
-              <span class="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 font-semibold">五大角色分流登入門戶</span>
-            </div>
-            <p class="hidden sm:block text-[11px] text-slate-400">農場主 ╳ 外籍外展移工 ╳ 帶隊領班/機耕 ╳ 合作社農業勞務員 ╳ 科技管理</p>
-          </div>
-        </a>
-
-        <div class="flex items-center gap-3 text-xs shrink-0 whitespace-nowrap">
-          <div id="serverStatusBadge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span class="text-[11px]">伺服器連線正常</span>
-          </div>
-          <a href="index.html" class="text-slate-400 hover:text-white transition shrink-0 whitespace-nowrap">回首頁</a>
-          <a href="../科技後台/admin.html" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition flex items-center gap-1 shadow-md shadow-indigo-600/30 shrink-0 whitespace-nowrap">
-            <span>💻</span> 管理後台
-          </a>
-        </div>
+  <!-- 表頭：一條 56px。連線狀態只在 demo 顯示。 -->
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner">
+      <a href="index.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+      </a>
+      <div class="ad-header__actions">
+        <span id="serverStatusBadge" class="ad-pill" data-demo-only><span class="ad-pill__dot"></span>檢查連線中</span>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col justify-center max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <!-- Title Section -->
-      <div class="text-center max-w-3xl mx-auto mb-10">
-        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold mb-4">
-          <span>🛡️</span> 100% 農業部外展與法規合規身分認證平台
-        </div>
-        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
-          請選擇您的 <span class="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">五大專屬服務身分</span>
-        </h1>
-        <p class="text-slate-400 text-sm mt-3 leading-relaxed">
-          系統針對契作農場業主、外展移工、帶隊領班與機耕技師、合作社在籍農業勞務員及科技營運管理人員提供量身訂製的操作介面與即時調度戰情。
-        </p>
-      </div>
+  <main class="flex-1 ad-container w-full" style="padding-block: 32px 40px;">
+    <div style="max-width: 560px; margin-inline: auto;">
+      <h1 class="ad-display">選擇你的身分</h1>
+      <p class="ad-caption" style="margin-top: 6px;">選好後進入對應的登入頁。</p>
 
-      <!-- Role Selection Cards (5 Roles including Labor Worker) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
-
-        <!-- Card 1: 農場主 / 產銷班長 -->
-        <a href="farmer-login.html" class="card-hover group relative rounded-3xl p-6 bg-gradient-to-b from-slate-900 to-slate-900/90 border border-emerald-500/30 hover:border-emerald-400 shadow-xl hover:shadow-2xl hover:shadow-emerald-500/10 flex flex-col justify-between overflow-hidden">
-          <div class="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-emerald-500/10 blur-2xl group-hover:bg-emerald-500/20 transition"></div>
-          
-          <div>
-            <div class="flex items-center justify-between mb-4">
-              <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition">
-                🌾
-              </div>
-              <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">
-                業主與大農
-              </span>
-            </div>
-
-            <h2 class="text-lg font-black text-white group-hover:text-emerald-300 transition flex items-center gap-1.5">
-              農場主 / 班長入口
-              <span class="text-sm opacity-0 group-hover:opacity-100 transition">➔</span>
-            </h2>
-            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
-              全台契作農場與溫室專用。一鍵預約早鳥工時包、6大派工類別試算、自訂現場派工小工頭。
-            </p>
-
-            <ul class="mt-4 space-y-2 text-xs text-slate-300 border-t border-slate-800/80 pt-3">
-              <li class="flex items-center gap-2">
-                <span class="text-emerald-400">✔</span>
-                <span>早鳥鎖定名額 ╳ 20% 定金履約</span>
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="text-emerald-400">✔</span>
-                <span>全台產曆收穫雷達 ╳ 搶工一鍵下單</span>
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="text-emerald-400">✔</span>
-                <span>自訂現場小工頭聯絡對口</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="mt-6 pt-3 border-t border-slate-800 flex items-center justify-between">
-            <span class="text-xs font-bold text-emerald-400 group-hover:underline">進入農場主登入 ➔</span>
-            <span class="text-[10px] text-slate-500 font-mono">Farmer Portal</span>
-          </div>
+      <nav class="ad-list" style="margin-top: 24px;" aria-label="身分">
+        <a href="farmer-login.html" class="ad-row ad-card--interactive">
+          <span class="ad-icon-box"><i data-lucide="wheat" class="ad-icon"></i></span>
+          <span class="ad-row__main">
+            <span class="ad-row__title" style="display: block;">農場主／產銷班長</span>
+            <span class="ad-row__meta" style="display: block;">預約派工、查看訂單</span>
+          </span>
+          <i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i>
         </a>
-
-        <!-- Card 2: 外籍外展移工 -->
-        <a href="worker-foreign-login.html" class="card-hover group relative rounded-3xl p-6 bg-gradient-to-b from-slate-900 to-slate-900/90 border border-amber-500/30 hover:border-amber-400 shadow-xl hover:shadow-2xl hover:shadow-amber-500/10 flex flex-col justify-between overflow-hidden">
-          <div class="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-amber-500/10 blur-2xl group-hover:bg-amber-500/20 transition"></div>
-          
-          <div>
-            <div class="flex items-center justify-between mb-4">
-              <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition">
-                👷
-              </div>
-              <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold">
-                Tier 1 外展移工
-              </span>
-            </div>
-
-            <h2 class="text-lg font-black text-white group-hover:text-amber-300 transition flex items-center gap-1.5">
-              外籍外展農工入口
-              <span class="text-sm opacity-0 group-hover:opacity-100 transition">➔</span>
-            </h2>
-            <div class="flex items-center gap-1 mt-1 text-[11px] text-amber-400/90 font-medium">
-              <span>🇻🇳 越</span>・<span>🇮🇩 印</span>・<span>🇹🇭 泰</span>・<span>🇵🇭 菲</span>
-            </div>
-            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
-              農業部外展在籍移工專用。支援五國語言、居留證 (ARC) / 護照號碼快速登入與任務通知。
-            </p>
-
-            <ul class="mt-4 space-y-2 text-xs text-slate-300 border-t border-slate-800/80 pt-3">
-              <li class="flex items-center gap-2">
-                <span class="text-amber-400">✔</span>
-                <span>五國語言切換 ╳ 戶外高對比大字</span>
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="text-amber-400">✔</span>
-                <span v-if="isDemo">ARC / 護照號碼免記密碼（Demo 展示）</span>
-                <span v-else>ARC / 護照號碼快速登入</span>
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="text-amber-400">✔</span>
-                <span>底薪 + 獎勵金 $8,800 明細</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="mt-6 pt-3 border-t border-slate-800 flex items-center justify-between">
-            <span class="text-xs font-bold text-amber-400 group-hover:underline">進入外勞登入 ➔</span>
-            <span class="text-[10px] text-slate-500 font-mono">Foreign Worker</span>
-          </div>
+        <a href="worker-foreign-login.html" class="ad-row ad-card--interactive">
+          <span class="ad-icon-box"><i data-lucide="hard-hat" class="ad-icon"></i></span>
+          <span class="ad-row__main">
+            <span class="ad-row__title" style="display: block;">外籍移工</span>
+            <span class="ad-row__meta" style="display: block;">今日任務、打卡、薪資（中／越／印／泰）</span>
+          </span>
+          <i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i>
         </a>
-
-        <!-- Card 3: 本國帶隊領班與專業機耕師 -->
-        <a href="worker-local-login.html" class="card-hover group relative rounded-3xl p-6 bg-gradient-to-b from-slate-900 to-slate-900/90 border border-blue-500/30 hover:border-blue-400 shadow-xl hover:shadow-2xl hover:shadow-blue-500/10 flex flex-col justify-between overflow-hidden">
-          <div class="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-blue-500/10 blur-2xl group-hover:bg-blue-500/20 transition"></div>
-          
-          <div>
-            <div class="flex items-center justify-between mb-4">
-              <div class="w-12 h-12 rounded-2xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition">
-                👨‍💼
-              </div>
-              <span class="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[11px] font-bold">
-                Tier 2/3 本地領班/菁英
-              </span>
-            </div>
-
-            <h2 class="text-lg font-black text-white group-hover:text-blue-300 transition flex items-center gap-1.5">
-              本國帶工領班 / 機耕入口
-              <span class="text-sm opacity-0 group-hover:opacity-100 transition">➔</span>
-            </h2>
-            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
-              外展帶隊小工頭（帶領外勞6人組）、大型曳引機駕駛、無人機植保飛手。小工頭責任加給 $8,000、雙語口令廣播、點名簽核與機耕代耕。
-            </p>
-
-            <ul class="mt-4 space-y-2 text-xs text-slate-300 border-t border-slate-800/80 pt-3">
-              <li class="flex items-center gap-2">
-                <span class="text-blue-400">✔</span>
-                <span>帶隊小工頭 ╳ 6名外勞現場管理與雙語口令</span>
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="text-blue-400">✔</span>
-                <span>小工頭加給 $8,000 ╳ 班員打卡簽核</span>
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="text-blue-400">✔</span>
-                <span>80hp 曳引機 ╳ 無人機代耕接單與完工回傳</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="mt-6 pt-3 border-t border-slate-800 flex items-center justify-between">
-            <span class="text-xs font-bold text-blue-400 group-hover:underline">進入領班/機耕登入 ➔</span>
-            <span class="text-[10px] text-slate-500 font-mono">Local Foreman & Worker</span>
-          </div>
+        <a href="worker-local-login.html" class="ad-row ad-card--interactive">
+          <span class="ad-icon-box"><i data-lucide="tractor" class="ad-icon"></i></span>
+          <span class="ad-row__main">
+            <span class="ad-row__title" style="display: block;">帶隊領班／機耕師</span>
+            <span class="ad-row__meta" style="display: block;">帶隊、打卡、薪資</span>
+          </span>
+          <i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i>
         </a>
-
-        <!-- Card 3b: 勞務勞工（新增獨立入口） -->
         <a href="worker-local-login.html?role=labor"
-           onclick="sessionStorage.setItem('localRole','labor');return true;"
-           class="card-hover group relative rounded-3xl p-6 bg-gradient-to-b from-slate-900 to-slate-900/90 border border-green-500/30 hover:border-green-400 shadow-xl hover:shadow-2xl hover:shadow-green-500/10 flex flex-col justify-between overflow-hidden">
-          <div class="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-green-500/10 blur-2xl group-hover:bg-green-500/20 transition"></div>
-
-          <div>
-            <div class="flex items-center justify-between mb-4">
-              <div class="w-12 h-12 rounded-2xl bg-green-500/20 border border-green-500/40 flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition">
-                🧑‍🌾
-              </div>
-              <span class="px-2.5 py-0.5 rounded-full bg-green-500/20 text-green-300 border border-green-500/30 text-[11px] font-bold">
-                合作社在籍農業勞務員
-              </span>
-            </div>
-
-            <h2 class="text-lg font-black text-white group-hover:text-green-300 transition flex items-center gap-1.5">
-              勞務勞工入口
-              <span class="text-sm opacity-0 group-hover:opacity-100 transition">➔</span>
-            </h2>
-            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
-              合作社在籍農業勞務員工。依合作社統一調度赴農場出勤，享有勞健保、6% 勞退與農業部就業獎勵金 NT$8,800。
-            </p>
-
-            <ul class="mt-4 space-y-2 text-xs text-slate-300 border-t border-slate-800/80 pt-3">
-              <li class="flex items-center gap-2">
-                <span class="text-green-400">✔</span>
-                <span>今日農務任務指派 ╳ GPS 出勤打卡</span>
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="text-green-400">✔</span>
-                <span>底薪 $29,500 + 就業獎勵 $8,800 透明明細</span>
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="text-green-400">✔</span>
-                <span>勞健保 ╳ 6% 勞退 ╳ 全額合規保障</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="mt-6 pt-3 border-t border-slate-800 flex items-center justify-between">
-            <span class="text-xs font-bold text-green-400 group-hover:underline">進入勞務工登入 ➔</span>
-            <span class="text-[10px] text-slate-500 font-mono">Agricultural Labor</span>
-          </div>
+           onclick="sessionStorage.setItem('localRole','labor');return true;" class="ad-row ad-card--interactive">
+          <span class="ad-icon-box"><i data-lucide="shovel" class="ad-icon"></i></span>
+          <span class="ad-row__main">
+            <span class="ad-row__title" style="display: block;">合作社勞務員</span>
+            <span class="ad-row__meta" style="display: block;">出勤、打卡、薪資</span>
+          </span>
+          <i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i>
         </a>
-
-        <!-- Card 4: 科技營運與合作社管理後台 -->
-        <a href="../科技後台/admin-login.html" class="card-hover group relative rounded-3xl p-6 bg-gradient-to-b from-slate-900 to-slate-900/90 border border-indigo-500/40 hover:border-indigo-400 shadow-xl hover:shadow-2xl hover:shadow-indigo-500/20 flex flex-col justify-between overflow-hidden">
-          <div class="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-indigo-500/10 blur-2xl group-hover:bg-indigo-500/30 transition"></div>
-          
-          <div>
-            <div class="flex items-center justify-between mb-4">
-              <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition">
-                💻
-              </div>
-              <span class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[11px] font-bold">
-                後台管理 ╳ 總台
-              </span>
-            </div>
-
-            <h2 class="text-lg font-black text-white group-hover:text-indigo-300 transition flex items-center gap-1.5">
-              科技營運管理後台
-              <span class="text-sm opacity-0 group-hover:opacity-100 transition">➔</span>
-            </h2>
-            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
-              專供科技代管主管與合作社調度員。三大戰情頁籤：即時氣象避險大腦、派工狀態（訂單 ╳ 26 名農工）、雙軌金流 18% 營收分流。
-            </p>
-
-            <ul class="mt-4 space-y-2 text-xs text-slate-300 border-t border-slate-800/80 pt-3">
-              <li class="flex items-center gap-2">
-                <span class="text-indigo-400">✔</span>
-                <span>🌤️ 天氣頁籤：突發暴雨冷鏈避險演練 ╳ 5大產區氣象雷達</span>
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="text-indigo-400">✔</span>
-                <span>🚜 派工狀態：4 大工班 ╳ 26 名在籍農工名冊 ╳ 訂單管理</span>
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="text-indigo-400">✔</span>
-                <span>💰 營收頁籤：科技公司 18% 代管發票 ╳ 82% 平移流水帳 CSV</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="mt-6 pt-3 border-t border-slate-800 flex items-center justify-between">
-            <span class="text-xs font-bold text-indigo-400 group-hover:underline">進入管理後台 ➔</span>
-            <span class="text-[10px] text-slate-500 font-mono">Admin Console</span>
-          </div>
+        <a href="../科技後台/admin-login.html" class="ad-row ad-card--interactive">
+          <span class="ad-icon-box"><i data-lucide="monitor" class="ad-icon"></i></span>
+          <span class="ad-row__main">
+            <span class="ad-row__title" style="display: block;">營運管理</span>
+            <span class="ad-row__meta" style="display: block;">科技公司與合作社人員</span>
+          </span>
+          <i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i>
         </a>
+      </nav>
 
+      <div id="app" v-cloak>
+        <p v-if="isDemo" data-demo-only class="ad-caption" style="margin-top: 20px; text-align: center;">示範模式：每個登入頁都能一鍵填入示範帳號。</p>
       </div>
+    </div>
+  </main>
 
-      <!-- Quick Access Bar -->
-      <div class="mt-10 bg-slate-900/60 p-5 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-        <div class="flex items-center gap-3">
-          <span class="text-xl">⚡</span>
-          <div>
-            <div v-if="isDemo" class="font-bold text-white">展示模式五大身分切換</div>
-            <div v-else class="font-bold text-white">快速前往管理後台</div>
-            <div v-if="isDemo" class="text-slate-400 text-[11px]">您可直接點選上方五大入口（含新三軌之「勞務勞工」），各入口均提供「一鍵填入示範身分」功能，免記帳密即可實測。</div>
-            <div v-else class="text-slate-400 text-[11px]">請使用上方各角色登入頁，以真實帳號密碼登入。</div>
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <a href="../科技後台/admin.html" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition flex items-center gap-1.5 shadow-md shadow-indigo-600/30">
-            <span>💻</span> 科技管理後台
-          </a>
-        </div>
-      </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
-      <div class="max-w-7xl mx-auto px-4">
-        智農派工 AgriDispatch © 2026 農業部外展合作社 ╳ 智慧調度管理系統
-      </div>
-    </footer>
-  </div>
+  <footer class="ad-caption" style="padding: 20px 16px; text-align: center; border-top: 1px solid var(--ad-border);">
+    © 2026 智農派工 AgriDispatch
+  </footer>
 
   <script>
     if (typeof Vue !== 'undefined') {
@@ -382,16 +141,16 @@
                 isOnline.value = true;
                 const badge = document.getElementById('serverStatusBadge');
                 if (badge) {
-                  badge.className = 'hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-emerald-300';
-                  badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span class="text-[11px] font-bold">雙伺服器在線 (200 OK)</span>';
+                  badge.className = 'ad-pill ad-pill--ok';
+                  badge.innerHTML = '<span class="ad-pill__dot"></span>伺服器在線';
                 }
               }
             } catch (e) {
               isOnline.value = false;
               const badge = document.getElementById('serverStatusBadge');
               if (badge) {
-                badge.className = 'hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-950/60 border border-amber-500/40 text-amber-300';
-                badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span><span class="text-[11px] font-bold">離線快取模式 (可執行 start_all.bat)</span>';
+                badge.className = 'ad-pill ad-pill--warn';
+                badge.innerHTML = '<span class="ad-pill__dot"></span>離線模式';
               }
             }
           };

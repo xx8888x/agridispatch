@@ -19,55 +19,63 @@
       document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
     }
   </script>
+  <!-- 設計系統：共用 tailwind.config、demo 模式標記、圖示、抽屜 -->
+  <script src="js/agri-theme.js"></script>
+  <!-- Lucide 圖示：本機 vendor 優先，CDN 備援 -->
+  <script src="js/vendor/lucide.min.js"></script>
   <script>
-    tailwind.config = {
-      theme: { extend: { colors: { brand: { 50: '#ecfdf5', 100: '#d1fae5', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b' } } } }
+    if (typeof lucide === 'undefined') {
+      document.write('<script src="https://unpkg.com/lucide@1.47.0"><\/script>');
     }
   </script>
+  <link rel="stylesheet" href="css/agri.css">
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
+<body class="ad-body ad-has-tabbar min-h-screen flex flex-col">
 
-  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-      <a href="admin.html" class="flex items-center gap-2 shrink-0">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-400 flex items-center justify-center shadow-lg shadow-indigo-600/30">
-          <span class="text-xl">🛡️</span>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="font-extrabold text-lg tracking-tight text-white">智農派工</span>
-            <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold">科技後台</span>
-          </div>
-          <p class="hidden sm:block text-[11px] text-slate-400">合作社加退保登錄 ╳ 派工前加保檢查</p>
-        </div>
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner" style="max-width: 1280px;">
+      <a href="admin.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">營運後台</span>
       </a>
-      <a href="admin.html" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition shrink-0">← 回整合管理後台</a>
+      <nav class="ad-nav" aria-label="營運工具">
+        <a class="ad-nav__link is-active" href="insurance.html">保險登錄</a>
+        <a class="ad-nav__link" href="skills.html">技能複核</a>
+        <a class="ad-nav__link" href="matching.html">派工媒合</a>
+      </nav>
+      <div class="ad-header__actions">
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()" aria-label="示範導覽"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span></button>
+        <a href="admin.html" class="ad-btn ad-btn--secondary ad-btn--sm"><i data-lucide="arrow-left" class="ad-icon ad-icon--sm"></i>回後台</a>
+      </div>
     </div>
   </header>
 
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+  <nav class="ad-tabbar" aria-label="營運工具">
+    <a class="ad-tabbar__item is-active" href="insurance.html"><i data-lucide="shield-check" class="ad-icon"></i>保險登錄</a>
+    <a class="ad-tabbar__item" href="skills.html"><i data-lucide="award" class="ad-icon"></i>技能複核</a>
+    <a class="ad-tabbar__item" href="matching.html"><i data-lucide="route" class="ad-icon"></i>派工媒合</a>
+    <a class="ad-tabbar__item" href="admin.html"><i data-lucide="layout-dashboard" class="ad-icon"></i>後台</a>
+  </nav>
 
-    <div class="space-y-2 border-b border-slate-800 pb-5">
-      <h1 class="text-2xl sm:text-3xl font-black text-white flex items-center gap-2"><span>🛡️</span> 保險登錄</h1>
-      <p class="text-sm text-slate-400 max-w-3xl leading-relaxed">
-        記錄合作社為每位工人辦理的勞保、就保、職保、健保加退保結果（實際申報於勞保局／健保署系統辦理）。
-        工班中只要有人未完整加保，訂單就無法轉為「施工中」。
-      </p>
-      <p class="text-[11px] text-amber-300/90">【待確認】應加保險種：本國籍為勞保／就保／職保／健保；外籍移工為勞保／職保／健保（不適用就保）。外籍配偶、部分工時投保級距等例外請洽勞保局。</p>
+  <main class="flex-1 ad-container w-full" style="max-width: 1280px; padding-block: 24px 40px; display: flex; flex-direction: column; gap: 20px;">
+    <div style="min-width: 0;">
+      <h1 class="ad-display">保險登錄</h1>
+      <p class="ad-caption" style="margin-top: 6px; max-width: 820px;">記錄合作社為每位工人辦理的勞保、就保、職保、健保加退保結果（實際申報於勞保局／健保署系統辦理）。工班中只要有人未完整加保，訂單就無法轉為「施工中」。</p>
+      <p class="ad-caption" style="margin-top: 6px; color: var(--ad-accent-text); max-width: 820px;">【待確認】應加保險種：本國籍為勞保／就保／職保／健保；外籍移工為勞保／職保／健保（不適用就保）。外籍配偶、部分工時投保級距等例外請洽勞保局。</p>
     </div>
+    <div id="loadError" class="ad-notice ad-notice--danger" role="alert" hidden></div>
 
-    <div id="loadError" class="hidden p-4 rounded-2xl bg-rose-950/50 border border-rose-500/40 text-sm text-rose-200"></div>
+    <div id="kpiRow" class="ad-stat-grid"></div>
 
-    <div id="kpiRow" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+    <section>
+      <h2 class="ad-title" style="margin-bottom: 10px;">工班加保概況（今日）</h2>
+      <div id="teamRow" class="ad-stat-grid"></div>
+    </section>
 
-    <div>
-      <h2 class="text-sm font-black text-white mb-2">工班加保概況（今日）</h2>
-      <div id="teamRow" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
-    </div>
-
-    <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-2xl bg-slate-900 border border-slate-800">
-      <input id="fSearch" type="search" oninput="renderTable()" placeholder="搜尋工號、姓名" class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
-      <select id="fFilter" onchange="renderTable()" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+    <div class="ad-card" style="display: flex; flex-wrap: wrap; gap: 12px; padding: 14px;">
+      <input id="fSearch" type="search" oninput="renderTable()" placeholder="搜尋工號、姓名" aria-label="搜尋工號、姓名" class="ad-input" style="flex: 1; min-width: 180px;">
+      <select id="fFilter" onchange="renderTable()" aria-label="篩選" class="ad-select" style="width: auto; min-width: 150px;">
         <option value="all">全部工人</option>
         <option value="gap">只看未完整加保</option>
         <option value="local">本國籍</option>
@@ -75,68 +83,49 @@
       </select>
     </div>
 
-    <div class="p-4 rounded-3xl bg-slate-900 border border-slate-800 overflow-x-auto">
-      <table class="w-full text-xs min-w-[820px]">
+    <div class="ad-card" style="padding: 8px 16px; overflow-x: auto;">
+      <table class="ad-table" style="min-width: 820px;">
         <thead>
-          <tr class="text-left text-slate-400 border-b border-slate-800">
-            <th class="py-2 pr-3">工人</th>
-            <th class="py-2 pr-3">工班</th>
-            <th class="py-2 pr-3">勞保</th>
-            <th class="py-2 pr-3">就保</th>
-            <th class="py-2 pr-3">職保</th>
-            <th class="py-2 pr-3">健保</th>
-            <th class="py-2 pr-3">狀態</th>
-            <th class="py-2"></th>
+          <tr>
+            <th>工人</th><th>工班</th><th>勞保</th><th>就保</th><th>職保</th><th>健保</th><th>狀態</th><th></th>
           </tr>
         </thead>
-        <tbody id="rows"><tr><td colspan="8" class="py-8 text-center text-slate-500">載入中…</td></tr></tbody>
+        <tbody id="rows"><tr><td colspan="8" style="text-align: center; padding: 32px 12px; color: var(--ad-text-3);">載入中…</td></tr></tbody>
       </table>
     </div>
   </main>
 
-  <!-- 工人明細 Modal：加退保歷史＋登錄加保 -->
-  <div id="detailModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4">
-    <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 rounded-3xl bg-slate-900 border border-indigo-500/40 space-y-5">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <h3 id="dTitle" class="text-white font-black text-lg"></h3>
-          <p id="dSub" class="text-[11px] text-slate-400"></p>
+  <!-- 工人明細：加退保歷史＋登錄加保 -->
+  <div id="detailModal" class="ad-modal" role="dialog" aria-modal="true" aria-labelledby="dTitle" hidden>
+    <div class="ad-modal__panel" style="max-width: 640px;">
+      <div class="ad-card__head">
+        <div style="min-width: 0;">
+          <h3 id="dTitle" class="ad-title"></h3>
+          <p id="dSub" class="ad-caption"></p>
         </div>
-        <button type="button" onclick="closeDetail()" class="text-slate-400 hover:text-white">✕</button>
+        <button type="button" onclick="closeDetail()" class="ad-btn ad-btn--ghost ad-btn--icon ad-btn--sm" aria-label="關閉"><i data-lucide="x" class="ad-icon"></i></button>
       </div>
 
-      <div>
-        <h4 class="text-xs font-black text-slate-300 mb-2">加退保歷史</h4>
-        <div id="dHistory" class="space-y-2"></div>
-      </div>
+      <section>
+        <h4 class="ad-heading" style="margin-bottom: 8px;">加退保歷史</h4>
+        <div id="dHistory" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      </section>
 
-      <div class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/60 space-y-3">
-        <h4 class="text-xs font-black text-emerald-300">＋ 登錄加保</h4>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-300 mb-1">險種</label>
-            <select id="eType" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"></select>
-          </div>
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-300 mb-1">月投保薪資 (NT$)</label>
-            <input id="eSalary" type="number" min="1" step="1" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-mono">
-          </div>
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-300 mb-1">加保日</label>
-            <input id="eDate" type="date" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
-          </div>
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-300 mb-1">申報受理編號（選填）</label>
-            <input id="eRef" type="text" maxlength="40" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-mono">
-          </div>
+      <section class="ad-card ad-card--inset" style="display: flex; flex-direction: column; gap: 12px;">
+        <h4 class="ad-heading">登錄加保</h4>
+        <div class="ad-form-grid ad-form-grid--2">
+          <div class="ad-field"><label class="ad-label" for="eType">險種</label><select id="eType" class="ad-select"></select></div>
+          <div class="ad-field"><label class="ad-label" for="eSalary">月投保薪資 (NT$)</label><input id="eSalary" type="number" inputmode="numeric" min="1" step="1" class="ad-input ad-num"></div>
+          <div class="ad-field"><label class="ad-label" for="eDate">加保日</label><input id="eDate" type="date" class="ad-input"></div>
+          <div class="ad-field"><label class="ad-label" for="eRef">申報受理編號（選填）</label><input id="eRef" type="text" maxlength="40" class="ad-input ad-num"></div>
         </div>
-        <p id="eMsg" class="hidden text-xs"></p>
-        <button type="button" id="eSubmit" onclick="submitEnroll()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm transition">登錄加保</button>
-      </div>
+        <p id="eMsg" hidden></p>
+        <button type="button" id="eSubmit" onclick="submitEnroll()" class="ad-btn ad-btn--primary ad-btn--block">登錄加保</button>
+      </section>
     </div>
   </div>
 
-  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden px-4 py-3 rounded-2xl bg-slate-800 border border-indigo-500/40 text-sm text-white shadow-2xl max-w-[90vw]"></div>
+  <div id="toast" class="ad-toast" role="status" hidden></div>
 
   <script>
     const TYPES = ['labor', 'employment', 'occupational', 'health'];
@@ -166,19 +155,19 @@
     function toast(msg) {
       const el = document.getElementById('toast');
       el.textContent = msg;
-      el.classList.remove('hidden');
+      el.hidden = false;
       clearTimeout(toast._t);
-      toast._t = setTimeout(() => el.classList.add('hidden'), 3000);
+      toast._t = setTimeout(() => { el.hidden = true; }, 3000);
     }
 
     async function loadAll() {
       try {
         workers = (await api('/insurance/workers')).data;
-        document.getElementById('loadError').classList.add('hidden');
+        document.getElementById('loadError').hidden = true;
       } catch (e) {
         const el = document.getElementById('loadError');
         el.textContent = `無法載入保險資料：${e.message}（請確認後端 3000 已啟動，且以管理員身分登入）`;
-        el.classList.remove('hidden');
+        el.hidden = false;
         document.getElementById('rows').innerHTML = '';
         return;
       }
@@ -191,15 +180,15 @@
       const gaps = workers.filter(w => !w.fullyInsured).length;
       const local = workers.filter(w => w.nationality === '本國').length;
       const tiles = [
-        ['工人數', workers.length, 'text-white'],
-        ['完整加保', workers.length - gaps, 'text-emerald-300'],
-        ['未完整加保', gaps, gaps ? 'text-rose-300' : 'text-slate-400'],
-        ['本國／外籍', `${local}／${workers.length - local}`, 'text-white']
+        ['工人數', workers.length, ''],
+        ['完整加保', workers.length - gaps, 'ad-stat--primary'],
+        ['未完整加保', gaps, gaps ? 'ad-stat--danger' : ''],
+        ['本國／外籍', `${local}／${workers.length - local}`, '']
       ];
       document.getElementById('kpiRow').innerHTML = tiles.map(([k, v, c]) => `
-        <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-          <div class="text-[11px] text-slate-400">${k}</div>
-          <div class="mt-1 text-2xl font-black ${c}">${v}</div>
+        <div class="ad-stat ${c}">
+          <div class="ad-stat__label">${k}</div>
+          <div class="ad-stat__value">${v}</div>
         </div>`).join('');
     }
 
@@ -210,23 +199,23 @@
           const t = (await api(`/insurance/teams/${encodeURIComponent(id)}`)).data;
           const ok = t.allInsured;
           const gapText = (t.gaps || []).map(g => `${esc(g.name)}（缺${esc(g.missing.join('、'))}）`).join('<br>');
-          return `<div class="p-4 rounded-2xl border ${ok ? 'bg-emerald-950/30 border-emerald-500/30' : 'bg-rose-950/40 border-rose-500/40'}">
-              <div class="text-xs font-black text-white">${esc(id)}</div>
-              <div class="mt-1 text-sm font-bold ${ok ? 'text-emerald-300' : 'text-rose-300'}">${ok ? '✅ 可出工' : '⛔ 不可出工'}・${t.insured}/${t.total} 人</div>
-              ${gapText ? `<div class="mt-1 text-[11px] text-rose-200">${gapText}</div>` : ''}
+          return `<div class="ad-stat ${ok ? 'ad-stat--primary' : 'ad-stat--danger'}">
+              <div class="ad-stat__label">${esc(id)}</div>
+              <div class="ad-heading" style="color: ${ok ? 'var(--ad-primary-text)' : 'var(--ad-danger-text)'};">${ok ? '可出工' : '不可出工'}・${t.insured}/${t.total} 人</div>
+              ${gapText ? `<div class="ad-caption" style="margin-top: 4px; color: var(--ad-danger-text);">${gapText}</div>` : ''}
             </div>`;
         } catch (e) {
-          return `<div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-xs text-slate-400">${esc(id)}：無法載入</div>`;
+          return `<div class="ad-stat"><div class="ad-stat__label">${esc(id)}</div><div class="ad-caption">無法載入</div></div>`;
         }
       }));
       document.getElementById('teamRow').innerHTML = cards.join('');
     }
 
     function cell(w, type) {
-      if (!w.required.includes(type)) return '<span class="text-slate-600">不適用</span>';
+      if (!w.required.includes(type)) return '<span class="ad-caption" style="color: var(--ad-text-3);">不適用</span>';
       const r = w.active[type];
-      if (!r) return '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/40">未加保</span>';
-      return `<div class="text-emerald-300 font-bold">✓ ${r.insuredSalary.toLocaleString()}</div><div class="text-[10px] text-slate-500">${esc(r.enrollDate)} 起</div>`;
+      if (!r) return '<span class="ad-pill ad-pill--danger">未加保</span>';
+      return `<div class="ad-num" style="color: var(--ad-primary-text); font-weight: 600;">${r.insuredSalary.toLocaleString()}</div><div class="ad-caption ad-num">${esc(r.enrollDate)} 起</div>`;
     }
 
     function renderTable() {
@@ -239,27 +228,25 @@
         return !q || w.workerId.toLowerCase().includes(q) || String(w.name).toLowerCase().includes(q);
       });
       document.getElementById('rows').innerHTML = list.length ? list.map(w => `
-        <tr class="border-b border-slate-800/70">
-          <td class="py-2.5 pr-3"><div class="font-bold text-white">${esc(w.name)}</div><div class="text-[10px] text-slate-500 font-mono">${esc(w.workerId)}・${esc(w.nationality)}</div></td>
-          <td class="py-2.5 pr-3 text-slate-300">${esc(w.teamId || '—')}</td>
-          ${TYPES.map(t => `<td class="py-2.5 pr-3">${cell(w, t)}</td>`).join('')}
-          <td class="py-2.5 pr-3">${w.fullyInsured
-            ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/40">完整加保</span>'
-            : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/40">缺 ${w.missing.map(t => LABEL[t]).join('、')}</span>`}</td>
-          <td class="py-2.5 text-right"><button type="button" data-id="${esc(w.workerId)}" onclick="openDetail(this.dataset.id)" class="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-200 hover:bg-indigo-500/30 border border-indigo-500/30 font-bold">管理</button></td>
-        </tr>`).join('') : '<tr><td colspan="8" class="py-8 text-center text-slate-500">沒有符合的工人</td></tr>';
+        <tr>
+          <td><div style="font-weight: 600;">${esc(w.name)}</div><div class="ad-caption ad-num">${esc(w.workerId)}・${esc(w.nationality)}</div></td>
+          <td>${esc(w.teamId || '—')}</td>
+          ${TYPES.map(t => `<td>${cell(w, t)}</td>`).join('')}
+          <td>${w.fullyInsured
+            ? '<span class="ad-pill ad-pill--ok">完整加保</span>'
+            : `<span class="ad-pill ad-pill--danger">缺 ${w.missing.map(t => LABEL[t]).join('、')}</span>`}</td>
+          <td style="text-align: right;"><button type="button" data-id="${esc(w.workerId)}" onclick="openDetail(this.dataset.id)" class="ad-btn ad-btn--secondary ad-btn--sm">管理</button></td>
+        </tr>`).join('') : '<tr><td colspan="8" style="text-align: center; padding: 32px 12px; color: var(--ad-text-3);">沒有符合的工人</td></tr>';
     }
 
     async function openDetail(workerId) {
-      const m = document.getElementById('detailModal');
-      m.classList.remove('hidden');
-      m.classList.add('flex');
+      document.getElementById('detailModal').hidden = false;
       setMsg('', '');
-      document.getElementById('dHistory').innerHTML = '<div class="text-xs text-slate-500">載入中…</div>';
+      document.getElementById('dHistory').innerHTML = '<div class="ad-caption">載入中…</div>';
       try {
         current = (await api(`/insurance/workers/${encodeURIComponent(workerId)}`)).data;
       } catch (e) {
-        document.getElementById('dHistory').innerHTML = `<div class="text-xs text-rose-300">${esc(e.message)}</div>`;
+        document.getElementById('dHistory').innerHTML = `<div class="ad-notice ad-notice--danger" role="alert">${esc(e.message)}</div>`;
         return;
       }
       document.getElementById('dTitle').textContent = `${current.name}（${current.workerId}）`;
@@ -273,35 +260,33 @@
       document.getElementById('eDate').value = today();
       document.getElementById('eRef').value = '';
       document.getElementById('eSubmit').disabled = !firstMissing;
-      document.getElementById('eSubmit').classList.toggle('opacity-50', !firstMissing);
     }
 
     function renderHistory() {
       const recs = current.records;
       document.getElementById('dHistory').innerHTML = recs.length ? recs.map(r => `
-        <div class="flex items-center justify-between gap-3 p-3 rounded-xl ${r.active ? 'bg-emerald-950/30 border border-emerald-500/30' : 'bg-slate-800/40 border border-slate-700/50'}">
-          <div class="text-xs">
-            <div class="font-bold ${r.active ? 'text-emerald-300' : 'text-slate-400'}">${LABEL[r.type]}・投保薪資 ${r.insuredSalary.toLocaleString()}</div>
-            <div class="text-[11px] text-slate-400">加保 ${esc(r.enrollDate)}${r.withdrawDate ? `　退保 ${esc(r.withdrawDate)}${r.withdrawReason ? `（${esc(r.withdrawReason)}）` : ''}` : '　在保中'}${r.filingRef ? `　受理編號 ${esc(r.filingRef)}` : ''}</div>
+        <div class="ad-card ad-card--inset" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 12px; ${r.active ? 'border-color: var(--ad-primary);' : ''}">
+          <div>
+            <div class="ad-heading" style="font-size: 14px; ${r.active ? 'color: var(--ad-primary-text);' : 'color: var(--ad-text-3);'}">${LABEL[r.type]}・投保薪資 <span class="ad-num">${r.insuredSalary.toLocaleString()}</span></div>
+            <div class="ad-caption">加保 ${esc(r.enrollDate)}${r.withdrawDate ? `　退保 ${esc(r.withdrawDate)}${r.withdrawReason ? `（${esc(r.withdrawReason)}）` : ''}` : '　在保中'}${r.filingRef ? `　受理編號 ${esc(r.filingRef)}` : ''}</div>
           </div>
           ${r.withdrawDate ? '' : `
-          <div class="flex items-center gap-1 shrink-0">
-            <input type="date" data-withdraw-for="${esc(r.id)}" value="${today()}" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-white">
-            <button type="button" data-id="${esc(r.id)}" onclick="submitWithdraw(this.dataset.id)" class="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-200 hover:bg-rose-500/30 border border-rose-500/30 text-[11px] font-bold">退保</button>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <input type="date" data-withdraw-for="${esc(r.id)}" value="${today()}" aria-label="退保日" class="ad-input" style="height: 36px; width: auto;">
+            <button type="button" data-id="${esc(r.id)}" onclick="submitWithdraw(this.dataset.id)" class="ad-btn ad-btn--danger ad-btn--sm">退保</button>
           </div>`}
-        </div>`).join('') : '<div class="text-xs text-slate-500">尚無加退保紀錄</div>';
+        </div>`).join('') : '<div class="ad-caption">尚無加退保紀錄</div>';
     }
 
     function closeDetail() {
-      const m = document.getElementById('detailModal');
-      m.classList.add('hidden');
-      m.classList.remove('flex');
+      document.getElementById('detailModal').hidden = true;
     }
 
     function setMsg(text, kind) {
       const el = document.getElementById('eMsg');
       el.innerHTML = text;
-      el.className = text ? `text-xs ${kind === 'error' ? 'text-rose-300' : kind === 'warn' ? 'text-amber-300' : 'text-emerald-300'}` : 'hidden text-xs';
+      el.hidden = !text;
+      el.className = text ? `ad-notice ${kind === 'error' ? 'ad-notice--danger' : kind === 'warn' ? 'ad-notice--warn' : 'ad-notice--ok'}` : '';
     }
 
     async function submitEnroll() {
@@ -318,9 +303,9 @@
         await loadAll();
         await openDetail(id);
         if (res.warnings && res.warnings.length) {
-          setMsg('✓ 已登錄加保。注意：<br>' + res.warnings.map(esc).join('<br>'), 'warn');
+          setMsg('已登錄加保。注意：<br>' + res.warnings.map(esc).join('<br>'), 'warn');
         } else {
-          setMsg('✓ 已登錄加保', 'ok');
+          setMsg('已登錄加保', 'ok');
         }
       } catch (e) {
         setMsg(esc(e.message), 'error');
@@ -344,6 +329,11 @@
     }
 
     document.addEventListener('DOMContentLoaded', loadAll);
+  </script>
+
+  <script>
+    var demoNav = AgriTheme.demoNav();
+    if (window.lucide) lucide.createIcons();
   </script>
 </body>
 </html>

@@ -15,53 +15,70 @@
       document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
     }
   </script>
+  <!-- 設計系統：共用 tailwind.config、demo 模式標記、圖示、抽屜 -->
+  <script src="js/agri-theme.js"></script>
+  <!-- Lucide 圖示：本機 vendor 優先，CDN 備援 -->
+  <script src="js/vendor/lucide.min.js"></script>
+  <script>
+    if (typeof lucide === 'undefined') {
+      document.write('<script src="https://unpkg.com/lucide@1.47.0"><\/script>');
+    }
+  </script>
+  <link rel="stylesheet" href="css/agri.css">
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
+<body class="ad-body ad-has-tabbar min-h-screen flex flex-col">
 
-  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-      <div class="flex items-center gap-2">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-400 flex items-center justify-center"><span class="text-xl">🧭</span></div>
-        <div>
-          <div class="font-extrabold text-lg text-white">智農派工 <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold">科技後台</span></div>
-          <p class="hidden sm:block text-[11px] text-slate-400">技能標籤 ╳ 工班評價 ╳ 加保資格 → 派工建議</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-2">
-        <a href="skills.html" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">💪 技能標籤</a>
-        <a href="admin.html" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">← 回整合管理後台</a>
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner" style="max-width: 1280px;">
+      <a href="admin.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">營運後台</span>
+      </a>
+      <nav class="ad-nav" aria-label="營運工具">
+        <a class="ad-nav__link" href="insurance.html">保險登錄</a>
+        <a class="ad-nav__link" href="skills.html">技能複核</a>
+        <a class="ad-nav__link is-active" href="matching.html">派工媒合</a>
+      </nav>
+      <div class="ad-header__actions">
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()" aria-label="示範導覽"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span></button>
+        <a href="admin.html" class="ad-btn ad-btn--secondary ad-btn--sm"><i data-lucide="arrow-left" class="ad-icon ad-icon--sm"></i>回後台</a>
       </div>
     </div>
   </header>
 
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-    <div class="space-y-2 border-b border-slate-800 pb-5">
-      <h1 class="text-2xl sm:text-3xl font-black text-white">🧭 派工媒合</h1>
-      <p class="text-sm text-slate-400 max-w-4xl leading-relaxed">
-        系統依「該類別熟手人數 → 資深人數 → 工班評價 → 目前施工中訂單數」排序工班，並建議出工名單（必含一位領班，
-        名單 ≥ 4 人時保留 1 個培養名額給新進工人）。未完整加保或工作許可過期者不列入名單。最後由合作社確認後儲存。
-      </p>
-      <p class="text-[11px] text-amber-300/90">【待確認】排序不使用國籍、性別、年齡；標籤只影響優先順序，不得作為排除特定工人或差別待遇的依據。</p>
+  <nav class="ad-tabbar" aria-label="營運工具">
+    <a class="ad-tabbar__item" href="insurance.html"><i data-lucide="shield-check" class="ad-icon"></i>保險登錄</a>
+    <a class="ad-tabbar__item" href="skills.html"><i data-lucide="award" class="ad-icon"></i>技能複核</a>
+    <a class="ad-tabbar__item is-active" href="matching.html"><i data-lucide="route" class="ad-icon"></i>派工媒合</a>
+    <a class="ad-tabbar__item" href="admin.html"><i data-lucide="layout-dashboard" class="ad-icon"></i>後台</a>
+  </nav>
+
+  <main class="flex-1 ad-container w-full" style="max-width: 1280px; padding-block: 24px 40px; display: flex; flex-direction: column; gap: 20px;">
+    <div style="min-width: 0;">
+      <h1 class="ad-display">派工媒合</h1>
+      <p class="ad-caption" style="margin-top: 6px; max-width: 820px;">系統依「該類別熟手人數 → 資深人數 → 工班評價 → 目前施工中訂單數」排序工班，並建議出工名單（必含一位領班，名單 ≥ 4 人時保留 1 個培養名額給新進工人）。未完整加保或工作許可過期者不列入名單。最後由合作社確認後儲存。</p>
+      <p class="ad-caption" style="margin-top: 6px; color: var(--ad-accent-text); max-width: 820px;">【待確認】排序不使用國籍、性別、年齡；標籤只影響優先順序，不得作為排除特定工人或差別待遇的依據。</p>
     </div>
 
-    <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-2xl bg-slate-900 border border-slate-800">
-      <label for="orderSel" class="text-xs text-slate-400 shrink-0">選擇訂單</label>
-      <select id="orderSel" onchange="loadOrder()" class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"></select>
+    <div class="ad-card" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 14px;">
+      <label for="orderSel" class="ad-label">選擇訂單</label>
+      <select id="orderSel" onchange="loadOrder()" class="ad-select" style="flex: 1; min-width: 220px;"></select>
     </div>
 
-    <div id="loadError" class="hidden p-4 rounded-2xl bg-rose-950/50 border border-rose-500/40 text-sm text-rose-200"></div>
+    <div id="loadError" class="ad-notice ad-notice--danger" role="alert" hidden></div>
     <div id="orderBox"></div>
 
     <div class="grid lg:grid-cols-12 gap-6">
-      <div class="lg:col-span-5 space-y-3">
-        <h2 class="text-sm font-black text-white">① 工班排序</h2>
-        <div id="teams" class="space-y-2"></div>
-      </div>
-      <div class="lg:col-span-7 space-y-3">
-        <h2 class="text-sm font-black text-white">② 出工名單 <span id="crewTeam" class="text-xs font-normal text-slate-400"></span></h2>
-        <div id="crew" class="space-y-2"></div>
+      <section class="lg:col-span-5" style="display: flex; flex-direction: column; gap: 12px;">
+        <h2 class="ad-title">1. 工班排序</h2>
+        <div id="teams" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      </section>
+      <section class="lg:col-span-7" style="display: flex; flex-direction: column; gap: 12px;">
+        <h2 class="ad-title">2. 出工名單 <span id="crewTeam" class="ad-caption" style="font-weight: 400;"></span></h2>
+        <div id="crew" style="display: flex; flex-direction: column; gap: 8px;"></div>
         <div id="crewFooter"></div>
-      </div>
+      </section>
     </div>
   </main>
 
@@ -71,6 +88,8 @@
     let crewData = null;
     let crewTeamId = null;
 
+    // 後端標籤名稱可能帶 emoji，介面上不顯示
+    const plain = s => String(s == null ? '' : s).replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]/gu, '').trim();
     function esc(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
@@ -83,7 +102,7 @@
     function showError(msg) {
       const el = document.getElementById('loadError');
       el.textContent = msg;
-      el.classList.toggle('hidden', !msg);
+      el.hidden = !msg;
     }
 
     async function init() {
@@ -112,19 +131,19 @@
       }
       const o = rec.order;
       document.getElementById('orderBox').innerHTML = `
-        <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-sm flex flex-wrap gap-x-6 gap-y-1">
-          <span><span class="text-slate-400">訂單</span> <span class="font-mono text-amber-300">${esc(o.orderId)}</span>（${esc(o.statusLabel)}）</span>
-          <span><span class="text-slate-400">農場</span> ${esc(o.farmerName)}</span>
-          <span><span class="text-slate-400">作業</span> ${esc(o.categoryName)}</span>
-          <span><span class="text-slate-400">需求</span> ${o.suggestedWorkers} 人</span>
-          <span><span class="text-slate-400">依據技能</span> ${esc(o.skillLabel || '證照類（不依經驗標籤）')}</span>
-          <span><span class="text-slate-400">目前派工</span> ${esc(o.assignedTeamId || '—')}${o.crew.length ? `・名單 ${o.crew.length} 人` : '・尚無出工名單'}</span>
-          <span class="flex items-center gap-1.5"><span class="text-slate-400">工期</span>
-            <input id="pStart" type="date" value="${esc(o.startDate || '')}" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 text-xs text-white">
+        <div class="ad-card" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; padding: 16px;">
+          <span><span class="ad-caption">訂單</span> <span class="ad-num" style="color: var(--ad-accent-text); font-weight: 600;">${esc(o.orderId)}</span>（${esc(o.statusLabel)}）</span>
+          <span><span class="ad-caption">農場</span> ${esc(o.farmerName)}</span>
+          <span><span class="ad-caption">作業</span> ${esc(o.categoryName)}</span>
+          <span><span class="ad-caption">需求</span> ${o.suggestedWorkers} 人</span>
+          <span><span class="ad-caption">依據技能</span> ${esc(plain(o.skillLabel) || '證照類（不依經驗標籤）')}</span>
+          <span><span class="ad-caption">目前派工</span> ${esc(o.assignedTeamId || '—')}${o.crew.length ? `・名單 ${o.crew.length} 人` : '・尚無出工名單'}</span>
+          <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;"><span class="ad-caption">工期</span>
+            <input id="pStart" type="date" value="${esc(o.startDate || '')}" aria-label="開工日" class="ad-input" style="height: 36px; width: auto;">
             ～
-            <input id="pEnd" type="date" value="${esc(o.endDate || '')}" class="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 text-xs text-white">
-            <button type="button" onclick="savePeriod()" class="px-2 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-xs text-white">儲存工期</button>
-            <span id="periodMsg" class="text-xs"></span>
+            <input id="pEnd" type="date" value="${esc(o.endDate || '')}" aria-label="完工日" class="ad-input" style="height: 36px; width: auto;">
+            <button type="button" onclick="savePeriod()" class="ad-btn ad-btn--secondary ad-btn--sm">儲存工期</button>
+            <span id="periodMsg" class="ad-caption" role="status"></span>
           </span>
         </div>`;
       renderTeams();
@@ -133,18 +152,18 @@
 
     function renderTeams() {
       document.getElementById('teams').innerHTML = rec.teams.map(t => `
-        <div class="p-4 rounded-2xl border ${t.eligible ? 'bg-slate-900 border-slate-700' : 'bg-slate-900/50 border-slate-800 opacity-70'} ${t.teamId === crewTeamId ? 'ring-2 ring-cyan-400' : ''}">
-          <div class="flex items-start justify-between gap-2">
+        <div class="ad-card${t.teamId === crewTeamId ? ' is-selected' : ''}" style="padding: 16px; ${t.teamId === crewTeamId ? 'border-color: var(--ad-primary); background: var(--ad-primary-soft);' : ''} ${t.eligible ? '' : 'opacity: .7;'}">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;">
             <div>
-              <div class="text-sm font-black text-white">#${t.rank} ${esc(t.teamName)}</div>
-              <div class="text-[11px] text-slate-400">${t.eligibleMembers}/${t.members} 人可出工</div>
+              <div class="ad-heading" style="font-size: 15px;">#${t.rank} ${esc(t.teamName)}</div>
+              <div class="ad-caption">${t.eligibleMembers}/${t.members} 人可出工</div>
             </div>
             ${t.eligible
-              ? `<button type="button" data-team="${esc(t.teamId)}" onclick="pickTeam(this.dataset.team)" class="shrink-0 px-2.5 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold">選這個工班</button>`
-              : '<span class="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/40">不符資格</span>'}
+              ? `<button type="button" data-team="${esc(t.teamId)}" onclick="pickTeam(this.dataset.team)" class="ad-btn ad-btn--secondary ad-btn--sm" style="flex-shrink: 0;">選這個工班</button>`
+              : '<span class="ad-pill ad-pill--danger" style="flex-shrink: 0;">不符資格</span>'}
           </div>
-          <ul class="mt-2 text-[11px] text-slate-300 space-y-0.5">${t.reasons.map(r => `<li>・${esc(r)}</li>`).join('')}</ul>
-          ${t.blockers.length ? `<div class="mt-1 text-[11px] text-rose-300">${t.blockers.map(esc).join('；')}</div>` : ''}
+          <ul class="ad-caption" style="margin: 8px 0 0; padding: 0; list-style: none; color: var(--ad-text-2);">${t.reasons.map(r => `<li>・${esc(r)}</li>`).join('')}</ul>
+          ${t.blockers.length ? `<div class="ad-caption" style="margin-top: 4px; color: var(--ad-danger-text);">${t.blockers.map(esc).join('；')}</div>` : ''}
         </div>`).join('');
     }
 
@@ -152,15 +171,15 @@
       const msg = document.getElementById('periodMsg');
       const startDate = document.getElementById('pStart').value;
       const endDate = document.getElementById('pEnd').value;
-      if (!startDate || !endDate) { msg.innerHTML = '<span class="text-rose-300">請填開工與完工日</span>'; return; }
+      if (!startDate || !endDate) { msg.innerHTML = '<span style="color: var(--ad-danger-text);">請填開工與完工日</span>'; return; }
       try {
         await api(`/orders/${encodeURIComponent(rec.order.orderId)}`, {
           method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ startDate, endDate })
         });
         await loadOrder();
-        document.getElementById('periodMsg').innerHTML = '<span class="text-emerald-300">✓ 已更新工期，排序與名單已重新計算</span>';
+        document.getElementById('periodMsg').innerHTML = '<span style="color: var(--ad-primary-text);">已更新工期，排序與名單已重新計算</span>';
       } catch (e) {
-        msg.innerHTML = `<span class="text-rose-300">${esc(e.message)}</span>`;
+        msg.innerHTML = `<span style="color: var(--ad-danger-text);">${esc(e.message)}</span>`;
       }
     }
 
@@ -177,11 +196,10 @@
 
     function roleBadge(c) {
       if (!c.role) return '';
-      const cls = c.role === '帶隊領班' ? 'bg-indigo-500/20 text-indigo-200 border-indigo-500/40'
-        : c.role === '培養名額' ? 'bg-sky-500/20 text-sky-200 border-sky-500/40'
-        : c.role === '標籤暫停中' ? 'bg-rose-500/20 text-rose-200 border-rose-500/40'
-        : 'bg-emerald-500/20 text-emerald-200 border-emerald-500/40';
-      return `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${cls}">${esc(c.role)}</span>`;
+      const cls = c.role === '標籤暫停中' ? 'ad-pill ad-pill--danger'
+        : (c.role === '帶隊領班' || c.role === '培養名額') ? 'ad-pill'
+        : 'ad-pill ad-pill--ok';
+      return `<span class="${cls}">${esc(c.role)}</span>`;
     }
 
     function renderCrew() {
@@ -191,22 +209,22 @@
       const useCurrent = d.currentCrew.length && rec.order.assignedTeamId === d.teamId;
       const checked = new Set(useCurrent ? d.currentCrew : d.candidates.filter(c => c.recommended).map(c => c.workerId));
       document.getElementById('crew').innerHTML = d.candidates.map(c => `
-        <label class="flex items-center gap-3 p-3 rounded-xl bg-slate-900 border ${c.recommended ? 'border-cyan-500/40' : 'border-slate-800'} cursor-pointer">
-          <input type="checkbox" value="${esc(c.workerId)}" ${checked.has(c.workerId) ? 'checked' : ''} onchange="updateCount()" class="w-4 h-4 accent-cyan-500">
-          <div class="flex-1 min-w-0">
-            <div class="text-sm font-bold text-white flex flex-wrap items-center gap-1.5">${esc(c.name)} <span class="text-[10px] text-slate-500 font-mono">${esc(c.workerId)}</span>${c.leader ? '<span class="text-[10px] text-indigo-300">領班</span>' : ''} ${roleBadge(c)}</div>
-            <div class="text-[11px] text-slate-400">${esc(c.levelLabel)}・同類 ${c.hours} 小時・領班評「優」${Math.round(c.excellentRate * 100)}%・「需加強」${Math.round(c.needsImprovementRate * 100)}%</div>
+        <label class="ad-choice" style="align-items: center;${c.recommended ? ' border-color: var(--ad-primary);' : ''}">
+          <input type="checkbox" value="${esc(c.workerId)}" ${checked.has(c.workerId) ? 'checked' : ''} onchange="updateCount()">
+          <div style="flex: 1; min-width: 0;">
+            <div class="ad-heading" style="font-size: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">${esc(c.name)} <span class="ad-caption ad-num" style="font-weight: 400;">${esc(c.workerId)}</span>${c.leader ? '<span class="ad-pill">領班</span>' : ''} ${roleBadge(c)}</div>
+            <div class="ad-caption">${esc(c.levelLabel)}・同類 ${c.hours} 小時・領班評「優」${Math.round(c.excellentRate * 100)}%・「需加強」${Math.round(c.needsImprovementRate * 100)}%</div>
           </div>
-          ${c.recommended ? '<span class="text-[10px] text-cyan-300 shrink-0">系統建議</span>' : ''}
+          ${c.recommended ? '<span class="ad-caption" style="color: var(--ad-primary-text); flex-shrink: 0;">系統建議</span>' : ''}
         </label>`).join('') + (d.excluded.length ? `
-        <div class="p-3 rounded-xl bg-slate-900/50 border border-slate-800 text-[11px] text-slate-400">
-          <div class="font-bold text-slate-300 mb-1">不列入名單（資格不符）</div>
+        <div class="ad-card ad-card--inset ad-caption" style="padding: 12px;">
+          <div class="ad-heading" style="font-size: 14px; margin-bottom: 4px;">不列入名單（資格不符）</div>
           ${d.excluded.map(c => `<div>・${esc(c.name)}（${esc(c.workerId)}）：${esc(c.excludedReason)}</div>`).join('')}
         </div>` : '');
       document.getElementById('crewFooter').innerHTML = `
-        <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div class="text-xs"><span id="crewCount" class="font-black text-white"></span>${d.shortage ? `<div class="text-rose-300 mt-0.5">合格人數不足，缺 ${d.shortage} 人</div>` : ''}${d.periodChecked ? '' : '<div class="text-amber-300 mt-0.5">此訂單尚未排定工期，無法檢查工人是否撞期</div>'}<div id="saveMsg" class="mt-0.5"></div></div>
-          <button type="button" id="saveBtn" onclick="saveCrew()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-black">確認派工並儲存名單</button>
+        <div class="ad-card" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px;">
+          <div class="ad-caption"><span id="crewCount" class="ad-heading"></span>${d.shortage ? `<div style="color: var(--ad-danger-text);">合格人數不足，缺 ${d.shortage} 人</div>` : ''}${d.periodChecked ? '' : '<div style="color: var(--ad-accent-text);">此訂單尚未排定工期，無法檢查工人是否撞期</div>'}<div id="saveMsg" role="status"></div></div>
+          <button type="button" id="saveBtn" onclick="saveCrew()" class="ad-btn ad-btn--primary">確認派工並儲存</button>
         </div>`;
       updateCount();
     }
@@ -219,13 +237,14 @@
       const need = crewData.needed;
       const el = document.getElementById('crewCount');
       el.textContent = `已選 ${n} / ${need} 人`;
-      el.className = `font-black ${n === need ? 'text-emerald-300' : 'text-amber-300'}`;
+      el.className = 'ad-heading';
+      el.style.color = n === need ? 'var(--ad-primary-text)' : 'var(--ad-accent-text)';
     }
 
     async function saveCrew() {
       const crew = selected();
       const msg = document.getElementById('saveMsg');
-      if (!crew.length) { msg.innerHTML = '<span class="text-rose-300">請至少選 1 位工人</span>'; return; }
+      if (!crew.length) { msg.innerHTML = '<span style="color: var(--ad-danger-text);">請至少選 1 位工人</span>'; return; }
       document.getElementById('saveBtn').disabled = true;
       try {
         await api(`/matching/orders/${encodeURIComponent(rec.order.orderId)}`, {
@@ -233,14 +252,19 @@
           body: JSON.stringify({ teamId: crewTeamId, crew })
         });
         await loadOrder();
-        document.getElementById('saveMsg').innerHTML = `<span class="text-emerald-300">✓ 已派工給 ${esc(crewTeamId)}，出工名單 ${crew.length} 人</span>`;
+        document.getElementById('saveMsg').innerHTML = `<span style="color: var(--ad-primary-text);">已派工給 ${esc(crewTeamId)}，出工名單 ${crew.length} 人</span>`;
       } catch (e) {
-        msg.innerHTML = `<span class="text-rose-300">未儲存：${esc(e.message)}</span>`;
+        msg.innerHTML = `<span style="color: var(--ad-danger-text);">未儲存：${esc(e.message)}</span>`;
         document.getElementById('saveBtn').disabled = false;
       }
     }
 
     document.addEventListener('DOMContentLoaded', init);
+  </script>
+
+  <script>
+    var demoNav = AgriTheme.demoNav();
+    if (window.lucide) lucide.createIcons();
   </script>
 </body>
 </html>

@@ -200,15 +200,15 @@
                   <div class="lc-flex">
                     <div class="lc-flex__head">
                       <span class="lc-tag" style="background: rgba(255, 255, 255, .18); color: #fff;">派工單</span>
-                      <div class="lc-flex__title">枋山愛文芒果（6.0 分地）</div>
-                      <div style="color: rgba(255, 255, 255, .85);">單號 ORD-2026-001・早鳥工時包</div>
+                      <div class="lc-flex__title" id="lc-static-title">枋山愛文芒果（6.0 分地）</div>
+                      <div style="color: rgba(255, 255, 255, .85);" id="lc-static-sub">單號 ORD-2026-001・早鳥工時包</div>
                     </div>
                     <div class="lc-flex__body">
-                      <div class="lc-flex__row"><span>出工時間</span><span>明日 07:00～16:00</span></div>
-                      <div class="lc-flex__row"><span>指派工班</span><span>B 組 6 人，領班阿迪</span></div>
-                      <div class="lc-flex__row"><span>接送專車</span><span>智農 2 號車，司機李大哥</span></div>
-                      <div class="lc-flex__row"><span>作業手路</span><span>留蒂 0.5cm、護果粉採收</span></div>
-                      <div class="lc-flex__row" style="border-top: 1px solid #e2e8f0; padding-top: 6px;"><span>應付金額</span><span class="ad-num" style="color: #047857;">NT$ 52,920（定金已收 20%）</span></div>
+                      <div class="lc-flex__row"><span>出工時間</span><span id="lc-static-time">明日 07:00～16:00</span></div>
+                      <div class="lc-flex__row"><span>指派工班</span><span id="lc-static-team">B 組 6 人，領班阿迪</span></div>
+                      <div class="lc-flex__row"><span>接送專車</span><span id="lc-static-car">智農 2 號車，司機李大哥</span></div>
+                      <div class="lc-flex__row"><span>作業手路</span><span id="lc-static-notes">留蒂 0.5cm、護果粉採收</span></div>
+                      <div class="lc-flex__row" style="border-top: 1px solid #e2e8f0; padding-top: 6px;"><span>應付金額</span><span class="ad-num" style="color: #047857;" id="lc-static-amount">NT$ 52,920（定金已收 20%）</span></div>
                     </div>
                     <div class="lc-flex__foot lc-flex__foot--row">
                       <button type="button" class="lc-flex__btn lc-flex__btn--line" onclick="handleQuickCmd('工班位置')">工班位置</button>
@@ -649,7 +649,7 @@
         renderFlexCard(buildForemanRollCallFlex());
       } else {
         appendBotText("陳建龍 班長您好！LINE Bot 已為您載入【農場主專屬】派工單與早鳥選購圖文選單。");
-        renderFlexCard(buildMockOrderQueryFlex('ORD-2026-001'));
+        renderFlexCard(buildMockOrderQueryFlex(''));
       }
     }
 
@@ -1000,7 +1000,7 @@
       } else if (type === 'salary_bonus') {
         renderFlexCard(buildForeignSalaryBonusFlex());
       } else if (type === 'order_query') {
-        renderFlexCard(buildMockOrderQueryFlex('ORD-2026-001'));
+        renderFlexCard(buildMockOrderQueryFlex(''));
       } else if (type === 'calendar_query') {
         renderFlexCard(buildMockCalendarQueryFlex('產曆'));
       } else {
@@ -1168,6 +1168,98 @@
       }
     }
 
+    // ------------------------------------------------------------------
+    // 卡片資料：從 API（純前端示範時由 demo-mock.js 回應）讀訂單、工班、工人，
+    // 派工單與工人卡片都用同一份資料，和農場主頁、後台看到的一致；讀不到時沿用卡片內的示範文字。
+    // ------------------------------------------------------------------
+    const LINE_DATA = { ready: false, orders: [], teams: [], workers: [] };
+    const PERSONA_WORKER = { worker_foreign: 'W001', worker_local: 'W026' };   // 阮文雄、林小祥
+    const ORDER_RANK = { in_progress: 0, confirmed: 1, pending: 2 };
+    const ORDER_STATUS = { pending: '待付定金', confirmed: '已排定', in_progress: '履約中 (出勤中)', completed: '已完工', cancelled: '已取消' };
+    const fmtNT = (n) => Number(n || 0).toLocaleString();
+
+    async function loadLineData() {
+      const get = async (path) => {
+        const res = await fetch(API_BASE + path);
+        if (!res.ok) throw new Error(path);
+        return (await res.json()).data || [];
+      };
+      try {
+        const [orders, teams, workers] = await Promise.all([get('/orders'), get('/dispatch/teams'), get('/workers')]);
+        Object.assign(LINE_DATA, { ready: true, orders, teams, workers });
+        fillStaticOrderCard();
+      } catch (e) { /* 離線：卡片沿用示範文字 */ }
+    }
+
+    // 進行中優先，其次已排定、待付定金；同狀態取較新的單號
+    function pickOrder(filter) {
+      return LINE_DATA.orders
+        .filter((o) => ORDER_RANK[o.status] != null && filter(o))
+        .sort((a, b) => ORDER_RANK[a.status] - ORDER_RANK[b.status] || String(b.id).localeCompare(String(a.id)))[0] || null;
+    }
+    function farmerOrder(query) {
+      const m = /ord-\d{4}-\d+/i.exec(query || '');
+      if (m) {
+        const hit = LINE_DATA.orders.find((o) => String(o.id).toLowerCase() === m[0].toLowerCase());
+        if (hit) return hit;
+      }
+      let farmerId = 'F001';
+      try {
+        const u = JSON.parse(sessionStorage.getItem('agri_user') || 'null');
+        if (u && u.role === 'farmer' && u.refId) farmerId = u.refId;
+      } catch (e) {}
+      return pickOrder((o) => o.farmerId === farmerId);
+    }
+    function teamOfWorker(workerId) {
+      const w = LINE_DATA.workers.find((x) => x.id === workerId);
+      return w ? w.teamId : null;
+    }
+
+    // kind：farmer（農場主的訂單）／foreign、foreman（該工人所屬工班的訂單）／context（依目前身分）
+    function lineView(kind, query) {
+      if (!LINE_DATA.ready) return null;
+      if (kind === 'context') kind = currentRole === 'worker_local' ? 'foreman' : (currentRole === 'worker_foreign' ? 'foreign' : 'farmer');
+      const o = kind === 'farmer'
+        ? farmerOrder(query)
+        : pickOrder((x) => x.assignedTeamId === teamOfWorker(PERSONA_WORKER[kind === 'foreign' ? 'worker_foreign' : 'worker_local']));
+      if (!o) return null;
+      const team = LINE_DATA.teams.find((t) => t.id === o.assignedTeamId) || null;
+      const driver = team ? String(team.driver || '') : '';
+      const crop = String(o.cropName || '');
+      return {
+        id: o.id, status: o.status, statusLabel: ORDER_STATUS[o.status] || o.status,
+        crop, cropShort: crop.split(' (')[0], area: o.area, category: o.categoryName || '',
+        location: o.farmLocation || (team && team.normalLocation) || '', farmer: o.farmerName || '',
+        planShort: String(o.planName || '').replace(/【[^】]*】/, '').split(/[（(]/)[0].trim(),
+        period: o.startDate ? (o.endDate && o.endDate !== o.startDate ? `${o.startDate}～${o.endDate}` : o.startDate) : '',
+        teamName: team ? team.name : '待分派工班', teamSize: team ? team.workerCount : (o.suggestedWorkers || ''),
+        leader: team ? team.leader : '待指派', leaderShort: team ? String(team.leader).split(' (')[0] : '待指派',
+        foreman: o.foremanName || (team && team.leader) || '待指派',
+        foremanPhone: o.foremanPhone || (team && team.leaderPhone) || '',
+        vehicle: team ? team.vehicle : '待排車', driver: driver || '待排定', driverName: driver.split(' (')[0] || '待排定',
+        driverPhone: (driver.match(/\d{4}-\d{3}-\d{3}/) || [''])[0],
+        notes: o.foremanNotes || (team && team.normalTask) || '依現場領班交辦',
+        amount: o.finalAmount || 0, deposit: o.depositAmount || 0, depositPaid: !!o.depositPaid,
+        depositText: o.depositPaid ? '定金已收 20%' : (o.depositAmount > 0 ? '待付 20% 定金' : '免定金'),
+        members: team ? LINE_DATA.workers.filter((w) => w.teamId === team.id && w.id !== PERSONA_WORKER.worker_local)   // 點名由領班本人執行，不列自己
+          .map((w) => ({ id: w.id, name: w.chineseName || w.name })) : []
+      };
+    }
+
+    // 對話一開始的派工單卡片（寫在 HTML 裡），有資料就換成農場主目前的訂單
+    function fillStaticOrderCard() {
+      const v = lineView('farmer');
+      if (!v) return;
+      const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+      set('lc-static-title', `${v.cropShort}（${v.area} 分地）`);
+      set('lc-static-sub', `單號 ${v.id}・${v.planShort || v.statusLabel}`);
+      set('lc-static-time', v.period ? `${v.period}，07:00～16:00` : '待排定');
+      set('lc-static-team', `${v.teamName.split(' (')[0]} ${v.teamSize} 人，領班${v.leaderShort}`);
+      set('lc-static-car', `${v.vehicle.split(' (')[0]}，司機${v.driverName}`);
+      set('lc-static-notes', v.notes);
+      set('lc-static-amount', `NT$ ${fmtNT(v.amount)}（${v.depositText}）`);
+    }
+
     function buildMockQueryHubFlex() {
       return {
         type: 'flex',
@@ -1201,6 +1293,7 @@
     }
 
     function buildMockOrderQueryFlex(query) {
+      const v = lineView('farmer', query);   // 有資料就用訂單／工班資料，沒有沿用示範文字
       return {
         type: 'flex',
         contents: {
@@ -1208,25 +1301,25 @@
             backgroundColor: '#047857',
             contents: [
               { text: '訂單查詢結果・即時履約戰情', color: '#A7F3D0', size: 'xs', weight: 'bold' },
-              { text: 'ORD-2026-001 ｜ 已派工 (出勤中)', color: '#FFFFFF', size: 'xl', weight: 'bold' },
-              { text: '作物：枋山愛文芒果 (6.0 分地) ｜ 類別：採收與初級分級', color: '#D1FAE5', size: 'xs', weight: 'normal' }
+              { text: v ? `${v.id} ｜ ${v.statusLabel}` : 'ORD-2026-001 ｜ 已派工 (出勤中)', color: '#FFFFFF', size: 'xl', weight: 'bold' },
+              { text: v ? `作物：${v.crop} (${v.area} 分地) ｜ 類別：${v.category}` : '作物：枋山愛文芒果 (6.0 分地) ｜ 類別：採收與初級分級', color: '#D1FAE5', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '契作農友', color: '#64748B' }, { text: '陳建龍 (枋山愛文芒果合作園)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '現場小工頭', color: '#64748B' }, { text: '林小龍 (0921-999-888，已交辦手路)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '指派工班', color: '#64748B' }, { text: '工班 B 組 (6人，領班: 阿迪 Agus)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '接送專車', color: '#64748B' }, { text: '智農 2 號車 (司機: 李大哥 0912-222-444)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '作業手路', color: '#64748B' }, { text: '留蒂 0.5cm 護果粉採收 / 完整驗收標準', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '契作農友', color: '#64748B' }, { text: v ? `${v.farmer} (${v.location})` : '陳建龍 (枋山愛文芒果合作園)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '現場小工頭', color: '#64748B' }, { text: v ? `${v.foreman} (${v.foremanPhone}，已交辦手路)` : '林小龍 (0921-999-888，已交辦手路)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '指派工班', color: '#64748B' }, { text: v ? `${v.teamName} (${v.teamSize}人，領班: ${v.leader})` : '工班 B 組 (6人，領班: 阿迪 Agus)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '接送專車', color: '#64748B' }, { text: v ? `${v.vehicle} (司機: ${v.driver})` : '智農 2 號車 (司機: 李大哥 0912-222-444)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '作業手路', color: '#64748B' }, { text: v ? v.notes : '留蒂 0.5cm 護果粉採收 / 完整驗收標準', color: '#047857' }] },
               { layout: 'baseline', contents: [{ text: '合約保障', color: '#64748B' }, { text: 'SLA 遲到免單、放鳥雙倍賠償、依法加保勞健保', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '總計金額', color: '#64748B' }, { text: 'NT$ 52,920 (早鳥 315/hr / 定金已收 20%)', color: '#047857' }] }
+              { layout: 'baseline', contents: [{ text: '總計金額', color: '#64748B' }, { text: v ? `NT$ ${fmtNT(v.amount)} (${v.depositText})` : 'NT$ 52,920 (早鳥 315/hr / 定金已收 20%)', color: '#047857' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '查看工班 GPS 即時座標', uri: 'https://agridispatch.tw/track/ORD-2026-001' }, color: '#059669' },
-              { action: { label: '撥打現場專車司機電話', uri: 'tel:0912222444' }, color: '#3B82F6' }
+              { action: { label: '查看工班 GPS 即時座標', uri: `https://agridispatch.tw/track/${v ? v.id : 'ORD-2026-001'}` }, color: '#059669' },
+              { action: { label: '撥打現場專車司機電話', uri: 'tel:' + (v && v.driverPhone ? v.driverPhone.replace(/-/g, '') : '0912222444') }, color: '#3B82F6' }
             ]
           }
         }
@@ -1422,6 +1515,7 @@
     }
 
     function buildForemanContactFlex() {
+      const v = lineView('context');   // 有資料就用訂單／工班資料，沒有沿用示範文字
       return {
         type: 'flex',
         contents: {
@@ -1435,8 +1529,8 @@
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '現場小工頭', color: '#64748B' }, { text: '林小祥 (0921-999-888，現場調度責任人)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '專車司機', color: '#64748B' }, { text: '李建國 大哥 (0912-222-444，智農 2 號車)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '現場小工頭', color: '#64748B' }, { text: v ? `${v.foreman} (${v.foremanPhone}，現場調度責任人)` : '林小祥 (0921-999-888，現場調度責任人)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '專車司機', color: '#64748B' }, { text: v ? `${v.driver}，${v.vehicle}` : '李建國 大哥 (0912-222-444，智農 2 號車)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '服務時段', color: '#64748B' }, { text: '每日 05:30 - 19:30 (田間作業優先接聽)', color: '#047857' }] },
               { layout: 'baseline', contents: [{ text: '承諾保障', color: '#64748B' }, { text: 'SLA 遲到免單、放鳥雙倍賠償保證', color: '#047857' }] }
             ]
@@ -1453,6 +1547,7 @@
 
     // --- 外籍移工專屬卡片 (越文雙語) ---
     function buildForeignWorkerTaskFlex() {
+      const v = lineView('foreign');   // 有資料就用訂單／工班資料，沒有沿用示範文字
       return {
         type: 'flex',
         contents: {
@@ -1460,17 +1555,17 @@
             backgroundColor: '#047857',
             contents: [
               { text: 'Lịch làm việc hôm nay ｜ 今日田間任務卡', color: '#A7F3D0', size: 'xs', weight: 'bold' },
-              { text: '枋山愛文芒果採收 ｜ Ca sáng (上午班)', color: '#FFFFFF', size: 'xl', weight: 'bold' },
-              { text: 'Hợp tác xã Nông nghiệp Fangshan ｜ 合作園區 B 區', color: '#D1FAE5', size: 'xs', weight: 'normal' }
+              { text: v ? `${v.cropShort} ｜ Ca sáng (上午班)` : '枋山愛文芒果採收 ｜ Ca sáng (上午班)', color: '#FFFFFF', size: 'xl', weight: 'bold' },
+              { text: v ? `${v.id} ｜ ${v.teamName}` : 'Hợp tác xã Nông nghiệp Fangshan ｜ 合作園區 B 區', color: '#D1FAE5', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
               { text: 'Nhiệm vụ & Tiêu chuẩn thao tác (任務與手路SOP)：', color: '#1E293B', size: 'xs', weight: 'bold' },
-              { layout: 'baseline', contents: [{ text: '作物地點', color: '#64748B' }, { text: '屏東枋山善德路芒果示範園 (6.0 分地)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '集合發車', color: '#64748B' }, { text: '06:30 宿舍門口 (智農 2 號車 李大哥)', color: '#059669' }] },
-              { layout: 'baseline', contents: [{ text: '採收標準', color: '#64748B' }, { text: '留蒂 0.5cm・護果粉採收・輕放藍箱', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '同組夥伴', color: '#64748B' }, { text: '工班 B 組 6 人 (帶隊領班: 林小祥)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '作物地點', color: '#64748B' }, { text: v ? `${v.location} (${v.area} 分地)` : '屏東枋山善德路芒果示範園 (6.0 分地)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '集合發車', color: '#64748B' }, { text: v ? `06:30 宿舍門口 (${v.vehicle.split(' (')[0]} ${v.driverName})` : '06:30 宿舍門口 (智農 2 號車 李大哥)', color: '#059669' }] },
+              { layout: 'baseline', contents: [{ text: '採收標準', color: '#64748B' }, { text: v ? v.notes : '留蒂 0.5cm・護果粉採收・輕放藍箱', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '同組夥伴', color: '#64748B' }, { text: v ? `${v.teamName} ${v.teamSize} 人 (帶隊領班: ${v.leader})` : '工班 B 組 6 人 (帶隊領班: 林小祥)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '納保合規', color: '#64748B' }, { text: '100% 勞保與農業職災即時生效中', color: '#047857' }] },
               { layout: 'baseline', contents: [{ text: '今日預估', color: '#64748B' }, { text: 'NT$ 1,840 (8H基本) + 採收品質獎金', color: '#D97706' }] }
             ]
@@ -1549,6 +1644,7 @@
     }
 
     function buildAttendancePunchFlex() {
+      const v = lineView('foreign');   // 有資料就用訂單／工班資料，沒有沿用示範文字
       return {
         type: 'flex',
         contents: {
@@ -1557,16 +1653,16 @@
             contents: [
               { text: 'Chấm công GPS thành công ｜ 出勤打卡成功', color: '#A7F3D0', size: 'xs', weight: 'bold' },
               { text: 'GPS 定位簽到完成 ｜ 準時上工', color: '#FFFFFF', size: 'xl', weight: 'bold' },
-              { text: '屏東枋山愛文芒果園區 ｜ 22.2571° N, 120.6558° E', color: '#D1FAE5', size: 'xs', weight: 'normal' }
+              { text: v ? v.location : '屏東枋山愛文芒果園區 ｜ 22.2571° N, 120.6558° E', color: '#D1FAE5', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
               { layout: 'baseline', contents: [{ text: '出勤同仁', color: '#64748B' }, { text: 'Nguyễn Văn Hùng (外展編號: V082)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '打卡時間', color: '#64748B' }, { text: '今日 07:12:35 (準時・無遲到)', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '關聯派工單', color: '#64748B' }, { text: 'ORD-2026-001 (枋山愛文芒果採收)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '關聯派工單', color: '#64748B' }, { text: v ? `${v.id} (${v.cropShort})` : 'ORD-2026-001 (枋山愛文芒果採收)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '職災即時起保', color: '#64748B' }, { text: '農業保險保單 AG-20260923 生效中', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '現場帶工領班', color: '#64748B' }, { text: '林小祥 (點名覆核通過)', color: '#0F172A' }] }
+              { layout: 'baseline', contents: [{ text: '現場帶工領班', color: '#64748B' }, { text: v ? `${v.leader} (點名覆核通過)` : '林小祥 (點名覆核通過)', color: '#0F172A' }] }
             ]
           },
           footer: {
@@ -1642,6 +1738,7 @@
 
     // --- 本國帶工領班與機耕隊專屬卡片 ---
     function buildForemanRollCallFlex() {
+      const v = lineView('foreman');   // 有資料就用訂單／工班資料，沒有沿用示範文字
       return {
         type: 'flex',
         contents: {
@@ -1649,20 +1746,22 @@
             backgroundColor: '#1E3A8A',
             contents: [
               { text: '工班現場實名出勤點名 ｜ 領班指揮中心', color: '#93C5FD', size: 'xs', weight: 'bold' },
-              { text: '工班 B 組・6人全員到齊', color: '#FFFFFF', size: 'xl', weight: 'bold' },
-              { text: 'ORD-2026-001 ｜ 枋山芒果示範園 ｜ 責任領班: 林小祥', color: '#BFDBFE', size: 'xs', weight: 'normal' }
+              { text: v ? `${v.teamName.split(' (')[0]}・${v.members.length}人全員到齊` : '工班 B 組・6人全員到齊', color: '#FFFFFF', size: 'xl', weight: 'bold' },
+              { text: v ? `${v.id} ｜ ${v.location} ｜ 責任領班: 林小祥` : 'ORD-2026-001 ｜ 枋山芒果示範園 ｜ 責任領班: 林小祥', color: '#BFDBFE', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
-              { text: '實名驗身與職災納保覆核 (全員通過 6/6)：', color: '#1E293B', size: 'xs', weight: 'bold' },
-              { layout: 'baseline', contents: [{ text: '1. 阮文雄 (V082)', color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '2. 黎文南 (V083)', color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '3. 陳德英 (V085)', color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '4. 范文強 (V088)', color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '5. 黃文海 (V091)', color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '6. 武氏娥 (V094)', color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '接駁專車', color: '#64748B' }, { text: '智農 2 號車 (司機: 李建國) 已順利送達', color: '#0F172A' }] }
+              { text: v ? `實名驗身與職災納保覆核 (全員通過 ${v.members.length}/${v.members.length})：` : '實名驗身與職災納保覆核 (全員通過 6/6)：', color: '#1E293B', size: 'xs', weight: 'bold' },
+              ...(v && v.members.length ? v.members.map((m, i) => ({ layout: 'baseline', contents: [{ text: `${i + 1}. ${m.name} (${m.id})`, color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] })) : [
+                { layout: 'baseline', contents: [{ text: '1. 阮文雄 (V082)', color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
+                { layout: 'baseline', contents: [{ text: '2. 黎文南 (V083)', color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
+                { layout: 'baseline', contents: [{ text: '3. 陳德英 (V085)', color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
+                { layout: 'baseline', contents: [{ text: '4. 范文強 (V088)', color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
+                { layout: 'baseline', contents: [{ text: '5. 黃文海 (V091)', color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] },
+                { layout: 'baseline', contents: [{ text: '6. 武氏娥 (V094)', color: '#64748B' }, { text: '準時上工 ｜ 職災投保生效 ｜ 酒測 0.00', color: '#047857' }] }
+              ]),
+              { layout: 'baseline', contents: [{ text: '接駁專車', color: '#64748B' }, { text: v ? `${v.vehicle.split(' (')[0]} (司機: ${v.driverName}) 已順利送達` : '智農 2 號車 (司機: 李建國) 已順利送達', color: '#0F172A' }] }
             ]
           },
           footer: {
@@ -1708,6 +1807,7 @@
     }
 
     function buildInspectionSignoffFlex() {
+      const v = lineView('context');   // 有資料就用訂單／工班資料，沒有沿用示範文字
       return {
         type: 'flex',
         contents: {
@@ -1715,17 +1815,17 @@
             backgroundColor: '#065F46',
             contents: [
               { text: '完工驗收與手路數位簽核單 ｜ SLA 交付', color: '#A7F3D0', size: 'xs', weight: 'bold' },
-              { text: 'ORD-2026-001 ｜ 作業驗收合格', color: '#FFFFFF', size: 'xl', weight: 'bold' },
-              { text: '枋山愛文芒果合作園 ｜ 農場主: 陳建龍 班長', color: '#D1FAE5', size: 'xs', weight: 'normal' }
+              { text: v ? `${v.id} ｜ 作業驗收合格` : 'ORD-2026-001 ｜ 作業驗收合格', color: '#FFFFFF', size: 'xl', weight: 'bold' },
+              { text: v ? `${v.location} ｜ 農場主: ${v.farmer}` : '枋山愛文芒果合作園 ｜ 農場主: 陳建龍 班長', color: '#D1FAE5', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
               { layout: 'baseline', contents: [{ text: '作業成果', color: '#64748B' }, { text: '採收 4,800 台斤 (留蒂 0.5cm 護粉率 99.8%)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '手路評分', color: '#64748B' }, { text: '5.0 顆星 (優於外銷標準・零刮傷)', color: '#D97706' }] },
-              { layout: 'baseline', contents: [{ text: '帶工責任領班', color: '#64748B' }, { text: '林小祥 (簽章核銷完成)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '帶工責任領班', color: '#64748B' }, { text: v ? `${v.foreman} (簽章核銷完成)` : '林小祥 (簽章核銷完成)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '雙軌帳務發票', color: '#64748B' }, { text: '18%科技服務發票 #AG-882199 已雲端開立', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '尾款核算', color: '#64748B' }, { text: 'NT$ 42,336 (總額 52,920 扣除 20% 定金)', color: '#0F172A' }] }
+              { layout: 'baseline', contents: [{ text: '尾款核算', color: '#64748B' }, { text: v ? (v.depositPaid ? `NT$ ${fmtNT(v.amount - v.deposit)} (總額 ${fmtNT(v.amount)} 扣除 20% 定金)` : `NT$ ${fmtNT(v.amount)} (定金未收，全額請款)`) : 'NT$ 42,336 (總額 52,920 扣除 20% 定金)', color: '#0F172A' }] }
             ]
           },
           footer: {
@@ -1834,6 +1934,7 @@
     // 9. 頁面初始化：載入預設農場主專屬圖文選單與快捷鍵
     // =========================================================================
     document.addEventListener('DOMContentLoaded', () => {
+      loadLineData();
       renderRichMenuForPersona('farmer');
       updateAccountUi();
       askLineBot({ event: 'menu' });

@@ -349,7 +349,9 @@
         badgeDone: "已下班（工時 {h}）",
         todayHours: "本日累計工時",
         hoursIdle: "0.0 小時",
-        hoursDone: "8.5 小時（正常 8h＋加班 0.5h）",
+        hoursDone: "{h} 小時{ot}",
+        otPart: "（含加班 {o}h）",
+        hourUnit: "h",
         signPending: "小工頭：待簽核",
         signDone: "小工頭：林小祥（已簽核）",
         sos119: "緊急救護 119",
@@ -366,7 +368,7 @@
         okIn: "上班打卡成功",
         okOut: "下班打卡成功",
         msgIn: "時間 {t}，已通知小工頭與調度。",
-        msgOut: "時間 {t}，今日工時 8.5h（含加班 0.5h），已記入本月薪酬。",
+        msgOut: "時間 {t}，今日工時 {h}h{ot}，已記入本月薪酬。",
         mainTitle: "今日任務",
         payTitle: "薪資",
         subTitle: "薪資與農業部 8,800 就業獎勵清楚透明",
@@ -404,7 +406,9 @@
         badgeDone: "Đã tan ca (làm {h})",
         todayHours: "Giờ làm hôm nay",
         hoursIdle: "0,0 giờ",
-        hoursDone: "8,5 giờ (thường 8h + tăng ca 0,5h)",
+        hoursDone: "{h} giờ{ot}",
+        otPart: " (tăng ca {o}h)",
+        hourUnit: "h",
         signPending: "Đội trưởng: chờ xác nhận",
         signDone: "Đội trưởng: 林小祥 (đã xác nhận)",
         sos119: "Cấp cứu 119",
@@ -421,7 +425,7 @@
         okIn: "Chấm công vào thành công",
         okOut: "Chấm công ra thành công",
         msgIn: "Giờ {t}. Đã báo cho đội trưởng.",
-        msgOut: "Giờ {t}. Hôm nay làm 8,5h (tăng ca 0,5h), đã tính vào lương tháng này.",
+        msgOut: "Giờ {t}. Hôm nay làm {h}h{ot}, đã tính vào lương tháng này.",
         mainTitle: "Nhiệm vụ hôm nay",
         payTitle: "Lương",
         subTitle: "Lương và thưởng 8.800 NTD minh bạch",
@@ -459,7 +463,9 @@
         badgeDone: "Selesai (jam kerja {h})",
         todayHours: "Jam kerja hari ini",
         hoursIdle: "0,0 jam",
-        hoursDone: "8,5 jam (normal 8j + lembur 0,5j)",
+        hoursDone: "{h} jam{ot}",
+        otPart: " (lembur {o}j)",
+        hourUnit: "j",
         signPending: "Mandor: menunggu persetujuan",
         signDone: "Mandor: 林小祥 (disetujui)",
         sos119: "Darurat medis 119",
@@ -476,7 +482,7 @@
         okIn: "Absen masuk berhasil",
         okOut: "Absen pulang berhasil",
         msgIn: "Waktu {t}. Mandor sudah diberi tahu.",
-        msgOut: "Waktu {t}. Jam kerja hari ini 8,5j (lembur 0,5j), sudah masuk gaji bulan ini.",
+        msgOut: "Waktu {t}. Jam kerja hari ini {h}j{ot}, sudah masuk gaji bulan ini.",
         mainTitle: "Tugas hari ini",
         payTitle: "Gaji",
         subTitle: "Gaji & subsidi NT$ 8.800 transparan",
@@ -576,6 +582,26 @@
     let punchState = 'working';          // demo 預設已於 06:45 上班，可直接體驗下班打卡
     let clockInTime = '06:45:10';
     let clockOutTime = '';
+    let shiftHours = null;               // 今日下班後的實際工時 { actual, overtime }（同後端 Attendance.completeShift）
+
+    // 依上下班時間（HH:MM:SS）計算工時：0.1 小時精度，超過 8 小時為加班；跨午夜視為隔天下班
+    function calcShift(inT, outT) {
+      const sec = (t) => { const [h, m, s] = String(t || '0:0:0').split(':').map(Number); return h * 3600 + m * 60 + (s || 0); };
+      let minutes = Math.round((sec(outT) - sec(inT)) / 60);
+      if (minutes < 0) minutes += 24 * 60;
+      const actual = Math.round(minutes / 6) / 10;
+      return { actual, overtime: Math.round(Math.max(0, actual - 8) * 10) / 10 };
+    }
+    // 越南文、印尼文小數點用逗號
+    function fmtH(h) {
+      const v = (Math.round((h || 0) * 10) / 10).toFixed(1);
+      return currentLang === 'vi' || currentLang === 'id' ? v.replace('.', ',') : v;
+    }
+    function hoursText(tpl) {
+      const sh = shiftHours || calcShift(clockInTime, clockOutTime);
+      const ot = sh.overtime > 0 ? tr('otPart').replace('{o}', fmtH(sh.overtime)) : '';
+      return tpl.replace('{h}', fmtH(sh.actual)).replace('{ot}', ot);
+    }
 
     function nowTimeStr() {
       const now = new Date();
@@ -605,11 +631,11 @@
         const hhmm = clockInTime.slice(0, 5);
         if (punchState === 'idle') { badge.className = 'ad-pill ad-pill--warn'; badge.textContent = tr('badgeIdle'); }
         else if (punchState === 'working') { badge.className = 'ad-pill ad-pill--ok'; badge.textContent = tr('badgeWorking').replace('{t}', hhmm); }
-        else { badge.className = 'ad-pill'; badge.textContent = tr('badgeDone').replace('{h}', '8.5h'); }
+        else { badge.className = 'ad-pill'; badge.textContent = tr('badgeDone').replace('{h}', hoursText('{h}') + tr('hourUnit')); }
       }
 
       const hours = $('txt-today-hours');
-      if (hours) hours.textContent = outDone ? tr('hoursDone') : tr('hoursIdle');
+      if (hours) hours.textContent = outDone ? hoursText(tr('hoursDone')) : tr('hoursIdle');
       const sign = $('txt-foreman-sign');
       if (sign) {
         sign.textContent = outDone ? tr('signDone') : tr('signPending');
@@ -621,7 +647,8 @@
       const row = $('row-today-status');
       if (row) {
         if (outDone) {
-          row.textContent = `${clockInTime.slice(0, 5)} ~ ${clockOutTime.slice(0, 5)}（8.5h・加班 0.5h）`;
+          const sh = shiftHours || calcShift(clockInTime, clockOutTime);
+          row.textContent = `${clockInTime.slice(0, 5)} ~ ${clockOutTime.slice(0, 5)}（${sh.actual.toFixed(1)}h${sh.overtime > 0 ? `・加班 ${sh.overtime.toFixed(1)}h` : ''}）`;
           row.style.color = 'var(--ad-primary-text)';
         } else if (inDone) {
           row.textContent = `${clockInTime.slice(0, 5)} 上班打卡（作業中）`;
@@ -653,11 +680,16 @@
       if (!punch.success) return;
 
       clockOutTime = nowTimeStr();
+      // 工時以後端（或 Mock）回傳的打卡紀錄為準；離線示範時依上下班時間計算
+      const att = punch && punch.data;
+      shiftHours = att && att.actualHours != null
+        ? { actual: att.actualHours, overtime: att.overtimeHours || 0 }
+        : calcShift(clockInTime, clockOutTime);
       punchState = 'done';
       renderPunchUI();
 
       if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
-        window.AgriDocs.notify(tr('okOut'), tr('msgOut').replace('{t}', clockOutTime), { channel: 'attendance' });
+        window.AgriDocs.notify(tr('okOut'), hoursText(tr('msgOut').replace('{t}', clockOutTime)), { channel: 'attendance' });
       }
     }
 
@@ -845,6 +877,7 @@
           } else if (latest.workDate === today && latest.clockOutTime) {
             clockInTime = hms(latest.clockInTime);
             clockOutTime = hms(latest.clockOutTime);
+            shiftHours = latest.actualHours != null ? { actual: latest.actualHours, overtime: latest.overtimeHours || 0 } : null;
             punchState = 'done';
           } else {
             punchState = 'idle';

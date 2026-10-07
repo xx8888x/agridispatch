@@ -138,7 +138,7 @@
                 </button>
               </div>
               <div class="ad-caption" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; margin-top: 10px;">
-                <span>本日帶工 <strong class="ad-num" style="color: var(--ad-text);">8.5 小時</strong>（正常 8h＋超時 0.5h）</span>
+                <span>本日帶工 <strong id="foreman-today-hours" class="ad-num" style="color: var(--ad-text);">—</strong></span>
                 <span style="color: var(--ad-primary-text); font-weight: 600;">農場主陳建龍已線上簽認</span>
               </div>
             </div>
@@ -342,7 +342,7 @@
                 </button>
               </div>
               <div class="ad-caption" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; margin-top: 10px;">
-                <span>本日機耕 <strong id="local-today-hours" class="ad-num" style="color: var(--ad-text);">8.5 小時（正常 8h＋加班 0.5h）</strong></span>
+                <span>本日機耕 <strong id="local-today-hours" class="ad-num" style="color: var(--ad-text);">—</strong></span>
                 <span id="local-foreman-sign" style="color: var(--ad-primary-text); font-weight: 600;">對口：許世芳（已簽核）</span>
               </div>
             </div>
@@ -857,16 +857,31 @@
 
     const PUNCH = {
       foreman: {
-        ids: { inBtn: 'foremanClockInBtn', outBtn: 'foremanClockOutBtn', timeIn: 'foreman-time-in', timeOut: 'foreman-time-out', badge: 'foreman-punch-status' },
-        state: 'working', inTime: '06:30:00', outTime: '',
-        badgeWorking: (t) => `帶隊作業中（${t} 上班）`, badgeDone: (t) => `已完工下班（${t}）`
+        ids: { inBtn: 'foremanClockInBtn', outBtn: 'foremanClockOutBtn', timeIn: 'foreman-time-in', timeOut: 'foreman-time-out', badge: 'foreman-punch-status', hours: 'foreman-today-hours' },
+        state: 'working', inTime: '06:30:00', outTime: '', shift: null,
+        badgeWorking: (t) => `帶隊作業中（${t} 上班）`, badgeDone: (t, h) => `已完工下班（${t}・${h}h）`
       },
       local: {
         ids: { inBtn: 'localClockInBtn', outBtn: 'localClockOutBtn', timeIn: 'local-time-in', timeOut: 'local-time-out', badge: 'local-punch-status-badge', row: 'local-row-today', hours: 'local-today-hours', sign: 'local-foreman-sign' },
-        state: 'working', inTime: '05:50:18', outTime: '',
-        badgeWorking: (t) => `作業中（${t} 上班）`, badgeDone: () => '已完工下班（8.5h 統包驗收完畢）'
+        state: 'working', inTime: '05:50:18', outTime: '', shift: null,
+        badgeWorking: (t) => `作業中（${t} 上班）`, badgeDone: (t, h) => `已完工下班（${h}h 統包驗收完畢）`
       }
     };
+
+    // 依上下班時間（HH:MM:SS）計算工時：0.1 小時精度，超過 8 小時為加班（同後端 Attendance.completeShift）
+    function calcShift(inT, outT) {
+      const sec = (t) => { const [h, m, s] = String(t || '0:0:0').split(':').map(Number); return h * 3600 + m * 60 + (s || 0); };
+      let minutes = Math.round((sec(outT) - sec(inT)) / 60);
+      if (minutes < 0) minutes += 24 * 60;
+      const actual = Math.round(minutes / 6) / 10;
+      return { actual, overtime: Math.round(Math.max(0, actual - 8) * 10) / 10 };
+    }
+    // 工時以打卡紀錄（後端或 Mock 回傳）為準；離線示範時依上下班時間計算
+    function shiftOf(c) { return c.shift || calcShift(c.inTime, c.outTime); }
+    const fmtH = (h) => (Math.round((h || 0) * 10) / 10).toFixed(1);   // 一律一位小數
+    function shiftFromRecord(att) {
+      return att && att.actualHours != null ? { actual: att.actualHours, overtime: att.overtimeHours || 0 } : null;
+    }
 
     function renderPunch(key) {
       const c = PUNCH[key];
@@ -888,16 +903,21 @@
         const hhmm = c.inTime.slice(0, 5);
         if (c.state === 'idle') { badge.className = 'ad-pill ad-pill--warn'; badge.textContent = '待出勤打卡'; }
         else if (c.state === 'working') { badge.className = 'ad-pill ad-pill--ok'; badge.textContent = c.badgeWorking(hhmm); }
-        else { badge.className = 'ad-pill'; badge.textContent = c.badgeDone(c.outTime.slice(0, 5)); }
+        else { badge.className = 'ad-pill'; badge.textContent = c.badgeDone(c.outTime.slice(0, 5), fmtH(shiftOf(c).actual)); }
       }
 
       const row = $(c.ids.row);
       if (row) {
-        if (outDone) { row.textContent = `${c.inTime.slice(0, 5)} ~ ${c.outTime.slice(0, 5)}（8.5h）`; row.style.color = 'var(--ad-primary-text)'; }
+        if (outDone) { row.textContent = `${c.inTime.slice(0, 5)} ~ ${c.outTime.slice(0, 5)}（${fmtH(shiftOf(c).actual)}h）`; row.style.color = 'var(--ad-primary-text)'; }
         else if (inDone) { row.textContent = `${c.inTime.slice(0, 5)} 上班（進行中）`; row.style.color = 'var(--ad-accent-text)'; }
       }
       const hours = $(c.ids.hours);
-      if (hours && outDone) hours.textContent = '8.5 小時（正常 8h＋避雨超時 0.5h）';
+      if (hours) {
+        const sh = shiftOf(c);
+        hours.textContent = outDone
+          ? `${fmtH(sh.actual)} 小時${sh.overtime > 0 ? `（正常 8h＋加班 ${fmtH(sh.overtime)}h）` : ''}`
+          : (inDone ? '作業中' : '0.0 小時');
+      }
       const sign = $(c.ids.sign);
       if (sign && outDone) sign.textContent = '對口：許世芳（已簽核驗收）';
     }
@@ -913,6 +933,7 @@
       if (!punch.success) return;
 
       PUNCH.foreman.inTime = nowTimeStr();
+      PUNCH.foreman.shift = null;
       PUNCH.foreman.state = 'working';
       renderPunch('foreman');
 
@@ -929,11 +950,12 @@
       if (!punch.success) return;
 
       PUNCH.foreman.outTime = nowTimeStr();
+      PUNCH.foreman.shift = shiftFromRecord(punch.data);
       PUNCH.foreman.state = 'done';
       renderPunch('foreman');
 
       if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
-        window.AgriDocs.notify('領班下班打卡成功', `時間 ${PUNCH.foreman.outTime}，工班 B 組 6 人出工 8.5h 已驗收完工。農場主陳建龍已在線簽核，帶隊加給已核算。`, { channel: 'attendance' });
+        window.AgriDocs.notify('領班下班打卡成功', `時間 ${PUNCH.foreman.outTime}，本日帶工 ${fmtH(shiftOf(PUNCH.foreman).actual)}h${shiftOf(PUNCH.foreman).overtime > 0 ? `（含加班 ${fmtH(shiftOf(PUNCH.foreman).overtime)}h）` : ''}，工班 B 組已驗收完工。農場主陳建龍已在線簽核，帶隊加給已核算。`, { channel: 'attendance' });
       }
     }
 
@@ -944,6 +966,7 @@
       if (!punch.success) return;
 
       PUNCH.local.inTime = nowTimeStr();
+      PUNCH.local.shift = null;
       PUNCH.local.state = 'working';
       renderPunch('local');
 
@@ -959,11 +982,12 @@
       if (!punch.success) return;
 
       PUNCH.local.outTime = nowTimeStr();
+      PUNCH.local.shift = shiftFromRecord(punch.data);
       PUNCH.local.state = 'done';
       renderPunch('local');
 
       if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
-        window.AgriDocs.notify(`${localTrackName()}下班打卡成功`, `時間 ${PUNCH.local.outTime}，工時 8.5h（含 0.5h 避雨超時）。許世芳隊長已驗收簽核，分紅獎金已計入薪酬明細。`, { channel: 'attendance' });
+        window.AgriDocs.notify(`${localTrackName()}下班打卡成功`, `時間 ${PUNCH.local.outTime}，工時 ${fmtH(shiftOf(PUNCH.local).actual)}h${shiftOf(PUNCH.local).overtime > 0 ? `（含加班 ${fmtH(shiftOf(PUNCH.local).overtime)}h）` : ''}。許世芳隊長已驗收簽核，分紅獎金已計入薪酬明細。`, { channel: 'attendance' });
       }
     }
 
@@ -981,11 +1005,11 @@
         const d = new Date();
         const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         if (latest && latest.status === 'working') {
-          c.state = 'working'; c.inTime = hms(latest.clockInTime) || c.inTime; c.outTime = '';
+          c.state = 'working'; c.inTime = hms(latest.clockInTime) || c.inTime; c.outTime = ''; c.shift = null;
         } else if (latest && latest.workDate === today && latest.clockOutTime) {
-          c.state = 'done'; c.inTime = hms(latest.clockInTime); c.outTime = hms(latest.clockOutTime);
+          c.state = 'done'; c.inTime = hms(latest.clockInTime); c.outTime = hms(latest.clockOutTime); c.shift = shiftFromRecord(latest);
         } else {
-          c.state = 'idle'; c.outTime = '';
+          c.state = 'idle'; c.outTime = ''; c.shift = null;
         }
         renderPunch(key);
       } catch (e) { /* 離線：沿用示範預設 */ }

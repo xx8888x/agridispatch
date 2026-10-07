@@ -527,6 +527,9 @@
     a.normalHours = Math.min(a.actualHours, 8);
     a.overtimeHours = Math.round(Math.max(0, a.actualHours - 8) * 10) / 10;
   }
+  // 錄製資料裡沒有出勤紀錄、但工作台預設「作業中」的示範工人 → 打卡地點
+  var DEMO_ON_SHIFT = { W012: '雲林縣元長鄉設施彩椒溫室專案區' };
+
   // 錄製資料裡還沒下班的紀錄停在錄製日；改成「8 小時前上班」，
   // 對應工人頁 demo 預設「已上班、可直接下班打卡」，下班時工時約 8 小時、不會累積好幾天
   function attendanceStore(workerId) {
@@ -534,6 +537,17 @@
     var he = get(hk) || { s: 200, b: { success: true, workerId: workerId, totalRecords: 0, data: [] } };
     var st = { key: hk, entry: he, list: he.b.data || (he.b.data = []) };
     var today = localStamp(new Date()).slice(0, 10), moved = false;
+    // 錄製資料沒有出勤紀錄的示範工人：今天還沒任何紀錄時補一筆「已上班」，工作台一打開就能直接下班打卡
+    var seed = DEMO_ON_SHIFT[workerId];
+    if (seed && !st.list.some(function (a) { return a.workDate === today || !a.clockOutTime; })) {
+      var maxId = st.list.reduce(function (m, a) { return Math.max(m, +a.id || 0); }, 0);
+      st.list.unshift({
+        id: maxId + 1, workerId: workerId, workDate: today, clockInTime: '', clockOutTime: null,
+        location: seed, gpsAccuracyMeters: null, status: 'working', actualHours: null, normalHours: null,
+        overtimeHours: null, foremanSignature: null, orderId: null, foremanRating: null, foremanRatedBy: null,
+        foremanRatedAt: null, createdAt: localStamp(new Date()), _demoShift: true
+      });
+    }
     st.list.forEach(function (a) {
       if (a.clockOutTime) return;
       if (a._demoShift || (a.workDate && a.workDate < today)) {

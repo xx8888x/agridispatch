@@ -290,6 +290,86 @@
     return order;
   }
 
+  // ---------------- 訂單修改與狀態機（移植 OrderService.updateOrder / changeStatus） ----------------
+  var TRANSITIONS = {
+    pending: ['confirmed', 'cancelled'], confirmed: ['in_progress', 'cancelled'],
+    in_progress: ['completed', 'cancelled'], completed: [], cancelled: []
+  };
+  function orderRef(id) {
+    var dk = 'GET /orders/' + encodeURIComponent(id), d = get(dk);
+    var o = (d && d.b && d.b.data) || findIn('GET /orders', id);
+    return o ? { key: dk, order: clone(o) } : null;
+  }
+  function saveOrder(ref) {
+    var o = ref.order;
+    patchList('GET /orders', String(o.id), o);
+    put(ref.key, { s: 200, b: { success: true, data: o } });
+    syncMatchingOrder(o.id, o);
+  }
+  function updateOrder(id, u) {
+    var ref = orderRef(id);
+    if (!ref) return respond(404, { success: false, error: '找不到該訂單編號: ' + id });
+    var o = ref.order;
+    if (o.status === 'cancelled' || o.status === 'completed') return respond(409, { success: false, error: '已取消或已完工的訂單不可修改' });
+    if (u.area != null && (u.area < 0 || isNaN(u.area))) return respond(400, { success: false, error: '面積必須大於 0' });
+    var priced = false;
+    if (u.cropId != null && u.cropId !== o.cropId) { o.cropId = u.cropId; priced = true; }
+    if (u.area > 0 && +u.area !== +o.area) { o.area = +u.area; priced = true; }
+    ['plan', 'transportZone', 'dispatchCategory'].forEach(function (f) {
+      if (u[f] != null && u[f] !== o[f]) { o[f] = u[f]; priced = true; }
+    });
+    if (priced && o.depositPaid) return respond(409, { success: false, error: '已付定金的訂單不可變更作物、面積或方案，請聯繫調度中心' });
+    if (priced && o.packageId) o.packageId = null;
+    if (u.requestedWorkers != null) o.requestedWorkers = u.requestedWorkers;
+    if (!blank(u.farmerName)) o.farmerName = u.farmerName;
+    ['phone', 'farmLocation', 'foremanName', 'foremanPhone', 'foremanNotes', 'assignedTeamId'].forEach(function (f) {
+      if (u[f] != null) o[f] = u[f];
+    });
+    if (u.startDate != null || u.endDate != null) {
+      var s = u.startDate != null ? u.startDate : o.startDate, e = u.endDate != null ? u.endDate : o.endDate;
+      if (s && e && e < s) return respond(400, { success: false, error: '完工日不可早於開工日' });
+      o.startDate = s; o.endDate = e;
+    }
+    if (priced) {
+      var c;
+      try {
+        c = calculate({ cropId: o.cropId, area: o.area, plan: o.plan, zone: o.transportZone, dispatchCategory: o.dispatchCategory, workers: o.requestedWorkers });
+      } catch (err) { return respond(400, { success: false, error: err.message }); }
+      Object.assign(o, {
+        cropName: c.cropName, planName: c.planName, categoryName: c.categoryName, totalHours: c.totalHours,
+        suggestedWorkers: c.suggestedWorkers, unitRate: c.unitRate, standardAmount: c.standardTotal,
+        finalAmount: c.actualTotal, depositAmount: c.deposit, transportSurcharge: c.transportSurcharge
+      });
+      if (o.status === 'pending' && o.depositAmount <= 0) o.status = 'confirmed';
+      else if (o.status === 'confirmed' && o.depositAmount > 0) o.status = 'pending';
+    }
+    saveOrder(ref);
+    return respond(200, { success: true, data: o, message: '訂單已更新' });
+  }
+  function changeStatus(id, next) {
+    var ref = orderRef(id);
+    if (!ref) return respond(404, { success: false, error: '找不到該訂單編號: ' + id });
+    var o = ref.order;
+    if (!TRANSITIONS[next]) return respond(400, { success: false, error: 'status 必須為 pending / confirmed / in_progress / completed / cancelled' });
+    if (next === o.status) return respond(200, { success: true, data: o });
+    if ((TRANSITIONS[o.status] || []).indexOf(next) < 0) return respond(409, { success: false, error: '訂單狀態不可由 ' + o.status + ' 變更為 ' + next });
+    if (next === 'confirmed' && o.depositAmount > 0 && !o.depositPaid) return respond(409, { success: false, error: '訂單尚未收到定金，無法轉為已排定' });
+    if (next === 'in_progress') {
+      // 派工前加保檢查：有出工名單看名單，否則看分派工班每位成員
+      var m = get('GET /matching/orders/' + encodeURIComponent(id));
+      var crew = (m && m.b && m.b.data && m.b.data.order && m.b.data.order.crew) || [];
+      var problems = (listOf(get('GET /insurance/workers')) || []).filter(function (w) {
+        return (crew.length ? crew.indexOf(w.workerId) >= 0 : w.teamId === o.assignedTeamId) && !w.fullyInsured;
+      }).map(function (w) {
+        return w.name + '（缺' + (w.missing || []).map(function (t) { return INS_LABEL[t] || t; }).join('、') + '）';
+      });
+      if (problems.length) return respond(409, { success: false, error: '工班有成員尚未完整加保，不可出工：' + problems.join('；') });
+    }
+    o.status = next;
+    saveOrder(ref);
+    return respond(200, { success: true, data: o });
+  }
+
   // ---------------- 模擬金流：定金付款直接成功，訂單 pending → confirmed ----------------
   function checkout(b) {
     var oid = b.orderId;
@@ -385,6 +465,120 @@
     put(key, e);
     legalizeSummary(rows);
     return respond(200, method === 'DELETE' ? { success: true } : { success: true, data: w });
+  }
+
+  // ---------------- LINE 帳號綁定（移植 LineBindingService.bind / unbind / list） ----------------
+  function lineStore() {
+    var key = 'GET /line/bindings', e = get(key) || { s: 200, b: { success: true, bindings: [] } };
+    e.b.bindings = e.b.bindings || [];
+    return { key: key, entry: e, list: e.b.bindings };
+  }
+  function lineBind(b) {
+    var u = currentUser();
+    if (!u) return respond(401, { success: false, error: '請先登入平台帳號' });
+    var ch = b.channel === 'worker' ? 'worker' : 'farmer';
+    if (ch === 'farmer' && u.role !== 'farmer') return respond(409, { success: false, error: '此 LINE 帳號（智農派工（農場主））只提供農場主綁定；工作人員請加入「智農派工（工作者）」帳號' });
+    if (ch === 'worker' && !/^worker_/.test(u.role || '')) return respond(409, { success: false, error: '此 LINE 帳號（智農派工（工作者））只提供工作人員綁定；農場主請加入「智農派工（農場主）」帳號' });
+    var lineId = String(b.idToken || '').replace(/^mock:/, '');
+    if (!/^U[0-9a-f]{32}$/.test(lineId)) return respond(400, { success: false, error: 'LINE 身分驗證失敗' });
+    var masked = lineId.slice(0, 6) + '****';
+    var st = lineStore(), mine = null, clash = null;
+    st.list.forEach(function (x) {
+      if (x.channel !== ch) return;
+      if (x.username === u.username) mine = x;
+      else if (x.bound && x._lineUserId === lineId) clash = x;
+    });
+    if (clash) return respond(409, { success: false, error: '這個 LINE 帳號已綁定其他平台帳號，請先解除原本的綁定' });
+    if (mine && mine.bound && mine._lineUserId !== lineId) return respond(409, { success: false, error: '您的平台帳號已綁定另一個 LINE 帳號，請先解除原本的綁定' });
+    if (!mine) {
+      mine = { id: 'LU-' + String(st.list.length + 1).padStart(4, '0'), channel: ch, username: u.username, role: u.role, refId: u.refId || null };
+      st.list.push(mine);
+    }
+    var nat = u.role === 'worker_foreign' ? ((findIn('GET /workers', u.refId) || {}).nationality || '') : '';
+    Object.assign(mine, {
+      _lineUserId: lineId, lineUserId: masked, displayName: u.name || u.username, bound: true,
+      lang: mine.langLocked ? mine.lang : ({ '越南': 'vi', '印尼': 'id' }[nat] || 'zh'),
+      langLocked: !!mine.langLocked, followed: true, boundAt: localStamp(new Date())
+    });
+    put(st.key, st.entry);
+    return respond(200, { success: true, channel: ch, displayName: mine.displayName, lang: mine.lang });
+  }
+  function lineUnbind(match) {
+    var st = lineStore(), hit = null;
+    st.list.forEach(function (x) { if (!hit && match(x)) hit = x; });
+    if (!hit) return respond(404, { success: false, error: '查無綁定紀錄' });
+    hit.bound = false;
+    hit.boundAt = null;
+    put(st.key, st.entry);
+    return respond(200, { success: true });
+  }
+
+  // ---------------- 出勤打卡（移植 AttendanceService.clockIn / clockOut、Attendance.completeShift） ----------------
+  function localStamp(d) {
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' +
+      pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  }
+  function completeShift(a, out) {
+    a.clockOutTime = localStamp(out);
+    a.status = 'completed';
+    var minutes = Math.max(0, Math.round((out - new Date(a.clockInTime)) / 60000));
+    a.actualHours = Math.round(minutes / 6) / 10;
+    a.normalHours = Math.min(a.actualHours, 8);
+    a.overtimeHours = Math.round(Math.max(0, a.actualHours - 8) * 10) / 10;
+  }
+  // 錄製資料裡還沒下班的紀錄停在錄製日；改成「今天同一時間上班」，
+  // 對應工人頁 demo 預設「今早已上班、可直接下班打卡」，下班時工時才不會累積好幾天
+  function attendanceStore(workerId) {
+    var hk = 'GET /attendance/history/' + encodeURIComponent(workerId);
+    var he = get(hk) || { s: 200, b: { success: true, workerId: workerId, totalRecords: 0, data: [] } };
+    var st = { key: hk, entry: he, list: he.b.data || (he.b.data = []) };
+    var today = localStamp(new Date()).slice(0, 10), moved = false;
+    st.list.forEach(function (a) {
+      if (!a.clockOutTime && a.workDate && a.workDate < today) {
+        a.clockInTime = today + String(a.clockInTime).slice(10);
+        a.workDate = today;
+        moved = true;
+      }
+    });
+    if (moved) saveAttendance(workerId, st);
+    return st;
+  }
+  function saveAttendance(workerId, st) {
+    st.entry.b.totalRecords = st.list.length;
+    put(st.key, st.entry);
+    var today = localStamp(new Date()).slice(0, 10);
+    put('GET /attendance/today/' + encodeURIComponent(workerId), {
+      s: 200, b: { success: true, data: st.list.filter(function (a) { return a.workDate === today; }) }
+    });
+  }
+  function clock(type, b) {
+    var workerId = b.workerId;
+    if (blank(workerId)) return respond(400, { success: false, error: '農工工號 (workerId) 不得為空！' });
+    if (!findIn('GET /workers', workerId)) return respond(404, { success: false, error: '找不到該農工編號：' + workerId });
+    var st = attendanceStore(workerId), now = new Date(), today = localStamp(now).slice(0, 10);
+    var open = st.list.filter(function (a) { return !a.clockOutTime; })[0];
+    if (type === 'clock-in') {
+      if (open) return respond(409, { success: false, error: '已有未下班的打卡紀錄（' + open.workDate + '），請先完成下班打卡' });
+      var maxId = st.list.reduce(function (m, a) { return Math.max(m, +a.id || 0); }, 0);
+      var att = {
+        id: maxId + 1, workerId: workerId, workDate: today, clockInTime: localStamp(now), clockOutTime: null,
+        location: b.location || '未提供 GPS 位置描述', gpsAccuracyMeters: null, status: 'working',
+        actualHours: null, normalHours: null, overtimeHours: null, foremanSignature: null, orderId: null,
+        foremanRating: null, foremanRatedBy: null, foremanRatedAt: null, createdAt: localStamp(now)
+      };
+      st.list.unshift(att);
+      saveAttendance(workerId, st);
+      return respond(200, { success: true, data: att, message: '📍 上班 GPS 打卡成功！位置：' + att.location });
+    }
+    if (!open) return respond(409, { success: false, error: '找不到尚未下班的上班打卡紀錄，請先上班打卡' });
+    completeShift(open, now);
+    open.foremanSignature = b.foremanSignature || null;
+    saveAttendance(workerId, st);
+    return respond(200, {
+      success: true, data: open, workHours: open.actualHours,
+      message: '🏁 下班打卡與工頭簽核完成！本日工時：' + open.actualHours + ' 小時 (含加班 ' + open.overtimeHours + ' 小時)'
+    });
   }
 
   // ---------------- 派工媒合：確認工班與出工名單 ----------------
@@ -598,12 +792,39 @@
       try { return respond(200, { success: true, data: createOrder(body || {}) }); } catch (err) { return respond(400, { success: false, error: err.message }); }
     }
     if (method === 'POST' && sp.path === '/payments/checkout') return checkout(body || {});
+    if (method === 'POST' && (sp.path === '/attendance/clock-in' || sp.path === '/attendance/clock-out')) return clock(seg[1], body || {});
+    if (method === 'POST' && sp.path === '/line/bind') return lineBind(body || {});
+    if (method === 'POST' && sp.path === '/line/notify/tomorrow') {
+      // 明日出工通知：工期涵蓋明天、已排定或履約中的訂單，通知其出工名單（沒有名單就以建議人數計）
+      var tm = new Date(); tm.setDate(tm.getDate() + 1);
+      var tmr = localStamp(tm).slice(0, 10), people = 0;
+      var due = (listOf(get('GET /orders')) || []).filter(function (o) {
+        return (o.status === 'confirmed' || o.status === 'in_progress') && o.startDate && o.startDate <= tmr && (!o.endDate || o.endDate >= tmr);
+      });
+      due.forEach(function (o) {
+        var m = get('GET /matching/orders/' + encodeURIComponent(o.id));
+        var crew = m && m.b && m.b.data && m.b.data.order && m.b.data.order.crew;
+        people += (crew && crew.length) || o.suggestedWorkers || 0;
+      });
+      return respond(200, { success: true, date: tmr, orders: due.length, workerRecipients: people, skippedQuietHours: 0 });
+    }
+    if (method === 'POST' && sp.path === '/line/notify/farmer-broadcast') {
+      if (blank(body && body.text)) return respond(400, { success: false, error: '請輸入通知內容' });
+      var farmers = (lineStore().list || []).filter(function (x) { return x.channel === 'farmer' && x.bound; }).length;
+      return respond(200, { success: true, recipients: farmers });
+    }
+    if (method === 'DELETE' && /^\/line\/bind\/[^/]+$/.test(sp.path)) {
+      var me = currentUser() || {};
+      return lineUnbind(function (x) { return x.channel === seg[2] && x.username === me.username && x.bound; });
+    }
+    if (method === 'DELETE' && /^\/line\/bindings\/[^/]+$/.test(sp.path)) {
+      var bid = decodeURIComponent(seg[2]);
+      return lineUnbind(function (x) { return x.id === bid; });
+    }
     if (method === 'PUT' && /^\/evaluations\/attendance\/[^/]+$/.test(sp.path)) return rateShift(decodeURIComponent(seg[2]), body || {});
     if (method === 'PUT' && /^\/matching\/orders\/[^/]+$/.test(sp.path)) return saveCrew(decodeURIComponent(seg[2]), body || {});
-    if (method === 'PUT' && /^\/orders\/[^/]+$/.test(sp.path) && body) {
-      if (body.startDate && body.endDate && body.endDate < body.startDate) return respond(400, { success: false, error: '完工日不可早於開工日' });
-      syncMatchingOrder(decodeURIComponent(seg[1]), body);
-    }
+    if (method === 'PUT' && /^\/orders\/[^/]+$/.test(sp.path)) return updateOrder(decodeURIComponent(seg[1]), body || {});
+    if (method === 'PUT' && /^\/orders\/[^/]+\/status$/.test(sp.path)) return changeStatus(decodeURIComponent(seg[1]), (body || {}).status);
     if (method === 'POST' && /^\/skills\/workers\/[^/]+\/[^/]+\/restore$/.test(sp.path)) {
       return restoreSkill(decodeURIComponent(seg[2]), decodeURIComponent(seg[3]), body);
     }
@@ -620,7 +841,10 @@
       });
       saveState(state);
       var sr = FIX['POST /dispatch/weather-scenario ' + JSON.stringify({ scenarioId: sid })];
-      return respond(200, sr ? sr.b : { success: true, message: '已切換天候情境' });
+      var names = { sunny: '全台晴朗炎熱', cloudy: '舒適多雲時晴', shower: '局部短暫陣雨', heavy_rain: '滯留鋒面大暴雨', typhoon: '強烈颱風警戒', cold_wave: '強烈寒流特報' };
+      var sb = sr ? clone(sr.b) : { success: true };
+      sb.message = '已成功切換天候情境：' + (names[sid] || sid);   // 後端訊息帶英文代碼，路演畫面改顯示中文
+      return respond(200, sb);
     }
     if (method === 'POST' && /^\/insurance\/workers\/[^/]+\/enroll$/.test(sp.path)) return enroll(decodeURIComponent(seg[2]), body || {});
     if (method === 'POST' && /^\/insurance\/records\/[^/]+\/withdraw$/.test(sp.path)) return withdraw(decodeURIComponent(seg[2]), body || {});
@@ -688,6 +912,25 @@
       if (sp.path === '/auth/me') {
         var u = currentUser();
         return u ? respond(200, { success: true, user: u, data: u }) : respond(401, { success: false, error: '未登入' });
+      }
+      if (sp.path === '/line/config') {
+        // 錄製時 LINE Bot 沒開；純前端示範的對話由頁面模擬，狀態顯示「模擬中」。金鑰等正式設定照實呈現。
+        var lc = findGet(p) || { s: 200, b: { success: true } };
+        lc.b.linebot = Object.assign({}, lc.b.linebot, { reachable: true, channels: { farmer: 'MOCK', worker: 'MOCK' } });
+        return respond(200, lc.b);
+      }
+      if (sp.path === '/line/bindings') {
+        var ls = lineStore();
+        return respond(200, Object.assign({}, ls.entry.b, {
+          bindings: ls.list.map(function (x) { var c = clone(x); delete c._lineUserId; return c; })
+        }));
+      }
+      var am = /^\/attendance\/(history|today)\/([^/]+)$/.exec(sp.path);
+      if (am) {
+        var wid = decodeURIComponent(am[2]), ast = attendanceStore(wid);
+        if (am[1] === 'history') return respond(200, ast.entry.b);
+        var td = localStamp(new Date()).slice(0, 10);
+        return respond(200, { success: true, data: ast.list.filter(function (a) { return a.workDate === td; }) });
       }
       var em = /^\/evaluations\/teams\/([^/]+)$/.exec(sp.path);
       if (em) {

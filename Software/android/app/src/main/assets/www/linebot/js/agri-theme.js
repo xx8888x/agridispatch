@@ -188,7 +188,8 @@
   // 頁首沒有「示範導覽」按鈕的頁面（登入頁、DM、證明書等），demo 模式補一顆浮動按鈕，路演時任何頁都能跳轉
   function demoNavFab() {
     if (mode === 'production' || document.getElementById('ad-demo-fab')) return;
-    if (document.querySelector('[data-demo-only][onclick*=".open()"]')) return;
+    // 頁首已有示範導覽按鈕（onclick 或 Vue @click，後者掛載後屬性會消失，所以也認 aria-label）
+    if (document.querySelector('[data-demo-only][onclick*=".open()"], button[data-demo-only][aria-label="示範導覽"]')) return;
     var ctl = demoNav();
     var btn = document.createElement('button');
     btn.type = 'button';

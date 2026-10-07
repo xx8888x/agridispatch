@@ -128,7 +128,7 @@
                 <span id="foreman-punch-status" class="ad-pill ad-pill--ok">帶隊作業中（06:30 上班）</span>
               </div>
               <div class="ad-form-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
-                <button type="button" id="foremanClockInBtn" disabled class="ad-btn ad-btn--stack is-done">
+                <button type="button" id="foremanClockInBtn" onclick="handleForemanClockIn()" disabled class="ad-btn ad-btn--stack is-done">
                   <span>上班打卡</span>
                   <span id="foreman-time-in" class="ad-caption ad-num"></span>
                 </button>
@@ -663,6 +663,7 @@
 
       updatePageTitle();
       loadLocalPayroll();
+      if (track !== 'foreman') syncPunch('local', localWorkerId());
     }
 
     function playVoiceInstruction(instruction) {
@@ -905,6 +906,21 @@
     const localWorkerId = () => payrollWorkerId();
     const localTrackName = () => (currentTrack === 'labor' ? '勞務出勤' : (currentTrack === 'foreman' ? '領班出勤' : '機耕出勤'));
 
+    async function handleForemanClockIn() {
+      const punch = window.AgriDocs
+        ? await AgriDocs.clockAction('clock-in', { workerId: DEMO_WORKER.foreman, locationLabel: '枋山愛文芒果合作園區', silent: true })
+        : { success: true };
+      if (!punch.success) return;
+
+      PUNCH.foreman.inTime = nowTimeStr();
+      PUNCH.foreman.state = 'working';
+      renderPunch('foreman');
+
+      if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
+        window.AgriDocs.notify('領班上班打卡成功', `時間 ${PUNCH.foreman.inTime}，已通知工班 B 組與調度總台。`, { channel: 'attendance' });
+      }
+    }
+
     async function handleForemanClockOut() {
       // 先向後端打卡，成功才更新畫面；後端拒絕（如重複打卡）時由 clockAction 顯示原因
       const punch = window.AgriDocs
@@ -951,7 +967,35 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => { renderPunch('foreman'); renderPunch('local'); });
+    // 有出勤資料就以資料為準：作業中→可下班；今天已下班→收工；今天還沒打卡→可上班。
+    // 讀不到（離線）時維持上面的示範預設狀態。
+    async function syncPunch(key, workerId) {
+      try {
+        const res = await fetch(`${API_BASE}/attendance/history/${encodeURIComponent(workerId)}`);
+        if (!res.ok) return;
+        const result = await res.json();
+        if (!result.success || !Array.isArray(result.data)) return;
+        const c = PUNCH[key];
+        const latest = result.data[0];
+        const hms = (t) => (t ? t.split('T')[1].substring(0, 8) : '');
+        const d = new Date();
+        const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        if (latest && latest.status === 'working') {
+          c.state = 'working'; c.inTime = hms(latest.clockInTime) || c.inTime; c.outTime = '';
+        } else if (latest && latest.workDate === today && latest.clockOutTime) {
+          c.state = 'done'; c.inTime = hms(latest.clockInTime); c.outTime = hms(latest.clockOutTime);
+        } else {
+          c.state = 'idle'; c.outTime = '';
+        }
+        renderPunch(key);
+      } catch (e) { /* 離線：沿用示範預設 */ }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderPunch('foreman');
+      renderPunch('local');
+      syncPunch('foreman', DEMO_WORKER.foreman);   // 機耕師／勞務員卡片在 switchLocalTrack 切軌時同步
+    });
   </script>
 </body>
 </html>

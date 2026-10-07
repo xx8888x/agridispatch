@@ -834,12 +834,22 @@
         const result = await res.json();
         if (result.success && result.data) renderRecentRecords(result.data);
         if (result.success && result.data && result.data.length > 0) {
+          // 有出勤資料就以資料為準：作業中→可下班；今天已下班→收工；今天還沒打卡→可上班
           const latest = result.data[0];
+          const hms = (t) => (t ? t.split('T')[1].substring(0, 8) : '');
+          const d = new Date();
+          const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
           if (latest.status === 'working') {
-            clockInTime = latest.clockInTime ? latest.clockInTime.split('T')[1].substring(0, 8) : clockInTime;
+            clockInTime = hms(latest.clockInTime) || clockInTime;
             punchState = 'working';
-            renderPunchUI();
+          } else if (latest.workDate === today && latest.clockOutTime) {
+            clockInTime = hms(latest.clockInTime);
+            clockOutTime = hms(latest.clockOutTime);
+            punchState = 'done';
+          } else {
+            punchState = 'idle';
           }
+          renderPunchUI();
         }
       } catch (e) {}
     }

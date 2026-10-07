@@ -5,9 +5,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.util.UriUtils;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -30,6 +33,18 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("Authorization", "Content-Type", "X-Line-Signature")
                 .maxAge(3600);
+    }
+
+    /**
+     * 入口轉址：/demo/、/web/ 沒有目錄首頁，直接導向主網站首頁，路演時只要記 http://localhost:3000/demo/
+     */
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        for (String site : new String[]{"demo", "web"}) {
+            String target = "redirect:/" + site + "/" + UriUtils.encodePath("農業派遣主網站", StandardCharsets.UTF_8) + "/index.html";
+            registry.addViewController("/" + site).setViewName(target);
+            registry.addViewController("/" + site + "/").setViewName(target);
+        }
     }
 
     @Override

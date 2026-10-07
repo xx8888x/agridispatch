@@ -119,11 +119,16 @@ const enc = encodeURIComponent;
   await record('GET', '/legalize/summary', null, tokens.farmer);
 
   // 3. 明細
-  const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
   const teams = data(got['/dispatch/teams']).map(t => t.id);
   for (const t of teams) {
     for (const p of [`/dispatch/teams/${enc(t)}`, `/insurance/teams/${enc(t)}`, `/skills/teams/${enc(t)}`,
-      `/ratings/teams/${enc(t)}`, `/evaluations/teams/${enc(t)}?date=${today}`]) await record('GET', p);
+      `/ratings/teams/${enc(t)}`]) await record('GET', p);
+    // 領班評核：錄近 3 週，Mock 對沒資料的日期改用該工班最近一天有班次的資料
+    for (let i = 0; i <= 21; i++) {
+      const day = new Date(Date.now() + 8 * 3600e3 - i * 86400e3).toISOString().slice(0, 10);
+      const r = await call('GET', `/evaluations/teams/${enc(t)}?date=${day}`, null, tokens.admin_tech);
+      if (r.s < 400 && r.b && r.b.data && r.b.data.shifts && r.b.data.shifts.length) fixtures[`GET /evaluations/teams/${enc(t)}?date=${day}`] = r;
+    }
   }
   for (const w of data(got['/workers'])) {
     const id = enc(w.id);

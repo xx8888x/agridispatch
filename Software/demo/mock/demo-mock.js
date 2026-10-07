@@ -314,6 +314,194 @@
     });
   }
 
+  // ---------------- 工班合法化清冊（移植自 LegalizeService.toView / aggregate） ----------------
+  function legalizeType(key) {
+    return (listOf(get('GET /legalize/types')) || []).filter(function (t) { return t.key === key; })[0] || null;
+  }
+  function legalizeView(w) {
+    var t = legalizeType(w.type), n = t ? t.steps.length : 0;
+    var done = [];
+    for (var i = 0; i < n; i++) done.push(!!(w.done && w.done[i]));
+    var all = n > 0 && done.every(Boolean), replace = t && t.path === 'replace';
+    w.typeLabel = t ? t.label : w.type;
+    w.path = t ? t.path : null;
+    w.done = done;
+    w.doneCount = done.filter(Boolean).length;
+    w.stepCount = n;
+    w.isDone = all;
+    w.isStopped = !!(replace && done[0]);
+    w.status = replace ? (all ? 'replaced' : (done[0] ? 'stopped' : 'in_use')) : (all ? 'legalized' : 'in_progress');
+    w.updatedAt = new Date().toISOString().slice(0, 19);
+    return w;
+  }
+  function legalizeSummary(rows) {
+    var e = get('GET /legalize/summary');
+    if (!e || !e.b || !e.b.data || !e.b.data.farms) return;
+    var me = (currentUser() || {}).refId || 'F001';
+    var keys = ['total', 'direct', 'conditional', 'replace', 'legalized', 'inProgress', 'exposed', 'stopped', 'replaced', 'gapOpen', 'exposureMinWan', 'exposureMaxWan'];
+    var m = {};
+    keys.forEach(function (k) { m[k] = 0; });
+    rows.forEach(function (w) {
+      m.total++;
+      m[w.path === 'direct' ? 'direct' : w.path === 'conditional' ? 'conditional' : 'replace']++;
+      if (w.path === 'replace') m[w.status === 'replaced' ? 'replaced' : w.status === 'stopped' ? 'stopped' : 'exposed']++;
+      else m[w.status === 'legalized' ? 'legalized' : 'inProgress']++;
+    });
+    m.gapOpen = m.exposed + m.stopped;
+    m.exposureMinWan = m.exposed * 15;
+    m.exposureMaxWan = m.exposed * 75;
+    var d = e.b.data;
+    d.farms.forEach(function (f) { if (f.farmerId === me) keys.forEach(function (k) { f[k] = m[k]; }); });
+    if (d.totals) keys.forEach(function (k) { d.totals[k] = d.farms.reduce(function (s, f) { return s + (f[k] || 0); }, 0); });
+    put('GET /legalize/summary', e);
+  }
+  function legalizeWrite(method, id, b) {
+    var key = 'GET /legalize/roster', e = get(key);
+    if (!e) return respond(404, { success: false, error: '查無清冊' });
+    var rows = listOf(e), w = null, idx = -1;
+    rows.forEach(function (r, i) { if (r.id === id) { w = r; idx = i; } });
+    if (method === 'POST') {
+      var t = legalizeType(b.type);
+      if (!t) return respond(400, { success: false, error: '不支援的身分類型：' + b.type });
+      if (t.path !== 'replace' && blank(b.name)) return respond(400, { success: false, error: '請填寫稱呼' });
+      var now = new Date().toISOString().slice(0, 19);
+      w = legalizeView({
+        id: nextId(rows, 'LGW-'), farmerId: (currentUser() || {}).refId || 'F001', type: b.type,
+        name: t.path === 'replace' ? null : b.name, job: b.job || '農務',
+        daysPerWeek: Math.min(7, Math.max(1, parseInt(b.daysPerWeek, 10) || 1)), done: [], createdAt: now
+      });
+      rows.push(w);
+    } else if (!w) {
+      return respond(404, { success: false, error: '查無此人員：' + id });
+    } else if (method === 'DELETE') {
+      rows.splice(idx, 1);
+    } else {
+      if (b.stepIndex != null) w.done[b.stepIndex] = !!b.checked;
+      if (Array.isArray(b.done)) w.done = b.done.slice();
+      ['name', 'job'].forEach(function (f) { if (b[f] != null) w[f] = b[f]; });
+      if (b.daysPerWeek != null) w.daysPerWeek = b.daysPerWeek;
+      legalizeView(w);
+    }
+    put(key, e);
+    legalizeSummary(rows);
+    return respond(200, method === 'DELETE' ? { success: true } : { success: true, data: w });
+  }
+
+  // ---------------- 派工媒合：確認工班與出工名單 ----------------
+  function saveCrew(orderId, b) {
+    var enc = encodeURIComponent(orderId);
+    var mk = 'GET /matching/orders/' + enc, me = get(mk);
+    if (!me || !me.b || !me.b.data) return respond(404, { success: false, error: '查無訂單：' + orderId });
+    if (blank(b.teamId) || !Array.isArray(b.crew) || !b.crew.length) return respond(400, { success: false, error: '請選擇工班與至少 1 位工人' });
+    var ck = 'GET /matching/orders/' + enc + '/crew?teamId=' + encodeURIComponent(b.teamId), ce = get(ck);
+    if (ce && ce.b && ce.b.data) {
+      ce.b.data.currentCrew = b.crew.slice();
+      (ce.b.data.candidates || []).forEach(function (c) { c.onCurrentCrew = b.crew.indexOf(c.workerId) >= 0; });
+      put(ck, ce);
+    }
+    var rec = me.b.data;
+    rec.order.assignedTeamId = b.teamId;
+    rec.order.crew = b.crew.slice();
+    if (ce && ce.b && ce.b.data) rec.crew = clone(ce.b.data);
+    put(mk, me);
+    patchList('GET /orders', orderId, { assignedTeamId: b.teamId });
+    var od = get('GET /orders/' + enc);
+    if (od && od.b && od.b.data) { od.b.data.assignedTeamId = b.teamId; put('GET /orders/' + enc, od); }
+    return respond(200, { success: true, data: rec });
+  }
+  // 訂單工期改了，媒合頁的訂單摘要一起更新
+  function syncMatchingOrder(orderId, fields) {
+    var mk = 'GET /matching/orders/' + encodeURIComponent(orderId), me = get(mk);
+    if (!me || !me.b || !me.b.data || !me.b.data.order) return;
+    ['startDate', 'endDate', 'assignedTeamId', 'status'].forEach(function (f) { if (fields[f] != null) me.b.data.order[f] = fields[f]; });
+    put(mk, me);
+  }
+
+  // ---------------- 領班逐人評核 ----------------
+  // 錄製資料只到錄製日；查詢的日期沒有班次時，改用該工班最近一天有班次的資料並換成查詢日期，
+  // 路演當天預設的「昨天」也有人可評。第一次查詢後存進 state，評核結果才留得住。
+  // 「本人班次」依目前登入者判斷（錄製時用的是 admin，self 一律 false）
+  function markSelf(e) {
+    var me = (currentUser() || {}).refId;
+    var out = clone(e);
+    (out.b && out.b.data && out.b.data.shifts || []).forEach(function (s) { s.self = !!me && s.workerId === me; });
+    return out;
+  }
+  function ratable(e) {
+    var me = (currentUser() || {}).refId;
+    return (e && e.b && e.b.data && e.b.data.shifts || []).some(function (s) { return s.clockOut && s.workerId !== me; });
+  }
+  function evaluationsFor(p, teamId, date) {
+    var key = 'GET ' + p;
+    var hit = get(key);
+    if (hit && (Object.prototype.hasOwnProperty.call(state, key) || ratable(hit))) return markSelf(hit);
+    var prefix = 'GET /evaluations/teams/' + encodeURIComponent(teamId) + '?date=';
+    var best = null;
+    Object.keys(FIX).forEach(function (k) {
+      if (k.indexOf(prefix) === 0 && ratable(FIX[k]) && (!best || k > best)) best = k;
+    });
+    if (!best) return hit || { s: 200, b: { success: true, data: { teamId: teamId, date: date, shifts: [] } } };
+    var e = clone(FIX[best]);
+    var from = e.b.data.date;
+    e.b.data.date = date;
+    e.b.data.shifts.forEach(function (s) {
+      s.attendanceId = String(s.attendanceId) + '@' + date;
+      ['clockIn', 'clockOut', 'workDate'].forEach(function (f) {
+        if (typeof s[f] === 'string') s[f] = s[f].split(from).join(date);
+      });
+    });
+    put(key, e);
+    return markSelf(e);
+  }
+  function rateShift(attendanceId, b) {
+    if (['excellent', 'ok', 'needs_improvement'].indexOf(b.rating) < 0 && b.rating != null) {
+      return respond(400, { success: false, error: '評核只能是 excellent／ok／needs_improvement' });
+    }
+    var found = null, u = currentUser() || {};
+    Object.keys(state).concat(Object.keys(FIX)).forEach(function (k) {
+      if (found || k.indexOf('GET /evaluations/teams/') !== 0) return;
+      var e = get(k);
+      (e && e.b && e.b.data && e.b.data.shifts || []).forEach(function (s) {
+        if (String(s.attendanceId) !== String(attendanceId)) return;
+        if (u.refId && s.workerId === u.refId) { found = { err: '本人班次，請由其他領班或合作社評核' }; return; }
+        s.rating = b.rating;
+        s.ratedBy = u.refId || u.username || null;
+        found = { key: k, entry: e, shift: s };
+      });
+    });
+    if (!found) return respond(404, { success: false, error: '找不到出勤紀錄：' + attendanceId });
+    if (found.err) return respond(409, { success: false, error: found.err });
+    put(found.key, found.entry);
+    return respond(200, { success: true, data: found.shift });
+  }
+
+  // ---------------- 技能標籤複核恢復：解除暫停、標籤恢復有效 ----------------
+  function restoreSkill(workerId, skillKey, b) {
+    var note = b && b.note ? String(b.note).trim() : '';
+    if (note.length > 200) return respond(400, { success: false, error: '備註最多 200 字' });
+    var profile = null;
+    function fix(p) {
+      if (!p || p.workerId !== workerId) return;
+      (p.skills || []).forEach(function (s) {
+        if (s.key === skillKey) { s.suspended = false; s.suspendReasons = []; s.active = s.level !== 'none'; }
+      });
+      // 同 SkillService.profile：沒有暫停中的標籤了，但近 6 個月曾暫停 → 仍不給履歷認證
+      var reasons = (p.unverifiedReasons || []).filter(function (r) { return r !== '有標籤暫停中，待合作社複核'; });
+      if ((p.skills || []).some(function (s) { return s.suspended; })) reasons.push('有標籤暫停中，待合作社複核');
+      if (reasons.indexOf('近 6 個月曾有標籤暫停') < 0) reasons.push('近 6 個月曾有標籤暫停');
+      p.unverifiedReasons = reasons;
+      p.verified = false;
+      profile = p;
+    }
+    var lk = 'GET /skills/workers', le = get(lk);
+    (listOf(le) || []).forEach(fix);
+    if (le) put(lk, le);
+    var dk = 'GET /skills/workers/' + encodeURIComponent(workerId), de = get(dk);
+    if (de && de.b && de.b.data) { fix(de.b.data); put(dk, de); }
+    if (!profile) return respond(404, { success: false, error: '找不到工人：' + workerId });
+    return respond(200, { success: true, data: profile });
+  }
+
   // ---------------- 保險加保／退保 ----------------
   var INS_LABEL = { labor: '勞保', employment: '就保', occupational: '職保', health: '健保' };
   function insView(workerId) {
@@ -410,6 +598,17 @@
       try { return respond(200, { success: true, data: createOrder(body || {}) }); } catch (err) { return respond(400, { success: false, error: err.message }); }
     }
     if (method === 'POST' && sp.path === '/payments/checkout') return checkout(body || {});
+    if (method === 'PUT' && /^\/evaluations\/attendance\/[^/]+$/.test(sp.path)) return rateShift(decodeURIComponent(seg[2]), body || {});
+    if (method === 'PUT' && /^\/matching\/orders\/[^/]+$/.test(sp.path)) return saveCrew(decodeURIComponent(seg[2]), body || {});
+    if (method === 'PUT' && /^\/orders\/[^/]+$/.test(sp.path) && body) {
+      if (body.startDate && body.endDate && body.endDate < body.startDate) return respond(400, { success: false, error: '完工日不可早於開工日' });
+      syncMatchingOrder(decodeURIComponent(seg[1]), body);
+    }
+    if (method === 'POST' && /^\/skills\/workers\/[^/]+\/[^/]+\/restore$/.test(sp.path)) {
+      return restoreSkill(decodeURIComponent(seg[2]), decodeURIComponent(seg[3]), body);
+    }
+    if (sp.path === '/legalize/roster' && method === 'POST') return legalizeWrite('POST', null, body || {});
+    if (/^\/legalize\/roster\/(?!reset$)[^/]+$/.test(sp.path)) return legalizeWrite(method, decodeURIComponent(seg[2]), body || {});
     if (method === 'POST' && (sp.path === '/dispatch/weather-scenario' || sp.path === '/dispatch/weather-switch')) {
       var sid = sp.path === '/dispatch/weather-switch'
         ? (body && body.isRainMode ? 'heavy_rain' : 'sunny')
@@ -489,6 +688,11 @@
       if (sp.path === '/auth/me') {
         var u = currentUser();
         return u ? respond(200, { success: true, user: u, data: u }) : respond(401, { success: false, error: '未登入' });
+      }
+      var em = /^\/evaluations\/teams\/([^/]+)$/.exec(sp.path);
+      if (em) {
+        var ev = evaluationsFor(p, decodeURIComponent(em[1]), (/[?&]date=([^&]+)/.exec(sp.query) || [])[1] || '');
+        return respond(ev.s, ev.b);
       }
       var pm = /^\/payments\/([^/]+)\/status$/.exec(sp.path);
       if (pm) {

@@ -633,6 +633,54 @@
     if (od && od.b && od.b.data) { od.b.data.assignedTeamId = b.teamId; put('GET /orders/' + enc, od); }
     return respond(200, { success: true, data: rec });
   }
+  // 新訂單（示範時剛下的單）沒有錄製的媒合建議：拿同派工類別的既有訂單當範本（技能需求、工班排序相同），
+  // 換上新訂單的資料；出工名單依新訂單人數重新挑選建議人選
+  var STATUS_LABEL = { pending: '待付定金', confirmed: '已排定', in_progress: '履約中', completed: '已完工', cancelled: '已取消' };
+  function matchingTemplate(o) {
+    var pool = (listOf(get('GET /orders')) || []).filter(function (x) {
+      return x.id !== o.id && FIX['GET /matching/orders/' + encodeURIComponent(x.id)];
+    });
+    return pool.filter(function (x) { return x.dispatchCategory === o.dispatchCategory; })[0] || pool[0] || null;
+  }
+  function synthMatching(orderId) {
+    var o = orderRef(orderId);
+    o = o && o.order;
+    var t = o && matchingTemplate(o);
+    if (!t) return null;
+    var tm = clone(FIX['GET /matching/orders/' + encodeURIComponent(t.id)].b.data);
+    var team = o.assignedTeamId && o.assignedTeamId !== '待分派' ? o.assignedTeamId : null;
+    var rec = {
+      order: Object.assign({}, tm.order, {
+        orderId: o.id, status: o.status, statusLabel: STATUS_LABEL[o.status] || o.status, farmerName: o.farmerName,
+        cropName: o.cropName, categoryName: o.categoryName, suggestedWorkers: o.suggestedWorkers,
+        startDate: o.startDate || null, endDate: o.endDate || null, assignedTeamId: team, crew: []
+      }),
+      teams: tm.teams, crew: null
+    };
+    var e = { s: 200, b: { success: true, data: rec } };
+    put('GET /matching/orders/' + encodeURIComponent(o.id), e);
+    return e;
+  }
+  function synthCrew(orderId, teamId) {
+    var o = orderRef(orderId);
+    o = o && o.order;
+    var t = o && matchingTemplate(o);
+    var src = t && get('GET /matching/orders/' + encodeURIComponent(t.id) + '/crew?teamId=' + encodeURIComponent(teamId));
+    if (!src || !src.b || !src.b.data) return null;
+    var c = clone(src.b.data), need = o.suggestedWorkers || c.needed, picked = 0;
+    c.needed = need;
+    c.currentCrew = [];
+    (c.candidates || []).forEach(function (x) {
+      x.onCurrentCrew = false;
+      x.recommended = !x.suspended && picked < need;
+      if (x.recommended) picked++;
+    });
+    c.shortage = Math.max(0, need - picked);
+    var e = { s: 200, b: { success: true, data: c } };
+    put('GET /matching/orders/' + encodeURIComponent(o.id) + '/crew?teamId=' + encodeURIComponent(teamId), e);
+    return e;
+  }
+
   // 訂單工期改了，媒合頁的訂單摘要一起更新
   function syncMatchingOrder(orderId, fields) {
     var mk = 'GET /matching/orders/' + encodeURIComponent(orderId), me = get(mk);
@@ -994,6 +1042,12 @@
             orderStatus: o.status, transactions: (base && base.b && base.b.data && base.b.data.transactions) || []
           } });
         }
+      }
+      var mm = /^\/matching\/orders\/([^/]+)(\/crew)?$/.exec(sp.path);
+      if (mm && !get('GET ' + p) && !(mm[2] ? null : get('GET ' + sp.path))) {
+        var tq = (/[?&]teamId=([^&]+)/.exec(sp.query) || [])[1];
+        var syn = mm[2] ? (tq && synthCrew(decodeURIComponent(mm[1]), decodeURIComponent(tq))) : synthMatching(decodeURIComponent(mm[1]));
+        if (syn) return respond(syn.s, syn.b);
       }
       var hit = findGet(p);
       if (hit) return respond(hit.s, hit.b);

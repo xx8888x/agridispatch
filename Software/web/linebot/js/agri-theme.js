@@ -152,6 +152,11 @@
       });
       html += '</div>';
     });
+    if (window.AgriMock) {
+      html += '<div class="ad-caption" style="margin-top:20px">純前端示範：資料存在這台電腦的瀏覽器，路演前可重置回初始狀態。</div>' +
+        '<button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" style="margin-top:8px" data-ad-mock-reset>' +
+        '<i data-lucide="rotate-ccw" class="ad-icon ad-icon--sm"></i>重置示範資料</button>';
+    }
 
     var backdrop = document.createElement('div');
     backdrop.className = 'ad-drawer__backdrop';
@@ -167,6 +172,15 @@
 
     var ctl = drawer(id) || noop;
     aside.querySelector('[data-ad-close]').addEventListener('click', ctl.close);
+    var resetBtn = aside.querySelector('[data-ad-mock-reset]');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function () {
+        if (!window.confirm('把訂單、保險、天候情境等示範資料恢復成初始狀態？')) return;
+        window.AgriMock.reset();
+        try { localStorage.removeItem('agri_orders'); } catch (e) {}
+        window.location.reload();
+      });
+    }
     icons(aside);
     return ctl;
   }

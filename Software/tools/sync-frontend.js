@@ -4,7 +4,7 @@
  *
  * demo/ 為唯一原始碼，本腳本把它同步到：
  *   - android/app/src/main/assets/www/ （全部檔案）
- *   - web/                              （排除 js/app-config.js、js/demo-accounts.js）
+ *   - web/                              （排除 js/app-config.js、js/demo-accounts.js、mock/）
  *
  * 規則：
  *   - 會刪除目標資料夾中「demo/ 已不存在」的檔案，但保留目標自己的 js/app-config.js
@@ -37,7 +37,9 @@ const TARGETS = [
     exclude: new Set([
       '科技後台/js/app-config.js', '科技後台/js/demo-accounts.js',
       'linebot/js/app-config.js', 'linebot/js/demo-accounts.js',
-      '農業派遣主網站/js/app-config.js', '農業派遣主網站/js/demo-accounts.js'
+      '農業派遣主網站/js/app-config.js', '農業派遣主網站/js/demo-accounts.js',
+      // 純前端 Mock（demo 專用，正式版一律連真實後端）
+      'mock/demo-mock.js', 'mock/demo-fixtures.js'
     ])
   }
 ];

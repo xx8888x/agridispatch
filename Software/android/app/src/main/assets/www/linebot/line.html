@@ -947,6 +947,13 @@
       const text = document.getElementById('line-server-status-text');
       if (!badge || !text) return;
 
+      // 純前端示範（demo-mock.js）：不連 LINE Bot，對話用本頁示範卡片
+      if (window.AgriMock) {
+        text.innerText = '純前端示範・模擬對話';
+        badge.className = 'ad-pill ad-pill--ok';
+        return;
+      }
+
       try {
         // /health 為公開端點（/api/config 需管理金鑰）；mode 為兩個官方帳號的總覽 MOCK／PRODUCTION／MIXED
         const res = await fetch(`${LINEBOT_BASE}/health`, { signal: AbortSignal.timeout(2000) });

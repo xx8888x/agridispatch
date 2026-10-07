@@ -140,9 +140,7 @@ const enc = encodeURIComponent;
     for (const p of [`/orders/${id}`, `/certificates/orders/${id}`, `/ratings/orders/${id}`,
       `/payments/${id}/status`, `/matching/orders/${id}`]) await record('GET', p);
     for (const t of teams) await record('GET', `/matching/orders/${id}/crew?teamId=${enc(t)}`);
-    const cert = fixtures[`GET /certificates/orders/${id}`];
-    const no = cert && cert.b && cert.b.data && (cert.b.data.certificateNo || cert.b.data.no);
-    if (no) await record('GET', `/public/certificates/${enc(no)}`);
+    // 公開查驗（/public/certificates/{no}?code=）不錄：demo-mock.js 用上面證明資料內的 verifyCode 比對
   }
   for (const [list, prefix] of [['/crops', '/crops/'], ['/talents', '/talents/'], ['/brochures', '/brochures/']]) {
     for (const it of data(got[list])) await record('GET', prefix + enc(it.id));

@@ -1043,6 +1043,34 @@
           } });
         }
       }
+      // 公開查驗用工證明（移植 CertificateService.verify）：以證明資料內的查驗碼比對
+      var cm = /^\/public\/certificates\/([^/]+)$/.exec(sp.path);
+      if (cm) {
+        var certNo = decodeURIComponent(cm[1]).trim().toUpperCase();
+        var vcode = decodeURIComponent((/[?&]code=([^&]*)/.exec(sp.query) || [])[1] || '').trim().toUpperCase();
+        var vr = { certificateNo: certNo };
+        if (certNo.indexOf('LEC-') !== 0 || !vcode) {
+          vr.valid = false; vr.reason = '證明編號或查驗碼格式不正確';
+          return respond(200, { success: true, data: vr });
+        }
+        var ce = get('GET /certificates/orders/' + encodeURIComponent(certNo.slice(4)));
+        var cert = ce && ce.b && ce.b.data;
+        if (!cert) {
+          vr.valid = false; vr.reason = '查無此證明';
+          return respond(200, { success: true, data: vr });
+        }
+        vr.valid = !!cert.verifyCode && cert.verifyCode === vcode;
+        if (!vr.valid) {
+          vr.reason = cert.verifyCode ? '查驗碼不符（證明可能遭竄改，或內容已更新，請向農場索取最新版本）' : '此訂單目前不符合開立條件';
+          return respond(200, { success: true, data: vr });
+        }
+        Object.assign(vr, {
+          issuer: cert.issuer, farmerName: cert.order.farmerName, cropName: cert.order.cropName,
+          categoryName: cert.order.categoryName, periodStart: cert.periodStart, periodEnd: cert.periodEnd,
+          workerCount: cert.workerCount, totalHours: cert.totalHours
+        });
+        return respond(200, { success: true, data: vr });
+      }
       var mm = /^\/matching\/orders\/([^/]+)(\/crew)?$/.exec(sp.path);
       if (mm && !get('GET ' + p) && !(mm[2] ? null : get('GET ' + sp.path))) {
         var tq = (/[?&]teamId=([^&]+)/.exec(sp.query) || [])[1];

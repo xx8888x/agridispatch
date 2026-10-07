@@ -212,7 +212,7 @@
                     <div class="ad-row__meta">屏東高樹洋蔥試驗田・小工頭：林小祥</div>
                   </div>
                   <div class="ad-row__aside">
-                    <div id="row-today-status" class="ad-num" style="font-weight: 600; color: var(--ad-accent-text);">06:45 上班打卡（作業中）</div>
+                    <div id="row-today-status" class="ad-num" style="font-weight: 600; color: var(--ad-accent-text);">上班打卡（作業中）</div>
                     <div class="ad-caption">預計 16:00 下班</div>
                   </div>
                 </div>
@@ -579,8 +579,11 @@
       : 'http://localhost:3000/api';
 
     // 打卡狀態：idle（尚未上班）→ working（作業中）→ done（已下班）。畫面一律由 renderPunchUI 依狀態與語言重畫。
-    let punchState = 'working';          // demo 預設已於 06:45 上班，可直接體驗下班打卡
-    let clockInTime = '06:45:10';
+    let punchState = 'working';          // demo 預設已在 8 小時前上班，可直接體驗下班打卡（工時約 8 小時）
+    let clockInTime = (() => {
+      const d = new Date(Date.now() - 8 * 3600e3);
+      return [d.getHours(), d.getMinutes(), d.getSeconds()].map((n) => String(n).padStart(2, '0')).join(':');
+    })();
     let clockOutTime = '';
     let shiftHours = null;               // 今日下班後的實際工時 { actual, overtime }（同後端 Attendance.completeShift）
 

@@ -534,8 +534,17 @@
     var he = get(hk) || { s: 200, b: { success: true, workerId: workerId, totalRecords: 0, data: [] } };
     var st = { key: hk, entry: he, list: he.b.data || (he.b.data = []) };
     var today = localStamp(new Date()).slice(0, 10), moved = false;
+    var w = findIn('GET /workers', workerId);
+    var foreign = !!(w && w.nationality && w.nationality !== '本國');
     st.list.forEach(function (a) {
-      if (!a.clockOutTime && a.workDate && a.workDate < today) {
+      if (a.clockOutTime) return;
+      if (foreign && (a._demoShift || (a.workDate && a.workDate < today))) {
+        // 外勞：上班時間固定為「現在往前 8 小時」，下班前每次讀取都重算，路演幾點按下班都約 8 小時
+        a.clockInTime = localStamp(new Date(Date.now() - 8 * 3600e3));
+        a.workDate = today;
+        a._demoShift = true;
+        moved = true;
+      } else if (a.workDate && a.workDate < today) {
         a.clockInTime = today + String(a.clockInTime).slice(10);
         a.workDate = today;
         moved = true;

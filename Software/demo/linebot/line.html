@@ -1238,7 +1238,7 @@
         foremanPhone: o.foremanPhone || (team && team.leaderPhone) || '',
         vehicle: team ? team.vehicle : '待排車', driver: driver || '待排定', driverName: driver.split(' (')[0] || '待排定',
         driverPhone: (driver.match(/\d{4}-\d{3}-\d{3}/) || [''])[0],
-        notes: o.foremanNotes || (team && team.normalTask) || '依現場領班交辦',
+        notes: o.foremanNotes || o.categoryName || (team && team.normalTask) || '依現場領班交辦',   // 沒有現場交辦時用訂單的派工類別
         amount: o.finalAmount || 0, deposit: o.depositAmount || 0, depositPaid: !!o.depositPaid,
         depositText: o.depositPaid ? '定金已收 20%' : (o.depositAmount > 0 ? '待付 20% 定金' : '免定金'),
         members: team ? LINE_DATA.workers.filter((w) => w.teamId === team.id && w.id !== PERSONA_WORKER.worker_local)   // 點名由領班本人執行，不列自己

@@ -119,7 +119,7 @@
                   <p id="fm-caption-lead" class="ad-caption">外展工班 B 組帶隊領班，帶領 6 名外展移工</p>
                 </div>
               </div>
-              <span class="ad-pill ad-pill--ok">帶隊出勤中（6/6 到齊）</span>
+              <span id="fm-pill-crew" class="ad-pill ad-pill--ok">帶隊出勤中（6/6 到齊）</span>
             </div>
 
             <div>
@@ -937,7 +937,7 @@
       const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       const short = (v) => String(v || '').split(' (')[0];
       const loc = (t) => t.order.farmLocation || t.team.normalLocation || '';
-      const notes = (t) => t.order.foremanNotes || t.team.normalTask || t.order.categoryName || '';
+      const notes = (t) => t.order.foremanNotes || t.order.categoryName || t.team.normalTask || '';   // 沒有現場交辦時用訂單的派工類別
       // 近期紀錄：工班的訂單依工期，今天這張標示「今日進行中」
       const history = (t, el) => {
         const box = document.getElementById(el);
@@ -1011,6 +1011,7 @@
         TRACK_META.foreman.role = `外展帶隊小工頭 ╳ ${team.replace('工班 ', '')} ${n} 名組員`;
         set('fm-caption-lead', `外展${team}帶隊領班，帶領 ${n} 名組員`);
         set('fm-caption-perf', `外展${team}，帶領 ${n} 名組員`);
+        set('fm-pill-crew', `帶隊出勤中（${n}/${n} 到齊）`);
       }
       if (mc) TRACK_META.machinery.badge = `${short(mc.order.cropName)}・機耕作業中`;
       if (lb) TRACK_META.labor.role = `合作社在籍農業勞務員 ╳ ${short(lb.team.name)}`;

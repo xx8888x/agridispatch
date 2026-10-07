@@ -527,8 +527,19 @@
     a.normalHours = Math.min(a.actualHours, 8);
     a.overtimeHours = Math.round(Math.max(0, a.actualHours - 8) * 10) / 10;
   }
-  // 錄製資料裡沒有出勤紀錄、但工作台預設「作業中」的示範工人 → 打卡地點
+  // 錄製資料裡沒有出勤紀錄、但工作台預設「作業中」的示範工人 → 打卡地點（找不到工班訂單時用）
   var DEMO_ON_SHIFT = { W012: '雲林縣元長鄉設施彩椒溫室專案區' };
+
+  // 工人所屬工班目前的訂單地點（規則同工作台任務卡、LINE：履約中優先，其次已排定、待付定金）
+  var TASK_RANK = { in_progress: 0, confirmed: 1, pending: 2 };
+  function teamTaskLocation(workerId) {
+    var w = findIn('GET /workers', workerId);
+    if (!w || !w.teamId) return null;
+    var o = (listOf(get('GET /orders')) || [])
+      .filter(function (x) { return x.assignedTeamId === w.teamId && TASK_RANK[x.status] != null; })
+      .sort(function (a, b) { return TASK_RANK[a.status] - TASK_RANK[b.status] || String(b.id).localeCompare(String(a.id)); })[0];
+    return o ? (o.farmLocation || null) : null;
+  }
 
   // 錄製資料裡還沒下班的紀錄停在錄製日；改成「8 小時前上班」，
   // 對應工人頁 demo 預設「已上班、可直接下班打卡」，下班時工時約 8 小時、不會累積好幾天
@@ -538,7 +549,7 @@
     var st = { key: hk, entry: he, list: he.b.data || (he.b.data = []) };
     var today = localStamp(new Date()).slice(0, 10), moved = false;
     // 錄製資料沒有出勤紀錄的示範工人：今天還沒任何紀錄時補一筆「已上班」，工作台一打開就能直接下班打卡
-    var seed = DEMO_ON_SHIFT[workerId];
+    var seed = DEMO_ON_SHIFT[workerId] && (teamTaskLocation(workerId) || DEMO_ON_SHIFT[workerId]);
     if (seed && !st.list.some(function (a) { return a.workDate === today || !a.clockOutTime; })) {
       var maxId = st.list.reduce(function (m, a) { return Math.max(m, +a.id || 0); }, 0);
       st.list.unshift({
@@ -551,7 +562,9 @@
     st.list.forEach(function (a) {
       if (a.clockOutTime) return;
       if (a._demoShift || (a.workDate && a.workDate < today)) {
-        // 上班時間固定為「現在往前 8 小時」，下班前每次讀取都重算，路演幾點按下班都約 8 小時
+        // 上班時間固定為「現在往前 8 小時」，下班前每次讀取都重算，路演幾點按下班都約 8 小時；
+        // 地點改成工班目前訂單的地點，和工作台任務卡一致
+        if (!a._demoShift) a.location = teamTaskLocation(workerId) || a.location;
         a.clockInTime = localStamp(new Date(Date.now() - 8 * 3600e3));
         a.workDate = today;
         a._demoShift = true;

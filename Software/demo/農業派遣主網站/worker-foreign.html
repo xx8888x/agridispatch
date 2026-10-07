@@ -735,7 +735,7 @@
           location: order.farmLocation || team.normalLocation || '',
           foreman: order.foremanName || team.leader || '',
           foremanPhone: order.foremanPhone || team.leaderPhone || '',
-          tasks: `${String(order.cropName || '').split(' (')[0]}：${order.foremanNotes || team.normalTask || order.categoryName || ''}`
+          tasks: `${String(order.cropName || '').split(' (')[0]}：${order.foremanNotes || order.categoryName || team.normalTask || ''}`
         };
         applyTaskCard();
       } catch (e) { /* 離線：沿用示範文字 */ }

@@ -125,7 +125,7 @@
             <div>
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px;">
                 <h4 class="ad-heading">領班打卡</h4>
-                <span id="foreman-punch-status" class="ad-pill ad-pill--ok">帶隊作業中（06:30 上班）</span>
+                <span id="foreman-punch-status" class="ad-pill ad-pill--ok">帶隊作業中</span>
               </div>
               <div class="ad-form-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
                 <button type="button" id="foremanClockInBtn" onclick="handleForemanClockIn()" disabled class="ad-btn ad-btn--stack is-done">
@@ -329,7 +329,7 @@
             <div>
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px;">
                 <h4 class="ad-heading">機耕打卡</h4>
-                <span id="local-punch-status-badge" class="ad-pill ad-pill--ok">作業中（05:50 上班）</span>
+                <span id="local-punch-status-badge" class="ad-pill ad-pill--ok">作業中</span>
               </div>
               <div class="ad-form-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
                 <button type="button" id="localClockInBtn" onclick="handleLocalClockIn()" disabled class="ad-btn ad-btn--stack is-done">
@@ -407,7 +407,7 @@
                     <div class="ad-row__title ad-num">2026-09-23（今日）</div>
                     <div class="ad-row__meta">雲林元長 彩椒溫室深耕與代噴</div>
                   </div>
-                  <div class="ad-row__aside"><span id="local-row-today" class="ad-num" style="font-weight: 600; color: var(--ad-accent-text);">05:50 上班（進行中）</span></div>
+                  <div class="ad-row__aside"><span id="local-row-today" class="ad-num" style="font-weight: 600; color: var(--ad-accent-text);">上班（進行中）</span></div>
                 </div>
                 <div class="ad-row">
                   <div class="ad-row__main">
@@ -855,15 +855,21 @@
       return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
     };
 
+    // demo 預設已在 8 小時前上班，可直接體驗下班打卡（工時約 8 小時）
+    const DEMO_IN_TIME = (() => {
+      const d = new Date(Date.now() - 8 * 3600e3);
+      return [d.getHours(), d.getMinutes(), d.getSeconds()].map((n) => String(n).padStart(2, '0')).join(':');
+    })();
+
     const PUNCH = {
       foreman: {
         ids: { inBtn: 'foremanClockInBtn', outBtn: 'foremanClockOutBtn', timeIn: 'foreman-time-in', timeOut: 'foreman-time-out', badge: 'foreman-punch-status', hours: 'foreman-today-hours' },
-        state: 'working', inTime: '06:30:00', outTime: '', shift: null,
+        state: 'working', inTime: DEMO_IN_TIME, outTime: '', shift: null,
         badgeWorking: (t) => `帶隊作業中（${t} 上班）`, badgeDone: (t, h) => `已完工下班（${t}・${h}h）`
       },
       local: {
         ids: { inBtn: 'localClockInBtn', outBtn: 'localClockOutBtn', timeIn: 'local-time-in', timeOut: 'local-time-out', badge: 'local-punch-status-badge', row: 'local-row-today', hours: 'local-today-hours', sign: 'local-foreman-sign' },
-        state: 'working', inTime: '05:50:18', outTime: '', shift: null,
+        state: 'working', inTime: DEMO_IN_TIME, outTime: '', shift: null,
         badgeWorking: (t) => `作業中（${t} 上班）`, badgeDone: (t, h) => `已完工下班（${h}h 統包驗收完畢）`
       }
     };

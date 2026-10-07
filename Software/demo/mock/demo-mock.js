@@ -527,26 +527,20 @@
     a.normalHours = Math.min(a.actualHours, 8);
     a.overtimeHours = Math.round(Math.max(0, a.actualHours - 8) * 10) / 10;
   }
-  // 錄製資料裡還沒下班的紀錄停在錄製日；改成「今天同一時間上班」，
-  // 對應工人頁 demo 預設「今早已上班、可直接下班打卡」，下班時工時才不會累積好幾天
+  // 錄製資料裡還沒下班的紀錄停在錄製日；改成「8 小時前上班」，
+  // 對應工人頁 demo 預設「已上班、可直接下班打卡」，下班時工時約 8 小時、不會累積好幾天
   function attendanceStore(workerId) {
     var hk = 'GET /attendance/history/' + encodeURIComponent(workerId);
     var he = get(hk) || { s: 200, b: { success: true, workerId: workerId, totalRecords: 0, data: [] } };
     var st = { key: hk, entry: he, list: he.b.data || (he.b.data = []) };
     var today = localStamp(new Date()).slice(0, 10), moved = false;
-    var w = findIn('GET /workers', workerId);
-    var foreign = !!(w && w.nationality && w.nationality !== '本國');
     st.list.forEach(function (a) {
       if (a.clockOutTime) return;
-      if (foreign && (a._demoShift || (a.workDate && a.workDate < today))) {
-        // 外勞：上班時間固定為「現在往前 8 小時」，下班前每次讀取都重算，路演幾點按下班都約 8 小時
+      if (a._demoShift || (a.workDate && a.workDate < today)) {
+        // 上班時間固定為「現在往前 8 小時」，下班前每次讀取都重算，路演幾點按下班都約 8 小時
         a.clockInTime = localStamp(new Date(Date.now() - 8 * 3600e3));
         a.workDate = today;
         a._demoShift = true;
-        moved = true;
-      } else if (a.workDate && a.workDate < today) {
-        a.clockInTime = today + String(a.clockInTime).slice(10);
-        a.workDate = today;
         moved = true;
       }
     });

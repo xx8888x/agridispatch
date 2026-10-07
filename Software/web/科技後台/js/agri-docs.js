@@ -740,7 +740,7 @@ const AgriDocs = (function () {
       if (res.ok && data && data.success) {
         if (!options.silent) notify(
           isClockIn ? '上班打卡成功' : '下班打卡成功',
-          `時間：${nowStr}${data.data && data.data.workHours ? `　今日工時：${data.data.workHours} 小時` : ''}`,
+          `時間：${nowStr}${data.data && (data.data.workHours || data.data.actualHours) ? `　今日工時：${data.data.workHours || data.data.actualHours} 小時` : ''}`,
           { channel: 'attendance' }
         );
         return data;

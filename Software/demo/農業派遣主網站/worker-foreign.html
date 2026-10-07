@@ -134,7 +134,7 @@
           <div class="ad-card ad-card--inset" style="display: flex; flex-direction: column; gap: 14px;">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
               <span id="txt-card-title" class="ad-label">今日派工任務卡</span>
-              <span class="ad-caption ad-num">2026-09-23</span>
+              <span id="val-task-date" class="ad-caption ad-num">2026-09-23</span>
             </div>
 
             <div>
@@ -209,7 +209,7 @@
                 <div class="ad-row">
                   <div class="ad-row__main">
                     <div id="row-today-date" class="ad-row__title ad-num">今日</div>
-                    <div class="ad-row__meta">屏東高樹洋蔥試驗田・小工頭：林小祥</div>
+                    <div id="row-today-meta" class="ad-row__meta">屏東高樹洋蔥試驗田・小工頭：林小祥</div>
                   </div>
                   <div class="ad-row__aside">
                     <div id="row-today-status" class="ad-num" style="font-weight: 600; color: var(--ad-accent-text);">上班打卡（作業中）</div>
@@ -223,7 +223,7 @@
 
           <div class="ad-card" style="padding: 24px;">
             <h3 id="txt-schedule-title" class="ad-heading" style="margin-bottom: 14px;">本週出勤與接送班表</h3>
-            <div class="ad-list">
+            <div id="schedule-list" class="ad-list">
               <div class="ad-row">
                 <div class="ad-row__main">
                   <div class="ad-row__title" style="white-space: normal;">週一至週三：屏東高樹 洋蔥採收裝袋</div>
@@ -549,6 +549,7 @@
       });
       updateTitle();
       renderPunchUI();
+      applyTaskCard();
     }
 
     // 標題隨頁籤切換：任務頁籤顯示「今日任務」，薪資頁籤顯示「薪資」（並隱藏今日出勤狀態）
@@ -664,7 +665,7 @@
     async function handleClockIn() {
       // 先向後端打卡，成功才更新畫面；後端拒絕（如重複打卡）時由 clockAction 顯示原因
       const punch = window.AgriDocs
-        ? await AgriDocs.clockAction('clock-in', { workerId: currentWorkerId(), locationLabel: '屏東縣高樹鄉金牌洋蔥試驗田', silent: true })
+        ? await AgriDocs.clockAction('clock-in', { workerId: currentWorkerId(), locationLabel: taskLocation(), silent: true })
         : { success: true };
       if (!punch.success) return;
 
@@ -679,7 +680,7 @@
 
     async function handleClockOut() {
       const punch = window.AgriDocs
-        ? await AgriDocs.clockAction('clock-out', { workerId: currentWorkerId(), locationLabel: '屏東縣高樹鄉金牌洋蔥試驗田', silent: true })
+        ? await AgriDocs.clockAction('clock-out', { workerId: currentWorkerId(), locationLabel: taskLocation(), silent: true })
         : { success: true };
       if (!punch.success) return;
 
@@ -702,6 +703,90 @@
     // 只有連不上後端的 demo 離線展示才用 localSlip（鏡像 WorkerService.buildSlip：W001 底薪 29,500、
     // 獎勵 8,800、津貼 1,200，勞保 12.5%×20%、健保 5.17%×30%，加班費 = 時數 × 時薪 × 4/3；後端公式改了要同步改）。
     const money = (n) => `NT$ ${Number(n).toLocaleString()}`;
+
+    // ------------------------------------------------------------------
+    // 今日任務卡、近期打卡列、本週班表：讀工人所屬工班的訂單與工班資料（與 LINE、後台同一份）。
+    // 選單規則同 LINE：履約中優先，其次已排定、待付定金；讀不到資料時沿用下方三語示範文字。
+    // 資料欄位（地點、作業內容）只有中文，切換越南文／印尼文時標籤會翻譯、資料維持中文。
+    // ------------------------------------------------------------------
+    let TASK = null;
+    const TASK_RANK = { in_progress: 0, confirmed: 1, pending: 2 };
+
+    function taskLocation() {
+      return (TASK && TASK.location) || '屏東縣高樹鄉金牌洋蔥試驗田';
+    }
+
+    async function loadTaskCard(workerId) {
+      const get = async (path) => {
+        const res = await fetch(`${API_BASE}${path}`);
+        if (!res.ok) throw new Error(path);
+        return (await res.json()).data;
+      };
+      try {
+        const worker = await get(`/workers/${encodeURIComponent(workerId)}`);
+        if (!worker || !worker.teamId) return;
+        const [orders, team] = await Promise.all([get('/orders'), get(`/dispatch/teams/${encodeURIComponent(worker.teamId)}`)]);
+        const mine = (orders || []).filter((o) => o.assignedTeamId === worker.teamId && o.status !== 'cancelled');
+        const order = mine.filter((o) => TASK_RANK[o.status] != null)
+          .sort((a, b) => TASK_RANK[a.status] - TASK_RANK[b.status] || String(b.id).localeCompare(String(a.id)))[0];
+        if (!order || !team) return;
+        TASK = {
+          order, team, mine,
+          location: order.farmLocation || team.normalLocation || '',
+          foreman: order.foremanName || team.leader || '',
+          foremanPhone: order.foremanPhone || team.leaderPhone || '',
+          tasks: `${String(order.cropName || '').split(' (')[0]}：${order.foremanNotes || team.normalTask || order.categoryName || ''}`
+        };
+        applyTaskCard();
+      } catch (e) { /* 離線：沿用示範文字 */ }
+    }
+
+    function applyTaskCard() {
+      if (!TASK) return;
+      const { order, team } = TASK;
+      const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+      const d = new Date();
+      set('val-task-date', `${order.id}・${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+      set('val-van', `${team.vehicle} / ${team.driver}`);
+      set('val-location', TASK.location);
+      set('val-foreman', TASK.foremanPhone ? `${TASK.foreman} (${TASK.foremanPhone})` : TASK.foreman);
+      set('val-tasks', TASK.tasks);
+      set('row-today-meta', `${TASK.location.split(' (')[0]}・小工頭：${TASK.foreman}`);
+
+      // 本週班表：工班的訂單（依工期），最後一列是天候避險時的室內改派地點
+      const list = document.getElementById('schedule-list');
+      if (!list) return;
+      const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      const PILL = {
+        in_progress: ['ad-pill ad-pill--ok', '今日出勤'], confirmed: ['ad-pill ad-pill--ok', '已排定'],
+        pending: ['ad-pill', '待確認'], completed: ['ad-pill', '已完工']
+      };
+      const rows = TASK.mine.slice()
+        .sort((a, b) => String(a.startDate || '9999').localeCompare(String(b.startDate || '9999')))
+        .slice(-3)
+        .map((o) => {
+          const isToday = o.id === order.id;
+          const pill = isToday ? ['ad-pill ad-pill--ok', '今日出勤'] : (PILL[o.status] || ['ad-pill', o.status]);
+          const period = o.startDate ? (o.endDate && o.endDate !== o.startDate ? `${o.startDate.slice(5)}～${o.endDate.slice(5)}` : o.startDate.slice(5)) : '工期待排定';
+          return `<div class="ad-row"${isToday ? ' style="border-color: var(--ad-primary); background: var(--ad-primary-soft);"' : ''}>
+                <div class="ad-row__main">
+                  <div class="ad-row__title" style="white-space: normal;">${esc(period)}：${esc(String(o.cropName || '').split(' (')[0])}（${esc(o.id)}）</div>
+                  <div class="ad-row__meta">${esc(String(team.vehicle).split(' (')[0])} 06:30 發車・${esc((o.farmLocation || '').split(' (')[0])}・對口：${esc(o.foremanName || team.leader)}</div>
+                </div>
+                <span class="${pill[0]}">${esc(pill[1])}</span>
+              </div>`;
+        });
+      if (team.hedgeLocation) {
+        rows.push(`<div class="ad-row">
+                <div class="ad-row__main">
+                  <div class="ad-row__title" style="white-space: normal;">遇午後暴雨：轉派 ${esc(team.hedgeLocation)}</div>
+                  <div class="ad-row__meta">${esc(team.hedgeTask || '室內作業免淋雨')}</div>
+                </div>
+                <span class="ad-pill ad-pill--warn">避險排班</span>
+              </div>`);
+      }
+      list.innerHTML = rows.join('');
+    }
 
     function currentWorkerId() {
       const u = (window.AgriAuth && window.AgriAuth.getUser && window.AgriAuth.getUser()) || null;
@@ -900,6 +985,7 @@
       renderPunchUI();
       const wid = currentWorkerId();
       loadAttendanceHistory(wid);
+      loadTaskCard(wid);
       loadAttendanceSummary(wid);
       loadLegalStatus(wid);
       fetchPayroll(wid).then(renderPayroll);

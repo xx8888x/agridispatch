@@ -942,6 +942,21 @@
           bindings: ls.list.map(function (x) { var c = clone(x); delete c._lineUserId; return c; })
         }));
       }
+      // 工人本月出勤統計：由出勤紀錄即時加總（錄製的統計不會隨打卡更新）
+      var wm = /^\/workers\/([^/]+)\/attendance$/.exec(sp.path);
+      if (wm) {
+        var wst = attendanceStore(decodeURIComponent(wm[1]));
+        var yq = /[?&]year=(\d+)/.exec(sp.query), mq = /[?&]month=(\d+)/.exec(sp.query);
+        var ym = yq && mq ? yq[1] + '-' + ('0' + mq[1]).slice(-2) : null;
+        var recs = wst.list.filter(function (a) { return !ym || String(a.workDate).slice(0, 7) === ym; });
+        var doneRecs = recs.filter(function (a) { return a.clockOutTime && a.actualHours != null; });
+        var sum = function (f) { return Math.round(doneRecs.reduce(function (t, a) { return t + (+a[f] || 0); }, 0) * 10) / 10; };
+        var days = {};
+        doneRecs.forEach(function (a) { days[a.workDate] = 1; });
+        var summary = { daysWorked: Object.keys(days).length, totalHours: sum('actualHours'), overtimeHours: sum('overtimeHours'), normalHours: sum('normalHours'), records: recs };
+        if (ym) summary.month = ym;
+        return respond(200, { success: true, data: summary });
+      }
       var am = /^\/attendance\/(history|today)\/([^/]+)$/.exec(sp.path);
       if (am) {
         var wid = decodeURIComponent(am[2]), ast = attendanceStore(wid);

@@ -72,6 +72,16 @@
     return dirPath.includes('/農業派遣主網站/') ? 'login.html' : '../農業派遣主網站/login.html';
   }
 
+  // demo 模式：路演時常從示範導覽在不同角色頁之間跳轉（例如後台 → 農場主頁），
+  // 目前登入的身分不屬於這一頁時清掉，讓本頁用自己角色的示範帳號自動登入，畫面不會顯示別人的名字。
+  // 同角色（例如指定登入的某位外勞）保留；後台各管理身分視為同一類。
+  if (MODE === 'demo') {
+    const pageRole = detectPageRole();
+    const user = getUser();
+    const family = (r) => (/^admin/.test(r || '') ? 'admin' : r);
+    if (pageRole && user && family(user.role) !== family(pageRole)) clearSession();
+  }
+
   // ------------------------------------------------------------------
   // fetch 包裝：自動帶 token / demo 自動登入 / production 401 導向
   // ------------------------------------------------------------------

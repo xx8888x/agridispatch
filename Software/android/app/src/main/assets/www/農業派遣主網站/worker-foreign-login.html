@@ -78,7 +78,7 @@
           <div v-if="isDemo && demoCfg" data-demo-only style="margin-bottom: 20px;">
             <div class="ad-notice ad-notice--ok">
               <span style="flex: 1;">示範模式，免密碼。</span>
-              <a href="worker-foreign.html" style="color: inherit; font-weight: 600; white-space: nowrap;">直接進入</a>
+              <a :href="'worker-foreign.html?lang=' + lang" style="color: inherit; font-weight: 600; white-space: nowrap;">直接進入</a>
             </div>
           </div>
           <div v-if="errorMsg" class="ad-notice ad-notice--danger" role="alert" style="margin-bottom: 16px;">
@@ -137,36 +137,36 @@
             <h2 id="workerModalTitle" class="ad-title">{{ workerModal.data.name }}</h2>
             <p class="ad-caption">{{ workerModal.data.roleDesc }}</p>
           </div>
-          <span class="ad-pill ad-pill--ok">登入成功</span>
+          <span class="ad-pill ad-pill--ok">{{ t.okBadge }}</span>
         </div>
 
         <div v-if="workerModal.data.workerProfile" style="display: flex; flex-direction: column; gap: 12px;">
           <div class="ad-card ad-card--inset" style="padding: 12px 16px;">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-              <span class="ad-caption">今日任務</span>
+              <span class="ad-caption">{{ t.todayTask }}</span>
               <span class="ad-pill" :class="workerModal.data.workerProfile.dispatchStatus === 'hedged_indoor' ? 'ad-pill--warn' : 'ad-pill--ok'">
-                {{ workerModal.data.workerProfile.dispatchStatus === 'hedged_indoor' ? '室內避險' : '田間出勤' }}
+                {{ workerModal.data.workerProfile.dispatchStatus === 'hedged_indoor' ? t.indoorHedge : t.fieldWork }}
               </span>
             </div>
             <div class="ad-heading" style="margin-top: 4px;">{{ workerModal.data.workerProfile.currentTask }}</div>
           </div>
 
           <dl class="ad-form-grid ad-form-grid--2" style="gap: 8px; margin: 0;">
-            <div class="ad-card ad-card--inset" style="padding: 10px 12px;"><dt class="ad-caption">居留證號</dt><dd class="ad-num" style="margin: 0; font-weight: 600;">{{ workerModal.data.workerProfile.arcNumber }}</dd></div>
-            <div class="ad-card ad-card--inset" style="padding: 10px 12px;"><dt class="ad-caption">護照號碼</dt><dd class="ad-num" style="margin: 0; font-weight: 600;">{{ workerModal.data.workerProfile.passportNumber }}</dd></div>
-            <div class="ad-card ad-card--inset" style="padding: 10px 12px;"><dt class="ad-caption">工班</dt><dd style="margin: 0; font-weight: 600;">{{ workerModal.data.workerProfile.teamId }}</dd></div>
-            <div class="ad-card ad-card--inset" style="padding: 10px 12px;"><dt class="ad-caption">勞健保</dt><dd style="margin: 0; font-weight: 600;">{{ workerModal.data.workerProfile.insuranceStatus }}</dd></div>
+            <div class="ad-card ad-card--inset" style="padding: 10px 12px;"><dt class="ad-caption">{{ t.arcNo }}</dt><dd class="ad-num" style="margin: 0; font-weight: 600;">{{ workerModal.data.workerProfile.arcNumber }}</dd></div>
+            <div class="ad-card ad-card--inset" style="padding: 10px 12px;"><dt class="ad-caption">{{ t.passportNo }}</dt><dd class="ad-num" style="margin: 0; font-weight: 600;">{{ workerModal.data.workerProfile.passportNumber }}</dd></div>
+            <div class="ad-card ad-card--inset" style="padding: 10px 12px;"><dt class="ad-caption">{{ t.teamLabel }}</dt><dd style="margin: 0; font-weight: 600;">{{ workerModal.data.workerProfile.teamId }}</dd></div>
+            <div class="ad-card ad-card--inset" style="padding: 10px 12px;"><dt class="ad-caption">{{ t.insuranceCol }}</dt><dd style="margin: 0; font-weight: 600;">{{ workerModal.data.workerProfile.insuranceStatus }}</dd></div>
           </dl>
 
           <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px;">
-            <span class="ad-caption">本月薪資（底薪＋獎勵＋津貼）</span>
-            <span class="ad-price ad-price--accent">{{ ((workerModal.data.workerProfile.baseSalary || 29500) + (workerModal.data.workerProfile.agriBonus || 8800) + (workerModal.data.workerProfile.transportAllowance || 1200)).toLocaleString() }}<span class="ad-price__unit">元</span></span>
+            <span class="ad-caption">{{ t.monthPay }}</span>
+            <span class="ad-price ad-price--accent">{{ ((workerModal.data.workerProfile.baseSalary || 29500) + (workerModal.data.workerProfile.agriBonus || 8800) + (workerModal.data.workerProfile.transportAllowance || 1200)).toLocaleString() }}<span class="ad-price__unit">{{ t.payUnit }}</span></span>
           </div>
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 8px;">
-          <button type="button" @click="workerModal.show = false" class="ad-btn ad-btn--ghost">關閉</button>
-          <a href="worker-foreign.html" class="ad-btn ad-btn--primary">進入工作台</a>
+          <button type="button" @click="workerModal.show = false" class="ad-btn ad-btn--ghost">{{ t.closeBtn }}</button>
+          <a :href="'worker-foreign.html?lang=' + lang" class="ad-btn ad-btn--primary">{{ t.enterBtn }}</a>
         </div>
       </div>
     </div>
@@ -182,6 +182,18 @@
     // Multilingual Dictionary
     const translations = {
       vi: {
+        okBadge: 'Đăng nhập thành công',
+        todayTask: 'Nhiệm vụ hôm nay',
+        fieldWork: 'Làm ngoài đồng',
+        indoorHedge: 'Tránh mưa trong nhà',
+        arcNo: 'Số thẻ cư trú',
+        passportNo: 'Số hộ chiếu',
+        teamLabel: 'Tổ',
+        insuranceCol: 'Bảo hiểm',
+        monthPay: 'Lương tháng này (cơ bản + thưởng + trợ cấp)',
+        payUnit: 'TWD',
+        closeBtn: 'Đóng',
+        enterBtn: 'Vào trang làm việc',
         switchRole: 'Đổi vai trò',
         legalTag: 'Hợp tác xã nông nghiệp đặc quyền của Bộ Nông nghiệp Đài Loan',
         heroTitle1: 'Quyền lợi & Nhiệm vụ',
@@ -211,6 +223,18 @@
         quickDemoTitle: 'Tài khoản mẫu thử nghiệm:'
       },
       id: {
+        okBadge: 'Berhasil masuk',
+        todayTask: 'Tugas hari ini',
+        fieldWork: 'Kerja di lapangan',
+        indoorHedge: 'Di dalam ruangan (hindari hujan)',
+        arcNo: 'Nomor ARC',
+        passportNo: 'Nomor paspor',
+        teamLabel: 'Regu',
+        insuranceCol: 'Asuransi',
+        monthPay: 'Gaji bulan ini (pokok + bonus + tunjangan)',
+        payUnit: 'TWD',
+        closeBtn: 'Tutup',
+        enterBtn: 'Masuk ke halaman kerja',
         switchRole: 'Ganti Peran',
         legalTag: 'Koperasi Pertanian Berlisensi Kementerian Pertanian Taiwan',
         heroTitle1: 'Hak & Tugas Kerja',
@@ -240,6 +264,18 @@
         quickDemoTitle: 'Akun demonstrasi cepat:'
       },
       th: {
+        okBadge: 'เข้าสู่ระบบสำเร็จ',
+        todayTask: 'งานวันนี้',
+        fieldWork: 'ทำงานในไร่',
+        indoorHedge: 'ทำงานในร่ม (หลบฝน)',
+        arcNo: 'เลขบัตร ARC',
+        passportNo: 'เลขหนังสือเดินทาง',
+        teamLabel: 'ทีม',
+        insuranceCol: 'ประกัน',
+        monthPay: 'เงินเดือนเดือนนี้ (ฐาน + โบนัส + เบี้ยเลี้ยง)',
+        payUnit: 'TWD',
+        closeBtn: 'ปิด',
+        enterBtn: 'เข้าสู่หน้าทำงาน',
         switchRole: 'เปลี่ยนบทบาท',
         legalTag: 'สหกรณ์การเกษตรที่ได้รับอนุญาตจากกระทรวงเกษตรไต้หวัน',
         heroTitle1: 'สิทธิประโยชน์และงาน',
@@ -269,6 +305,18 @@
         quickDemoTitle: 'บัญชีทดลองใช้งาน:'
       },
       en: {
+        okBadge: 'Signed in',
+        todayTask: "Today's task",
+        fieldWork: 'Field work',
+        indoorHedge: 'Indoor (rain hedge)',
+        arcNo: 'ARC No.',
+        passportNo: 'Passport No.',
+        teamLabel: 'Team',
+        insuranceCol: 'Insurance',
+        monthPay: "This month's pay (base + bonus + allowance)",
+        payUnit: 'TWD',
+        closeBtn: 'Close',
+        enterBtn: 'Open workspace',
         switchRole: 'Switch Role',
         legalTag: 'Licensed Agricultural Cooperative - Ministry of Agriculture',
         heroTitle1: 'Work Tasks & Rights',
@@ -298,6 +346,18 @@
         quickDemoTitle: 'Quick demo profiles:'
       },
       zh: {
+        okBadge: '登入成功',
+        todayTask: '今日任務',
+        fieldWork: '田間出勤',
+        indoorHedge: '室內避險',
+        arcNo: '居留證號',
+        passportNo: '護照號碼',
+        teamLabel: '工班',
+        insuranceCol: '勞健保',
+        monthPay: '本月薪資（底薪＋獎勵＋津貼）',
+        payUnit: '元',
+        closeBtn: '關閉',
+        enterBtn: '進入工作台',
         switchRole: '切換身分',
         legalTag: '農業部外展合作社 ╳ 合法在籍移工專用',
         heroTitle1: '派遣任務與權益保障',

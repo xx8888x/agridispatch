@@ -694,11 +694,58 @@
       : String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
     // 付定金：資料放在按鈕的 data-pay（JSON），付款成功後把按鈕換成「已付清＋下載發票」
+    // 本機訂單紀錄（agri_orders）更新；回傳是否有這筆
+    function updateLocalOrder(id, patch) {
+      try {
+        const list = JSON.parse(localStorage.getItem('agri_orders') || '[]');
+        const o = list.find((x) => x.id === id);
+        if (!o) return false;
+        Object.assign(o, patch);
+        localStorage.setItem('agri_orders', JSON.stringify(list));
+        return true;
+      } catch (e) { return false; }
+    }
+
+    function downloadPaidInvoice(btn) {
+      let d;
+      try { d = JSON.parse(btn.dataset.pay); } catch (e) { return; }
+      AgriDocs.downloadInvoice(d.orderId, {
+        invoiceNo: btn.dataset.invoice || 'AG-88192041', cropName: d.crop, amount: d.amount, deposit: d.deposit
+      });
+    }
+
+    // 載入時向後端（或 Mock）同步本機訂單的狀態與付款，避免在別處付款或改狀態後卡片還是舊的
+    async function syncLocalOrders() {
+      let list = [];
+      try { list = JSON.parse(localStorage.getItem('agri_orders') || '[]'); } catch (e) { return; }
+      const base = (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+      let changed = false;
+      await Promise.all(list.filter((o) => o.id && !o.offline).map(async (o) => {
+        try {
+          const res = await fetch(`${base}/orders/${encodeURIComponent(o.id)}`);
+          if (!res.ok) return;
+          const body = await res.json();
+          const cur = body && body.data;
+          if (cur && (cur.status !== o.status || !!cur.depositPaid !== !!o.depositPaid)) {
+            o.status = cur.status; o.depositPaid = !!cur.depositPaid; changed = true;
+          }
+        } catch (e) { /* 離線：維持本機紀錄 */ }
+      }));
+      if (changed) {
+        try { localStorage.setItem('agri_orders', JSON.stringify(list)); } catch (e) {}
+        renderOrdersList();
+      }
+    }
+
     function payDeposit(btn) {
       let d;
       try { d = JSON.parse(btn.dataset.pay); } catch (e) { return; }
       const holder = btn.parentElement;
       AgriDocs.openPaymentCashier(d.orderId, d.deposit, d.crop, d.location, (data) => {
+        if (updateLocalOrder(d.orderId, { depositPaid: true, status: 'confirmed', invoiceNo: (data && data.invoiceNo) || '' })) {
+          renderOrdersList();
+          return;
+        }
         holder.textContent = '';
         const done = document.createElement('span');
         done.className = 'ad-pill ad-pill--ok';
@@ -1086,12 +1133,25 @@
           location: ord.farmLocation, amount: ord.finalAmount || 22400
         }));
         const money = (n) => (n ? Number(n).toLocaleString() : '0');
+        // 付款狀態：已付定金 → 已排定；免定金方案（如彈性兼職包）直接已排定
+        const needDeposit = Number(ord.depositAmount) > 0;
+        const paid = !!ord.depositPaid;
+        const statusPill = paid
+          ? '<span class="ad-pill ad-pill--ok">已排定・定金已付</span>'
+          : (needDeposit ? '<span class="ad-pill ad-pill--warn">已預約・待付 20% 定金</span>' : '<span class="ad-pill ad-pill--ok">已排定・免定金</span>');
+        const depositLine = !needDeposit
+          ? '<p class="ad-caption">此方案免付定金，派工依排班確認</p>'
+          : `<p class="ad-caption">${paid ? '已付定金' : '待付定金'}（20%）：<span class="ad-num" style="color: ${paid ? 'var(--ad-primary-text)' : 'var(--ad-accent-text)'}; font-weight: 700;">NT$ ${money(ord.depositAmount)}</span></p>
+              <p class="ad-caption">${paid ? '已啟動專車派遣與早鳥鎖約' : '付定金後啟動專車派遣與早鳥鎖約'}</p>`;
+        const action = paid
+          ? `<span class="ad-pill ad-pill--ok">定金已付清</span><button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" data-pay="${pay}" data-invoice="${escHtml(ord.invoiceNo || '')}" onclick="downloadPaidInvoice(this)">下載發票</button>`
+          : (needDeposit ? `<button type="button" class="ad-btn ad-btn--accent ad-btn--sm" data-pay="${pay}" onclick="payDeposit(this)">付定金 NT$ ${money(ord.depositAmount)}</button>` : '');
         return `
         <div class="ad-card" style="padding: 24px;">
           <div class="ad-card__head" style="flex-wrap: wrap;">
             <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;">
               <span class="ad-heading ad-num">${escHtml(ord.id)}</span>
-              <span class="ad-pill ad-pill--warn">已預約・待付 20% 定金</span>
+              ${statusPill}
               <span class="ad-pill ad-pill--ok">剛剛送出</span>
             </div>
             <div class="ad-caption">預計起工 <strong class="ad-num" style="color: var(--ad-text);">${escHtml(when)}</strong>（共 ${days} 天・${escHtml(ord.totalHours)} 工時）</div>
@@ -1112,15 +1172,14 @@
             <div class="ad-card--inset ad-card">
               <div class="ad-label">費用（${escHtml(ord.planName)}）</div>
               <div class="ad-price ad-price--accent" style="margin-top: 4px; font-size: 1.125rem;">應付總額 NT$ ${money(ord.finalAmount)}</div>
-              <p class="ad-caption">待付定金（20%）：<span class="ad-num" style="color: var(--ad-accent-text); font-weight: 700;">NT$ ${money(ord.depositAmount)}</span></p>
-              <p class="ad-caption">付定金後啟動專車派遣與早鳥鎖約</p>
+              ${depositLine}
             </div>
           </div>
 
           <div class="ad-card__foot" style="justify-content: space-between; flex-wrap: wrap;">
             <span class="ad-caption">派工項目：<span style="color: var(--ad-text);">${escHtml(ord.categoryName)}</span></span>
             <div style="display: flex; gap: 8px;">
-              <button type="button" class="ad-btn ad-btn--accent ad-btn--sm" data-pay="${pay}" onclick="payDeposit(this)">付定金 NT$ ${money(ord.depositAmount)}</button>
+              ${action}
             </div>
           </div>
         </div>`;
@@ -1166,6 +1225,8 @@
       } else {
         switchFarmerTab('booking');
       }
+      renderOrdersList();   // 頁首「我的訂單」數量一進頁就更新（原本要切到訂單頁籤才更新）
+      syncLocalOrders();
     });
   </script>
 </body>

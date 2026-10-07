@@ -531,6 +531,7 @@
     function setLang(lang) {
       const t = translations[lang] || translations.zh;
       currentLang = translations[lang] ? lang : 'zh';
+      try { sessionStorage.setItem('agri_worker_lang', currentLang); } catch (e) {}
       ['zh', 'vi', 'id'].forEach(k => {
         const btn = document.getElementById('lang-' + k);
         if (btn) btn.classList.toggle('is-active', k === lang);
@@ -690,6 +691,7 @@
         : calcShift(clockInTime, clockOutTime);
       punchState = 'done';
       renderPunchUI();
+      loadAttendanceSummary(currentWorkerId());   // 本月出勤統計跟著更新
 
       if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
         window.AgriDocs.notify(tr('okOut'), hoursText(tr('msgOut').replace('{t}', clockOutTime)), { channel: 'attendance' });
@@ -891,6 +893,10 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      // 語言：登入頁帶入的 ?lang= 優先，其次是這次瀏覽選過的語言
+      let initLang = new URLSearchParams(window.location.search).get('lang');
+      if (!initLang) { try { initLang = sessionStorage.getItem('agri_worker_lang'); } catch (e) {} }
+      if (initLang && initLang !== currentLang && translations[initLang]) setLang(initLang);
       renderPunchUI();
       const wid = currentWorkerId();
       loadAttendanceHistory(wid);

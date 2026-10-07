@@ -124,10 +124,19 @@
     });
   }
 
+  // 依目前頁面所在資料夾推算三個資料夾的相對前綴（呼叫端沒給 paths 時用）
+  function defaultPaths() {
+    var dir = window.location.pathname;
+    try { dir = decodeURIComponent(dir); } catch (e) {}
+    if (dir.indexOf('/科技後台/') >= 0) return { main: '../農業派遣主網站/', tech: '', line: '../linebot/' };
+    if (dir.indexOf('/linebot/') >= 0) return { main: '../農業派遣主網站/', tech: '../科技後台/', line: '' };
+    return { main: '', tech: '../科技後台/', line: '../linebot/' };
+  }
+
   function demoNav(paths) {
     var noop = { open: function () {}, close: function () {}, toggle: function () {} };
     if (mode === 'production') return noop;
-    var p = paths || { main: '', tech: '../科技後台/', line: '../linebot/' };
+    var p = paths || defaultPaths();
     var id = 'ad-demo-drawer';
     if (document.getElementById(id)) return drawer(id) || noop;
 
@@ -162,7 +171,28 @@
     return ctl;
   }
 
+  // 頁首沒有「示範導覽」按鈕的頁面（登入頁、DM、證明書等），demo 模式補一顆浮動按鈕，路演時任何頁都能跳轉
+  function demoNavFab() {
+    if (mode === 'production' || document.getElementById('ad-demo-fab')) return;
+    if (document.querySelector('[data-demo-only][onclick*=".open()"]')) return;
+    var ctl = demoNav();
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'ad-demo-fab';
+    btn.className = 'ad-btn ad-btn--secondary ad-btn--sm';
+    btn.setAttribute('data-demo-only', '');
+    btn.setAttribute('aria-label', '示範導覽');
+    btn.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:60;box-shadow:0 4px 12px rgba(0,0,0,.15)';
+    btn.innerHTML = '<i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i>示範導覽';
+    btn.addEventListener('click', ctl.open);
+    var css = document.createElement('style');
+    css.textContent = '@media print { #ad-demo-fab { display: none !important; } }';
+    document.head.appendChild(css);
+    document.body.appendChild(btn);
+    icons(btn);
+  }
+
   window.AgriTheme = { mode: mode, icons: icons, drawer: drawer, toast: toast, demoNav: demoNav };
 
-  document.addEventListener('DOMContentLoaded', function () { icons(); });
+  document.addEventListener('DOMContentLoaded', function () { icons(); demoNavFab(); });
 })();

@@ -47,6 +47,19 @@
   var root = document.documentElement;
   root.classList.add(mode === 'production' ? 'is-production' : 'is-demo');
 
+  // 2b. 功能開關（AGRI_CONFIG.features）：關閉的功能，標了 data-feature="名稱" 的元素一律隱藏
+  var FEATURES = (window.AGRI_CONFIG && window.AGRI_CONFIG.features) || {};
+  function feature(name) { return FEATURES[name] !== false; }
+  (function () {
+    // data-feature-off="名稱"：只在該功能關閉時顯示（例如下架後的替代文字）
+    var off = Object.keys(FEATURES).filter(function (k) { return FEATURES[k] === false; });
+    var css = document.createElement('style');
+    css.textContent = '[data-feature-off]{display:none !important;}' +
+      (off.length ? off.map(function (k) { return '[data-feature="' + k + '"]'; }).join(',') + '{display:none !important;}' +
+        off.map(function (k) { return '[data-feature-off="' + k + '"]'; }).join(',') + '{display:inline !important;}' : '');
+    (document.head || root).appendChild(css);
+  })();
+
   // 3. 圖示初始化（lucide 可能晚於本檔載入，所以提供函式而非直接執行）
   function icons(scope) {
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -112,7 +125,7 @@
       { root: 'main', href: 'brochure.html', title: '文宣 DM', meta: '四大工時包，A4 可列印' },
       { root: 'main', href: 'farmers_map.html', title: '產地地圖', meta: '全台農會名冊與產季' },
       { root: 'main', href: 'coldchain.html', title: '冷鏈與物流', meta: '雨天改派與預冷場' },
-      { root: 'main', href: 'legalize.html', title: '法規與合規', meta: '外展農務制度與雙軌架構' },
+      { root: 'main', href: 'legalize.html', title: '法規與合規', meta: '外展農務制度與雙軌架構', feature: 'legalize' },
       { root: 'line', href: 'line.html', title: 'LINE Bot', meta: '圖文選單與對話模擬' },
       { root: 'main', href: 'login.html', title: '登入大廳', meta: '五種身分入口' }
     ] }
@@ -145,7 +158,7 @@
       '<p class="ad-caption" style="margin-bottom:16px">路演用。正式版不會顯示這個選單。</p>';
     DEMO_PAGES.forEach(function (g, gi) {
       html += '<div class="ad-caption" style="font-weight:600;margin-bottom:8px' + (gi ? ';margin-top:20px' : '') + '">' + escapeHtml(g.group) + '</div><div class="ad-list">';
-      g.items.forEach(function (it) {
+      g.items.filter(function (it) { return !it.feature || feature(it.feature); }).forEach(function (it) {
         html += '<a href="' + escapeHtml((p[it.root] || '') + it.href) + '" class="ad-row"><div class="ad-row__main">' +
           '<div class="ad-row__title">' + escapeHtml(it.title) + '</div><div class="ad-row__meta">' + escapeHtml(it.meta) + '</div></div>' +
           '<i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>';
@@ -207,7 +220,7 @@
     icons(btn);
   }
 
-  window.AgriTheme = { mode: mode, icons: icons, drawer: drawer, toast: toast, demoNav: demoNav };
+  window.AgriTheme = { mode: mode, icons: icons, drawer: drawer, toast: toast, demoNav: demoNav, feature: feature };
 
   document.addEventListener('DOMContentLoaded', function () { icons(); demoNavFab(); });
 })();

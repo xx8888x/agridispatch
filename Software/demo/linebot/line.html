@@ -396,6 +396,10 @@
     // LINE Bot 獨立服務（Port 5000），集中管理呼叫端點
     const LINEBOT_BASE = 'http://localhost:5000';
 
+    // 功能開關（js/app-config.js 的 features）；legalize = 工班黑轉白
+    const featureOn = (name) => (window.AgriTheme && window.AgriTheme.feature) ? window.AgriTheme.feature(name) : true;
+    const legalizeOn = () => featureOn('legalize');
+
     let currentUserId = 'U1001_FARMER';
     let currentRole = 'farmer';
     let currentUserName = '陳建龍 (阿龍班長)';
@@ -549,7 +553,8 @@
         cols: 4,
         buttons: [
           { cmd: '查派工單', icon: 'clipboard-list', title: '我的派工單', desc: '單號／車號／進度' },
-          { cmd: '黑轉白', icon: 'refresh-cw', title: '工班黑轉白', desc: '依身分合法轉換' },
+          { cmd: '黑轉白', icon: 'refresh-cw', title: '工班黑轉白', desc: '依身分合法轉換', feature: 'legalize',
+            alt: { cmd: '查產曆', icon: 'calendar-days', title: '全台產曆', desc: '產季與缺工預測' } },
           { cmd: '早鳥工時包', icon: 'zap', title: '早鳥工時包', desc: '鎖定名額・優先排班' },
           { cmd: '天候避險', icon: 'cloud-rain', title: '暴雨避險', desc: '冷鏈轉移通報' },
           { cmd: '機耕代噴', icon: 'tractor', title: '預約機耕', desc: '植保／深耕' },
@@ -557,7 +562,8 @@
           { cmd: '聯絡工頭', icon: 'phone-call', title: '聯絡工頭', desc: '小工頭／司機專線' },
           { cmd: '查費率', icon: 'coins', title: '查費率', desc: '時薪／包工' }
         ],
-        chips: ['黑轉白', '查派工單', '早鳥工時包', '天候避險', '查產曆', '查費率']
+        chips: ['黑轉白', '查派工單', '早鳥工時包', '天候避險', '查產曆', '查費率'],
+        chipFeatures: { '黑轉白': 'legalize' }
       },
       worker_foreign: {
         title: '工作者・圖文選單（越南語）',
@@ -598,7 +604,9 @@
       const gridEl = document.getElementById('rich-menu-grid');
       if (gridEl) {
         gridEl.className = 'lc-grid lc-grid--' + (menuConfig.cols || 3);
-        gridEl.innerHTML = menuConfig.buttons.map(btn => `
+        // 功能下架（AGRI_CONFIG.features）時，按鈕改用 alt 替代，避免圖文選單出現空格
+        const buttons = menuConfig.buttons.map(b => (b.feature && !featureOn(b.feature)) ? b.alt : b).filter(Boolean);
+        gridEl.innerHTML = buttons.map(btn => `
           <button type="button" class="lc-cell" onclick="handleQuickCmd('${btn.cmd}')">
             <i data-lucide="${btn.icon}" class="ad-icon"></i>
             <span>${escapeHtml(btn.title)}</span>
@@ -610,7 +618,8 @@
 
       const chipsEl = document.getElementById('quick-chips-bar');
       if (chipsEl) {
-        chipsEl.innerHTML = '<span class="lc-chips__label">常用：</span>' + menuConfig.chips.map(chip => {
+        const chips = menuConfig.chips.filter(c => !(menuConfig.chipFeatures && menuConfig.chipFeatures[c] && !featureOn(menuConfig.chipFeatures[c])));
+        chipsEl.innerHTML = '<span class="lc-chips__label">常用：</span>' + chips.map(chip => {
           const c = typeof chip === 'string' ? { cmd: chip, text: chip } : chip;
           return `<button type="button" class="lc-chip" onclick="handleQuickCmd('${c.cmd}')">${escapeHtml(c.text)}</button>`;
         }).join('');
@@ -669,7 +678,7 @@
         runQuickDispatchDemo();
         return;
       }
-      if (cmd === '黑轉白') {
+      if (cmd === '黑轉白' && legalizeOn()) {
         sendLineText('現有工班要怎麼黑轉白？');
         return;
       }
@@ -680,7 +689,7 @@
     // 送出一則使用者訊息（輸入框與 Flex 卡片「傳訊息」按鈕共用）
     function sendLineText(text) {
       appendUserBubble(text);
-      if (currentRole === 'farmer' && /黑轉白|黑工/.test(text)) {
+      if (currentRole === 'farmer' && legalizeOn() && /黑轉白|黑工/.test(text)) {
         runLegalize(text);
         return;
       }

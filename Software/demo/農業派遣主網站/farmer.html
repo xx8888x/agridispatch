@@ -59,7 +59,7 @@
       <nav class="ad-nav" aria-label="農場主導覽">
         <button type="button" id="tabBtnBooking" class="ad-nav__link is-active" data-tab="booking" onclick="switchFarmerTab('booking')">預約派工</button>
         <button type="button" id="tabBtnOrders" class="ad-nav__link" data-tab="orders" onclick="switchFarmerTab('orders')">我的訂單 <span id="orderBadgeCount" class="ad-tab__count">2</span></button>
-        <a class="ad-nav__link" href="legalize.html">工班合法化</a>
+        <a class="ad-nav__link" href="legalize.html" data-feature="legalize">工班合法化</a>
         <a class="ad-nav__link" href="expenses.html">支出明細</a>
       </nav>
       <div class="ad-header__actions">
@@ -74,7 +74,7 @@
   <nav class="ad-tabbar" aria-label="農場主導覽">
     <button type="button" class="ad-tabbar__item is-active" data-tab="booking" onclick="switchFarmerTab('booking')"><i data-lucide="calendar-plus" class="ad-icon"></i>預約</button>
     <button type="button" class="ad-tabbar__item" data-tab="orders" onclick="switchFarmerTab('orders')"><i data-lucide="clipboard-list" class="ad-icon"></i>訂單</button>
-    <a class="ad-tabbar__item" href="legalize.html"><i data-lucide="user-check" class="ad-icon"></i>合法化</a>
+    <a class="ad-tabbar__item" href="legalize.html" data-feature="legalize"><i data-lucide="user-check" class="ad-icon"></i>合法化</a>
     <a class="ad-tabbar__item" href="expenses.html"><i data-lucide="receipt" class="ad-icon"></i>支出</a>
   </nav>
 
@@ -264,14 +264,14 @@
         </div>
 
         <div id="legalBenefitsBanner" class="ad-notice" style="flex-direction: column; gap: 8px;">
-          <h3 class="ad-heading">預約即享「黑轉白」四大保障</h3>
+          <h3 class="ad-heading"><span data-feature="legalize">預約即享「黑轉白」四大保障</span><span data-feature-off="legalize">預約即享四大保障</span></h3>
           <ul class="ad-caption" style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px;">
             <li><strong style="color: var(--ad-text);">早鳥定價：</strong>提前預約鎖定產季名額、優先排班（315 元/hr 不打折）</li>
             <li><strong style="color: var(--ad-text);">合法雇用：</strong>人員由合作社雇用並依法加保勞保／職災保險，免除非法容留外國人工作之罰鍰風險（就服法每人 15～75 萬）</li>
             <li><strong style="color: var(--ad-text);">通路認證：</strong>完工可匯出出勤與合法用工證明，供產銷履歷與通路稽核使用</li>
             <li><strong style="color: var(--ad-text);">帳務透明：</strong>開立合法發票，勞務費支出有憑有據，可交會計師依法列報</li>
           </ul>
-          <a href="legalize.html" class="ad-btn ad-btn--ghost ad-btn--sm" style="align-self: flex-start;">園區有未投保工班？前往轉換</a>
+          <a href="legalize.html" data-feature="legalize" class="ad-btn ad-btn--ghost ad-btn--sm" style="align-self: flex-start;">園區有未投保工班？前往轉換</a>
         </div>
 
         <div id="fSuccessBanner" class="hidden" role="status">

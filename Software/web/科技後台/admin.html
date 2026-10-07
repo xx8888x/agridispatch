@@ -284,7 +284,7 @@
           <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'calendar' }" :aria-selected="dispatchSubTab === 'calendar'" @click="dispatchSubTab = 'calendar'">全台產曆</button>
           <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'talents' }" :aria-selected="dispatchSubTab === 'talents'" @click="dispatchSubTab = 'talents'">人才儲備<span class="ad-tab__count">{{ talents.length }}</span></button>
           <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'brochures' }" :aria-selected="dispatchSubTab === 'brochures'" @click="dispatchSubTab = 'brochures'">產品文宣<span class="ad-tab__count">{{ brochures.length }}</span></button>
-          <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'legalize' }" :aria-selected="dispatchSubTab === 'legalize'" @click="dispatchSubTab = 'legalize'; fetchLegalize()">工班合法化<span v-if="legalizeSummary" class="ad-tab__count">{{ legalizeSummary.totals.gapOpen }}</span></button>
+          <button type="button" role="tab" data-feature="legalize" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'legalize' }" :aria-selected="dispatchSubTab === 'legalize'" @click="dispatchSubTab = 'legalize'; fetchLegalize()">工班合法化<span v-if="legalizeSummary" class="ad-tab__count">{{ legalizeSummary.totals.gapOpen }}</span></button>
         </div>
 
         <!-- Sub-View 1: Orders -->

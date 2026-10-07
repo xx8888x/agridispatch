@@ -9,6 +9,9 @@ window.AGRI_CONFIG = {
   mode: 'demo', // 'demo' | 'production'
   // 純前端示範：true 時 /api/* 由 ../mock/ 的錄製資料回應，不需啟動後端；改 false 則連真實後端
   mock: true,
+  // 功能開關：false 時隱藏該功能的所有入口（路演暫時下架）；改回 true 即恢復
+  // legalize：工班合法化（黑轉白）轉換中心、後台彙總、LINE 黑轉白卡片
+  features: { legalize: false },
   apiBase: window.location.origin.startsWith('http')
     ? `${window.location.origin}/api`
     : 'http://localhost:3000/api'

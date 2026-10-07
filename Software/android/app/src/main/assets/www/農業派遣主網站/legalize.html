@@ -6,6 +6,12 @@
   <title>智農派工 AgriDispatch - 現有工班黑轉白轉換中心</title>
   <!-- 執行模式設定（demo / production，每份副本各自一份） -->
   <script src="js/app-config.js"></script>
+  <script>
+    // 功能開關 features.legalize = false（路演暫時下架）時不開放此頁，轉回農場主工作台
+    if (window.AGRI_CONFIG && window.AGRI_CONFIG.features && window.AGRI_CONFIG.features.legalize === false) {
+      window.location.replace('farmer.html');
+    }
+  </script>
   <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
   <script src="js/api-client.js"></script>
   <script>

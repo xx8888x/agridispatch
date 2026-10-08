@@ -35,6 +35,6 @@ sudo bash /tmp/agri-deploy/enable-https.sh dev.<IP 以 - 連接>.sslip.io
 
 - 管理員 `admin_tech` 的初始密碼在主機 `/etc/agridispatch/agri-dev.env` 的 `AGRI_ADMIN_PASSWORD`（`sudo cat` 查看），登入後請改密碼。
 - App：`gradlew assembleClientRelease assembleServerRelease -PagriApiBase=https://<DEV 網域>/api`（版本號會 +1，記得提交 `version.properties`）。
-- Log：`/opt/agridispatch/logs/app.log`（每週輪替）；服務：`sudo systemctl status agridispatch`；資料庫：`sudo podman logs agri-oracle`。
+- Log：`sudo journalctl -u agridispatch -f`（journald，上限 500MB）；服務：`sudo systemctl status agridispatch`；資料庫：`sudo podman logs agri-oracle`。
 - 備份（DEV 簡易版）：`sudo podman exec agri-oracle ...` 匯出，或對開機磁碟建立 Oracle Cloud 備份。
 - 尚未部署 LINE Bot（DEV 先用網頁的 LINE 體驗頁；要部署時加 `/callback/` 轉送與服務）。

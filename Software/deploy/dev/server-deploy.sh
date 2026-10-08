@@ -37,6 +37,7 @@ tar -xzf $UP/web.tar.gz -C $APP_DIR/web.new
 rm -rf $APP_DIR/web.old; [ -d $APP_DIR/web ] && mv $APP_DIR/web $APP_DIR/web.old
 mv $APP_DIR/web.new $APP_DIR/web
 chown -R agri:agri $APP_DIR/web
+chmod -R u=rwX,go=rX $APP_DIR/web          # tar 從 Windows 帶來的權限可能是全部可寫
 
 echo "[deploy] 3/4 重新啟動後端"
 systemctl restart agridispatch.service
@@ -44,7 +45,7 @@ for _ in $(seq 1 60); do
   if curl -fs -o /dev/null http://127.0.0.1:3000/api/crops; then break; fi
   sleep 3
 done
-curl -fs -o /dev/null http://127.0.0.1:3000/api/crops && echo "  後端已啟動" || { echo "  後端未啟動，最後 40 行 log："; tail -40 $APP_DIR/logs/app.log; exit 1; }
+curl -fs -o /dev/null http://127.0.0.1:3000/api/crops && echo "  後端已啟動" || { echo "  後端未啟動，最後 40 行 log："; journalctl -u agridispatch --no-pager -n 40; exit 1; }
 
 echo "[deploy] 4/4 帳號（選用）"
 if [ -f $UP/accounts.sql ]; then

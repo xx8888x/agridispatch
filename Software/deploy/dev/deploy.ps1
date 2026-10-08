@@ -15,7 +15,9 @@ param(
     [switch]$Setup,
     [string]$Accounts = ""
 )
-$ErrorActionPreference = "Stop"
+# 原生程式（mvn、ssh、scp、tar）寫到 stderr 的警告在 PowerShell 5.1 會被當成錯誤，改以 $LASTEXITCODE 判斷成敗
+$ErrorActionPreference = "Continue"
+function Check([string]$what) { if ($LASTEXITCODE -ne 0) { throw "$what 失敗（exit $LASTEXITCODE）" } }
 if (-not $Domain) { $Domain = "dev." + ($HostIp -replace '\.', '-') + ".sslip.io" }
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $software = Resolve-Path (Join-Path $here "..\..")
@@ -29,13 +31,14 @@ New-Item -ItemType Directory -Force $stage | Out-Null
 
 Write-Host "[deploy] 1/4 建置後端 jar"
 Push-Location $backend
-& .\maven\apache-maven-3.9.6\bin\mvn.cmd -o -q package -DskipTests "-Dmaven-jar-plugin.version=3.4.2"
-if ($LASTEXITCODE -ne 0) { Pop-Location; throw "建置失敗" }
-Pop-Location
+& .\maven\apache-maven-3.9.6\bin\mvn.cmd -o -q package -DskipTests "-Dmaven-jar-plugin.version=3.4.2" 2>$null
+$rc = $LASTEXITCODE; Pop-Location
+if ($rc -ne 0) { throw "建置失敗（exit $rc）" }
 Copy-Item (Join-Path $backend "target\agridispatch-backend-2.0.0.jar") (Join-Path $stage "app.jar") -Force
 
 Write-Host "[deploy] 2/4 打包網頁（Software/web，正式版前端）與建表腳本（只取建表部分）"
 tar -czf (Join-Path $stage "web.tar.gz") -C (Join-Path $software "web") .
+Check "打包網頁"
 $schema = Get-Content (Join-Path $software "database\01_agridispatch_oracle_schema.sql") -Encoding UTF8
 $cut = ($schema | Select-String -SimpleMatch "【初始種子資料 (SEED DATA)】" | Select-Object -First 1).LineNumber
 if (-not $cut) { throw "找不到建表腳本的種子資料標記" }
@@ -49,6 +52,7 @@ if ($Accounts) { Copy-Item $Accounts (Join-Path $stage "accounts.sql") -Force }
 
 Write-Host "[deploy] 3/4 上傳"
 & ssh @sshOpts $target "mkdir -p /tmp/agri-deploy"
+Check "SSH 連線"
 $files = @("app.jar", "web.tar.gz", "schema-ddl.sql", "server-setup.sh", "server-deploy.sh", "enable-https.sh")
 if ($Accounts) { $files += "accounts.sql" }
 & scp @sshOpts ($files | ForEach-Object { Join-Path $stage $_ }) "${target}:/tmp/agri-deploy/"

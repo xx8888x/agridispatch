@@ -149,7 +149,7 @@
   </div>
 
   <script>
-    const { createApp, ref, reactive } = Vue;
+    const { createApp, ref, reactive, watch } = Vue;
 
     createApp({
       setup() {
@@ -165,6 +165,14 @@
         const loading = ref(false);
         const errorMsg = ref('');
         const successMsg = ref('');
+        // 送出鈕在表單底部，手機上看不到最上方的提示：出現錯誤或成功訊息時捲到提示處
+        watch([errorMsg, successMsg], ([err, ok]) => {
+          if (!err && !ok) return;
+          setTimeout(() => {   // 等提示框（v-if）畫出來
+            const box = document.querySelector('.ad-notice--danger[role="alert"], .ad-notice--ok[role="status"]');
+            if (box) box.scrollIntoView({ block: 'center' });
+          }, 0);
+        }, { flush: 'sync' });   // 同一個錯誤連續出現時（先清空再設定）也要捲動
 
         const normalizePhone = (p) => p.replace(/[\s-]/g, '');
 

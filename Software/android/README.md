@@ -60,6 +60,8 @@ subst Z: /D
 
 或以 Android Studio 開啟 `Z:\`（同樣先 subst）。長期建議把專案搬到純英文路徑（例如 `D:\AgriDispatch\`）。
 
+2026-10-08 實測：`gradle.properties` 已設 `android.overridePathCheck=true`，從 PowerShell 直接在原路徑執行 `.\gradlew.bat --offline assembleClientDebug assembleServerDebug` 可以建置成功；但**單元測試在原路徑一定失敗**（測試 JVM 載不到測試類別，`ClassNotFoundException: ...UserProfileTest`）。請改用 `run_unit_tests.bat`：它會自動找一個空的磁碟代號（T:～Z:）做 subst、執行兩個 flavor 的 debug 單元測試，跑完就解除對應（可加 `--offline` 等 Gradle 參數）。
+
 ---
 
 ## 🏗️ 建置 APK 步驟

@@ -55,7 +55,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             new String[]{"GET", "/api/dispatch/weather-state"},
             new String[]{"GET", "/api/legalize/types"},          // 黑轉白身分類型與法規參考文字
             new String[]{"POST", "/api/payments/ecpay/notify"},  // 以 CheckMacValue 驗證
-            new String[]{"POST", "/api/line/webhook"},            // 以 X-Line-Signature 驗證（已停用，過渡期保留）
+            new String[]{"POST", "/api/line/webhook"},            // 已停用：一律回 410 Gone（不處理訊息）
             new String[]{"POST", "/api/line/internal/**"}         // LINE Bot 內部端點：以 X-Internal-Key 驗證（LineController）
     );
 
@@ -84,11 +84,13 @@ public class AuthInterceptor implements HandlerInterceptor {
     );
 
     private final TokenService tokenService;
+    private final TokenVersionChecker tokenVersionChecker;
     private final AgriSettings settings;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public AuthInterceptor(TokenService tokenService, AgriSettings settings) {
+    public AuthInterceptor(TokenService tokenService, TokenVersionChecker tokenVersionChecker, AgriSettings settings) {
         this.tokenService = tokenService;
+        this.tokenVersionChecker = tokenVersionChecker;
         this.settings = settings;
     }
 
@@ -105,7 +107,9 @@ public class AuthInterceptor implements HandlerInterceptor {
             return reject(response, 404, "NOT_FOUND");
         }
 
-        Optional<AuthContext> ctx = tokenService.verify(extractBearer(request));
+        // 簽章與到期有效後，再比對帳號目前的 token 版本（改密碼 / 重設 / 刪除 / 變更角色後舊 token 失效）
+        Optional<AuthContext> ctx = tokenService.verify(extractBearer(request))
+                .filter(tokenVersionChecker::isCurrent);
         ctx.ifPresent(c -> request.setAttribute(AuthContext.REQUEST_ATTR, c));
 
         if (matchesAny(PUBLIC, method, path)) {

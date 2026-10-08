@@ -41,6 +41,11 @@ public class Worker {
     @JsonIgnore
     private String passwordHash;
 
+    /** Token 版本（同 User.tokenVersion）：改密碼、重設密碼、變更身分層級（tier）時 +1；舊資料為 null 時視為 0 */
+    @JsonIgnore
+    @jakarta.persistence.Column(name = "token_version")
+    private Integer tokenVersion = 0;
+
     public Worker() {}
 
     public Worker(String id, String name, String chineseName, String nationality,
@@ -129,4 +134,10 @@ public class Worker {
     public String getPasswordHash() { return passwordHash; }
     @JsonIgnore
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+
+    @JsonIgnore
+    public int getTokenVersion() { return tokenVersion == null ? 0 : tokenVersion; }
+
+    /** 使此農工已簽發的 token 全部失效 */
+    public void bumpTokenVersion() { this.tokenVersion = getTokenVersion() + 1; }
 }

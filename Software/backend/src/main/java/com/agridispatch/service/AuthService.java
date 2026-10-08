@@ -8,6 +8,7 @@ import com.agridispatch.entity.Worker;
 import com.agridispatch.repository.UserRepository;
 import com.agridispatch.repository.WorkerRepository;
 import com.agridispatch.security.AuthContext;
+import com.agridispatch.security.LoginRateLimiter;
 import com.agridispatch.security.PasswordHasher;
 import com.agridispatch.security.TokenService;
 import org.springframework.stereotype.Service;
@@ -36,14 +37,17 @@ public class AuthService {
     private final PasswordHasher passwordHasher;
     private final TokenService tokenService;
     private final AgriSettings settings;
+    private final LoginRateLimiter loginRateLimiter;
 
     public AuthService(UserRepository userRepository, WorkerRepository workerRepository,
-                       PasswordHasher passwordHasher, TokenService tokenService, AgriSettings settings) {
+                       PasswordHasher passwordHasher, TokenService tokenService, AgriSettings settings,
+                       LoginRateLimiter loginRateLimiter) {
         this.userRepository = userRepository;
         this.workerRepository = workerRepository;
         this.passwordHasher = passwordHasher;
         this.tokenService = tokenService;
         this.settings = settings;
+        this.loginRateLimiter = loginRateLimiter;
     }
 
     // =========================================================================
@@ -52,10 +56,20 @@ public class AuthService {
 
     /**
      * 帳密登入：identifier 可為 users 帳號、農工工號、手機、居留證號 (ARC)、護照號碼
+     * 失敗次數限制（規格 03 第 5 節）：帳號或來源 IP 鎖定中直接回 429，**不執行 PBKDF2**；
+     * 失敗累計、成功清除該帳號計數。
+     * @param clientIp 來源 IP（request.getRemoteAddr()）
      * @return {token, user}；失敗回傳 empty（呼叫端統一回「帳號或密碼錯誤」）
      */
-    public Optional<Map<String, Object>> login(String identifier, String password) {
-        return authenticate(identifier, password).map(p -> buildLoginResponse(p, false));
+    public Optional<Map<String, Object>> login(String identifier, String password, String clientIp) {
+        loginRateLimiter.checkAllowed(identifier, clientIp);
+        Optional<Principal> p = authenticate(identifier, password);
+        if (p.isPresent()) {
+            loginRateLimiter.recordSuccess(identifier);
+        } else {
+            loginRateLimiter.recordFailure(identifier, clientIp);
+        }
+        return p.map(x -> buildLoginResponse(x, false));
     }
 
     Optional<Principal> authenticate(String identifier, String password) {
@@ -133,12 +147,14 @@ public class AuthService {
         if (u.isPresent()) {
             if (!passwordHasher.matches(oldPassword, u.get().getPassword())) throw ApiException.badRequest("原密碼錯誤");
             u.get().setPassword(passwordHasher.hash(newPassword));
+            u.get().bumpTokenVersion();   // 舊 token（含本次請求所用的）立即失效
             userRepository.save(u.get());
             return;
         }
         Worker w = workerRepository.findById(ctx.sub()).orElseThrow(ApiException::unauthorized);
         if (!passwordHasher.matches(oldPassword, w.getPasswordHash())) throw ApiException.badRequest("原密碼錯誤");
         w.setPasswordHash(passwordHasher.hash(newPassword));
+        w.bumpTokenVersion();
         workerRepository.save(w);
     }
 
@@ -150,12 +166,14 @@ public class AuthService {
         Optional<User> u = userRepository.findById(id);
         if (u.isPresent()) {
             u.get().setPassword(passwordHasher.hash(newPassword));
+            u.get().bumpTokenVersion();   // 該帳號既有 token 立即失效
             userRepository.save(u.get());
             return;
         }
         Worker w = workerRepository.findById(id.toUpperCase(Locale.ROOT))
                 .orElseThrow(() -> ApiException.notFound("查無帳號：" + id));
         w.setPasswordHash(passwordHasher.hash(newPassword));
+        w.bumpTokenVersion();
         workerRepository.save(w);
     }
 
@@ -170,7 +188,8 @@ public class AuthService {
     // =========================================================================
 
     private Map<String, Object> buildLoginResponse(Principal p, boolean demo) {
-        String token = tokenService.issue(p.username(), p.role(), p.refId(), demo);
+        int ver = p.user() != null ? p.user().getTokenVersion() : p.worker().getTokenVersion();
+        String token = tokenService.issueWithVersion(p.username(), p.role(), p.refId(), demo, ver);
         Map<String, Object> res = new LinkedHashMap<>();
         res.put("success", true);
         res.put("token", token);

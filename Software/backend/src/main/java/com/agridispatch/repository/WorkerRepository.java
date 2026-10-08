@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface WorkerRepository extends JpaRepository<Worker, String> {
@@ -19,4 +20,8 @@ public interface WorkerRepository extends JpaRepository<Worker, String> {
 
     @Query("SELECT w.id FROM Worker w WHERE w.id LIKE CONCAT(:prefix, '%')")
     List<String> findIdsByPrefix(@Param("prefix") String prefix);
+
+    /** Token 驗證用：只取 token 版本（農工不存在回 empty） */
+    @Query("SELECT COALESCE(w.tokenVersion, 0) FROM Worker w WHERE w.id = :id")
+    Optional<Integer> findTokenVersion(@Param("id") String id);
 }

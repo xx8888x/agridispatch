@@ -21,7 +21,7 @@ import java.util.Optional;
 /**
  * Token 簽發與驗證（規格第 2 節）
  * 格式：base64url(payloadJSON) + "." + base64url(HMAC-SHA256(secret, payloadPart))
- * payload：{"sub","role","ref","demo","exp"}，有效期 12 小時
+ * payload：{"sub","role","ref","demo","ver","exp"}，有效期 12 小時；ver 為帳號 token 版本（AuthInterceptor 比對資料庫）
  */
 @Service
 public class TokenService {
@@ -53,16 +53,26 @@ public class TokenService {
     }
 
     public String issue(String sub, String role, String ref, boolean demo) {
-        return issue(sub, role, ref, demo, Instant.now().getEpochSecond() + TTL_SECONDS);
+        return issueWithVersion(sub, role, ref, demo, 0, Instant.now().getEpochSecond() + TTL_SECONDS);
     }
 
     /** 指定到期時間簽發（測試過期情境用） */
     public String issue(String sub, String role, String ref, boolean demo, long expEpochSec) {
+        return issueWithVersion(sub, role, ref, demo, 0, expEpochSec);
+    }
+
+    /** 帶入帳號 token 版本簽發（登入用） */
+    public String issueWithVersion(String sub, String role, String ref, boolean demo, int tokenVersion) {
+        return issueWithVersion(sub, role, ref, demo, tokenVersion, Instant.now().getEpochSecond() + TTL_SECONDS);
+    }
+
+    public String issueWithVersion(String sub, String role, String ref, boolean demo, int tokenVersion, long expEpochSec) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("sub", sub);
         payload.put("role", role);
         payload.put("ref", ref);
         payload.put("demo", demo);
+        payload.put("ver", tokenVersion);
         payload.put("exp", expEpochSec);
         try {
             String payloadPart = B64URL.encodeToString(mapper.writeValueAsBytes(payload));
@@ -92,10 +102,11 @@ public class TokenService {
             String ref = text(node, "ref");
             boolean demo = node.path("demo").asBoolean(false);
             long exp = node.path("exp").asLong(0);
+            int ver = node.path("ver").asInt(0);
             if (sub == null || role == null || exp <= 0) return Optional.empty();
             if (Instant.now().getEpochSecond() >= exp) return Optional.empty();
             if (demo && !settings.isDemoEnabled()) return Optional.empty();
-            return Optional.of(new AuthContext(sub, role, ref, demo, exp, settings.isDemoEnabled()));
+            return Optional.of(new AuthContext(sub, role, ref, demo, exp, settings.isDemoEnabled(), ver));
         } catch (Exception e) {
             return Optional.empty();
         }

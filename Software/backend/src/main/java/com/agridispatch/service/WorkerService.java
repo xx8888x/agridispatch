@@ -111,6 +111,8 @@ public class WorkerService {
         if (copy.containsKey("leader")) existing.setLeader(u.isLeader());
         if (copy.containsKey("tier")) {
             if (!TIERS.contains(u.getTier())) throw ApiException.badRequest("tier 不合法");
+            // tier 決定登入角色（worker_foreign / worker_local）與子角色：變更時使該農工既有 token 失效
+            if (!u.getTier().equals(existing.getTier())) existing.bumpTokenVersion();
             existing.setTier(u.getTier());
         }
         if (copy.containsKey("baseSalary")) existing.setBaseSalary(u.getBaseSalary());

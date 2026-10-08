@@ -15,8 +15,10 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * @param demo         是否為 demo-login 簽發之 token
  * @param expEpochSec  到期時間（epoch 秒）
  * @param demoModeOn   目前後端是否為 demo 模式（demo token 在 demo 模式下視同 admin）
+ * @param tokenVersion token 簽發時帳號的 token 版本（payload ver；舊 token 無此欄視為 0）
  */
-public record AuthContext(String sub, String role, String ref, boolean demo, long expEpochSec, boolean demoModeOn) {
+public record AuthContext(String sub, String role, String ref, boolean demo, long expEpochSec, boolean demoModeOn,
+                          int tokenVersion) {
 
     public static final String REQUEST_ATTR = "agri.auth";
 

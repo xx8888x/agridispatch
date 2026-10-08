@@ -4,6 +4,7 @@ import com.agridispatch.common.ApiException;
 import com.agridispatch.config.AgriSettings;
 import com.agridispatch.security.AuthContext;
 import com.agridispatch.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,14 +26,15 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, Object> req) {
+    public ResponseEntity<?> login(@RequestBody Map<String, Object> req, HttpServletRequest request) {
         String identifier = str(req.get("identifier"));
         if (identifier == null || identifier.isBlank()) {
             identifier = str(req.get("username"));
         }
         String password = str(req.get("password"));
 
-        return authService.login(identifier, password)
+        // 來源 IP 一律取連線端位址（不信任可偽造的 X-Forwarded-For）；部署在反向代理後須設定 server.forward-headers-strategy
+        return authService.login(identifier, password, request.getRemoteAddr())
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("success", false, "error", "帳號或密碼錯誤")));

@@ -31,6 +31,7 @@
 | Method | Path | 權限 | 說明 |
 |---|---|---|---|
 | POST | `/api/auth/login` | 公開 | body `{identifier, password}` → 200 `{success:true, token, user}`；失敗 401 `{success:false, error:"帳號或密碼錯誤"}`（**不得**提示預設密碼）；鎖定中 429（見第 5 節「登入次數限制」） |
+| POST | `/api/auth/register` | 公開 | 農場主自助註冊（2026-10-08 起）：body `{name, phone, password, address, pdpaConsent:true, farmName?, farmType?}` → 200 同 login 回應（註冊即登入）。帳號＝手機號碼純數字（`09` 開頭 10 碼，輸入可含 `-`／空白），建立 `farmers`（編號 `F###`，與既有 farmer 帳號 refId 不重複）與 `users`（role `farmer`）。姓名 50 字、密碼 8～128 字元、農地地址必填 255 字、農場名稱 100 字；未同意個資蒐集 400；手機已註冊 409；同一來源 IP 每小時 10 次（`agri.security.register-ip-max`／`register-window-minutes`），超過 429。工人不開放自助註冊（須合作社查驗證件後建檔）。個資告知文字【待確認：律師審閱】 |
 | POST | `/api/auth/demo-login` | 公開，**僅 demo 模式** | body `{role, refId?}` → 同 login 回應，`user.demo=true`；非 demo 模式回 404 |
 | GET | `/api/auth/me` | 需登入 | 200 `{success:true, user}` |
 | GET | `/api/auth/quick-profiles` | **僅 demo 模式** | 示範帳號清單，**不含**密碼、居留證號、護照號；非 demo 模式回 404 |
@@ -40,7 +41,7 @@
 
 ## 5. 授權規則
 
-- **公開（不需 token）**：`POST /api/auth/login`、`POST /api/auth/demo-login`、`GET /api/public/**`、`GET /api/crops/**`、`GET /api/calendar/**`、`GET /api/brochures/**`、`GET /api/legalize/types`（黑轉白身分類型與法規參考文字）、`GET /api/payments/methods`、`GET /api/orders/categories`、`POST /api/orders/calculate`、`POST /api/talents/register`、`GET /api/dispatch/overview`、`GET /api/dispatch/weather-state`、`POST /api/payments/ecpay/notify`（以 CheckMacValue 驗證）、`POST /api/line/webhook`（已停用，一律回 410，見下方）、`POST /api/line/internal/**`（LINE Bot 內部端點，以 `X-Internal-Key` 驗證，見下方「LINE 官方帳號」）。
+- **公開（不需 token）**：`POST /api/auth/login`、`POST /api/auth/register`、`POST /api/auth/demo-login`、`GET /api/public/**`、`GET /api/crops/**`、`GET /api/calendar/**`、`GET /api/brochures/**`、`GET /api/legalize/types`（黑轉白身分類型與法規參考文字）、`GET /api/payments/methods`、`GET /api/orders/categories`、`POST /api/orders/calculate`、`POST /api/talents/register`、`GET /api/dispatch/overview`、`GET /api/dispatch/weather-state`、`POST /api/payments/ecpay/notify`（以 CheckMacValue 驗證）、`POST /api/line/webhook`（已停用，一律回 410，見下方）、`POST /api/line/internal/**`（LINE Bot 內部端點，以 `X-Internal-Key` 驗證，見下方「LINE 官方帳號」）。
 - **需登入**：其餘 `/api/**`。
 - **僅 admin_tech**：crops / brochures / talents / workers 的新增修改刪除、`/api/dispatch/*` 的 POST/PUT、`/api/line/config`、`GET /api/line/bindings`、`DELETE /api/line/bindings/{id}`、`/api/notifications/send`、`GET /api/workers`（完整名冊）、`/api/dev/**`。
 - **LINE 官方帳號（農場主／工作者雙帳號，規格 `05_LINE官方帳號拆分規格.md` 第伍、陸章）**：

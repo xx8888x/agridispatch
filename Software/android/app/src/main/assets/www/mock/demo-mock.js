@@ -862,6 +862,17 @@
       return loginAs(role, refId);
     }
 
+    // 農場主自助註冊：檢查與後端相同的必填欄位，回一個示範農場主身分（不存帳密）
+    if (method === 'POST' && sp.path === '/auth/register') {
+      var r = body || {}, phone = String(r.phone || '').replace(/[\s-]/g, '');
+      if (!r.name || !/^09\d{8}$/.test(phone) || !r.password || String(r.password).length < 8 || !r.address || r.pdpaConsent !== true) {
+        return respond(400, { success: false, error: '請確認姓名、手機、密碼（至少 8 字元）、農地地址與個資同意都已填寫' });
+      }
+      return respond(200, { success: true, token: 'mock.farmer.F900', user: {
+        username: phone, name: String(r.name), role: 'farmer', refId: 'F900',
+        roleDesc: (r.farmName || '自助註冊') + ' 農場主' } });
+    }
+
     // 有業務邏輯、會影響後續查詢的動作
     if (method === 'POST' && sp.path === '/orders/calculate') {
       try { return respond(200, { success: true, data: calculate(body || {}) }); } catch (err) { return respond(400, { success: false, error: err.message }); }

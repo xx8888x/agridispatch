@@ -2,6 +2,7 @@ package com.agridispatch.security;
 
 import com.agridispatch.common.ApiException;
 import com.agridispatch.config.AgriSettings;
+import com.agridispatch.repository.FarmerRepository;
 import com.agridispatch.repository.UserRepository;
 import com.agridispatch.repository.WorkerRepository;
 import com.agridispatch.service.AuthService;
@@ -59,7 +60,8 @@ class LoginRateLimitBeforeHashTest {
         CountingHasher hasher = new CountingHasher();
         LoginRateLimiter limiter = new LoginRateLimiter(5, 30, 15, 15);
         AuthService auth = new AuthService(recordingRepo(UserRepository.class, repoCalls),
-                recordingRepo(WorkerRepository.class, repoCalls), hasher, new TokenService(settings()), settings(), limiter);
+                recordingRepo(WorkerRepository.class, repoCalls), hasher, new TokenService(settings()), settings(), limiter,
+                recordingRepo(FarmerRepository.class, repoCalls), new RegisterRateLimiter(10, 60));
 
         for (int i = 0; i < 5; i++) limiter.recordFailure("farmer", "10.1.1.1");
 
@@ -80,7 +82,8 @@ class LoginRateLimitBeforeHashTest {
         CountingHasher hasher = new CountingHasher();
         LoginRateLimiter limiter = new LoginRateLimiter(5, 30, 15, 15);
         AuthService auth = new AuthService(recordingRepo(UserRepository.class, repoCalls),
-                recordingRepo(WorkerRepository.class, repoCalls), hasher, new TokenService(settings()), settings(), limiter);
+                recordingRepo(WorkerRepository.class, repoCalls), hasher, new TokenService(settings()), settings(), limiter,
+                recordingRepo(FarmerRepository.class, repoCalls), new RegisterRateLimiter(10, 60));
 
         for (int i = 0; i < 5; i++) assertTrue(auth.login("nobody", "pw", "10.1.1.3").isEmpty());
         assertEquals(5, hasher.calls.get(), "查無帳號時仍以 burnTime 消耗等量時間");

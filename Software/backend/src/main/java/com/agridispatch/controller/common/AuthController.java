@@ -40,6 +40,12 @@ public class AuthController {
                         .body(Map.of("success", false, "error", "帳號或密碼錯誤")));
     }
 
+    /** 農場主自助註冊：成功回 200 {success, token, user}（同 login），手機已註冊 409，次數過多 429 */
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody Map<String, Object> req, HttpServletRequest request) {
+        return ResponseEntity.ok(authService.registerFarmer(req, request.getRemoteAddr()));
+    }
+
     /** demo 模式免密登入；非 demo 模式回 404 */
     @PostMapping("/demo-login")
     public ResponseEntity<?> demoLogin(@RequestBody(required = false) Map<String, Object> req) {

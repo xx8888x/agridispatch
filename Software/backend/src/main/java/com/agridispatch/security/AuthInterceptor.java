@@ -38,6 +38,7 @@ public class AuthInterceptor implements HandlerInterceptor {
     /** 公開端點：{method, pattern} */
     private static final List<String[]> PUBLIC = List.of(
             new String[]{"POST", "/api/auth/login"},
+            new String[]{"POST", "/api/auth/register"},       // 農場主自助註冊（RegisterRateLimiter 限次）
             new String[]{"POST", "/api/auth/demo-login"},
             new String[]{"GET", "/api/auth/quick-profiles"},   // 僅 demo 模式有效，非 demo 回 404
             new String[]{"GET", "/api/public/**"},

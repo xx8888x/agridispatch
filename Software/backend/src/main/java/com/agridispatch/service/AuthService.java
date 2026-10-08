@@ -1,17 +1,22 @@
 package com.agridispatch.service;
 
 import com.agridispatch.common.ApiException;
+import com.agridispatch.common.IdGenerator;
 import com.agridispatch.common.LaborConstants;
 import com.agridispatch.config.AgriSettings;
+import com.agridispatch.entity.Farmer;
 import com.agridispatch.entity.User;
 import com.agridispatch.entity.Worker;
+import com.agridispatch.repository.FarmerRepository;
 import com.agridispatch.repository.UserRepository;
 import com.agridispatch.repository.WorkerRepository;
 import com.agridispatch.security.AuthContext;
 import com.agridispatch.security.LoginRateLimiter;
 import com.agridispatch.security.PasswordHasher;
+import com.agridispatch.security.RegisterRateLimiter;
 import com.agridispatch.security.TokenService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -38,16 +43,21 @@ public class AuthService {
     private final TokenService tokenService;
     private final AgriSettings settings;
     private final LoginRateLimiter loginRateLimiter;
+    private final FarmerRepository farmerRepository;
+    private final RegisterRateLimiter registerRateLimiter;
 
     public AuthService(UserRepository userRepository, WorkerRepository workerRepository,
                        PasswordHasher passwordHasher, TokenService tokenService, AgriSettings settings,
-                       LoginRateLimiter loginRateLimiter) {
+                       LoginRateLimiter loginRateLimiter, FarmerRepository farmerRepository,
+                       RegisterRateLimiter registerRateLimiter) {
         this.userRepository = userRepository;
         this.workerRepository = workerRepository;
         this.passwordHasher = passwordHasher;
         this.tokenService = tokenService;
         this.settings = settings;
         this.loginRateLimiter = loginRateLimiter;
+        this.farmerRepository = farmerRepository;
+        this.registerRateLimiter = registerRateLimiter;
     }
 
     // =========================================================================
@@ -81,6 +91,11 @@ public class AuthService {
 
         List<Principal> candidates = new ArrayList<>();
         userRepository.findById(id).ifPresent(u -> candidates.add(fromUser(u)));
+        // 自助註冊的農場主以手機號碼（純數字）為帳號：輸入含 - 或空白時也找得到
+        String digits = id.replaceAll("[\\s-]", "");
+        if (!digits.equals(id) && digits.matches("\\d{10}")) {
+            userRepository.findById(digits).ifPresent(u -> candidates.add(fromUser(u)));
+        }
 
         Set<String> seenWorkers = new HashSet<>();
         List<Worker> workers = new ArrayList<>();
@@ -134,6 +149,57 @@ public class AuthService {
                 .or(() -> workerRepository.findById(ctx.sub()).map(this::fromWorker))
                 .orElseThrow(ApiException::unauthorized);
         return buildUser(p, ctx.demo());
+    }
+
+    // =========================================================================
+    // 自助註冊（目前只開放農場主；工人須經合作社查驗證件後由後台建檔）
+    // =========================================================================
+
+    /**
+     * 農場主自助註冊：建立 farmers 與 users（帳號＝手機號碼純數字、role=farmer），成功即回登入結果。
+     * 必填 name、phone（台灣手機 09 開頭 10 碼）、password（8～128 字元）、address、pdpaConsent=true；
+     * farmName、farmType 選填。手機已註冊 → 409。同一 IP 每小時 10 次（RegisterRateLimiter）。
+     */
+    @Transactional
+    public Map<String, Object> registerFarmer(Map<String, Object> req, String clientIp) {
+        registerRateLimiter.acquire(clientIp);
+        String name = trimmed(req.get("name"));
+        String phone = trimmed(req.get("phone"));
+        String password = req.get("password") == null ? null : req.get("password").toString();
+        String address = trimmed(req.get("address"));
+        String farmName = trimmed(req.get("farmName"));
+        String farmType = trimmed(req.get("farmType"));
+
+        if (name == null || name.length() > 50) throw ApiException.badRequest("請填寫姓名（50 字以內）");
+        String mobile = phone == null ? "" : phone.replaceAll("[\\s-]", "");
+        if (!mobile.matches("09\\d{8}")) throw ApiException.badRequest("請填寫正確的手機號碼（09 開頭共 10 碼）");
+        validateNewPassword(password);
+        if (address == null || address.length() > 255) throw ApiException.badRequest("請填寫農地地址（255 字以內）");
+        if (farmName != null && farmName.length() > 100) throw ApiException.badRequest("農場名稱請在 100 字以內");
+        if (farmType != null && farmType.length() > 50) throw ApiException.badRequest("農場類型請在 50 字以內");
+        if (!Boolean.TRUE.equals(req.get("pdpaConsent"))) throw ApiException.badRequest("請先閱讀並同意個人資料蒐集告知事項");
+
+        if (userRepository.existsById(mobile) || farmerRepository.findByPhone(mobile).isPresent()) {
+            throw ApiException.conflict("此手機號碼已註冊，請直接登入");
+        }
+
+        // 農場主編號：farmers 表與既有 farmer 帳號的 refId（種子帳號 F001、F002 只存在 users）一起取最大值
+        Set<String> used = new HashSet<>();
+        farmerRepository.findAll().forEach(f -> used.add(f.getId()));
+        userRepository.findAll().forEach(u -> { if (u.getRefId() != null) used.add(u.getRefId()); });
+        String farmerId = IdGenerator.next("F", 3, used, used::contains);
+
+        farmerRepository.save(new Farmer(farmerId, farmName != null ? farmName : name, mobile, address, null, farmType));
+        User user = new User(mobile, passwordHasher.hash(password), name, AuthContext.ROLE_FARMER, farmerId,
+                (farmName != null ? farmName : "自助註冊") + " 農場主");
+        userRepository.save(user);
+        return buildLoginResponse(fromUser(user), false);
+    }
+
+    private static String trimmed(Object o) {
+        if (o == null) return null;
+        String s = o.toString().trim();
+        return s.isEmpty() ? null : s;
     }
 
     // =========================================================================

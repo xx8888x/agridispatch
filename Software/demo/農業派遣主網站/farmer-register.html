@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>農場主註冊 - 智農派工 AgriDispatch</title>
+  <!-- 執行模式設定（demo / production，每份副本各自一份） -->
+  <script src="js/app-config.js"></script>
+  <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
+  <script src="js/api-client.js"></script>
+  <!-- Tailwind CSS CDN -->
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
+  <!-- 設計系統：共用 tailwind.config、demo 模式標記、圖示 -->
+  <script src="js/agri-theme.js"></script>
+  <!-- Lucide 圖示：本機 vendor 優先，CDN 備援（只用在 Vue 區塊外的表頭） -->
+  <script src="js/vendor/lucide.min.js"></script>
+  <script>
+    if (typeof lucide === 'undefined') {
+      document.write('<script src="https://unpkg.com/lucide@1.47.0"><\/script>');
+    }
+  </script>
+  <!-- Vue 3: Local Vendor First with CDN Fallback -->
+  <script src="js/vendor/vue.global.prod.js"></script>
+  <script>
+    if (typeof Vue === 'undefined') {
+      document.write('<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"><\/script>');
+    }
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/agri.css">
+  <style>
+    [v-cloak] { display: none; }
+    .reg-required { color: var(--ad-danger, #b42318); }
+  </style>
+  <script>
+    // Failsafe: Remove v-cloak if Vue takes more than 1.5s to prevent blank screen
+    setTimeout(function() {
+      var appEl = document.getElementById('app');
+      if (appEl && appEl.hasAttribute('v-cloak')) {
+        console.warn('Vue mounting timed out or offline, removing v-cloak failsafe');
+        appEl.removeAttribute('v-cloak');
+      }
+    }, 1500);
+  </script>
+</head>
+<body class="ad-body min-h-screen flex flex-col">
+
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner">
+      <a href="index.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">農場主</span>
+      </a>
+      <div class="ad-header__actions">
+        <a href="farmer-login.html" class="ad-btn ad-btn--ghost ad-btn--sm"><i data-lucide="log-in" class="ad-icon ad-icon--sm"></i>登入</a>
+      </div>
+    </div>
+  </header>
+
+  <div id="app" v-cloak class="flex-1 flex flex-col">
+    <main class="flex-1 ad-container w-full" style="padding-block: 32px 40px;">
+      <div style="max-width: 440px; margin-inline: auto;">
+        <h1 class="ad-display">農場主註冊</h1>
+        <p class="ad-caption" style="margin-top: 6px;">免費註冊，之後用手機號碼登入預約派工。</p>
+
+        <div class="ad-card" style="padding: 24px; margin-top: 24px;">
+          <div v-if="isMock" data-demo-only class="ad-notice ad-notice--ok" style="margin-bottom: 16px;">
+            <span>示範模式：註冊資料只存在這台裝置的瀏覽器，不會送出。</span>
+          </div>
+
+          <div v-if="errorMsg" class="ad-notice ad-notice--danger" role="alert" style="margin-bottom: 16px;">
+            <span>{{ errorMsg }}</span>
+          </div>
+          <div v-if="successMsg" class="ad-notice ad-notice--ok" role="status" style="margin-bottom: 16px;">
+            <span>{{ successMsg }}</span>
+          </div>
+
+          <form @submit.prevent="handleRegister" novalidate style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="ad-field">
+              <label class="ad-label" for="regName">姓名 <span class="reg-required">*</span></label>
+              <input id="regName" v-model="form.name" type="text" autocomplete="name" maxlength="50" class="ad-input" placeholder="例：王大明">
+            </div>
+
+            <div class="ad-field">
+              <label class="ad-label" for="regPhone">手機號碼 <span class="reg-required">*</span></label>
+              <input id="regPhone" v-model="form.phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="12" class="ad-input" placeholder="09xxxxxxxx">
+              <span class="ad-hint">之後用這支手機號碼登入。</span>
+            </div>
+
+            <div class="ad-field">
+              <label class="ad-label" for="regPwd">密碼 <span class="reg-required">*</span></label>
+              <input id="regPwd" v-model="form.password" type="password" autocomplete="new-password" maxlength="128" class="ad-input" placeholder="至少 8 個字元">
+            </div>
+
+            <div class="ad-field">
+              <label class="ad-label" for="regPwd2">再輸入一次密碼 <span class="reg-required">*</span></label>
+              <input id="regPwd2" v-model="form.password2" type="password" autocomplete="new-password" maxlength="128" class="ad-input">
+            </div>
+
+            <div class="ad-field">
+              <label class="ad-label" for="regFarmName">農場／產銷班名稱</label>
+              <input id="regFarmName" v-model="form.farmName" type="text" maxlength="100" class="ad-input" placeholder="選填，例：八德有機蔬菜產銷班">
+            </div>
+
+            <div class="ad-field">
+              <label class="ad-label" for="regFarmType">經營型態</label>
+              <select id="regFarmType" v-model="form.farmType" class="ad-input">
+                <option value="個人農戶">個人農戶</option>
+                <option value="產銷班">產銷班</option>
+                <option value="農企業">農企業</option>
+                <option value="農會／合作社">農會／合作社</option>
+              </select>
+            </div>
+
+            <div class="ad-field">
+              <label class="ad-label" for="regAddress">農地地址 <span class="reg-required">*</span></label>
+              <input id="regAddress" v-model="form.address" type="text" autocomplete="street-address" maxlength="255" class="ad-input" placeholder="例：桃園市八德區（填到鄉鎮也可以）">
+            </div>
+
+            <label style="display: flex; gap: 10px; align-items: flex-start; cursor: pointer;">
+              <input type="checkbox" v-model="form.pdpaConsent" style="margin-top: 3px; width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--ad-primary);">
+              <span class="ad-caption">我同意智農派工依個人資料保護法，蒐集上面填寫的姓名、手機與農地地址，用於帳號管理、派工聯繫與服務通知。</span>
+            </label>
+
+            <button type="submit" :disabled="loading" class="ad-btn ad-btn--primary ad-btn--lg ad-btn--block">
+              {{ loading ? '註冊中…' : '註冊並登入' }}
+            </button>
+          </form>
+        </div>
+
+        <p class="ad-caption" style="margin-top: 20px; text-align: center;">
+          已經有帳號？<a href="farmer-login.html" style="color: var(--ad-primary-text);">農場主登入</a>
+        </p>
+        <p class="ad-caption" style="margin-top: 8px; text-align: center;">
+          想來上工的工作者：請聯絡合作社或在 LINE 官方帳號報名，由合作社查驗證件後建立帳號。
+        </p>
+      </div>
+    </main>
+
+    <footer class="ad-caption" style="padding: 20px 16px; text-align: center; border-top: 1px solid var(--ad-border);">
+      © 2026 智農派工 AgriDispatch
+    </footer>
+  </div>
+
+  <script>
+    const { createApp, ref, reactive } = Vue;
+
+    createApp({
+      setup() {
+        const API_BASE = window.AgriAuth ? window.AgriAuth.API_BASE : (window.location.origin.startsWith('http')
+          ? `${window.location.origin}/api`
+          : 'http://localhost:3000/api');
+        const isMock = !!(window.AGRI_CONFIG && window.AGRI_CONFIG.mock);
+
+        const form = reactive({
+          name: '', phone: '', password: '', password2: '',
+          farmName: '', farmType: '個人農戶', address: '', pdpaConsent: false
+        });
+        const loading = ref(false);
+        const errorMsg = ref('');
+        const successMsg = ref('');
+
+        const normalizePhone = (p) => p.replace(/[\s-]/g, '');
+
+        // 前端先擋常見錯誤；後端 POST /api/auth/register 會再檢查一次
+        const validate = () => {
+          if (!form.name.trim()) return '請填寫姓名';
+          if (!/^09\d{8}$/.test(normalizePhone(form.phone))) return '請填寫正確的手機號碼（09 開頭共 10 碼）';
+          if (form.password.length < 8) return '密碼至少 8 個字元';
+          if (form.password !== form.password2) return '兩次輸入的密碼不一樣';
+          if (!form.address.trim()) return '請填寫農地地址';
+          if (!form.pdpaConsent) return '請先勾選同意個人資料蒐集';
+          return '';
+        };
+
+        const handleRegister = async () => {
+          errorMsg.value = '';
+          successMsg.value = '';
+          const problem = validate();
+          if (problem) { errorMsg.value = problem; return; }
+
+          loading.value = true;
+          try {
+            const res = await fetch(`${API_BASE}/auth/register`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: form.name.trim(),
+                phone: normalizePhone(form.phone),
+                password: form.password,
+                farmName: form.farmName.trim(),
+                farmType: form.farmType,
+                address: form.address.trim(),
+                pdpaConsent: form.pdpaConsent
+              })
+            });
+            const data = await res.json().catch(() => null);
+            if (res.ok && data && data.success && data.user) {
+              if (window.AgriAuth) window.AgriAuth.setSession(data.token, data.user);
+              sessionStorage.setItem('farmerUser', JSON.stringify(data.user));
+              successMsg.value = `註冊完成，${data.user.name}！正在開啟農場主工作台…`;
+              if (window.AgriNativeBridge && typeof window.AgriNativeBridge.vibrate === 'function') {
+                window.AgriNativeBridge.vibrate(80);
+              }
+              setTimeout(() => { window.location.href = 'farmer.html'; }, 800);
+            } else {
+              errorMsg.value = (data && data.error) || '註冊失敗，請稍後再試';
+            }
+          } catch (e) {
+            errorMsg.value = '無法連線到伺服器，請稍後再試';
+          } finally {
+            loading.value = false;
+          }
+        };
+
+        return { form, loading, errorMsg, successMsg, isMock, handleRegister };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

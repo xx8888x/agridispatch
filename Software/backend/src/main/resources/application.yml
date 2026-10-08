@@ -35,6 +35,7 @@ agri:
   security:
     token-secret: ${AGRI_TOKEN_SECRET:}
     admin-password: ${AGRI_ADMIN_PASSWORD:}
+    login-lock-admin-only: ${AGRI_LOGIN_LOCK_ADMIN_ONLY:false}
   cors:
     allowed-origins: ${AGRI_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5000,http://127.0.0.1:3000,https://appassets.androidplatform.net}
   payment:

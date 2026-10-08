@@ -53,7 +53,16 @@ public class AgriSettings {
     @Value("${agri.seed.demo-data:}")
     private String seedDemoData;
 
+    /**
+     * 測試期開關：登入失敗鎖定只套用在科技後台（admin_tech）帳號，其餘角色不鎖（環境變數 AGRI_LOGIN_LOCK_ADMIN_ONLY）。
+     * 僅供 DEV／測試環境，正式環境不得開啟。
+     */
+    @Value("${agri.security.login-lock-admin-only:false}")
+    private boolean loginLockAdminOnly;
+
     public boolean isDemoEnabled() { return demoEnabled; }
+
+    public boolean isLoginLockAdminOnly() { return loginLockAdminOnly; }
 
     public boolean isSeedDemoData() {
         return seedDemoData == null || seedDemoData.isBlank() ? demoEnabled : Boolean.parseBoolean(seedDemoData.trim());

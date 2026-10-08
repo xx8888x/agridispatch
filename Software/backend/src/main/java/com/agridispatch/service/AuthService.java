@@ -72,14 +72,25 @@ public class AuthService {
      * @return {token, user}；失敗回傳 empty（呼叫端統一回「帳號或密碼錯誤」）
      */
     public Optional<Map<String, Object>> login(String identifier, String password, String clientIp) {
-        loginRateLimiter.checkAllowed(identifier, clientIp);
+        // 測試期（AGRI_LOGIN_LOCK_ADMIN_ONLY=true）：只有科技後台帳號計次鎖定，其餘角色不計帳號與 IP 失敗
+        boolean limited = !settings.isLoginLockAdminOnly() || isAdminIdentifier(identifier);
+        if (limited) loginRateLimiter.checkAllowed(identifier, clientIp);
         Optional<Principal> p = authenticate(identifier, password);
-        if (p.isPresent()) {
-            loginRateLimiter.recordSuccess(identifier);
-        } else {
-            loginRateLimiter.recordFailure(identifier, clientIp);
+        if (limited) {
+            if (p.isPresent()) {
+                loginRateLimiter.recordSuccess(identifier);
+            } else {
+                loginRateLimiter.recordFailure(identifier, clientIp);
+            }
         }
         return p.map(x -> buildLoginResponse(x, false));
+    }
+
+    private boolean isAdminIdentifier(String identifier) {
+        if (identifier == null || identifier.isBlank()) return false;
+        return userRepository.findById(identifier.trim())
+                .map(u -> AuthContext.ROLE_ADMIN.equals(u.getRole()))
+                .orElse(false);
     }
 
     Optional<Principal> authenticate(String identifier, String password) {

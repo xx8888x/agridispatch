@@ -19,6 +19,7 @@ public class Worker {
     private String chineseName;
     private String nationality;
     private String teamId;
+    @jakarta.persistence.Convert(converter = com.agridispatch.common.YesNoBooleanConverter.class)
     private boolean isLeader;
     private String tier; // tier1_foreign, tier2_local_flex, tier3_turnkey
     private int baseSalary;

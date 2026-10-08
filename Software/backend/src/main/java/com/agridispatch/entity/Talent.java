@@ -17,7 +17,9 @@ public class Talent {
     private String categoryName;
     private String phone;
     private String experience;
+    @jakarta.persistence.Convert(converter = com.agridispatch.common.YesNoBooleanConverter.class)
     private boolean pdpaConsent;
+    @jakarta.persistence.Convert(converter = com.agridispatch.common.DateTimeStringConverter.class)
     private String registeredAt;
 
     public Talent() {}

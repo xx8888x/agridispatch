@@ -53,6 +53,15 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Oracle JDBC（spring.profiles.active=oracle 時使用，見 application-oracle.yml）；
+             版本明確指定為本機離線庫已有的 23.5，Spring Boot 3.2 預設管理的 23.3 不在離線庫 -->
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc11</artifactId>
+            <version>23.5.0.24.07</version>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

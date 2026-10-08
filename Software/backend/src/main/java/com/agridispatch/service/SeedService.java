@@ -58,6 +58,7 @@ public class SeedService {
     private final LegalizeWorkerRepository legalizeWorkerRepository;
     private final PasswordHasher passwordHasher;
     private final AgriSettings settings;
+    private final com.agridispatch.repository.FinancialLedgerRepository financialLedgerRepository;
 
     /** demo 密碼雜湊快取（310,000 次 PBKDF2 較耗時，demo 種子共用同一組雜湊） */
     private String demoPasswordHash;
@@ -76,6 +77,7 @@ public class SeedService {
                        InsuranceRecordRepository insuranceRecordRepository,
                        SkillReviewRepository skillReviewRepository,
                        LegalizeWorkerRepository legalizeWorkerRepository,
+                       com.agridispatch.repository.FinancialLedgerRepository financialLedgerRepository,
                        PasswordHasher passwordHasher,
                        AgriSettings settings) {
         this.userRepository = userRepository;
@@ -92,12 +94,16 @@ public class SeedService {
         this.insuranceRecordRepository = insuranceRecordRepository;
         this.skillReviewRepository = skillReviewRepository;
         this.legalizeWorkerRepository = legalizeWorkerRepository;
+        this.financialLedgerRepository = financialLedgerRepository;
         this.passwordHasher = passwordHasher;
         this.settings = settings;
     }
 
     public void seedAll(boolean cleanFirst) {
         if (cleanFirst) {
+            // 依外鍵相依順序刪除（Oracle schema 有 FK；H2 由 Hibernate 建表時沒有）：先刪參照 orders／workers 的表
+            attendanceRepository.deleteAll();
+            financialLedgerRepository.deleteAll();
             teamRatingRepository.deleteAll();
             legalizeWorkerRepository.deleteAll();
             insuranceRecordRepository.deleteAll();
@@ -111,7 +117,6 @@ public class SeedService {
             userRepository.deleteAll();
             brochureRepository.deleteAll();
             weatherStateRepository.deleteAll();
-            attendanceRepository.deleteAll();
         }
 
         seedUsers();
@@ -280,6 +285,13 @@ public class SeedService {
                 u.setRoleDesc("worker_labor".equals(u.getUsername()) ? AuthService.laborRoleDesc()
                         : u.getRoleDesc().replace("28,590", LaborConstants.formatMoney(LaborConstants.MIN_MONTHLY_WAGE)));
                 userRepository.save(u);
+            }
+        }
+        // 舊資料以 "待分派" 等字串當工班編號；Oracle 有 FK（orders.assigned_team_id → dispatch_teams），一律改為 null（待分派）
+        for (Order o : orderRepository.findAll()) {
+            if (o.getAssignedTeamId() != null && !teamRepository.existsById(o.getAssignedTeamId())) {
+                o.setAssignedTeamId(null);
+                orderRepository.save(o);
             }
         }
         migrateEarlyBirdPricing();
@@ -525,7 +537,7 @@ public class SeedService {
                         "pear", "高接梨 (台中東勢/苗栗卓蘭)", 4.0, "early_bird", "【Tier 1】產季早鳥工時包 (鎖定名額・優先排班)",
                         "pruning_bagging", "【田間管理】修枝疏果與引蔓套袋",
                         "陳建龍 (農場主本人帶隊)", "0912-345-678", "農場主本人親自現場帶隊指揮調度",
-                        "core_35km", 0, 128, 5, 315, 40320, 40320, 8064, false, "pending", "待分派", "2026-09-23 10:00:00")
+                        "core_35km", 0, 128, 5, 315, 40320, 40320, 8064, false, "pending", null, "2026-09-23 10:00:00")   // null＝待分派
             );
             // 示範農場主 F001（陳建龍）的訂單
             orders.get(0).setFarmerId("F001");

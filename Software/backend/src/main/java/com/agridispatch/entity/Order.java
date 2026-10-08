@@ -31,12 +31,14 @@ public class Order {
     private int standardAmount;
     private int finalAmount;
     private int depositAmount;
+    @jakarta.persistence.Convert(converter = com.agridispatch.common.YesNoBooleanConverter.class)
     private boolean depositPaid;
     private String status; // pending, confirmed, in_progress, completed, cancelled
     private String assignedTeamId;
     private String foremanName; // 現場派工小工頭 / 帶隊對口姓名
     private String foremanPhone; // 小工頭電話 / LINE
     private String foremanNotes; // 現場交辦指示 / 報到須知
+    @jakarta.persistence.Convert(converter = com.agridispatch.common.DateTimeStringConverter.class)
     private String createdAt;
 
     /** 出工名單（工號，逗號分隔）；只由派工媒合 API 設定，建立／修改訂單時不接受前端傳入 */

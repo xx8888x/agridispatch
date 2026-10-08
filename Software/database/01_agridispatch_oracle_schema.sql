@@ -111,14 +111,14 @@ END;
 -- 1. 作物基準表 (CROPS)
 -- ====================================================================
 CREATE TABLE crops (
-    id                 VARCHAR2(32)   NOT NULL,
-    name               VARCHAR2(100)  NOT NULL,
+    id                 VARCHAR2(32 CHAR)   NOT NULL,
+    name               VARCHAR2(100 CHAR)  NOT NULL,
     base_hours_per_fen NUMBER(6,1)    DEFAULT 20 NOT NULL,
     workers_per_fen    NUMBER(4)      DEFAULT 3 NOT NULL,
     rate               NUMBER(8)      DEFAULT 300 NOT NULL,
-    season             VARCHAR2(50)   NOT NULL,
-    task_description   VARCHAR2(1000) NOT NULL,
-    indoor_alternative VARCHAR2(1000) NOT NULL,
+    season             VARCHAR2(50 CHAR)   NOT NULL,
+    task_description   VARCHAR2(1000 CHAR) NOT NULL,
+    indoor_alternative VARCHAR2(1000 CHAR) NOT NULL,
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
     CONSTRAINT pk_crops PRIMARY KEY (id)
 );
@@ -137,12 +137,12 @@ COMMENT ON COLUMN crops.indoor_alternative IS '突發暴雨室內冷鏈集貨備
 -- 2. 小農/契作商表 (FARMERS)
 -- ====================================================================
 CREATE TABLE farmers (
-    id                 VARCHAR2(32)   NOT NULL,
-    name               VARCHAR2(100)  NOT NULL,
-    phone              VARCHAR2(30)   NOT NULL,
-    address            VARCHAR2(255)  NOT NULL,
-    tax_id             VARCHAR2(20),
-    farm_type          VARCHAR2(50)   DEFAULT '產銷班' NOT NULL,
+    id                 VARCHAR2(32 CHAR)   NOT NULL,
+    name               VARCHAR2(100 CHAR)  NOT NULL,
+    phone              VARCHAR2(30 CHAR)   NOT NULL,
+    address            VARCHAR2(255 CHAR)  NOT NULL,
+    tax_id             VARCHAR2(20 CHAR),
+    farm_type          VARCHAR2(50 CHAR)   DEFAULT '產銷班' NOT NULL,
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
     CONSTRAINT pk_farmers PRIMARY KEY (id)
 );
@@ -159,18 +159,18 @@ COMMENT ON COLUMN farmers.farm_type IS '農場型態 (產銷班 / 契作農企�
 -- 3. 調度工班與專車表 (DISPATCH_TEAMS)
 -- ====================================================================
 CREATE TABLE dispatch_teams (
-    id                 VARCHAR2(32)   NOT NULL,
-    name               VARCHAR2(50)   NOT NULL,
+    id                 VARCHAR2(32 CHAR)   NOT NULL,
+    name               VARCHAR2(50 CHAR)   NOT NULL,
     worker_count       NUMBER(4)      DEFAULT 0 NOT NULL,
-    leader             VARCHAR2(50)   NOT NULL,
-    leader_phone       VARCHAR2(30)   NOT NULL,
-    vehicle            VARCHAR2(100)  NOT NULL,
-    driver             VARCHAR2(50)   NOT NULL,
-    normal_location    VARCHAR2(255)  NOT NULL,
-    normal_task        VARCHAR2(255)  NOT NULL,
-    hedge_location     VARCHAR2(255)  NOT NULL,
-    hedge_task         VARCHAR2(255)  NOT NULL,
-    status             VARCHAR2(30)   DEFAULT 'active_field' NOT NULL,
+    leader             VARCHAR2(50 CHAR)   NOT NULL,
+    leader_phone       VARCHAR2(30 CHAR)   NOT NULL,
+    vehicle            VARCHAR2(100 CHAR)  NOT NULL,
+    driver             VARCHAR2(50 CHAR)   NOT NULL,
+    normal_location    VARCHAR2(255 CHAR)  NOT NULL,
+    normal_task        VARCHAR2(255 CHAR)  NOT NULL,
+    hedge_location     VARCHAR2(255 CHAR)  NOT NULL,
+    hedge_task         VARCHAR2(255 CHAR)  NOT NULL,
+    status             VARCHAR2(30 CHAR)   DEFAULT 'active_field' NOT NULL,
     CONSTRAINT pk_dispatch_teams PRIMARY KEY (id),
     CONSTRAINT chk_team_status CHECK (status IN ('active_field', 'hedged_indoor', 'standby'))
 );
@@ -189,19 +189,19 @@ COMMENT ON COLUMN dispatch_teams.status IS '出勤狀態 (active_field:田間出
 -- 4. 派工訂單表 (ORDERS)
 -- ====================================================================
 CREATE TABLE orders (
-    id                 VARCHAR2(32)   NOT NULL,
-    farmer_id          VARCHAR2(32),
-    farmer_name        VARCHAR2(100)  NOT NULL,
-    phone              VARCHAR2(30)   NOT NULL,
-    farm_location      VARCHAR2(255)  NOT NULL,
-    crop_id            VARCHAR2(32)   NOT NULL,
-    crop_name          VARCHAR2(100)  NOT NULL,
+    id                 VARCHAR2(32 CHAR)   NOT NULL,
+    farmer_id          VARCHAR2(32 CHAR),
+    farmer_name        VARCHAR2(100 CHAR)  NOT NULL,
+    phone              VARCHAR2(30 CHAR),               -- API 允許管理員代建訂單時不填
+    farm_location      VARCHAR2(255 CHAR),
+    crop_id            VARCHAR2(32 CHAR)   NOT NULL,
+    crop_name          VARCHAR2(100 CHAR)  NOT NULL,
     area               NUMBER(6,2)    NOT NULL,
-    plan               VARCHAR2(30)   DEFAULT 'early_bird' NOT NULL,
-    plan_name          VARCHAR2(100)  NOT NULL,
-    dispatch_category  VARCHAR2(50),
-    category_name      VARCHAR2(100),
-    transport_zone     VARCHAR2(50),
+    plan               VARCHAR2(30 CHAR)   DEFAULT 'early_bird' NOT NULL,
+    plan_name          VARCHAR2(100 CHAR)  NOT NULL,
+    dispatch_category  VARCHAR2(50 CHAR),
+    category_name      VARCHAR2(100 CHAR),
+    transport_zone     VARCHAR2(50 CHAR),
     transport_surcharge NUMBER(8)     DEFAULT 0 NOT NULL,
     total_hours        NUMBER(6)      NOT NULL,
     suggested_workers  NUMBER(4)      NOT NULL,
@@ -210,27 +210,27 @@ CREATE TABLE orders (
     final_amount       NUMBER(10)     NOT NULL,
     deposit_amount     NUMBER(10)     DEFAULT 0 NOT NULL,
     deposit_paid       CHAR(1)        DEFAULT 'Y' NOT NULL,
-    status             VARCHAR2(30)   DEFAULT 'confirmed' NOT NULL,
-    assigned_team_id   VARCHAR2(32),
-    foreman_name       VARCHAR2(100),
-    foreman_phone      VARCHAR2(30),
-    foreman_notes      VARCHAR2(500),
-    crew_worker_ids    VARCHAR2(400),
+    status             VARCHAR2(30 CHAR)   DEFAULT 'confirmed' NOT NULL,
+    assigned_team_id   VARCHAR2(32 CHAR),
+    foreman_name       VARCHAR2(100 CHAR),
+    foreman_phone      VARCHAR2(30 CHAR),
+    foreman_notes      VARCHAR2(500 CHAR),
+    crew_worker_ids    VARCHAR2(400 CHAR),
     requested_workers  NUMBER(4),
-    package_id         VARCHAR2(40),
+    package_id         VARCHAR2(40 CHAR),
     start_date         DATE,
     end_date           DATE,
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
     CONSTRAINT pk_orders PRIMARY KEY (id),
     CONSTRAINT chk_orders_period CHECK ((start_date IS NULL AND end_date IS NULL) OR (start_date IS NOT NULL AND end_date IS NOT NULL AND end_date >= start_date)),
     CONSTRAINT fk_orders_crop FOREIGN KEY (crop_id) REFERENCES crops(id),
-    CONSTRAINT fk_orders_farmer FOREIGN KEY (farmer_id) REFERENCES farmers(id),
     CONSTRAINT fk_orders_team FOREIGN KEY (assigned_team_id) REFERENCES dispatch_teams(id),
     CONSTRAINT chk_orders_deposit_paid CHECK (deposit_paid IN ('Y', 'N'))
 );
 
 COMMENT ON TABLE orders IS '派工訂單表：早鳥工時包預約與出工履約紀錄';
 COMMENT ON COLUMN orders.id IS '訂單流水號 (如 ORD-2026-001)';
+COMMENT ON COLUMN orders.farmer_id IS '下單農場主編號（登入 token 的 ref，對應 users.ref_id）；不設 FK 到 farmers：路演帳號與新註冊農場主不一定有 farmers 資料';
 COMMENT ON COLUMN orders.crew_worker_ids IS '出工名單（工號逗號分隔），由派工媒合設定；有名單時派工前加保檢查與打卡連結以名單為準';
 COMMENT ON COLUMN orders.start_date IS '預定開工日（含當日）；與 end_date 須同時有值或同時為 NULL';
 COMMENT ON COLUMN orders.end_date IS '預定完工日（含當日）；派工媒合依工期排除撞期工人、打卡依工期判斷所屬訂單';
@@ -243,24 +243,24 @@ COMMENT ON COLUMN orders.deposit_paid IS '定金是否已繳納 (Y/N)';
 -- 5. 在籍外展移工表 (WORKERS)
 -- ====================================================================
 CREATE TABLE workers (
-    id                  VARCHAR2(32)  NOT NULL,
-    team_id             VARCHAR2(32)  NOT NULL,
-    name                VARCHAR2(100) NOT NULL,
-    chinese_name        VARCHAR2(50)  NOT NULL,
-    nationality         VARCHAR2(50)  NOT NULL,
+    id                  VARCHAR2(32 CHAR)  NOT NULL,
+    team_id             VARCHAR2(32 CHAR)  NOT NULL,
+    name                VARCHAR2(100 CHAR) NOT NULL,
+    chinese_name        VARCHAR2(50 CHAR)  NOT NULL,
+    nationality         VARCHAR2(50 CHAR)  NOT NULL,
     is_leader           CHAR(1)       DEFAULT 'N' NOT NULL,
-    tier                VARCHAR2(30),
+    tier                VARCHAR2(30 CHAR),
     base_salary         NUMBER(8)     DEFAULT 29500 NOT NULL,
     agri_bonus          NUMBER(8)     DEFAULT 8800 NOT NULL,
     transport_allowance NUMBER(8)     DEFAULT 2400 NOT NULL,
-    arc_number          VARCHAR2(32),
-    passport_number     VARCHAR2(32),
-    permit_expiry       VARCHAR2(20),
-    insurance_status    VARCHAR2(100),
-    current_task        VARCHAR2(255),
-    dispatch_status     VARCHAR2(30),
-    phone               VARCHAR2(30),
-    password_hash       VARCHAR2(255),
+    arc_number          VARCHAR2(32 CHAR),
+    passport_number     VARCHAR2(32 CHAR),
+    permit_expiry       VARCHAR2(20 CHAR),
+    insurance_status    VARCHAR2(100 CHAR),
+    current_task        VARCHAR2(255 CHAR),
+    dispatch_status     VARCHAR2(30 CHAR),
+    phone               VARCHAR2(30 CHAR),
+    password_hash       VARCHAR2(255 CHAR),
     created_at          TIMESTAMP     DEFAULT SYSTIMESTAMP NOT NULL,
     CONSTRAINT pk_workers PRIMARY KEY (id),
     CONSTRAINT fk_workers_team FOREIGN KEY (team_id) REFERENCES dispatch_teams(id),
@@ -278,24 +278,24 @@ COMMENT ON COLUMN workers.transport_allowance IS '高溫與專車交通津貼 (N
 -- 6. GPS 現場數位打卡表 (CLOCK_INS)
 -- ====================================================================
 CREATE TABLE clock_ins (
-    id                 VARCHAR2(64)   NOT NULL,
-    worker_id          VARCHAR2(32)   NOT NULL,
+    id                 NUMBER(19)     GENERATED BY DEFAULT AS IDENTITY,   -- 後端 Attendance.id 為 Long + IDENTITY
+    worker_id          VARCHAR2(32 CHAR)   NOT NULL,
     work_date          DATE,
     latitude           NUMBER(10,6),
     longitude          NUMBER(10,6),
-    location_name      VARCHAR2(255),
-    location           VARCHAR2(200),
+    location_name      VARCHAR2(255 CHAR),
+    location           VARCHAR2(200 CHAR),
     gps_accuracy_meters NUMBER(8,2),
     clock_in_time      TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
     clock_out_time     TIMESTAMP,
-    status             VARCHAR2(20)   DEFAULT 'success' NOT NULL,
+    status             VARCHAR2(20 CHAR)   DEFAULT 'success' NOT NULL,
     actual_hours       NUMBER(6,2),
     normal_hours       NUMBER(6,2),
     overtime_hours     NUMBER(6,2),
-    foreman_signature  VARCHAR2(50),
-    order_id           VARCHAR2(40),
-    foreman_rating     VARCHAR2(20),
-    foreman_rated_by   VARCHAR2(32),
+    foreman_signature  VARCHAR2(50 CHAR),
+    order_id           VARCHAR2(40 CHAR),
+    foreman_rating     VARCHAR2(20 CHAR),
+    foreman_rated_by   VARCHAR2(32 CHAR),
     foreman_rated_at   TIMESTAMP,
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP,
     CONSTRAINT chk_clock_ins_rating CHECK (foreman_rating IS NULL OR foreman_rating IN ('excellent', 'ok', 'needs_improvement')),
@@ -306,7 +306,7 @@ CREATE TABLE clock_ins (
 
 CREATE INDEX idx_clock_ins_order ON clock_ins (order_id, work_date);
 
-COMMENT ON TABLE clock_ins IS 'GPS 現場數位打卡紀錄表：專車抵達田區或冷鏈場打卡';
+COMMENT ON TABLE clock_ins IS 'GPS 現場數位打卡紀錄表：工人抵達田區或冷鏈場打卡';
 COMMENT ON COLUMN clock_ins.order_id IS '本次出勤所屬訂單（合法用工證明依此彙整）；舊資料或無法判定時為 NULL';
 COMMENT ON COLUMN clock_ins.foreman_rating IS '領班逐人評核：excellent 優 / ok 可 / needs_improvement 需加強；NULL 為未評核';
 COMMENT ON COLUMN clock_ins.foreman_rated_by IS '評核者工號（同工班領班）或管理員編號';
@@ -315,12 +315,12 @@ COMMENT ON COLUMN clock_ins.foreman_rated_by IS '評核者工號（同工班領�
 -- 7. 自願登錄人才庫表 (TALENTS)
 -- ====================================================================
 CREATE TABLE talents (
-    id                 VARCHAR2(32)   NOT NULL,
-    name               VARCHAR2(100)  NOT NULL,
-    category           VARCHAR2(50)   NOT NULL,
-    category_name      VARCHAR2(100)  NOT NULL,
-    phone              VARCHAR2(30)   NOT NULL,
-    experience         VARCHAR2(1000) NOT NULL,
+    id                 VARCHAR2(32 CHAR)   NOT NULL,
+    name               VARCHAR2(100 CHAR)  NOT NULL,
+    category           VARCHAR2(50 CHAR)   NOT NULL,
+    category_name      VARCHAR2(100 CHAR)  NOT NULL,
+    phone              VARCHAR2(30 CHAR)   NOT NULL,
+    experience         VARCHAR2(1000 CHAR) NOT NULL,
     pdpa_consent       CHAR(1)        DEFAULT 'Y' NOT NULL,
     registered_at      TIMESTAMP      DEFAULT SYSTIMESTAMP,
     CONSTRAINT pk_talents PRIMARY KEY (id),
@@ -333,13 +333,13 @@ COMMENT ON TABLE talents IS '自願登錄人才庫表：合規個資法第19條�
 -- 8. 天候避險狀態表 (WEATHER_STATES)
 -- ====================================================================
 CREATE TABLE weather_states (
-    id                 VARCHAR2(32)   NOT NULL,
-    scenario_id        VARCHAR2(32)   DEFAULT 'cloudy' NOT NULL,
-    scenario_name      VARCHAR2(64)   DEFAULT '舒適多雲時晴' NOT NULL,
+    id                 VARCHAR2(32 CHAR)   NOT NULL,
+    scenario_id        VARCHAR2(32 CHAR)   DEFAULT 'cloudy' NOT NULL,
+    scenario_name      VARCHAR2(64 CHAR)   DEFAULT '舒適多雲時晴' NOT NULL,
     is_rain_mode       CHAR(1)        DEFAULT 'N' NOT NULL,
-    current_weather    VARCHAR2(100)  NOT NULL,
-    alert_level        VARCHAR2(50)   DEFAULT 'normal' NOT NULL,
-    message            VARCHAR2(500)  NOT NULL,
+    current_weather    VARCHAR2(100 CHAR)  NOT NULL,
+    alert_level        VARCHAR2(50 CHAR)   DEFAULT 'normal' NOT NULL,
+    message            VARCHAR2(500 CHAR)  NOT NULL,
     secured_revenue    NUMBER(10)     DEFAULT 62500 NOT NULL,
     daily_capacity_hrs NUMBER(6)      DEFAULT 160 NOT NULL,
     regional_json      CLOB,
@@ -354,8 +354,8 @@ COMMENT ON TABLE weather_states IS '天候避險狀態表：微氣候大腦狀�
 -- 9. 雙軌利潤分流帳本 (FINANCIAL_LEDGER)
 -- ====================================================================
 CREATE TABLE financial_ledger (
-    id                 VARCHAR2(32)   NOT NULL,
-    order_id           VARCHAR2(32)   NOT NULL,
+    id                 VARCHAR2(32 CHAR)   NOT NULL,
+    order_id           VARCHAR2(32 CHAR)   NOT NULL,
     total_gmv          NUMBER(12)     NOT NULL,
     tech_take_rate     NUMBER(12)     NOT NULL,
     coop_pass_through  NUMBER(12)     NOT NULL,
@@ -373,14 +373,14 @@ COMMENT ON TABLE financial_ledger IS '雙軌利潤分流帳本：科技公司16%
 --     規格：07_系統分析及文件/05_LINE官方帳號拆分規格.md 6.5（實體 LineUser.java）
 -- ====================================================================
 CREATE TABLE line_users (
-    id                 VARCHAR2(32)   NOT NULL,
-    channel            VARCHAR2(10)   NOT NULL,
-    line_user_id       VARCHAR2(64)   NOT NULL,
-    username           VARCHAR2(32),
-    ref_id             VARCHAR2(32),
-    display_name       VARCHAR2(100),
-    role               VARCHAR2(32),
-    lang               VARCHAR2(10)   DEFAULT 'zh' NOT NULL,
+    id                 VARCHAR2(32 CHAR)   NOT NULL,
+    channel            VARCHAR2(10 CHAR)   NOT NULL,
+    line_user_id       VARCHAR2(64 CHAR)   NOT NULL,
+    username           VARCHAR2(32 CHAR),
+    ref_id             VARCHAR2(32 CHAR),
+    display_name       VARCHAR2(100 CHAR),
+    role               VARCHAR2(32 CHAR),
+    lang               VARCHAR2(10 CHAR)   DEFAULT 'zh' NOT NULL,
     lang_locked        CHAR(1)        DEFAULT 'N' NOT NULL,
     is_bound           CHAR(1)        DEFAULT 'N' NOT NULL,
     bound_at           TIMESTAMP,
@@ -414,12 +414,12 @@ COMMENT ON TABLE line_users IS 'LINE 官方帳號使用者：農場主／工作�
 -- 11. LINE 推播歷程表 (LINE_MESSAGES)
 -- ====================================================================
 CREATE TABLE line_messages (
-    id                 VARCHAR2(64)   NOT NULL,
-    line_user_id       VARCHAR2(64),
-    sender             VARCHAR2(64)   DEFAULT 'SYSTEM_BROADCAST' NOT NULL,
-    target_role        VARCHAR2(32)   DEFAULT 'all' NOT NULL,
-    message_type       VARCHAR2(32)   NOT NULL,
-    content            VARCHAR2(2000) NOT NULL,
+    id                 VARCHAR2(64 CHAR)   NOT NULL,
+    line_user_id       VARCHAR2(64 CHAR),
+    sender             VARCHAR2(64 CHAR)   DEFAULT 'SYSTEM_BROADCAST' NOT NULL,
+    target_role        VARCHAR2(32 CHAR)   DEFAULT 'all' NOT NULL,
+    message_type       VARCHAR2(32 CHAR)   NOT NULL,
+    content            VARCHAR2(2000 CHAR) NOT NULL,
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
     CONSTRAINT pk_line_messages PRIMARY KEY (id)
 );
@@ -430,16 +430,16 @@ COMMENT ON TABLE line_messages IS 'LINE 訊息與推播歷程表：記錄 Flex M
 -- 12. 產品文宣 DM 範本表 (BROCHURES)
 -- ====================================================================
 CREATE TABLE brochures (
-    id                 VARCHAR2(64)   NOT NULL,
-    title              VARCHAR2(200)  NOT NULL,
-    subtitle           VARCHAR2(200),
-    category           VARCHAR2(50),
-    crop               VARCHAR2(100),
-    region             VARCHAR2(100),
-    target_audience    VARCHAR2(200),
-    badge              VARCHAR2(100),
-    icon               VARCHAR2(50),
-    theme_color        VARCHAR2(30),
+    id                 VARCHAR2(64 CHAR)   NOT NULL,
+    title              VARCHAR2(200 CHAR)  NOT NULL,
+    subtitle           VARCHAR2(200 CHAR),
+    category           VARCHAR2(50 CHAR),
+    crop               VARCHAR2(100 CHAR),
+    region             VARCHAR2(100 CHAR),
+    target_audience    VARCHAR2(200 CHAR),
+    badge              VARCHAR2(100 CHAR),
+    icon               VARCHAR2(50 CHAR),
+    theme_color        VARCHAR2(30 CHAR),
     cover_image        CLOB,
     original_price     NUMBER(10)     DEFAULT 0 NOT NULL,
     discount_price     NUMBER(10)     DEFAULT 0 NOT NULL,
@@ -451,13 +451,13 @@ CREATE TABLE brochures (
     description        CLOB,
     features_json      CLOB,
     comparison_json    CLOB,
-    testimonial_name   VARCHAR2(100),
-    testimonial_title  VARCHAR2(200),
+    testimonial_name   VARCHAR2(100 CHAR),
+    testimonial_title  VARCHAR2(200 CHAR),
     testimonial_quote  CLOB,
-    phone              VARCHAR2(30),
-    service_office     VARCHAR2(200),
-    status             VARCHAR2(20)   DEFAULT 'active' NOT NULL,
-    created_at         VARCHAR2(30),
+    phone              VARCHAR2(30 CHAR),
+    service_office     VARCHAR2(200 CHAR),
+    status             VARCHAR2(20 CHAR)   DEFAULT 'active' NOT NULL,
+    created_at         VARCHAR2(30 CHAR),
     CONSTRAINT pk_brochures PRIMARY KEY (id),
     CONSTRAINT chk_brochure_status CHECK (status IN ('active', 'draft'))
 );
@@ -471,16 +471,16 @@ COMMENT ON COLUMN brochures.deposit_rate IS '定金比例 (% 整數，預設 20)
 -- 13. 金流交易紀錄表 (PAYMENT_TRANSACTIONS)
 -- ====================================================================
 CREATE TABLE payment_transactions (
-    id                 VARCHAR2(20)   NOT NULL,
-    order_id           VARCHAR2(40)   NOT NULL,
+    id                 VARCHAR2(20 CHAR)   NOT NULL,
+    order_id           VARCHAR2(40 CHAR)   NOT NULL,
     amount             NUMBER(10)     NOT NULL,
-    provider           VARCHAR2(16)   NOT NULL,
-    payment_method     VARCHAR2(32),
-    status             VARCHAR2(16)   NOT NULL,
-    payer_name         VARCHAR2(100),
-    gateway_trade_no   VARCHAR2(40),
-    auth_code          VARCHAR2(20),
-    invoice_no         VARCHAR2(20),
+    provider           VARCHAR2(16 CHAR)   NOT NULL,
+    payment_method     VARCHAR2(32 CHAR),
+    status             VARCHAR2(16 CHAR)   NOT NULL,
+    payer_name         VARCHAR2(100 CHAR),
+    gateway_trade_no   VARCHAR2(40 CHAR),
+    auth_code          VARCHAR2(20 CHAR),
+    invoice_no         VARCHAR2(20 CHAR),
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP,
     paid_at            TIMESTAMP,
     CONSTRAINT pk_payment_transactions PRIMARY KEY (id),
@@ -500,12 +500,12 @@ COMMENT ON COLUMN payment_transactions.invoice_no IS '電子發票號碼';
 -- 14. 系統帳號表 (USERS)
 -- ====================================================================
 CREATE TABLE users (
-    username           VARCHAR2(64)   NOT NULL,
-    password           VARCHAR2(255),
-    name               VARCHAR2(100)  NOT NULL,
-    role               VARCHAR2(32)   NOT NULL,
-    ref_id             VARCHAR2(64),
-    role_desc          VARCHAR2(200),
+    username           VARCHAR2(64 CHAR)   NOT NULL,
+    password           VARCHAR2(255 CHAR),
+    name               VARCHAR2(100 CHAR)  NOT NULL,
+    role               VARCHAR2(32 CHAR)   NOT NULL,
+    ref_id             VARCHAR2(64 CHAR),
+    role_desc          VARCHAR2(200 CHAR),
     CONSTRAINT pk_users PRIMARY KEY (username),
     CONSTRAINT chk_user_role CHECK (role IN ('admin_tech', 'farmer', 'worker_foreign', 'worker_local'))
 );
@@ -519,13 +519,13 @@ COMMENT ON COLUMN users.ref_id IS '關聯業務實體 ID（如農工 W001、農�
 -- 15. 工班評價表 (TEAM_RATINGS)
 -- ====================================================================
 CREATE TABLE team_ratings (
-    id                 VARCHAR2(50)   NOT NULL,
-    order_id           VARCHAR2(40)   NOT NULL,
-    team_id            VARCHAR2(32)   NOT NULL,
-    farmer_id          VARCHAR2(40),
+    id                 VARCHAR2(50 CHAR)   NOT NULL,
+    order_id           VARCHAR2(40 CHAR)   NOT NULL,
+    team_id            VARCHAR2(32 CHAR)   NOT NULL,
+    farmer_id          VARCHAR2(40 CHAR),
     score              NUMBER(1)      NOT NULL,
-    tags               VARCHAR2(200),
-    rating_comment     VARCHAR2(300),
+    tags               VARCHAR2(200 CHAR),
+    rating_comment     VARCHAR2(300 CHAR),
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP,
     updated_at         TIMESTAMP,
     CONSTRAINT pk_team_ratings PRIMARY KEY (id),
@@ -540,13 +540,13 @@ CREATE TABLE team_ratings (
 -- 失聯移工／借用移工（borrowed、runaway）不登錄個資：nickname 為 NULL
 -- ====================================================================
 CREATE TABLE legalize_workers (
-    id                 VARCHAR2(32)   NOT NULL,
-    farmer_id          VARCHAR2(40)   NOT NULL,
-    worker_type        VARCHAR2(16)   NOT NULL,
-    nickname           VARCHAR2(60),
-    job                VARCHAR2(60),
+    id                 VARCHAR2(32 CHAR)   NOT NULL,
+    farmer_id          VARCHAR2(40 CHAR)   NOT NULL,
+    worker_type        VARCHAR2(16 CHAR)   NOT NULL,
+    nickname           VARCHAR2(60 CHAR),
+    job                VARCHAR2(60 CHAR),
     days_per_week      NUMBER(1)      NOT NULL,
-    steps_done         VARCHAR2(40)   NOT NULL,
+    steps_done         VARCHAR2(40 CHAR)   NOT NULL,
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP,
     updated_at         TIMESTAMP,
     CONSTRAINT pk_legalize_workers PRIMARY KEY (id),
@@ -567,14 +567,14 @@ COMMENT ON COLUMN team_ratings.tags IS '評價標籤，逗號分隔：準時到�
 -- 16. 加退保紀錄表 (INSURANCE_RECORDS)
 -- ====================================================================
 CREATE TABLE insurance_records (
-    id                 VARCHAR2(60)   NOT NULL,
-    worker_id          VARCHAR2(32)   NOT NULL,
-    insurance_type     VARCHAR2(16)   NOT NULL,
+    id                 VARCHAR2(60 CHAR)   NOT NULL,
+    worker_id          VARCHAR2(32 CHAR)   NOT NULL,
+    insurance_type     VARCHAR2(16 CHAR)   NOT NULL,
     insured_salary     NUMBER(8)      NOT NULL,
     enroll_date        DATE           NOT NULL,
     withdraw_date      DATE,
-    withdraw_reason    VARCHAR2(100),
-    filing_ref         VARCHAR2(40),
+    withdraw_reason    VARCHAR2(100 CHAR),
+    filing_ref         VARCHAR2(40 CHAR),
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP,
     updated_at         TIMESTAMP,
     CONSTRAINT pk_insurance_records PRIMARY KEY (id),
@@ -598,11 +598,11 @@ COMMENT ON COLUMN insurance_records.filing_ref IS '勞保局／健保署申報�
 -- ====================================================================
 CREATE TABLE skill_reviews (
     id                 NUMBER(19)     GENERATED BY DEFAULT AS IDENTITY,
-    worker_id          VARCHAR2(32)   NOT NULL,
-    skill_key          VARCHAR2(16)   NOT NULL,
+    worker_id          VARCHAR2(32 CHAR)   NOT NULL,
+    skill_key          VARCHAR2(16 CHAR)   NOT NULL,
     cleared_at         TIMESTAMP      NOT NULL,
-    cleared_by         VARCHAR2(32),
-    note               VARCHAR2(200),
+    cleared_by         VARCHAR2(32 CHAR),
+    note               VARCHAR2(200 CHAR),
     CONSTRAINT pk_skill_reviews PRIMARY KEY (id),
     CONSTRAINT fk_skill_review_worker FOREIGN KEY (worker_id) REFERENCES workers(id),
     CONSTRAINT chk_skill_key CHECK (skill_key IN ('harvest', 'pruning', 'tillage', 'packing'))

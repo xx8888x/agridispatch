@@ -66,6 +66,34 @@ D:\派遣專案網站(農事及其它)\Software\database\
 > - 若要改用 02 的完整種子（26 位農工、12 筆訂單），請只執行 01 的建表部分，再先執行 `ALTER SESSION SET NLS_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH24:MI:SS';`，最後執行 02。
 > - 以上流程已於 2026-10-01 在本機 Oracle 26ai Free（FREEPDB1，臨時 schema）實測，兩種流程皆 0 錯誤（同日加入評價、加保紀錄、打卡訂單與領班評核欄位、熟手複核表後再次實測通過；本機 AGRIDISPATCH 已用「01 建表＋02 完整種子」重建）。
 > - `skill_reviews` 使用 identity 欄位，需 Oracle 12c 以上。
+> - 2026-10-08 起 `clock_ins.id` 也是 identity；文字欄位一律為字元語意 `VARCHAR2(n CHAR)`。**既有的 AGRIDISPATCH schema 是舊結構**，要給後端連線前須以新腳本重建（會清除資料，請先備份）。
+
+---
+
+## 參之一、 後端連線 Oracle 與實測（2026-10-08）
+
+後端以 `oracle` profile 連線（`Software/backend/src/main/resources/application-oracle.yml`，`ddl-auto: none`，不會自動改 schema），連線資訊由環境變數提供：
+
+```powershell
+$env:AGRI_DB_URL = "jdbc:oracle:thin:@//localhost:1521/FREEPDB1"
+$env:AGRI_DB_USERNAME = "AGRIDISPATCH"
+$env:AGRI_DB_PASSWORD = "<密碼>"
+cd Software\backend
+.\maven\apache-maven-3.9.6\bin\mvn.cmd -o spring-boot:run "-Dspring-boot.run.profiles=oracle"
+```
+
+正式模式另需 `AGRI_TOKEN_SECRET`、`AGRI_ADMIN_PASSWORD`（見 `文件/07_系統分析及文件/03_認證與API安全規格.md`）。
+
+**整合測試**：`src/test/java/com/agridispatch/OracleIntegrationTest.java` 只在設定 `AGRI_DB_URL` 時執行（平常的 `mvn test` 會略過），會寫入並重灌資料，**只能對臨時 schema 執行**。做法：
+
+1. 以 `sqlplus / as sysdba` 進 `FREEPDB1`，建立臨時使用者（例如 `AGRI_ORA_TEST`，給 `create session, create table, create sequence, create view, create trigger, create procedure` 與 `quota unlimited on users`）。
+2. 以該使用者執行 `01_agridispatch_oracle_schema.sql`（sqlplus 無法開啟含中文的路徑，先複製到英文路徑）。
+3. 設定上面三個環境變數指向臨時使用者，執行 `mvn.cmd -o test "-Dtest=OracleIntegrationTest"`。
+4. 測完 `drop user AGRI_ORA_TEST cascade`。
+
+**本機注意**：TNS Listener 服務（`OracleOraDB23Home1TNSListener`）預設停止，啟動服務需系統管理員權限。2026-10-08 實測時改以一般程序執行 `tnslsnr.exe LISTENER`，但非服務身分的 listener 無法把連線交給資料庫（ORA-12518），需暫時開啟共用伺服器（`alter system set shared_servers=2 scope=memory; alter system set dispatchers='(PROTOCOL=TCP)(DISPATCHERS=1)' scope=memory;`，重啟後還原），連線字串加 `(SERVER=SHARED)`：`jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=FREEPDB1)(SERVER=SHARED)))`。正式主機請以服務方式啟動 listener。
+
+實測結果（臨時 schema）：建表腳本 0 錯誤；「01 建表＋02 完整種子」0 錯誤；`OracleIntegrationTest` 6/6 通過（兩種種子狀態皆是），涵蓋啟動補種子、中文長字串、Y/N 旗標、TIMESTAMP 往返、綠界付款、打卡 identity、人才報名、天候 CLOB、60KB 封面圖 CLOB、評價、加保、技能複核、派工媒合、黑轉白清冊、依外鍵順序重灌。
 
 ---
 

@@ -1,0 +1,18 @@
+# Oracle 正式資料庫：--spring.profiles.active=oracle（可與 demo 併用：oracle,demo）
+# 建表與初始資料請先以 Software/database/01_agridispatch_oracle_schema.sql 建立（見 README_ORACLE_SETUP.md），
+# 後端不自動改 schema（ddl-auto: none）。連線資訊一律由環境變數提供，勿寫入版本庫。
+#   AGRI_DB_URL       例：jdbc:oracle:thin:@//db-host:1521/FREEPDB1
+#   AGRI_DB_USERNAME  例：AGRIDISPATCH
+#   AGRI_DB_PASSWORD
+spring:
+  datasource:
+    url: ${AGRI_DB_URL}
+    driverClassName: oracle.jdbc.OracleDriver
+    username: ${AGRI_DB_USERNAME}
+    password: ${AGRI_DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: none
+  h2:
+    console:
+      enabled: false

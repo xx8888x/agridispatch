@@ -6,6 +6,9 @@
  */
 window.AGRI_CONFIG = {
   mode: 'production',
+  // 功能開關：false 時隱藏該功能的所有入口（暫時下架）；改回 true 即恢復
+  // legalize：工班合法化（黑轉白）轉換中心、後台彙總、LINE 黑轉白卡片
+  features: { legalize: false },
   apiBase: window.location.origin.startsWith('http')
     ? `${window.location.origin}/api`
     : 'http://localhost:3000/api',

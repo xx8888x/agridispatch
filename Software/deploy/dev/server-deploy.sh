@@ -47,6 +47,24 @@ for _ in $(seq 1 60); do
 done
 curl -fs -o /dev/null http://127.0.0.1:3000/api/crops && echo "  後端已啟動" || { echo "  後端未啟動，最後 40 行 log："; journalctl -u agridispatch --no-pager -n 40; exit 1; }
 
+echo "[deploy] LINE Bot"
+BOT_DIR=/opt/agri-linebot
+if [ -f $UP/linebot.tar.gz ]; then
+  mkdir -p $BOT_DIR
+  # 保留各環境自己的圖文選單 ID（richmenu_ids.properties，由 RichMenuUploader 產生）
+  [ -f $BOT_DIR/rich_menu/richmenu_ids.properties ] && cp $BOT_DIR/rich_menu/richmenu_ids.properties $UP/richmenu_ids.keep
+  rm -rf $BOT_DIR/bin $BOT_DIR/i18n $BOT_DIR/flex_templates $BOT_DIR/rich_menu
+  tar -xzf $UP/linebot.tar.gz -C $BOT_DIR
+  [ -f $UP/richmenu_ids.keep ] && mv $UP/richmenu_ids.keep $BOT_DIR/rich_menu/richmenu_ids.properties
+  chown -R agri:agri $BOT_DIR; chmod -R u=rwX,go=rX $BOT_DIR
+  systemctl restart agri-linebot.service
+  for _ in $(seq 1 30); do curl -fs -o /dev/null http://127.0.0.1:5000/health && break; sleep 2; done
+  curl -fs -o /dev/null http://127.0.0.1:5000/health && echo "  LINE Bot 已啟動" || { echo "  LINE Bot 未啟動："; journalctl -u agri-linebot --no-pager -n 30; exit 1; }
+  rm -f $UP/linebot.tar.gz
+else
+  echo "  未上傳 LINE Bot，略過"
+fi
+
 echo "[deploy] 4/4 帳號（選用）"
 if [ -f $UP/accounts.sql ]; then
   sleep 5   # 等啟動時的種子寫完（管理員帳號）

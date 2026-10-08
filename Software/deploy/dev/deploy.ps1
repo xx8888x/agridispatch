@@ -50,10 +50,23 @@ foreach ($f in "server-setup.sh", "server-deploy.sh", "enable-https.sh") {
 }
 if ($Accounts) { Copy-Item $Accounts (Join-Path $stage "accounts.sql") -Force }
 
+Write-Host "[deploy] 2b 編譯 LINE Bot（--release 17：主機是 Java 17）"
+$bot = Join-Path $software "Line Bot"
+$botStage = Join-Path $stage "linebot"
+if (Test-Path $botStage) { Remove-Item $botStage -Recurse -Force }
+New-Item -ItemType Directory -Force (Join-Path $botStage "bin") | Out-Null
+$srcs = Get-ChildItem (Join-Path $bot "src\com\agridispatch\linebot\*.java") | ForEach-Object { $_.FullName }
+& javac --release 17 -encoding UTF-8 -nowarn -d (Join-Path $botStage "bin") $srcs 2>$null
+Check "編譯 LINE Bot"
+foreach ($d in "i18n", "flex_templates", "rich_menu") { Copy-Item (Join-Path $bot $d) $botStage -Recurse -Force }
+Get-ChildItem (Join-Path $botStage "rich_menu") -Filter "richmenu_ids.properties" -ErrorAction SilentlyContinue | Remove-Item -Force
+tar -czf (Join-Path $stage "linebot.tar.gz") -C $botStage bin i18n flex_templates rich_menu
+Check "打包 LINE Bot"
+
 Write-Host "[deploy] 3/4 上傳"
 & ssh @sshOpts $target "mkdir -p /tmp/agri-deploy"
 Check "SSH 連線"
-$files = @("app.jar", "web.tar.gz", "schema-ddl.sql", "server-setup.sh", "server-deploy.sh", "enable-https.sh")
+$files = @("app.jar", "web.tar.gz", "linebot.tar.gz", "schema-ddl.sql", "server-setup.sh", "server-deploy.sh", "enable-https.sh")
 if ($Accounts) { $files += "accounts.sql" }
 & scp @sshOpts ($files | ForEach-Object { Join-Path $stage $_ }) "${target}:/tmp/agri-deploy/"
 if ($LASTEXITCODE -ne 0) { throw "上傳失敗" }

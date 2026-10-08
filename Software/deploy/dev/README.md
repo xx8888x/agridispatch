@@ -37,7 +37,8 @@ sudo bash /tmp/agri-deploy/enable-https.sh dev.<IP 以 - 連接>.sslip.io
 - App：`gradlew assembleClientRelease assembleServerRelease -PagriApiBase=https://<DEV 網域>/api`（版本號會 +1，記得提交 `version.properties`）。
 - Log：`sudo journalctl -u agridispatch -f`（journald，上限 500MB）；服務：`sudo systemctl status agridispatch`；資料庫：`sudo podman logs agri-oracle`。
 - 備份（DEV 簡易版）：`sudo podman exec agri-oracle ...` 匯出，或對開機磁碟建立 Oracle Cloud 備份。
-- 尚未部署 LINE Bot（DEV 先用網頁的 LINE 體驗頁；要部署時加 `/callback/` 轉送與服務）。
+- LINE Bot：服務 `agri-linebot`（只聽本機 5000），Nginx 以 `/callback/`（官方帳號 webhook）與 `/linebot-api/`（網頁 LINE 體驗頁）轉送；設定在 `/etc/agridispatch/linebot-dev.env`。兩個官方帳號金鑰未設定＝模擬模式；申請帳號後把金鑰加進該檔並 `sudo systemctl restart agri-linebot`，webhook 設為 `https://<DEV 網域>/callback/farmer`、`/callback/worker`。
+- ⚠️ 模擬模式下 webhook 不驗簽章、`/linebot-api/mock/*` 對外可用（DEV 測試用）；設定正式金鑰後模擬模式即關閉。
 
 ## 四、目前的 DEV 環境（2026-10-08 部署）
 
@@ -47,5 +48,6 @@ sudo bash /tmp/agri-deploy/enable-https.sh dev.<IP 以 - 連接>.sslip.io
 | 主機 | Oracle Cloud 大阪 `instance-20261008-1438`，Oracle Linux 9.8 **x86_64**（2 vCPU／11 GB；非 Always Free 的 Ampere，請留意計費） |
 | 資料庫 | Oracle 23ai Free（lite 映像檔）容器 `agri-oracle`，固定 IP 10.88.0.50，資料磁碟區 `agri-oradata` |
 | 帳號 | 11 個帳號已匯入（帳密清單在本機 `Software/database/local/`，勿外流）；`admin_tech` 密碼在主機 env 檔 |
-| App | 1.0.11 正式簽章，`-PagriApiBase=https://dev.141-147-147-14.sslip.io/api` |
+| App | 1.0.11 正式簽章，`-PagriApiBase=https://dev.141-147-147-14.sslip.io/api`（App 內 LINE 體驗頁連 DEV LINE Bot 需 1.0.12 以後） |
+| LINE Bot | 模擬模式，`https://dev.141-147-147-14.sslip.io/linebot-api/health`；與後端共用內部金鑰已連通（backendLinked） |
 | 已知狀況 | 部分網路（例如家用路由器 DNS）查不到 sslip.io 網域；連不上時把電腦／手機 DNS 改為 8.8.8.8，或日後改用自有網域 |

@@ -4,7 +4,7 @@
 # 用法：sudo bash server-setup.sh <DEV 網域，例如 dev.1-2-3-4.sslip.io>
 # 可重複執行（已完成的步驟會略過）。完成後以 server-deploy.sh 部署程式，再以 enable-https.sh 申請憑證。
 #
-# 安裝：Java 17、Nginx、Podman、Oracle Database 23ai Free（容器，固定內部 IP 10.88.0.50，不對外）
+# 安裝：Java 17、Nginx、Podman、Oracle Database 23ai Free（容器，固定內部 IP 10.88.0.50，不對外）、LINE Bot 服務
 # 產生：/etc/agridispatch/agri-dev.env（後端環境變數與隨機密碼，僅 root／agri 可讀，不離開主機）
 # =============================================================================
 set -euo pipefail
@@ -14,6 +14,8 @@ APP_DIR=/opt/agridispatch
 ETC_DIR=/etc/agridispatch
 ENV_FILE=$ETC_DIR/agri-dev.env
 ORA_ENV=$ETC_DIR/oracle.env
+BOT_DIR=/opt/agri-linebot
+BOT_ENV=$ETC_DIR/linebot-dev.env
 ORA_IMAGE=container-registry.oracle.com/database/free:latest-lite
 ORA_NAME=agri-oracle
 # 資料庫容器固定內部 IP（podman 預設網路 10.88.0.0/16），後端直接連此位址。
@@ -129,7 +131,7 @@ end;
 exit
 EOF
 
-log "7/7 systemd 服務與 Nginx（HTTP；憑證由 enable-https.sh 申請）"
+log "7/7 systemd 服務（後端、LINE Bot）與 Nginx（HTTP；憑證由 enable-https.sh 申請）"
 cat > /etc/systemd/system/agridispatch.service <<EOF
 [Unit]
 Description=AgriDispatch backend (DEV)
@@ -154,22 +156,104 @@ EOF
 systemctl daemon-reload
 systemctl enable agridispatch.service >/dev/null
 
-cat > /etc/nginx/conf.d/agridispatch.conf <<EOF
+# ---- LINE Bot（只聽本機 5000，經 Nginx 的 /callback/、/linebot-api/ 對外）----
+mkdir -p $BOT_DIR && chown agri:agri $BOT_DIR
+# 後端與 LINE Bot 互相呼叫內部端點的共用金鑰（規格 05 第 6.3 節）；後端須知道 LINE Bot 位址
+grep -q '^AGRI_LINEBOT_INTERNAL_KEY=' "$ENV_FILE" || echo "AGRI_LINEBOT_INTERNAL_KEY=$(rand 40)" >> "$ENV_FILE"
+grep -q '^AGRI_LINEBOT_BASE_URL=' "$ENV_FILE" || echo "AGRI_LINEBOT_BASE_URL=http://127.0.0.1:5000" >> "$ENV_FILE"
+INTERNAL_KEY=$(grep '^AGRI_LINEBOT_INTERNAL_KEY=' "$ENV_FILE" | cut -d= -f2-)
+if [ ! -f "$BOT_ENV" ]; then
+  umask 077
+  cat > "$BOT_ENV" <<EOF
+# 智農派工 DEV LINE Bot 環境變數（由 server-setup.sh 產生）
+PORT=5000
+BACKEND_API_BASE=http://127.0.0.1:3000/api
+# Flex 卡片按鈕連到的網站
+WEB_BASE_URL=https://$DOMAIN/web
+CORS_ALLOWED_ORIGINS=https://$DOMAIN
+AGRI_LINEBOT_INTERNAL_KEY=$INTERNAL_KEY
+# 工班合法化（黑轉白）暫時下架
+FEATURE_LEGALIZE=false
+# 兩個官方帳號的金鑰未設定＝模擬模式（網頁 LINE 體驗頁可測）；申請帳號後加入：
+# LINE_FARMER_CHANNEL_SECRET=  LINE_FARMER_CHANNEL_ACCESS_TOKEN=  LINE_WORKER_CHANNEL_SECRET=  LINE_WORKER_CHANNEL_ACCESS_TOKEN=
+EOF
+fi
+chown root:agri "$BOT_ENV"; chmod 640 "$BOT_ENV"; chown root:agri "$ENV_FILE"; chmod 640 "$ENV_FILE"
+
+cat > /etc/systemd/system/agri-linebot.service <<EOF
+[Unit]
+Description=AgriDispatch LINE Bot (DEV)
+After=network-online.target agridispatch.service
+Wants=network-online.target
+
+[Service]
+User=agri
+WorkingDirectory=$BOT_DIR
+EnvironmentFile=$BOT_ENV
+ExecStart=/usr/bin/java -Xms64m -Xmx256m -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -cp $BOT_DIR/bin com.agridispatch.linebot.LineBotServer
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=agri-linebot
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl daemon-reload
+systemctl enable agri-linebot.service >/dev/null
+
+# ---- Nginx ----
+# 轉送規則放獨立檔案（每次重產）；主設定檔只 include 它，certbot 加的 HTTPS 設定不會被覆蓋
+cat > /etc/nginx/agridispatch-locations.conf <<EOF
+client_max_body_size 10m;          # 文宣 DM 封面圖（base64）
+location = / { return 302 /web/; }
+# LINE 官方帳號 webhook：/callback/farmer、/callback/worker
+location /callback/ {
+    proxy_pass http://127.0.0.1:5000;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+}
+# 網頁 LINE 體驗頁呼叫 LINE Bot（/linebot-api/mock/chat、/health、/rich_menu/…），去掉前綴後轉送
+location /linebot-api/ {
+    proxy_pass http://127.0.0.1:5000/;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+}
+location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+    proxy_read_timeout 60s;
+}
+EOF
+NGX=/etc/nginx/conf.d/agridispatch.conf
+if [ ! -f $NGX ]; then
+  cat > $NGX <<EOF
 server {
     listen 80;
     server_name $DOMAIN;
-    client_max_body_size 10m;          # 文宣 DM 封面圖（base64）
-    location = / { return 302 /web/; }
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_read_timeout 60s;
-    }
+    include /etc/nginx/agridispatch-locations.conf;
 }
 EOF
+elif ! grep -q agridispatch-locations.conf $NGX; then
+  # 舊版把轉送規則直接寫在主設定檔（certbot 已加入 HTTPS）：把那段換成 include，保留 certbot 的設定
+  cp $NGX $NGX.bak.$(date +%Y%m%d%H%M%S)
+  python3 - "$NGX" <<'PY'
+import re, sys
+p = sys.argv[1]
+s = open(p, encoding='utf-8').read()
+s2 = re.sub(r'    client_max_body_size.*?\n    location / \{.*?\n    \}\n',
+            '    include /etc/nginx/agridispatch-locations.conf;\n', s, count=1, flags=re.S)
+if s2 == s:
+    sys.exit('無法轉換舊版 Nginx 設定，請手動處理：' + p)
+open(p, 'w', encoding='utf-8').write(s2)
+PY
+fi
 nginx -t
 systemctl enable --now nginx >/dev/null
 systemctl reload nginx

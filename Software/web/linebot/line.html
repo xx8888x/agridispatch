@@ -394,7 +394,14 @@
       : 'http://localhost:3000/api';
 
     // LINE Bot 獨立服務（Port 5000），集中管理呼叫端點
-    const LINEBOT_BASE = 'http://localhost:5000';
+    // 本機開發與 demo（Mock 攔截 localhost:5000）連本機 LINE Bot；部署環境（如 DEV）經 Nginx 的 /linebot-api 轉送
+    const LINEBOT_BASE = (() => {
+      const cfg = window.AGRI_CONFIG || {};
+      if (cfg.linebotBase) return cfg.linebotBase;
+      const api = String(cfg.apiBase || '');
+      if (cfg.mock || !api || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(api)) return 'http://localhost:5000';
+      return api.replace(/\/api\/?$/, '') + '/linebot-api';
+    })();
 
     // 功能開關（js/app-config.js 的 features）；legalize = 工班黑轉白
     const featureOn = (name) => (window.AgriTheme && window.AgriTheme.feature) ? window.AgriTheme.feature(name) : true;

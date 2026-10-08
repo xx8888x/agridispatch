@@ -33,3 +33,6 @@ Software/android/keystore.properties
 ~$*
 Thumbs.db
 desktop.ini
+
+# DEV 測試帳號清單（含測試密碼，不提交）
+文件/07_系統分析及文件/08_DEV測試帳號清單.*

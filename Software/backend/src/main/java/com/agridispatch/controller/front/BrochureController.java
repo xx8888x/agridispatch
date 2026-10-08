@@ -46,12 +46,8 @@ public class BrochureController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateBrochure(@PathVariable String id, @RequestBody Brochure brochure) {
-        if (brochureService.getBrochureById(id).isEmpty()) {
-            throw com.agridispatch.common.ApiException.notFound("找不到該產品文宣 DM: " + id);
-        }
-        brochure.setId(id);
-        Brochure updated = brochureService.saveBrochure(brochure);
+    public ResponseEntity<?> updateBrochure(@PathVariable String id, @RequestBody Map<String, Object> body) {
+        Brochure updated = brochureService.updateBrochure(id, body);
         return ResponseEntity.ok(Map.of("success", true, "data", updated, "message", "成功更新產品文宣 DM"));
     }
 

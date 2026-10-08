@@ -45,8 +45,8 @@ public class TalentController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateTalent(@PathVariable String id, @RequestBody Talent talent) {
-        Talent updated = talentService.updateTalent(id, talent);
+    public ResponseEntity<?> updateTalent(@PathVariable String id, @RequestBody Map<String, Object> body) {
+        Talent updated = talentService.updateTalent(id, body);
         return ResponseEntity.ok(Map.of("success", true, "data", updated, "message", "成功更新人才資料"));
     }
 

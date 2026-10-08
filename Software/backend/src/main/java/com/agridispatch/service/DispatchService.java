@@ -1,5 +1,7 @@
 package com.agridispatch.service;
 
+import com.agridispatch.common.ApiException;
+import com.agridispatch.common.PartialUpdate;
 import com.agridispatch.entity.DispatchTeam;
 import com.agridispatch.entity.WeatherState;
 import com.agridispatch.repository.DispatchTeamRepository;
@@ -90,21 +92,14 @@ public class DispatchService {
         return teamRepository.save(team);
     }
 
-    public DispatchTeam updateTeam(String id, DispatchTeam updated) {
-        return teamRepository.findById(id).map(existing -> {
-            existing.setName(updated.getName());
-            existing.setWorkerCount(updated.getWorkerCount());
-            existing.setLeader(updated.getLeader());
-            existing.setLeaderPhone(updated.getLeaderPhone());
-            existing.setVehicle(updated.getVehicle());
-            existing.setDriver(updated.getDriver());
-            existing.setNormalLocation(updated.getNormalLocation());
-            existing.setNormalTask(updated.getNormalTask());
-            existing.setHedgeLocation(updated.getHedgeLocation());
-            existing.setHedgeTask(updated.getHedgeTask());
-            existing.setStatus(updated.getStatus());
-            return teamRepository.save(existing);
-        }).orElseThrow(() -> new NoSuchElementException("找不到該工班代號: " + id));
+    /** 部分更新：只改 body 中有帶且非 null 的欄位（id 不可改）；名稱明確傳空字串回 400 */
+    public DispatchTeam updateTeam(String id, Map<String, Object> body) {
+        DispatchTeam existing = teamRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("找不到該工班代號: " + id));
+        PartialUpdate.rejectBlank(body, "name", "工班名稱");
+        PartialUpdate.apply(existing, body, Set.of("id"));
+        if (existing.getWorkerCount() < 0) throw ApiException.badRequest("工班人數不可為負數");
+        return teamRepository.save(existing);
     }
 
     public void deleteTeam(String id) {

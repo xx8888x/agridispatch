@@ -38,8 +38,8 @@ public class CropController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateCrop(@PathVariable String id, @RequestBody Crop crop) {
-        Crop updated = cropService.updateCrop(id, crop);
+    public ResponseEntity<?> updateCrop(@PathVariable String id, @RequestBody Map<String, Object> body) {
+        Crop updated = cropService.updateCrop(id, body);
         return ResponseEntity.ok(Map.of("success", true, "data", updated, "message", "成功更新作物基準"));
     }
 

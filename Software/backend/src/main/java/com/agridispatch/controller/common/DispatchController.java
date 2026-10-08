@@ -84,8 +84,8 @@ public class DispatchController {
     }
 
     @PutMapping("/teams/{id}")
-    public ResponseEntity<?> updateTeam(@PathVariable String id, @RequestBody DispatchTeam team) {
-        DispatchTeam updated = dispatchService.updateTeam(id, team);
+    public ResponseEntity<?> updateTeam(@PathVariable String id, @RequestBody Map<String, Object> body) {
+        DispatchTeam updated = dispatchService.updateTeam(id, body);
         return ResponseEntity.ok(Map.of("success", true, "data", updated, "message", "成功更新工班資訊"));
     }
 

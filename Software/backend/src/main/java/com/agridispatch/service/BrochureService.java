@@ -1,12 +1,16 @@
 package com.agridispatch.service;
 
+import com.agridispatch.common.ApiException;
+import com.agridispatch.common.PartialUpdate;
 import com.agridispatch.entity.Brochure;
 import com.agridispatch.repository.BrochureRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -45,6 +49,15 @@ public class BrochureService {
             brochure.setStatus("active");
         }
         return brochureRepository.save(brochure);
+    }
+
+    /** 部分更新：只改 body 中有帶且非 null 的欄位（id 不可改）；標題明確傳空字串回 400 */
+    public Brochure updateBrochure(String id, Map<String, Object> body) {
+        Brochure existing = brochureRepository.findById(id)
+                .orElseThrow(() -> ApiException.notFound("找不到該產品文宣 DM: " + id));
+        PartialUpdate.rejectBlank(body, "title", "文宣標題");
+        PartialUpdate.apply(existing, body, Set.of("id"));
+        return saveBrochure(existing);
     }
 
     public void deleteBrochure(String id) {

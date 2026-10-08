@@ -4,6 +4,7 @@ import com.agridispatch.entity.Talent;
 import com.agridispatch.repository.TalentRepository;
 import com.agridispatch.common.ApiException;
 import com.agridispatch.common.IdGenerator;
+import com.agridispatch.common.PartialUpdate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,7 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -65,16 +68,18 @@ public class TalentService {
         }
     }
 
-    public Talent updateTalent(String id, Talent updated) {
-        return talentRepository.findById(id).map(existing -> {
-            existing.setName(updated.getName());
-            existing.setCategory(updated.getCategory());
-            existing.setCategoryName(updated.getCategoryName());
-            existing.setPhone(updated.getPhone());
-            existing.setExperience(updated.getExperience());
-            existing.setPdpaConsent(updated.isPdpaConsent());
-            return talentRepository.save(existing);
-        }).orElseThrow(() -> ApiException.notFound("找不到該人才編號: " + id));
+    /** 部分更新：只改 body 中有帶且非 null 的欄位（id、登錄時間不可改）；姓名明確傳空字串回 400 */
+    public Talent updateTalent(String id, Map<String, Object> body) {
+        Talent existing = talentRepository.findById(id)
+                .orElseThrow(() -> ApiException.notFound("找不到該人才編號: " + id));
+        PartialUpdate.rejectBlank(body, "name", "姓名");
+        PartialUpdate.apply(existing, body, Set.of("id", "registeredAt"));
+        if (existing.getName().length() > 100) throw ApiException.badRequest("姓名過長");
+        if (existing.getPhone() != null && existing.getPhone().length() > 30) throw ApiException.badRequest("聯絡電話過長");
+        if (existing.getExperience() != null && existing.getExperience().length() > 255) {
+            throw ApiException.badRequest("經歷描述過長（上限 255 字）");
+        }
+        return talentRepository.save(existing);
     }
 
     public void deleteTalent(String id) {

@@ -16,7 +16,8 @@
 ## 2. Token
 
 - 格式：`base64url(payloadJSON) + "." + base64url(HMAC-SHA256(secret, payloadPart))`
-- payload：`{"sub":"<username>","role":"<role>","ref":"<refId>","demo":false,"exp":<epochSeconds>}`，有效期 12 小時。
+- payload：`{"sub":"<username>","role":"<role>","ref":"<refId>","demo":false,"ver":<tokenVersion>,"exp":<epochSeconds>}`，有效期 12 小時。
+- `ver`＝簽發時帳號（`users` 或 `workers`）的 `token_version`；每次請求與資料庫比對，不同或帳號已不存在即視為無效 token（401），見第 5 節「舊 token 失效」。舊 token 無 `ver` 視為 0。
 - 密鑰：環境變數 `AGRI_TOKEN_SECRET`（或 `agri.security.token-secret`）；未設定時每次啟動隨機產生並在 log 警告（重啟後舊 token 失效）。
 - 前端存放：`sessionStorage.agri_token`、`sessionStorage.agri_user`（JSON）。
 - 呼叫 API 一律帶 `Authorization: Bearer <token>`（由 `js/api-client.js` 自動加上）。
@@ -29,7 +30,7 @@
 
 | Method | Path | 權限 | 說明 |
 |---|---|---|---|
-| POST | `/api/auth/login` | 公開 | body `{identifier, password}` → 200 `{success:true, token, user}`；失敗 401 `{success:false, error:"帳號或密碼錯誤"}`（**不得**提示預設密碼） |
+| POST | `/api/auth/login` | 公開 | body `{identifier, password}` → 200 `{success:true, token, user}`；失敗 401 `{success:false, error:"帳號或密碼錯誤"}`（**不得**提示預設密碼）；鎖定中 429（見第 5 節「登入次數限制」） |
 | POST | `/api/auth/demo-login` | 公開，**僅 demo 模式** | body `{role, refId?}` → 同 login 回應，`user.demo=true`；非 demo 模式回 404 |
 | GET | `/api/auth/me` | 需登入 | 200 `{success:true, user}` |
 | GET | `/api/auth/quick-profiles` | **僅 demo 模式** | 示範帳號清單，**不含**密碼、居留證號、護照號；非 demo 模式回 404 |
@@ -39,7 +40,7 @@
 
 ## 5. 授權規則
 
-- **公開（不需 token）**：`POST /api/auth/login`、`POST /api/auth/demo-login`、`GET /api/public/**`、`GET /api/crops/**`、`GET /api/calendar/**`、`GET /api/brochures/**`、`GET /api/legalize/types`（黑轉白身分類型與法規參考文字）、`GET /api/payments/methods`、`GET /api/orders/categories`、`POST /api/orders/calculate`、`POST /api/talents/register`、`GET /api/dispatch/overview`、`GET /api/dispatch/weather-state`、`POST /api/payments/ecpay/notify`（以 CheckMacValue 驗證）、`POST /api/line/webhook`（以 X-Line-Signature 驗證；已停用，過渡期保留）、`POST /api/line/internal/**`（LINE Bot 內部端點，以 `X-Internal-Key` 驗證，見下方「LINE 官方帳號」）。
+- **公開（不需 token）**：`POST /api/auth/login`、`POST /api/auth/demo-login`、`GET /api/public/**`、`GET /api/crops/**`、`GET /api/calendar/**`、`GET /api/brochures/**`、`GET /api/legalize/types`（黑轉白身分類型與法規參考文字）、`GET /api/payments/methods`、`GET /api/orders/categories`、`POST /api/orders/calculate`、`POST /api/talents/register`、`GET /api/dispatch/overview`、`GET /api/dispatch/weather-state`、`POST /api/payments/ecpay/notify`（以 CheckMacValue 驗證）、`POST /api/line/webhook`（已停用，一律回 410，見下方）、`POST /api/line/internal/**`（LINE Bot 內部端點，以 `X-Internal-Key` 驗證，見下方「LINE 官方帳號」）。
 - **需登入**：其餘 `/api/**`。
 - **僅 admin_tech**：crops / brochures / talents / workers 的新增修改刪除、`/api/dispatch/*` 的 POST/PUT、`/api/line/config`、`GET /api/line/bindings`、`DELETE /api/line/bindings/{id}`、`/api/notifications/send`、`GET /api/workers`（完整名冊）、`/api/dev/**`。
 - **LINE 官方帳號（農場主／工作者雙帳號，規格 `05_LINE官方帳號拆分規格.md` 第伍、陸章）**：
@@ -65,6 +66,10 @@
 - **訂單工期**：`POST/PUT /api/orders` 可帶 `startDate`、`endDate`（yyyy-MM-dd，須同時提供、完工不早於開工、最長一年，否則 400）；已完工或取消的訂單不可改工期（409）；農場主只能在「待付定金」時改，已排定後須由 admin 調整（409）。派工媒合會排除已排入「工期重疊」訂單出工名單的工人；打卡自動連結在出工名單無法判定時，改取今天落在工期內的施工中訂單。
 - **打卡連結訂單**：`POST /api/workers/{id}/clock-in`、`POST /api/attendance/clock-in` 可帶 `orderId`（須為施工中且工人屬該訂單工班，否則 409／400）；未帶時，工人所屬工班恰有一張施工中訂單才自動連結。
 - **派工前加保檢查**：`PUT /api/orders/{id}/status` 轉為 `in_progress` 時，已分派工班的每位成員須於當日完整加保（本國：勞保／就保／職保／健保；外籍：勞保／職保／健保【待確認】），否則 409 並列出缺保人員。
+- **登入次數限制（2026-10-08 起）**：`POST /api/auth/login` 同一帳號識別碼（不分大小寫）15 分鐘內失敗 5 次、或同一來源 IP 15 分鐘內失敗 30 次 → 之後 15 分鐘一律回 429 `{success:false, error:"嘗試次數過多，請 15 分鐘後再試"}`（密碼正確也一樣）。檢查在 PBKDF2 之前，鎖定期間不驗密碼、不查資料庫；登入成功清除該帳號計數（IP 計數不清）。記憶體實作（單一實例，重啟歸零），門檻可用 `agri.security.login-max-failures`／`login-ip-max-failures`／`login-window-minutes`／`login-lock-minutes` 覆寫。來源 IP 取連線端位址，部署在反向代理後須設定 `server.forward-headers-strategy`【待確認：正式環境代理架構】。
+- **舊 token 失效（2026-10-08 起）**：`users`、`workers` 各有 `token_version`（預設 0）。本人改密碼（`/api/auth/change-password`，含當次使用的 token）、admin 重設密碼（`/api/auth/reset-password`）、變更角色（`users.role`；農工 `tier` 改變）時 +1，該帳號已簽發的 token 立即 401；帳號刪除後查無版本，其 token 同樣 401。demo-login 簽發的 demo token 沿用原規則（僅 demo 模式有效，不比對版本）。
+- **舊 LINE webhook 停用**：`POST /api/line/webhook` 一律回 410 `{success:false, error:"GONE", message:"此端點已停用，LINE webhook 改由 LINE Bot 服務（/callback/farmer、/callback/worker）處理"}`，不讀取 body、不處理訊息、不查訂單。LINE Bot 需要後端資料時呼叫 `/api/line/internal/*`。
+- **管理端 PUT 為部分更新**：`PUT /api/crops/{id}`、`/api/dispatch/teams/{id}`、`/api/talents/{id}`、`/api/brochures/{id}`（及原本就是部分更新的 `/api/workers/{id}`、`/api/orders/{id}`）只改請求中有帶且非 null 的欄位，沒帶的欄位（含數字、布林）維持原值；body 內的 `id` 不改主鍵，人才 `registeredAt` 不可改。名稱類必填欄位（作物／工班 `name`、人才 `name`、文宣 `title`）明確傳空字串回 400。前端送完整物件時行為不變。
 - `/api/dev/**` 另需 demo 模式，否則 404。
 - 未帶或無效 token → 401 `{success:false, error:"UNAUTHORIZED"}`；權限不足 → 403 `{success:false, error:"FORBIDDEN"}`。
 - demo token（`demo:true`）在 demo 模式下視同 admin_tech 權限，方便路演切換角色；production 模式一律拒絕 demo token。

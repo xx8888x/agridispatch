@@ -381,7 +381,7 @@ class ProductionModeApiTest extends ApiTestSupport {
         assertEquals(txId, again.get("transactionId").asText());
     }
 
-    // ------------------------------------------------------------------ LINE webhook
+    // ------------------------------------------------------------------ LINE webhook（已停用）
 
     private static String lineSignature(String secret, byte[] body) throws Exception {
         Mac mac = Mac.getInstance("HmacSHA256");
@@ -389,18 +389,26 @@ class ProductionModeApiTest extends ApiTestSupport {
         return Base64.getEncoder().encodeToString(mac.doFinal(body));
     }
 
+    /** 舊 /api/line/webhook 一律 410 Gone：無論簽章正確與否都不處理訊息、不回訂單資料 */
     @Test
-    void lineWebhookRequiresValidSignature() throws Exception {
-        byte[] body = "{\"events\":[{\"type\":\"message\",\"source\":{\"userId\":\"U1\"},\"message\":{\"type\":\"text\",\"text\":\"查費率\"}}]}"
+    void lineWebhookIsGone() throws Exception {
+        byte[] body = "{\"events\":[{\"type\":\"message\",\"source\":{\"userId\":\"U1\"},\"message\":{\"type\":\"text\",\"text\":\"查訂單\"}}]}"
                 .getBytes(StandardCharsets.UTF_8);
-        assertEquals(401, mvc.perform(post("/api/line/webhook").contentType(MediaType.APPLICATION_JSON).content(body))
-                .andReturn().getResponse().getStatus(), "缺少簽章");
-        assertEquals(401, mvc.perform(post("/api/line/webhook").contentType(MediaType.APPLICATION_JSON).content(body)
-                .header("X-Line-Signature", "mock_signature")).andReturn().getResponse().getStatus(), "簽章錯誤");
-        MvcResult ok = mvc.perform(post("/api/line/webhook").contentType(MediaType.APPLICATION_JSON).content(body)
+        MvcResult noSig = mvc.perform(post("/api/line/webhook").contentType(MediaType.APPLICATION_JSON).content(body)).andReturn();
+        MvcResult badSig = mvc.perform(post("/api/line/webhook").contentType(MediaType.APPLICATION_JSON).content(body)
+                .header("X-Line-Signature", "mock_signature")).andReturn();
+        MvcResult goodSig = mvc.perform(post("/api/line/webhook").contentType(MediaType.APPLICATION_JSON).content(body)
                 .header("X-Line-Signature", lineSignature("test-line-channel-secret", body))).andReturn();
-        assertEquals(200, ok.getResponse().getStatus());
-        assertTrue(json(ok).get("replies").size() > 0);
+        MvcResult noBody = mvc.perform(post("/api/line/webhook")).andReturn();
+        for (MvcResult r : List.of(noSig, badSig, goodSig, noBody)) {
+            assertEquals(410, r.getResponse().getStatus());
+            JsonNode j = json(r);
+            assertFalse(j.get("success").asBoolean());
+            assertEquals("GONE", j.get("error").asText());
+            assertTrue(j.get("message").asText().contains("/callback/farmer"));
+            assertFalse(j.has("replies"));
+            assertFalse(r.getResponse().getContentAsString(StandardCharsets.UTF_8).contains("ORD-"));
+        }
     }
 
     @Test

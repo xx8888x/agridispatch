@@ -790,46 +790,18 @@
       sendLineText(text);
     }
 
-    // 5. 處理指令並呼叫後端 API (優先直連 Port 5000 專用 LINE Bot 核心，回退至 Port 3000)
+    // 5. 處理指令：呼叫 Port 5000 LINE Bot 核心；Bot 未啟動時改用本頁示範回應
+    //    （後端舊 /api/line/webhook 已停用、一律回 410，不再作為備援）
     async function processCommand(text) {
       showTypingIndicator();
 
       try {
-        let replyJson = null;
         const botData = await askLineBot({ text: text });
-        if (botData && botData.messages && botData.messages.length) {
-          removeTypingIndicator();
-          botData.messages.forEach(renderFlexOrText);
-          return;
-        }
-
-        if (!replyJson) {
-          const res3000 = await fetch(`${API_BASE}/line/webhook`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Line-Signature': 'mock_signature'
-            },
-            body: JSON.stringify({
-              events: [{
-                type: 'message',
-                userId: currentUserId,
-                message: { type: 'text', text: text }
-              }]
-            })
-          });
-          const data3000 = await res3000.json();
-          if (data3000.replies && data3000.replies.length > 0) {
-            replyJson = data3000.replies[0];
-          }
-        }
-
         removeTypingIndicator();
-
-        if (replyJson) {
-          renderFlexOrText(replyJson);
+        if (botData && botData.messages && botData.messages.length) {
+          botData.messages.forEach(renderFlexOrText);
         } else {
-          appendBotText("感謝您的訊息！智農客服團隊已收到您的需求，將於 10 分鐘內由專車調度員與您聯繫。");
+          mockLocalResponse(text);
         }
       } catch (e) {
         removeTypingIndicator();
@@ -895,21 +867,8 @@
           throw new Error('HTTP ' + res.status);
         }
       } catch (e) {
-        try {
-          const res = await fetch(`${API_BASE}/line/webhook`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ events: [{ type: 'message', message: { text: '查訂單' } }] })
-          });
-          const data = await res.json();
-          if (data.replies && data.replies[0]) renderFlexOrText(data.replies[0]);
-          if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
-            window.AgriDocs.notify('Webhook 備援成功', '後端伺服器 (Port 3000) 成功處理 Webhook 請求！');
-          }
-        } catch (err) {
-          if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
-            window.AgriDocs.notify('伺服器連線失敗', '請確認已執行 start_all.bat 或 start_line_tunnel.bat', { isAlert: true });
-          }
+        if (window.AgriDocs && typeof window.AgriDocs.notify === 'function') {
+          window.AgriDocs.notify('LINE Bot 未回應', '請確認已執行 start_all.bat 或 start_line_tunnel.bat（LINE webhook 由 LINE Bot 服務 /callback/farmer、/callback/worker 接收）', { isAlert: true });
         }
       }
     }

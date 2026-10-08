@@ -3,48 +3,34 @@ package com.agridispatch.controller.linebot;
 import com.agridispatch.common.ApiException;
 import com.agridispatch.entity.LineUser;
 import com.agridispatch.entity.Order;
-import com.agridispatch.entity.Worker;
-import com.agridispatch.entity.Crop;
 import com.agridispatch.repository.OrderRepository;
-import com.agridispatch.repository.WorkerRepository;
-import com.agridispatch.repository.CropRepository;
 import com.agridispatch.common.LaborConstants;
 import com.agridispatch.config.AgriSettings;
 import com.agridispatch.service.CalendarService;
 import com.agridispatch.service.LineBindingService;
 import com.agridispatch.service.LineBotClient;
 import com.agridispatch.service.OrderService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDate;
 import java.util.*;
 
 /**
- * 智農派工 (AgriDispatch) - LINE Bot Webhook 與智慧查詢控制器
- * 提供訂單進度、全台產曆收穫雷達、在籍工班與服務費率之即時查詢與 Flex Message 生成
+ * 智農派工 (AgriDispatch) - LINE 相關端點：LINE Bot 內部查詢、帳號設定狀態、體驗頁推播卡片
+ * （舊版 /webhook 已停用，一律回 410；LINE webhook 由 LINE Bot 服務接收）
  */
 @RestController
 @RequestMapping("/api/line")
 public class LineController {
 
-    private static final Logger log = LoggerFactory.getLogger(LineController.class);
-
     private final OrderRepository orderRepository;
-    private final WorkerRepository workerRepository;
-    private final CropRepository cropRepository;
     private final CalendarService calendarService;
     private final AgriSettings settings;
-    private final ObjectMapper objectMapper;
     private final LineBindingService lineBindingService;
     private final LineBotClient lineBotClient;
 
@@ -53,114 +39,40 @@ public class LineController {
     private volatile String channelAccessToken;
 
     public LineController(OrderRepository orderRepository,
-                          WorkerRepository workerRepository,
-                          CropRepository cropRepository,
                           CalendarService calendarService,
                           AgriSettings settings,
-                          ObjectMapper objectMapper,
                           LineBindingService lineBindingService,
                           LineBotClient lineBotClient,
                           @Value("${agri.line.channel-secret:}") String channelSecret,
                           @Value("${agri.line.channel-access-token:}") String channelAccessToken) {
         this.orderRepository = orderRepository;
-        this.workerRepository = workerRepository;
-        this.cropRepository = cropRepository;
         this.calendarService = calendarService;
         this.settings = settings;
-        this.objectMapper = objectMapper;
         this.lineBindingService = lineBindingService;
         this.lineBotClient = lineBotClient;
         this.channelSecret = channelSecret == null ? "" : channelSecret.trim();
         this.channelAccessToken = channelAccessToken == null ? "" : channelAccessToken.trim();
     }
 
-    /** 未設定 channel secret → 本地模擬（MOCK）模式（僅 demo 模式可處理 webhook） */
+    /** 未設定 channel secret → 本地模擬（MOCK）模式（僅供 GET /config 顯示狀態） */
     private boolean isMockMode() {
         return channelSecret.isEmpty();
     }
 
-    /**
-     * 驗證 X-Line-Signature：Base64(HMAC-SHA256(channelSecret, rawBody))，以 constant-time 比對
-     */
-    static boolean verifySignature(String secret, byte[] rawBody, String signatureHeader) {
-        if (secret == null || secret.isEmpty() || signatureHeader == null || signatureHeader.isBlank()) return false;
-        try {
-            Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-            byte[] expected = Base64.getEncoder().encode(mac.doFinal(rawBody));
-            return MessageDigest.isEqual(expected, signatureHeader.trim().getBytes(StandardCharsets.US_ASCII));
-        } catch (Exception e) {
-            return false;
-        }
-    }
+    /** 已停用端點的固定回應（規格 03 第 5 節） */
+    static final Map<String, Object> WEBHOOK_GONE_BODY = Map.of(
+            "success", false,
+            "error", "GONE",
+            "message", "此端點已停用，LINE webhook 改由 LINE Bot 服務（/callback/farmer、/callback/worker）處理");
 
     /**
-     * 舊版查詢入口（已停用，過渡期保留）：LINE Bot 已改呼叫 /api/line/internal/*（規格 05 第 6.3 節），之後移除
+     * 舊版 webhook 入口（已停用）：一律回 410 Gone，不讀取 body、不處理訊息、不查訂單。
+     * LINE webhook 由 LINE Bot 服務（Software/Line Bot）的 /callback/farmer、/callback/worker 接收，
+     * 需要後端資料時改呼叫 /api/line/internal/*（規格 05 第 6.3 節）。
      */
-    @Deprecated
     @PostMapping("/webhook")
-    @SuppressWarnings("unchecked")
-    public ResponseEntity<?> handleWebhook(@RequestBody(required = false) byte[] rawBody,
-                                           @RequestHeader(value = "X-Line-Signature", required = false) String signature) {
-        byte[] bodyBytes = rawBody == null ? new byte[0] : rawBody;
-        if (isMockMode()) {
-            if (!settings.isDemoEnabled()) {
-                // production 未設定 channel secret：無法驗證簽章，一律拒絕
-                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                        .body(Map.of("success", false, "error", "LINE channel secret 未設定"));
-            }
-            // demo 模式且未設定金鑰：本地模擬，不驗證簽章
-        } else if (!verifySignature(channelSecret, bodyBytes, signature)) {
-            log.warn("[LINE] X-Line-Signature 驗證失敗，拒絕 webhook 請求");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("success", false, "error", "INVALID_SIGNATURE"));
-        }
-
-        Map<String, Object> body;
-        try {
-            body = bodyBytes.length == 0 ? Map.of() : objectMapper.readValue(bodyBytes, Map.class);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "error", "請求內容格式錯誤"));
-        }
-        List<Map<String, Object>> replies = new ArrayList<>();
-
-        if (body.containsKey("events") && body.get("events") instanceof List) {
-            List<?> events = (List<?>) body.get("events");
-            for (Object eventObj : events) {
-                if (eventObj instanceof Map) {
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> event = (Map<String, Object>) eventObj;
-                    String userId = extractUserId(event);
-                    
-                    String text = "";
-                    if (event.containsKey("message") && event.get("message") instanceof Map) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> message = (Map<String, Object>) event.get("message");
-                        text = message.getOrDefault("text", "").toString();
-                    }
-
-                    Map<String, Object> reply = processQueryOrCommand(userId, text);
-                    replies.add(reply);
-                }
-            }
-        }
-
-        if (replies.isEmpty()) {
-            replies.add(buildQueryHubFlex("zh"));
-        }
-
-        return ResponseEntity.ok(Map.of("success", true, "replies", replies));
-    }
-
-    /** LINE 正式事件的 userId 位於 source.userId；相容舊版模擬格式 event.userId */
-    @SuppressWarnings("unchecked")
-    private static String extractUserId(Map<String, Object> event) {
-        Object source = event.get("source");
-        if (source instanceof Map && ((Map<String, Object>) source).get("userId") != null) {
-            return ((Map<String, Object>) source).get("userId").toString();
-        }
-        Object uid = event.get("userId");
-        return uid != null ? uid.toString() : "ANONYMOUS";
+    public ResponseEntity<?> handleWebhook() {
+        return ResponseEntity.status(HttpStatus.GONE).body(WEBHOOK_GONE_BODY);
     }
 
     // =========================================================================
@@ -286,7 +198,6 @@ public class LineController {
         res.put("channelAccessTokenConfigured", !channelAccessToken.isEmpty());
         res.put("channelSecretMasked", channelSecret.isEmpty() ? "" : "********");
         res.put("channelAccessTokenMasked", channelAccessToken.isEmpty() ? "" : "********");
-        res.put("webhookPath", "/api/line/webhook");
         // LINE 雙帳號（規格 05 第 6.3 節）：channel token 只在 LINE Bot，後端只回設定狀態
         res.put("internalKeyConfigured", settings.getLinebotInternalKey() != null);
         res.put("loginChannelConfigured", settings.getLineLoginChannelId() != null);
@@ -320,121 +231,8 @@ public class LineController {
     }
 
     // =========================================================================
-    // 智慧查詢路由引擎
-    // =========================================================================
-
-    private Map<String, Object> processQueryOrCommand(String userId, String rawText) {
-        String clean = rawText == null ? "" : rawText.trim().toLowerCase();
-
-        // 1. 訂單查詢
-        if (clean.contains("查訂單") || clean.contains("訂單") || clean.contains("工單") || clean.contains("ord-")
-                || clean.contains("單號") || clean.contains("派工單") || clean.contains("進度")) {
-            return buildOrderQueryFlex(clean);
-        }
-
-        // 2. 全台產曆與收穫倒數查詢
-        if (clean.contains("查產曆") || clean.contains("產曆") || clean.contains("產季") || clean.contains("收穫")
-                || clean.contains("採收") || clean.contains("芒果") || clean.contains("洋蔥") || clean.contains("鳳梨")
-                || clean.contains("西瓜") || clean.contains("青蔥") || clean.contains("茶")) {
-            return buildCalendarQueryFlex(clean);
-        }
-
-        // 3. 工班與農工名冊查詢
-        if (clean.contains("查工班") || clean.contains("工班") || clean.contains("農工") || clean.contains("外展")
-                || clean.contains("移工") || clean.contains("名冊") || clean.contains("司機")) {
-            return buildCrewQueryFlex(clean);
-        }
-
-        // 4. 服務費率與試算查詢
-        if (clean.contains("查費率") || clean.contains("費率") || clean.contains("價格") || clean.contains("多少錢")
-                || clean.contains("計費") || clean.contains("早鳥") || clean.contains("加乘")) {
-            return buildRateQueryFlex();
-        }
-
-        // 5. 天候避險查詢
-        if (clean.contains("避險") || clean.contains("暴雨") || clean.contains("下雨") || clean.contains("冷鏈")) {
-            return buildWeatherAlertFlex();
-        }
-
-        // 6. 機耕與無人機代噴
-        if (clean.contains("機耕") || clean.contains("代噴") || clean.contains("無人機") || clean.contains("曳引機")) {
-            return buildMachineryTaskFlex();
-        }
-
-        // 7. 多語工單切換
-        if (clean.contains("越南") || clean.contains("viet") || clean.contains("tiếng việt")) {
-            return buildTextReply("✅ Đã chuyển đổi sang Tiếng Việt. Gõ 'nhiệm vụ' hoặc 'tra cứu' để xem thông tin điều phái!");
-        } else if (clean.contains("印尼") || clean.contains("indo") || clean.contains("bahasa")) {
-            return buildTextReply("✅ Bahasa telah diubah ke Bahasa Indonesia. Ketik 'tugas' atau 'cari' untuk melihat info tugas!");
-        }
-
-        // 預設：查詢大廳功能導覽
-        return buildQueryHubFlex("zh");
-    }
-
-    // =========================================================================
     // Flex Message Builders (高擬真 LINE 氣泡卡片)
     // =========================================================================
-
-    /**
-     * 查詢大廳總導覽卡片
-     */
-    private Map<String, Object> buildQueryHubFlex(String lang) {
-        Map<String, Object> flex = new LinkedHashMap<>();
-        flex.put("type", "flex");
-        flex.put("altText", "🔍 智農派工 - 智慧農務查詢中心");
-
-        Map<String, Object> contents = new LinkedHashMap<>();
-        contents.put("type", "bubble");
-        contents.put("size", "mega");
-
-        // Header
-        Map<String, Object> header = new LinkedHashMap<>();
-        header.put("type", "box");
-        header.put("layout", "vertical");
-        header.put("backgroundColor", "#047857");
-        header.put("paddingAll", "20px");
-
-        List<Map<String, Object>> hItems = new ArrayList<>();
-        hItems.add(createLabel("智農派工・LINE 智慧查詢中心", "#A7F3D0", "xs", "bold"));
-        hItems.add(createLabel("農務查詢快捷大廳", "#FFFFFF", "xl", "bold"));
-        hItems.add(createLabel("支援即時查單 ╳ 產曆收穫雷達 ╳ 工班戰情 ╳ 標準費率", "#D1FAE5", "xs", "regular"));
-        header.put("contents", hItems);
-        contents.put("header", header);
-
-        // Body
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("type", "box");
-        body.put("layout", "vertical");
-        body.put("spacing", "md");
-        body.put("paddingAll", "20px");
-
-        List<Map<String, Object>> bItems = new ArrayList<>();
-        bItems.add(createLabel("請點選下方快捷按鈕，或直接在對話框輸入關鍵字查詢：", "#475569", "xs", "regular"));
-        bItems.add(createRowKV("📋 訂單進度", "輸入「查訂單」或「ORD-2026-001」"));
-        bItems.add(createRowKV("📅 全台產曆", "輸入「查產曆」、「芒果產季」、「洋蔥」"));
-        bItems.add(createRowKV("👷 工班人力", "輸入「查工班」、「工班B組」、「外展移工」"));
-        bItems.add(createRowKV("💰 服務費率", "輸入「查費率」、「早鳥」、「防颱搶收」"));
-        body.put("contents", bItems);
-        contents.put("body", body);
-
-        // Footer Actions
-        Map<String, Object> footer = new LinkedHashMap<>();
-        footer.put("type", "box");
-        footer.put("layout", "vertical");
-        footer.put("spacing", "sm");
-        footer.put("paddingAll", "16px");
-
-        List<Map<String, Object>> fItems = new ArrayList<>();
-        fItems.add(createButton("📋 立即查詢派工單進度", "https://agridispatch.tw/track/ORD-2026-001", "#059669"));
-        fItems.add(createButton("📅 查詢全台產曆與收穫倒數", "https://agridispatch.tw/web/index.html#calendar", "#3B82F6"));
-        fItems.add(createButton("💰 查詢早鳥與派工費率", "https://agridispatch.tw/web/farmer-login.html", "#D97706"));
-        footer.put("contents", fItems);
-        contents.put("footer", footer);
-
-        flex.put("contents", contents);
-        return flex;
-    }
 
     /**
      * 1. 訂單進度查詢結果卡片
@@ -584,68 +382,6 @@ public class LineController {
         List<Map<String, Object>> fItems = new ArrayList<>();
         fItems.add(createButton("⚡ 預購產季早鳥保證工時包 (鎖定名額・優先排班)", "https://agridispatch.tw/web/farmer.html", "#D97706"));
         fItems.add(createButton("🗓️ 瀏覽 52 週完整產曆動態輪播", "https://agridispatch.tw/web/index.html#calendar", "#2563EB"));
-        footer.put("contents", fItems);
-        contents.put("footer", footer);
-
-        flex.put("contents", contents);
-        return flex;
-    }
-
-    /**
-     * 3. 在籍工班與外展農工查詢結果卡片
-     */
-    private Map<String, Object> buildCrewQueryFlex(String query) {
-        List<Worker> workers = workerRepository.findAll();
-        int totalWorkers = workers.isEmpty() ? 25 : workers.size();
-
-        Map<String, Object> flex = new LinkedHashMap<>();
-        flex.put("type", "flex");
-        flex.put("altText", "👷 智農派工 - 在籍工班與人力戰情查詢");
-
-        Map<String, Object> contents = new LinkedHashMap<>();
-        contents.put("type", "bubble");
-        contents.put("size", "mega");
-
-        // Header
-        Map<String, Object> header = new LinkedHashMap<>();
-        header.put("type", "box");
-        header.put("layout", "vertical");
-        header.put("backgroundColor", "#312E81");
-        header.put("paddingAll", "20px");
-
-        List<Map<String, Object>> hItems = new ArrayList<>();
-        hItems.add(createLabel("在籍合法外展工班・即時人力戰情", "#C7D2FE", "xs", "bold"));
-        hItems.add(createLabel("在籍人員 " + totalWorkers + " 名 (依法加保勞健保)", "#FFFFFF", "xl", "bold"));
-        hItems.add(createLabel("合法外展移工 20 名 ╳ 本國機耕師與兼職 5 名", "#E0E7FF", "xs", "regular"));
-        header.put("contents", hItems);
-        contents.put("header", header);
-
-        // Body
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("type", "box");
-        body.put("layout", "vertical");
-        body.put("spacing", "md");
-        body.put("paddingAll", "20px");
-
-        List<Map<String, Object>> bItems = new ArrayList<>();
-        bItems.add(createRowKV("工班 A 組 (5人)", "桃園設施溫室組・智農 1 號車 (張大哥)"));
-        bItems.add(createRowKV("工班 B 組 (6人)", "枋山芒果專線・領班阿迪・智農 2 號車"));
-        bItems.add(createRowKV("工班 C 組 (4人)", "雲林機耕無人機隊・陳建宏雙證照飛手"));
-        bItems.add(createRowKV("工班 D 組 (5人)", "屏南冷鏈預冷分級・范氏紅冷鏈專線"));
-        bItems.add(createRowKV("今日出勤率", "100% (160 工時全滿檔・零閒置)"));
-        body.put("contents", bItems);
-        contents.put("body", body);
-
-        // Footer
-        Map<String, Object> footer = new LinkedHashMap<>();
-        footer.put("type", "box");
-        footer.put("layout", "vertical");
-        footer.put("spacing", "sm");
-        footer.put("paddingAll", "16px");
-
-        List<Map<String, Object>> fItems = new ArrayList<>();
-        fItems.add(createButton("📊 開啟後台農工名冊總台", "https://agridispatch.tw/web/admin.html", "#4F46E5"));
-        fItems.add(createButton("📑 主管機關送審名冊備查", "https://agridispatch.tw/api/workers/export-csv", "#059669"));
         footer.put("contents", fItems);
         contents.put("footer", footer);
 
@@ -805,45 +541,6 @@ public class LineController {
         bItems.add(createRowKV("基本薪資", "NT$ " + LaborConstants.formatMoney(LaborConstants.MIN_MONTHLY_WAGE) + " (每月 5 日合作社入帳)"));
         bItems.add(createRowKV("就業獎勵金", "NT$ " + LaborConstants.formatMoney(LaborConstants.AGRI_EMPLOYMENT_BONUS) + " (農業部外展留台補助)"));
         bItems.add(createRowKV("合計入帳", "NT$ " + LaborConstants.formatMoney(LaborConstants.MIN_MONTHLY_WAGE + LaborConstants.AGRI_EMPLOYMENT_BONUS) + " (合法外展・全額勞健保)"));
-        body.put("contents", bItems);
-        contents.put("body", body);
-
-        flex.put("contents", contents);
-        return flex;
-    }
-
-    private Map<String, Object> buildMachineryTaskFlex() {
-        Map<String, Object> flex = new LinkedHashMap<>();
-        flex.put("type", "flex");
-        flex.put("altText", "🚜 本國專業機耕隊與無人機植保工單");
-
-        Map<String, Object> contents = new LinkedHashMap<>();
-        contents.put("type", "bubble");
-        contents.put("size", "mega");
-
-        Map<String, Object> header = new LinkedHashMap<>();
-        header.put("type", "box");
-        header.put("layout", "vertical");
-        header.put("backgroundColor", "#1E293B");
-        header.put("paddingAll", "20px");
-
-        List<Map<String, Object>> hItems = new ArrayList<>();
-        hItems.add(createLabel("本國高階機耕技師・派工單", "#94A3B8", "xs", "bold"));
-        hItems.add(createLabel("無人機植保 ╳ 曳引機整地", "#FFFFFF", "xl", "bold"));
-        hItems.add(createLabel("機耕師：陳建宏 (雙證照) ｜ 雲林設施甜椒園區", "#CBD5E1", "xs", "regular"));
-        header.put("contents", hItems);
-        contents.put("header", header);
-
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("type", "box");
-        body.put("layout", "vertical");
-        body.put("spacing", "md");
-        body.put("paddingAll", "20px");
-
-        List<Map<String, Object>> bItems = new ArrayList<>();
-        bItems.add(createRowKV("調派機具", "大疆 Agras T50 (50L 植保無人機)"));
-        bItems.add(createRowKV("作業面積", "8.5 分地 (預計 45 分鐘完成代噴)"));
-        bItems.add(createRowKV("計費標準", "NT$ 250 / 分地 + 時薪 NT$ 310"));
         body.put("contents", bItems);
         contents.put("body", body);
 

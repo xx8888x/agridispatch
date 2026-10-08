@@ -265,11 +265,13 @@ class DemoModeApiTest extends ApiTestSupport {
     }
 
     @Test
-    void lineWebhookMockModeInDemo() throws Exception {
+    void lineWebhookGoneInDemo() throws Exception {
         MvcResult r = mvc.perform(post("/api/line/webhook").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"events\":[{\"type\":\"message\",\"userId\":\"U1\",\"message\":{\"text\":\"查訂單\"}}]}")
                 .header("X-Line-Signature", "mock_signature")).andReturn();
-        assertEquals(200, r.getResponse().getStatus(), "demo 模式未設定 channel secret 時為本地模擬");
+        assertEquals(410, r.getResponse().getStatus(), "舊 webhook 已停用，demo 模式同樣回 410");
+        assertEquals("GONE", json(r).get("error").asText());
+        assertFalse(json(r).has("replies"));
     }
 
     @Test

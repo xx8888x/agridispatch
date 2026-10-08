@@ -44,9 +44,13 @@ public class NotificationController {
 
     @GetMapping
     public ResponseEntity<?> getHistory(@RequestParam(required = false) String target) {
+        // 非 admin 只能看全體公告與發給自己的通知
+        com.agridispatch.security.AuthContext ctx = com.agridispatch.security.AuthContext.require();
+        if (!ctx.isAdmin()) target = ctx.ref() != null ? ctx.ref() : ctx.sub();
         if (target != null && !target.isBlank()) {
+            final String who = target;
             List<Map<String, Object>> filtered = notificationHistory.stream()
-                    .filter(n -> "all".equals(n.get("target")) || target.equals(n.get("target")))
+                    .filter(n -> "all".equals(n.get("target")) || who.equals(n.get("target")))
                     .toList();
             return ResponseEntity.ok(Map.of("success", true, "data", filtered));
         }
@@ -55,16 +59,16 @@ public class NotificationController {
 
     @PostMapping("/send")
     public ResponseEntity<?> sendNotification(@RequestBody Map<String, Object> payload) {
-        String title = payload.getOrDefault("title", "智農派工訊息").toString();
-        String message = payload.getOrDefault("message", "").toString();
+        String title = Objects.toString(payload.get("title"), "智農派工訊息");
+        String message = Objects.toString(payload.get("message"), "");
         if (message.isBlank()) {
             throw new IllegalArgumentException("通知內容 (message) 為必填欄位");
         }
         if (title.length() > 100 || message.length() > 2000) {
             throw new IllegalArgumentException("通知標題或內容過長");
         }
-        String channel = payload.getOrDefault("channel", "dispatch").toString();
-        String target = payload.getOrDefault("target", "all").toString();
+        String channel = Objects.toString(payload.get("channel"), "dispatch");
+        String target = Objects.toString(payload.get("target"), "all");
 
         Map<String, Object> notif = new LinkedHashMap<>();
         notif.put("id", "NOTIF-" + System.currentTimeMillis());
@@ -91,7 +95,7 @@ public class NotificationController {
         // FCM token 一律綁定目前登入者，不接受替他人註冊
         com.agridispatch.security.AuthContext ctx = com.agridispatch.security.AuthContext.require();
         String userId = ctx.sub();
-        String token = req.getOrDefault("token", "");
+        String token = Objects.toString(req.get("token"), "");
         if (token.length() > 4096) {
             throw new IllegalArgumentException("FCM token 過長");
         }

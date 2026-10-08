@@ -70,6 +70,13 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, "欄位驗證失敗");
     }
 
+    /** 欄位過長、必填欄位為 null、唯一鍵重複等資料庫約束錯誤：回 400，不回 500 */
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrity(org.springframework.dao.DataIntegrityViolationException e) {
+        log.warn("資料庫約束錯誤：{}", e.getMostSpecificCause().getMessage());
+        return error(HttpStatus.BAD_REQUEST, "資料格式不符（欄位過長或缺少必填欄位）");
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException e) {
         return error(HttpStatus.BAD_REQUEST, e.getMessage() != null ? e.getMessage() : "參數錯誤");

@@ -1,6 +1,7 @@
 package com.agridispatch.controller.common;
 
 import com.agridispatch.entity.DispatchTeam;
+import com.agridispatch.security.AuthContext;
 import com.agridispatch.service.DispatchService;
 import com.agridispatch.service.LineNotifyService;
 import org.springframework.http.HttpStatus;
@@ -20,9 +21,30 @@ public class DispatchController {
         this.lineNotifyService = lineNotifyService;
     }
 
+    /** 公開端點：未登入或非 admin 只回天候與工班動態，不含領班電話、司機與營收（規格 03 §5） */
     @GetMapping("/overview")
     public ResponseEntity<?> getOverview() {
-        return ResponseEntity.ok(Map.of("success", true, "data", dispatchService.getOverview()));
+        Map<String, Object> overview = dispatchService.getOverview();
+        AuthContext ctx = AuthContext.current();
+        if (ctx == null || !ctx.isAdmin()) {
+            overview.remove("securedRevenue");
+            List<Map<String, Object>> teams = new ArrayList<>();
+            for (Object o : (List<?>) overview.get("teams")) {
+                DispatchTeam t = (DispatchTeam) o;
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("id", t.getId());
+                m.put("name", t.getName());
+                m.put("workerCount", t.getWorkerCount());
+                m.put("normalLocation", t.getNormalLocation());
+                m.put("normalTask", t.getNormalTask());
+                m.put("hedgeLocation", t.getHedgeLocation());
+                m.put("hedgeTask", t.getHedgeTask());
+                m.put("status", t.getStatus());
+                teams.add(m);
+            }
+            overview.put("teams", teams);
+        }
+        return ResponseEntity.ok(Map.of("success", true, "data", overview));
     }
 
     @GetMapping("/weather-state")
@@ -33,7 +55,7 @@ public class DispatchController {
     @PostMapping("/weather-scenario")
     public ResponseEntity<?> applyWeatherScenario(@RequestBody(required = false) Map<String, Object> req) {
         String scenarioId = "sunny";
-        if (req != null && req.containsKey("scenarioId")) {
+        if (req != null && req.get("scenarioId") != null) {
             scenarioId = req.get("scenarioId").toString();
         }
         String previous = dispatchService.getCurrentScenarioId();

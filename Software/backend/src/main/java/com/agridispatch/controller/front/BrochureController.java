@@ -20,7 +20,10 @@ public class BrochureController {
 
     @GetMapping
     public ResponseEntity<?> getAllBrochures(@RequestParam(required = false, defaultValue = "false") boolean all) {
-        return ResponseEntity.ok(Map.of("success", true, "data", brochureService.getAllBrochures(!all)));
+        // all=true（含未上架草稿）僅限 admin；公開端點其他人一律只看已上架
+        com.agridispatch.security.AuthContext ctx = com.agridispatch.security.AuthContext.current();
+        boolean includeDrafts = all && ctx != null && ctx.isAdmin();
+        return ResponseEntity.ok(Map.of("success", true, "data", brochureService.getAllBrochures(!includeDrafts)));
     }
 
     @GetMapping("/{id}")

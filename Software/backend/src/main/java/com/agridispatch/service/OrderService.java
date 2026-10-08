@@ -7,6 +7,7 @@ import com.agridispatch.entity.Crop;
 import com.agridispatch.entity.Order;
 import com.agridispatch.repository.CropRepository;
 import com.agridispatch.repository.OrderRepository;
+import com.agridispatch.repository.WorkerRepository;
 import com.agridispatch.security.AuthContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -36,6 +37,7 @@ public class OrderService {
     private final Object idLock = new Object();
 
     private final com.agridispatch.repository.BrochureRepository brochureRepository;
+    private final WorkerRepository workerRepository;
 
     /**
      * 工時包（文宣 DM）對應的作物與派工類別、預設面積：{cropId, dispatchCategory, area}。
@@ -50,8 +52,10 @@ public class OrderService {
 
     public OrderService(OrderRepository orderRepository, CropRepository cropRepository, AgriSettings settings,
                         InsuranceService insuranceService, LineNotifyService lineNotifyService,
-                        com.agridispatch.repository.BrochureRepository brochureRepository) {
+                        com.agridispatch.repository.BrochureRepository brochureRepository,
+                        WorkerRepository workerRepository) {
         this.orderRepository = orderRepository;
+        this.workerRepository = workerRepository;
         this.brochureRepository = brochureRepository;
         this.cropRepository = cropRepository;
         this.settings = settings;
@@ -399,6 +403,7 @@ public class OrderService {
         if (input.getFarmerName() == null || input.getFarmerName().isBlank()) {
             throw ApiException.badRequest("農場主姓名 (farmerName) 為必填欄位");
         }
+        validateTextLengths(input);
         Order order = new Order();
         order.setFarmerId(farmerId);
         order.setFarmerName(input.getFarmerName().trim());
@@ -453,6 +458,7 @@ public class OrderService {
         if (updated.getArea() < 0 || Double.isNaN(updated.getArea())) {
             throw ApiException.badRequest("面積必須大於 0");
         }
+        validateTextLengths(updated);
 
         boolean pricingChanged = false;
         if (updated.getCropId() != null && !updated.getCropId().equals(existing.getCropId())) {
@@ -583,6 +589,22 @@ public class OrderService {
     }
 
     /** 工期：開工、完工日須同時提供，完工不可早於開工，單張訂單最長 366 天；皆未提供視為尚未排定 */
+    /** 文字欄位長度上限（未設 @Column 的欄位在 H2 為 varchar(255)），超過回 400 而不是資料庫錯誤 */
+    static void validateTextLengths(Order o) {
+        checkLength(o.getFarmerName(), 100, "農場主姓名");
+        checkLength(o.getPhone(), 30, "聯絡電話");
+        checkLength(o.getFarmLocation(), 255, "農地位置");
+        checkLength(o.getForemanName(), 100, "現場對口姓名");
+        checkLength(o.getForemanPhone(), 30, "現場對口電話");
+        checkLength(o.getForemanNotes(), 255, "現場交辦事項");
+    }
+
+    private static void checkLength(String value, int max, String label) {
+        if (value != null && value.length() > max) {
+            throw ApiException.badRequest(label + "過長（上限 " + max + " 字）");
+        }
+    }
+
     static void validatePeriod(java.time.LocalDate start, java.time.LocalDate end) {
         if (start == null && end == null) return;
         if (start == null || end == null) throw ApiException.badRequest("開工日 (startDate) 與完工日 (endDate) 須同時提供");
@@ -602,8 +624,25 @@ public class OrderService {
     }
 
     public void checkReadable(AuthContext ctx, Order order) {
-        if (ctx.isAdmin() || ctx.isWorker() || isOwner(ctx, order)) return;
+        if (ctx.isAdmin() || isOwner(ctx, order)) return;
+        if (ctx.isWorker() && workerCanSee(ctx, order, workerTeamId(ctx))) return;
         throw ApiException.forbidden();
+    }
+
+    /**
+     * 工人可見的訂單：正式模式只限自己工班承接或出工名單有自己的訂單（訂單含農場主電話、農地位置與金額）；
+     * demo 模式維持全部可見，路演的本勞工作台一頁同時呈現三種身分的任務卡。
+     */
+    private boolean workerCanSee(AuthContext ctx, Order order, String teamId) {
+        if (settings.isDemoEnabled()) return true;
+        if (teamId != null && teamId.equals(order.getAssignedTeamId())) return true;
+        String crew = order.getCrewWorkerIds();
+        return crew != null && Arrays.asList(crew.split(",")).contains(ctx.ref());
+    }
+
+    private String workerTeamId(AuthContext ctx) {
+        if (ctx.ref() == null) return null;
+        return workerRepository.findById(ctx.ref()).map(w -> w.getTeamId()).orElse(null);
     }
 
     /** 付款 / 修改 / 取消：admin 或訂單擁有者 */
@@ -614,8 +653,12 @@ public class OrderService {
 
     public List<Order> getOrdersVisibleTo(AuthContext ctx) {
         List<Order> all = orderRepository.findAll();
-        if (ctx.isAdmin() || ctx.isWorker()) return all;
+        if (ctx.isAdmin()) return all;
         if (ctx.isFarmer()) return all.stream().filter(o -> isOwner(ctx, o)).toList();
+        if (ctx.isWorker()) {
+            String teamId = workerTeamId(ctx);
+            return all.stream().filter(o -> workerCanSee(ctx, o, teamId)).toList();
+        }
         return List.of();
     }
 }

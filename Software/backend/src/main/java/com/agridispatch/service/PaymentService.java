@@ -152,6 +152,9 @@ public class PaymentService {
             if (OrderService.CANCELLED.equals(order.getStatus())) {
                 throw ApiException.conflict("訂單已取消，無法付款");
             }
+            if (tx.getAmount() != order.getDepositAmount()) {
+                throw ApiException.conflict("訂單定金已變更，請重新發起付款");
+            }
             tx.setAuthCode("MOCK" + digits(6));
             tx.setInvoiceNo("AG-MOCK-" + digits(6));
             markPaid(tx, order, null);
@@ -187,12 +190,18 @@ public class PaymentService {
                 throw ApiException.badRequest("0|Amount Mismatch");
             }
             Order order = orderService.requireOrder(tx.getOrderId());
-            if (order.isDepositPaid()) {
+            // 款項已入帳（交易記為已付），但下列情況不可把訂單標成已付定金，需人工退款或補收：
+            // 已由其他交易付款、訂單已取消，或付款後規格變更使定金與這筆交易金額不同（舊交易頁付了較少的定金）
+            String manual = order.isDepositPaid() ? "已由其他交易付款"
+                    : OrderService.CANCELLED.equals(order.getStatus()) ? "訂單已取消"
+                    : tx.getAmount() != order.getDepositAmount() ? "定金已變更為 " + order.getDepositAmount() + " 元"
+                    : null;
+            if (manual != null) {
                 tx.setStatus(PaymentTransaction.PAID);
                 tx.setGatewayTradeNo(params.get("TradeNo"));
                 tx.setPaidAt(LocalDateTime.now());
                 txRepository.save(tx);
-                log.warn("[ECPay] 訂單 {} 已由其他交易付款，交易 {} 需人工退款處理", order.getId(), tx.getId());
+                log.warn("[ECPay] 訂單 {} {}，交易 {}（{} 元）需人工退款或補收處理", order.getId(), manual, tx.getId(), tx.getAmount());
                 return "1|OK";
             }
             markPaid(tx, order, params.get("TradeNo"));

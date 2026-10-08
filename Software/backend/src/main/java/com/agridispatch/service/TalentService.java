@@ -43,6 +43,9 @@ public class TalentService {
         if (talent.getName().length() > 100) {
             throw ApiException.badRequest("姓名過長");
         }
+        if (talent.getPhone() != null && talent.getPhone().length() > 30) {
+            throw ApiException.badRequest("聯絡電話過長");
+        }
         if (requireConsent) {
             if (talent.getPhone() == null || talent.getPhone().isBlank()) {
                 throw ApiException.badRequest("聯絡電話 (phone) 為必填欄位");
@@ -51,8 +54,9 @@ public class TalentService {
                 throw ApiException.badRequest("請先同意個人資料蒐集與利用 (pdpaConsent)");
             }
         }
-        if (talent.getExperience() != null && talent.getExperience().length() > 2000) {
-            throw ApiException.badRequest("經歷描述過長（上限 2000 字）");
+        // 資料庫欄位：H2 預設 varchar(255)、Oracle VARCHAR2(1000 BYTE)（中文約 333 字），取 255 字
+        if (talent.getExperience() != null && talent.getExperience().length() > 255) {
+            throw ApiException.badRequest("經歷描述過長（上限 255 字）");
         }
         talent.setRegisteredAt(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         synchronized (idLock) {

@@ -73,6 +73,7 @@ public class OrderController {
             farmerId = order.getFarmerId();
         } else if (ctx.isFarmer()) {
             farmerId = ctx.ref();
+            order.setAssignedTeamId(null);   // 工班由系統建議或調度指派，農場主不得自選（避開加保檢查）
         } else {
             throw ApiException.forbidden();
         }

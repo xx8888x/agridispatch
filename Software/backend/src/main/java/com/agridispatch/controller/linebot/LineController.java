@@ -245,7 +245,9 @@ public class LineController {
 
     @PostMapping("/simulate-push")
     public ResponseEntity<?> simulatePush(@RequestBody Map<String, Object> req) {
-        String type = req.getOrDefault("type", "daily_task").toString();
+        // 卡片含真實訂單的小工頭聯絡方式與金額：正式模式僅限 admin（LINE 體驗頁屬路演功能）
+        if (!settings.isDemoEnabled()) com.agridispatch.security.AuthContext.require().requireAdmin();
+        String type = Objects.toString(req.get("type"), "daily_task");
         Map<String, Object> flex;
 
         switch (type) {

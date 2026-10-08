@@ -38,3 +38,14 @@ sudo bash /tmp/agri-deploy/enable-https.sh dev.<IP 以 - 連接>.sslip.io
 - Log：`sudo journalctl -u agridispatch -f`（journald，上限 500MB）；服務：`sudo systemctl status agridispatch`；資料庫：`sudo podman logs agri-oracle`。
 - 備份（DEV 簡易版）：`sudo podman exec agri-oracle ...` 匯出，或對開機磁碟建立 Oracle Cloud 備份。
 - 尚未部署 LINE Bot（DEV 先用網頁的 LINE 體驗頁；要部署時加 `/callback/` 轉送與服務）。
+
+## 四、目前的 DEV 環境（2026-10-08 部署）
+
+| 項目 | 值 |
+|---|---|
+| 網址 | https://dev.141-147-147-14.sslip.io/web/（Let's Encrypt 憑證，2027-01-06 到期，自動續期） |
+| 主機 | Oracle Cloud 大阪 `instance-20261008-1438`，Oracle Linux 9.8 **x86_64**（2 vCPU／11 GB；非 Always Free 的 Ampere，請留意計費） |
+| 資料庫 | Oracle 23ai Free（lite 映像檔）容器 `agri-oracle`，固定 IP 10.88.0.50，資料磁碟區 `agri-oradata` |
+| 帳號 | 11 個帳號已匯入（帳密清單在本機 `Software/database/local/`，勿外流）；`admin_tech` 密碼在主機 env 檔 |
+| App | 1.0.11 正式簽章，`-PagriApiBase=https://dev.141-147-147-14.sslip.io/api` |
+| 已知狀況 | 部分網路（例如家用路由器 DNS）查不到 sslip.io 網域；連不上時把電腦／手機 DNS 改為 8.8.8.8，或日後改用自有網域 |

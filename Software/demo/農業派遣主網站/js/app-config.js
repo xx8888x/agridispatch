@@ -5,14 +5,24 @@
  * web/ 為 production 模式（真實帳密、Token 驗證、無後門）。
  * 詳見 07_系統分析及文件/03_認證與API安全規格.md 第 1 節。
  */
+// Android App：原生端（WebAppInterface.getBackendConfig，值來自建置設定 API_BASE／APP_MODE）提供後端網址時，
+// 關閉 Mock、改連該後端；未提供（目前正式版，正式網域上線前）則沿用內建示範資料。網站沒有原生橋接，不受影響。
+var AGRI_APP_BACKEND = (function () {
+  try {
+    var c = window.AgriNativeBridge && window.AgriNativeBridge.getBackendConfig
+      ? JSON.parse(window.AgriNativeBridge.getBackendConfig()) : null;
+    return c && c.apiBase ? c : null;
+  } catch (e) { return null; }
+})();
+
 window.AGRI_CONFIG = {
-  mode: 'demo', // 'demo' | 'production'
+  mode: AGRI_APP_BACKEND ? AGRI_APP_BACKEND.mode : 'demo', // 'demo' | 'production'
   // 純前端示範：true 時 /api/* 由 ../mock/ 的錄製資料回應，不需啟動後端；改 false 則連真實後端
-  mock: true,
+  mock: !AGRI_APP_BACKEND,
   // 功能開關：false 時隱藏該功能的所有入口（路演暫時下架）；改回 true 即恢復
   // legalize：工班合法化（黑轉白）轉換中心、後台彙總、LINE 黑轉白卡片
   features: { legalize: false },
-  apiBase: window.location.origin.startsWith('http')
+  apiBase: AGRI_APP_BACKEND ? AGRI_APP_BACKEND.apiBase : window.location.origin.startsWith('http')
     ? `${window.location.origin}/api`
     : 'http://localhost:3000/api',
   // LINE 帳號綁定頁（line-bind.html）的 LIFF ID；空字串時：demo 模式用模擬 LINE 帳號、production 顯示「請從 LINE 開啟」

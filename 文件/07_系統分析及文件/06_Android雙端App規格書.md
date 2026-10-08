@@ -281,7 +281,20 @@ flowchart TD
 | 4 | 對照組：後端改回舊白名單（不含此來源）再送同樣請求 | ✅ 被 CORS 擋下 |
 | 5 | 直接進入示範登入 → 預約頁；導向 `../科技後台/admin.html` 被攔截留在原頁；導向 `login.html` 回到原生身分選擇畫面 | ✅ |
 
-> **尚未讓 App 實際使用後端（待決定）**：`assets/www/` 由同步腳本自 demo 產生，`app-config.js` 為 `mock: true`（請求由純前端 Mock 回應，不會打後端）；且 `apiBase` 依 `location.origin` 計算，在 App 內會變成 `https://appassets.androidplatform.net/api`（不是後端）。上表 2～4 是直接指定 `http://localhost:3000/api` 驗證 CORS。要讓 App 連正式後端，需另訂 App 用的 `apiBase`（正式網域）並關閉 Mock，正式環境的後端網址須為 HTTPS。
+### 7.5 App 連後端的切換機制（2026-10-08）
+
+App 要連哪個後端由**建置設定**決定，網頁不需另做 App 版：
+
+| 環節 | 做法 |
+|---|---|
+| 建置設定 `app/build.gradle` | `BuildConfig.API_BASE`、`APP_MODE`。debug 預設 `http://localhost:3000/api`、`demo`（模擬器先 `adb reverse tcp:3000 tcp:3000`；`-PagriDebugApiBase=` 空值可改回示範資料）；release 預設**空字串**、`production`，可用 `-PagriApiBase=https://…` 指定，非 https 一律建置失敗 |
+| 原生橋接 | `AgriNativeBridge.getBackendConfig()` 回 `{"apiBase","mode"}`（不含機密） |
+| `js/app-config.js`（demo 原始檔，同步到 App） | 有 `apiBase` → `mock: false`、改連該後端、`mode` 依建置；沒有（網站或空字串）→ 維持原本的示範資料 |
+| `js/api-client.js` | `apiBase` 與頁面不同源時（App），把頁面自己以 `location.origin + '/api'` 組的請求改送到 `apiBase`，並照常附 token |
+
+**目前狀態**：正式網域 `agridispatch.tw` 尚未上線（2026-10-08 查 DNS 不存在），**release 暫留空字串，1.0.10 仍使用內建示範資料**。網域與後端主機上線後，以 `-PagriApiBase=https://agridispatch.tw/api`（或改 `build.gradle` 預設值）建 1.0.11 即可；後端 CORS 已允許 App 來源。
+
+**實測（debug，AVD `AgriTest_API35`，本機後端 demo 模式）**：`AGRI_CONFIG` 為 `mock: false`、`apiBase: http://localhost:3000/api`，頁面未載入 Mock；示範登入後農場主頁所有請求（`auth/demo-login`、`crops`、`ratings`、`insurance`、`skills`、`orders/calculate`…）皆送到後端並回 200，訂單頁顯示後端資料。網站 demo 站同一頁仍為 `mock: true`、主控台無錯誤。release 預設 `API_BASE` 為空（維持示範資料）；指定 http 網址時建置失敗。
 
 **Release 簽章版 1.0.5 複測（2026-10-02）**：由 1.0.0 覆蓋升級（同一把上傳金鑰），兩支 App 皆非 debuggable、通知權限正常授予；升級後保留原身分（越南）直接進越南語登入頁；上表 2～9 全部重測通過，另確認外籍移工工單頁依國別切換（越南、印尼），以及後台 App 可進入 `admin.html`；全程無閃退。
 

@@ -105,6 +105,25 @@
     } catch (e) { return false; }
   }
 
+  /**
+   * App（Android WebViewAssetLoader）內建網頁的來源是 https://appassets.androidplatform.net，後端在別的網址：
+   * 不少頁面自己以 location.origin + '/api' 組 API 網址，這裡把「同源 /api/…」改送到 AGRI_CONFIG.apiBase。
+   * 一般網站（apiBase 與頁面同源）不受影響。
+   */
+  const API_IS_CROSS_ORIGIN = (function () {
+    try { return new URL(API_BASE, global.location.href).origin !== global.location.origin; } catch (e) { return false; }
+  })();
+  function toApiBase(input) {
+    if (!API_IS_CROSS_ORIGIN) return input;
+    const url = typeof input === 'string' ? input : (input && input.url);
+    if (!url) return input;
+    let abs;
+    try { abs = new URL(url, global.location.href); } catch (e) { return input; }
+    if (abs.origin !== global.location.origin || !abs.pathname.startsWith('/api/')) return input;
+    const target = API_BASE + abs.pathname.slice(4) + abs.search;
+    return typeof input === 'string' ? target : new Request(target, input);
+  }
+
   function isAuthBootstrapEndpoint(url) {
     return /\/api\/auth\/(login|demo-login)(\?|$)/.test(url);
   }
@@ -153,6 +172,7 @@
 
   if (nativeFetch) {
     global.fetch = async function (input, init) {
+      input = toApiBase(input);
       const url = resolveUrl(input);
       const requestIsApi = isApiRequest(url);
 

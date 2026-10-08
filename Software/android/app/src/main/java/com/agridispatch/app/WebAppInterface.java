@@ -214,6 +214,22 @@ public class WebAppInterface {
         return activity.getProfile().toJson().toString();
     }
 
+    /**
+     * 內建網頁要連的後端 (JSON)：{"apiBase":"…","mode":"demo|production"}，值來自建置設定 (app/build.gradle)。
+     * apiBase 為空字串時網頁沿用內建示範資料 (mock)。不含任何機密，所有頁面皆可讀。
+     */
+    @JavascriptInterface
+    public String getBackendConfig() {
+        try {
+            return new org.json.JSONObject()
+                    .put("apiBase", BuildConfig.API_BASE)
+                    .put("mode", BuildConfig.APP_MODE)
+                    .toString();
+        } catch (org.json.JSONException e) {
+            return "{}";
+        }
+    }
+
     /** 回到原生身分選擇畫面 (僅客戶端；Server 端無作用)。 */
     @JavascriptInterface
     public void switchRole() {

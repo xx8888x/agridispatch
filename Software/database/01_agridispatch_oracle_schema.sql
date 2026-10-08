@@ -365,7 +365,7 @@ CREATE TABLE financial_ledger (
     CONSTRAINT fk_ledger_order FOREIGN KEY (order_id) REFERENCES orders(id)
 );
 
-COMMENT ON TABLE financial_ledger IS '雙軌利潤分流帳本：科技公司18%技術費與合作社82%人事成本清算';
+COMMENT ON TABLE financial_ledger IS '雙軌利潤分流帳本：科技公司16%代管費與合作社84%人事成本清算（F2 v2.4）';
 
 -- ====================================================================
 -- 10. LINE 官方帳號使用者表 (LINE_USERS)
@@ -702,7 +702,7 @@ INSERT INTO weather_states VALUES ('WS-001', 'sunny', '全台晴朗炎熱', 'N',
     '全區田間出勤中・外展農工出勤率 100% (20/20 人在崗)', 62500, 160, NULL, SYSTIMESTAMP);
 
 -- 8. 雙軌財務帳本
-INSERT INTO financial_ledger VALUES ('LED-001', 'ORD-2026-001', 52920, 9526, 43394, 8800, SYSTIMESTAMP);
+INSERT INTO financial_ledger VALUES ('LED-001', 'ORD-2026-001', 52920, 8467, 44453, 8800, SYSTIMESTAMP);  -- 16% 代管費（F2 v2.4）
 
 -- 9. LINE 官方帳號使用者（admin_tech 不使用 LINE）
 INSERT INTO line_users (id, channel, line_user_id, username, ref_id, display_name, role, lang, lang_locked, is_bound, bound_at, followed)

@@ -457,7 +457,7 @@ LINE 官方帳號依「每月主動推播則數」計費，**回覆訊息（Repl
 | Line Bot | `LineBotServer.java` | 註冊 `/callback/farmer`、`/callback/worker`、`/internal/push`、`/internal/richmenu/link`；舊路徑過渡 |
 | Line Bot | `WebhookHandler.java` | 依路徑帶入 channel；處理 follow／unfollow／postback／非文字訊息 |
 | Line Bot | `LineBotDispatcher.java` | 拆為 `FarmerDispatcher`、`WorkerDispatcher`，共用跨帳號關鍵字表（4.3）；移除記憶體語言表與「以語言推測身分」 |
-| Line Bot | `BackendQueryClient.java` | 改呼叫 `/api/line/internal/*`，以 `X-Internal-Key` 取代 channel secret 簽章 |
+| Line Bot | `BackendClient.java` | 改呼叫 `/api/line/internal/*`，以 `X-Internal-Key` 取代 channel secret 簽章 |
 | Line Bot | `LineApiClient.java` | 依 channel 取 token；新增 multicast、per-user 選單連結；移除工作者帳號的 broadcast |
 | Line Bot | `FlexMessageBuilder.java`、`flex_templates/` | 依 4.1／4.2 拆分卡片；工人卡片三語化；綁定卡分帳號 |
 | Line Bot | `RichMenuUploader.java`、`rich_menu/` | 6 份選單（第捌章） |

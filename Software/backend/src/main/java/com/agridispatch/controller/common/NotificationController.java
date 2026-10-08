@@ -21,8 +21,9 @@ public class NotificationController {
     private final List<Map<String, Object>> notificationHistory = new CopyOnWriteArrayList<>();
     private final Map<String, String> fcmTokens = new ConcurrentHashMap<>();
 
-    public NotificationController() {
-        // 預載通知紀錄
+    public NotificationController(com.agridispatch.config.AgriSettings settings) {
+        // 預載示範通知紀錄（agri.seed.demo-data；正式環境不預載，避免假的天候廣播出現在所有人的通知裡）
+        if (!settings.isSeedDemoData()) return;
         Map<String, Object> n1 = new LinkedHashMap<>();
         n1.put("id", "NOTIF-001");
         n1.put("channel", "weather");

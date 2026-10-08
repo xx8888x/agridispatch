@@ -84,6 +84,8 @@ cd Software\backend
 
 正式模式另需 `AGRI_TOKEN_SECRET`、`AGRI_ADMIN_PASSWORD`（見 `文件/07_系統分析及文件/03_認證與API安全規格.md`）。
 
+**示範資料（2026-10-08 起）**：正式模式預設**不寫入**示範工班、工人、訂單、出勤、人才與示範通知，啟動只補齊管理員（`admin_tech`）、作物費率與工時包 DM。測試環境（DEV）若需要示範資料，設 `AGRI_SEED_DEMO_DATA=true`。注意 `01_agridispatch_oracle_schema.sql` 末段本身含精簡示範種子：正式環境請只執行「初始種子資料」標記之前的建表部分，帳號用 `Software/database/local/production-accounts.sql` 建立。
+
 **整合測試**：`src/test/java/com/agridispatch/OracleIntegrationTest.java` 只在設定 `AGRI_DB_URL` 時執行（平常的 `mvn test` 會略過），會寫入並重灌資料，**只能對臨時 schema 執行**。做法：
 
 1. 以 `sqlplus / as sysdba` 進 `FREEPDB1`，建立臨時使用者（例如 `AGRI_ORA_TEST`，給 `create session, create table, create sequence, create view, create trigger, create procedure` 與 `quota unlimited on users`）。

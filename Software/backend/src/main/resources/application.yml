@@ -27,6 +27,9 @@ spring:
 # 機密值一律由環境變數提供，勿寫入版本庫
 # =====================================================================
 agri:
+  seed:
+    # 啟動時寫入示範資料（工班、工人、訂單…）；未設定時跟隨 demo 模式。正式環境請勿設 true
+    demo-data: ${AGRI_SEED_DEMO_DATA:}
   demo:
     enabled: false
   security:

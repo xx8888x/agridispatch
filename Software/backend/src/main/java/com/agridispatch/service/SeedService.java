@@ -119,18 +119,27 @@ public class SeedService {
             weatherStateRepository.deleteAll();
         }
 
-        seedUsers();
+        // 正式環境（agri.seed.demo-data 未開）只建管理員與參考資料（作物費率、工時包 DM），
+        // 不寫入示範工班、工人、訂單、出勤等，避免假資料（含假居留證號）進入正式資料庫
+        boolean demoData = settings.isSeedDemoData();
+        seedUsers(demoData);
         seedCrops();
-        seedTeams();
-        seedWorkers();
-        seedInsurance();
-        seedOrders();
-        seedRatings();
-        seedLegalize();
-        seedTalents();
+        if (demoData) {
+            seedTeams();
+            seedWorkers();
+            seedInsurance();
+            seedOrders();
+            seedRatings();
+            seedLegalize();
+            seedTalents();
+        }
         seedBrochures();
-        seedWeatherStates();
-        seedAttendance();
+        if (demoData) {
+            seedWeatherStates();
+            seedAttendance();
+        } else {
+            log.info("[種子] 未寫入示範資料（agri.seed.demo-data 未開啟）；只補齊管理員、作物費率與工時包 DM");
+        }
         migrateLegacyData();
         ensureCredentials();
     }
@@ -151,7 +160,7 @@ public class SeedService {
     // 帳號與密碼
     // =========================================================================
 
-    private void seedUsers() {
+    private void seedUsers(boolean demoData) {
         boolean demo = settings.isDemoEnabled();
         // 非 demo 模式：示範帳號不給預設密碼（無法登入），需由管理員以 reset-password 設定
         String userPw = demo ? demoHash() : null;
@@ -164,6 +173,7 @@ public class SeedService {
             new User("admin_tech", null, "智農科技調度總監", "admin_tech", "ADM01", "科技公司系統調度與數據管理員")
         );
         for (User u : users) {
+            if (!demoData && !"admin_tech".equals(u.getRole())) continue;   // 正式環境不建示範帳號
             if (userRepository.existsById(u.getUsername())) continue;
             if ("admin_tech".equals(u.getRole())) {
                 u.setPassword(passwordHasher.hash(initialAdminPassword()));

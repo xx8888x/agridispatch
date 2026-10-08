@@ -45,7 +45,19 @@ public class AgriSettings {
     @Value("${agri.linebot.base-url:http://localhost:5000}")
     private String linebotBaseUrl;
 
+    /**
+     * 啟動時是否寫入示範資料（工班、工人、訂單、出勤、加保、評價、人才、黑轉白清冊、天候狀態與示範帳號）。
+     * 環境變數 AGRI_SEED_DEMO_DATA；未設定時跟隨 demo 模式。正式環境不得開啟。
+     * 作物費率與工時包 DM（產品定義）屬參考資料，不論此設定都會補齊。
+     */
+    @Value("${agri.seed.demo-data:}")
+    private String seedDemoData;
+
     public boolean isDemoEnabled() { return demoEnabled; }
+
+    public boolean isSeedDemoData() {
+        return seedDemoData == null || seedDemoData.isBlank() ? demoEnabled : Boolean.parseBoolean(seedDemoData.trim());
+    }
 
     public String getTokenSecret() { return tokenSecret; }
 

@@ -38,6 +38,7 @@ public class OrderService {
 
     private final com.agridispatch.repository.BrochureRepository brochureRepository;
     private final WorkerRepository workerRepository;
+    private final com.agridispatch.repository.DispatchTeamRepository teamRepository;
 
     /**
      * 工時包（文宣 DM）對應的作物與派工類別、預設面積：{cropId, dispatchCategory, area}。
@@ -53,8 +54,10 @@ public class OrderService {
     public OrderService(OrderRepository orderRepository, CropRepository cropRepository, AgriSettings settings,
                         InsuranceService insuranceService, LineNotifyService lineNotifyService,
                         com.agridispatch.repository.BrochureRepository brochureRepository,
-                        WorkerRepository workerRepository) {
+                        WorkerRepository workerRepository,
+                        com.agridispatch.repository.DispatchTeamRepository teamRepository) {
         this.orderRepository = orderRepository;
+        this.teamRepository = teamRepository;
         this.workerRepository = workerRepository;
         this.brochureRepository = brochureRepository;
         this.cropRepository = cropRepository;
@@ -434,7 +437,11 @@ public class OrderService {
 
         Map<String, Object> calc = applyPricing(order); // 驗證作物 / 面積 / 方案並精算金額
         if (order.getAssignedTeamId() == null || order.getAssignedTeamId().isBlank()) {
-            order.setAssignedTeamId((String) calc.get("suggestedTeam"));
+            // 類別的建議工班是固定代碼（team_a…）；正式環境工班尚未建立時不指派（null＝待分派），避免違反工班外鍵
+            String suggested = (String) calc.get("suggestedTeam");
+            order.setAssignedTeamId(suggested != null && teamRepository.existsById(suggested) ? suggested : null);
+        } else {
+            requireTeam(order.getAssignedTeamId());
         }
         order.setDepositPaid(false);
         order.setStatus(order.getDepositAmount() > 0 ? PENDING : CONFIRMED);
@@ -507,7 +514,7 @@ public class OrderService {
         if (updated.getForemanName() != null) existing.setForemanName(updated.getForemanName());
         if (updated.getForemanPhone() != null) existing.setForemanPhone(updated.getForemanPhone());
         if (updated.getForemanNotes() != null) existing.setForemanNotes(updated.getForemanNotes());
-        if (isAdmin && updated.getAssignedTeamId() != null) existing.setAssignedTeamId(updated.getAssignedTeamId());
+        if (isAdmin && updated.getAssignedTeamId() != null) existing.setAssignedTeamId(requireTeam(updated.getAssignedTeamId()));
         if (updated.getStartDate() != null || updated.getEndDate() != null) {
             if (COMPLETED.equals(existing.getStatus()) || CANCELLED.equals(existing.getStatus())) {
                 throw ApiException.conflict("已完工或已取消的訂單不可修改工期");
@@ -589,6 +596,11 @@ public class OrderService {
     }
 
     /** 工期：開工、完工日須同時提供，完工不可早於開工，單張訂單最長 366 天；皆未提供視為尚未排定 */
+    private String requireTeam(String teamId) {
+        if (!teamRepository.existsById(teamId)) throw ApiException.badRequest("查無工班：" + teamId);
+        return teamId;
+    }
+
     /** 文字欄位長度上限（未設 @Column 的欄位在 H2 為 varchar(255)），超過回 400 而不是資料庫錯誤 */
     static void validateTextLengths(Order o) {
         checkLength(o.getFarmerName(), 100, "農場主姓名");

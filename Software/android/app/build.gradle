@@ -90,6 +90,8 @@ android {
     //   debug：本機後端，模擬器先執行 adb reverse tcp:3000 tcp:3000；-PagriDebugApiBase= （空值）可改回示範資料
     //   release：正式網域上線前留空（維持示範資料）；上線後改為 https://agridispatch.tw/api，或建置時 -PagriApiBase=https://…
     def debugApiBase = project.findProperty('agriDebugApiBase') ?: (project.hasProperty('agriDebugApiBase') ? '' : 'http://localhost:3000/api')
+    // debug 的網頁模式預設 demo；連正式模式後端（例如本機正式模式測試）時以 -PagriDebugAppMode=production 指定
+    def debugAppMode = project.findProperty('agriDebugAppMode') ?: 'demo'
     def releaseApiBase = project.findProperty('agriApiBase') ?: ''
     if (releaseApiBase && !releaseApiBase.startsWith('https://')) {
         throw new GradleException("release 的後端網址必須是 https：${releaseApiBase}")
@@ -97,7 +99,7 @@ android {
     buildTypes {
         debug {
             buildConfigField 'String', 'API_BASE', "\"${debugApiBase}\""
-            buildConfigField 'String', 'APP_MODE', '"demo"'
+            buildConfigField 'String', 'APP_MODE', "\"${debugAppMode}\""
         }
         release {
             buildConfigField 'String', 'API_BASE', "\"${releaseApiBase}\""

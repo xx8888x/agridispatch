@@ -222,6 +222,16 @@ location /linebot-api/ {
     proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto \$scheme;
 }
+# 網頁：每次載入都向伺服器確認是否有新版（沒變就回 304），部署後使用者不會卡在瀏覽器快取的舊頁面
+location /web/ {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+    proxy_hide_header Cache-Control;
+    add_header Cache-Control "no-cache" always;
+}
 location / {
     proxy_pass http://127.0.0.1:3000;
     proxy_set_header Host \$host;

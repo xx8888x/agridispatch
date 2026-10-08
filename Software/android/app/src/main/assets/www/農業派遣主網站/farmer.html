@@ -338,118 +338,8 @@
 
       <div id="farmerOrdersListContainer" style="display: flex; flex-direction: column; gap: 16px;">
 
-        <!-- 訂單 1：履約中 -->
-        <div class="ad-card" style="padding: 24px;">
-          <div class="ad-card__head" style="flex-wrap: wrap;">
-            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;">
-              <span class="ad-heading ad-num">ORD-2026-013</span>
-              <span class="ad-pill ad-pill--ok"><span class="ad-pill__dot"></span>履約中・專車已排定</span>
-              <span data-team-insurance="team_b" class="ad-pill">加保狀態查詢中…</span>
-            </div>
-            <div class="ad-caption">起工 <strong class="ad-num" style="color: var(--ad-text);">2026/09/25</strong>（共 4 天・168 工時）</div>
-          </div>
-
-          <div class="ad-form-grid ad-form-grid--3">
-            <div class="ad-card--inset ad-card">
-              <div class="ad-label">作物與面積</div>
-              <div class="ad-heading" style="margin-top: 4px;">屏東枋山愛文芒果（6 分地）</div>
-              <p class="ad-caption">枋山愛文芒果合作園區 2 號地</p>
-            </div>
-            <div class="ad-card--inset ad-card">
-              <div class="ad-label">工班與現場小工頭</div>
-              <div class="ad-heading" style="margin-top: 4px;">外展工班 B 組（6 人）</div>
-              <p class="ad-caption" data-team-rating="team_b">工班評價載入中…</p>
-              <div style="display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0;">
-                <span class="ad-hint" data-team-skills="team_b" data-skill="harvest">技能標籤載入中…</span>
-              </div>
-              <p class="ad-caption">小工頭：<strong style="color: var(--ad-text);">林小龍 (副班長)</strong> 0921-999-888</p>
-              <p class="ad-caption">指示：早上 06:45 枋山 2 號集貨場集合</p>
-            </div>
-            <div class="ad-card--inset ad-card">
-              <div class="ad-label">費用與發票</div>
-              <div class="ad-price ad-price--accent" style="margin-top: 4px; font-size: 1.125rem;">總額 NT$ 52,920</div>
-              <p class="ad-caption">已付 20% 定金：<span class="ad-num" style="color: var(--ad-primary-text);">NT$ 10,584</span></p>
-              <p class="ad-caption">發票號碼：<span class="ad-num" style="color: var(--ad-text);">AG-98765432</span></p>
-            </div>
-          </div>
-
-          <div style="margin-top: 16px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;" class="ad-caption">
-              <span>作業進度（第 3 天／共 4 天）</span>
-              <strong class="ad-num" style="color: var(--ad-primary-text);">75%</strong>
-            </div>
-            <div class="ad-progress" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"><div class="ad-progress__bar" style="width: 75%;"></div></div>
-          </div>
-
-          <div class="ad-card__foot" style="justify-content: space-between; flex-wrap: wrap;">
-            <span class="ad-caption">外銷採收良率 <strong class="ad-num" style="color: var(--ad-primary-text);">96.8%</strong>（留蒂 ≥ 0.5cm）</span>
-            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-              <button type="button" onclick="AgriDocs.downloadInvoice('ORD-2026-013', { invoiceNo: 'AG-98765432', cropName: '枋山愛文芒果 (6.0 分地)', amount: 52920, deposit: 10584 })" class="ad-btn ad-btn--secondary ad-btn--sm">下載發票</button>
-              <button type="button" onclick="AgriDocs.showGpsLocation('專車 GPS 即時定位', '屏東枋山集貨場專車，預計明日清晨 06:50 抵達果園門口。')" class="ad-btn ad-btn--secondary ad-btn--sm">專車位置</button>
-              <a href="tel:0921999888" class="ad-btn ad-btn--secondary ad-btn--sm">致電小工頭</a>
-            </div>
-          </div>
-
-          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px;">
-            <span class="ad-caption">合規與評價</span>
-            <a href="farmer-certificate.html?order=ORD-2026-013" class="ad-btn ad-btn--ghost ad-btn--sm">合法用工證明</a>
-            <a href="expenses.html" class="ad-btn ad-btn--ghost ad-btn--sm">勞務費明細</a>
-            <button type="button" id="rateBtn-ORD-2026-013" onclick="openRatingModal('ORD-2026-013', '外展工班 B 組', 'team_b')" class="ad-btn ad-btn--ghost ad-btn--sm">評價工班</button>
-          </div>
-        </div>
-
-        <!-- 訂單 2：待付定金 -->
-        <div class="ad-card" style="padding: 24px;">
-          <div class="ad-card__head" style="flex-wrap: wrap;">
-            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;">
-              <span class="ad-heading ad-num">ORD-2026-014</span>
-              <span class="ad-pill ad-pill--warn">已預約・待付 20% 定金</span>
-              <span class="ad-pill">工班分派後由合作社加保</span>
-            </div>
-            <div class="ad-caption">預計起工 <strong class="ad-num" style="color: var(--ad-text);">2026/10/05</strong>（約 3 天・128 工時）</div>
-          </div>
-
-          <div class="ad-form-grid ad-form-grid--3">
-            <div class="ad-card--inset ad-card">
-              <div class="ad-label">作物與面積</div>
-              <div class="ad-heading" style="margin-top: 4px;">苗栗卓蘭高接梨（4 分地）</div>
-              <p class="ad-caption">卓蘭果園產區・嫁接與高空修剪</p>
-            </div>
-            <div class="ad-card--inset ad-card">
-              <div class="ad-label">工班與現場小工頭</div>
-              <div class="ad-heading" style="margin-top: 4px;">工班 B 組（5 人待分派）</div>
-              <div style="display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0;">
-                <span class="ad-hint" data-team-skills="team_b" data-skill="pruning">技能標籤載入中…</span>
-              </div>
-              <p class="ad-caption">小工頭：<strong style="color: var(--ad-text);">陳建龍 (農場主本人帶隊)</strong></p>
-              <p class="ad-caption">指示：農場主本人親自現場帶隊指揮調度</p>
-            </div>
-            <div class="ad-card--inset ad-card">
-              <div class="ad-label">費用</div>
-              <div class="ad-price ad-price--accent" style="margin-top: 4px; font-size: 1.125rem;">總額 NT$ 40,320</div>
-              <p class="ad-caption">待付定金（20%）：<span class="ad-num" style="color: var(--ad-accent-text); font-weight: 700;">NT$ 8,064</span></p>
-              <p class="ad-caption">付定金後啟動專車派遣與早鳥鎖約</p>
-            </div>
-          </div>
-
-          <div class="ad-card__foot" style="justify-content: space-between; flex-wrap: wrap;">
-            <span class="ad-caption">早鳥 315 元/hr：已鎖定產季名額・優先排班</span>
-            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-              <button type="button" class="ad-btn ad-btn--accent ad-btn--sm" data-pay='{"orderId":"ORD-2026-014","deposit":8064,"crop":"苗栗卓蘭高接梨 (4分地)","location":"卓蘭果園","amount":40320}' onclick="payDeposit(this)">付定金 NT$ 8,064</button>
-              <button type="button" onclick="switchFarmerTab('booking')" class="ad-btn ad-btn--secondary ad-btn--sm">修改預約</button>
-            </div>
-          </div>
-
-          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px;">
-            <span class="ad-caption">合規與評價</span>
-            <button type="button" onclick="farmerDemoNotice('合法用工證明（完工後提供）', '此訂單尚未出工；完工後依實際出勤紀錄產生，內含出勤人員、工時與合作社雇用紀錄。')" class="ad-btn ad-btn--ghost ad-btn--sm">合法用工證明</button>
-            <a href="expenses.html" class="ad-btn ad-btn--ghost ad-btn--sm">勞務費明細</a>
-            <button type="button" onclick="farmerDemoNotice('評價工班（完工後開放）', '此訂單尚未出工；完工驗收後即可為工班評分。')" class="ad-btn ad-btn--ghost ad-btn--sm">評價工班</button>
-          </div>
-        </div>
-
-        <!-- 剛送出的訂單（由 renderOrdersList 產生） -->
-        <div id="dynamicOrdersBox" style="display: flex; flex-direction: column; gap: 16px;"></div>
+        <!-- 我的訂單（renderOrdersList 向後端 GET /api/orders 讀取本人訂單；demo 由 Mock 回應） -->
+        <div id="dynamicOrdersBox" style="display: flex; flex-direction: column; gap: 16px;"><p class="ad-caption">訂單載入中…</p></div>
       </div>
 
     </div>
@@ -740,25 +630,9 @@
     function payDeposit(btn) {
       let d;
       try { d = JSON.parse(btn.dataset.pay); } catch (e) { return; }
-      const holder = btn.parentElement;
       AgriDocs.openPaymentCashier(d.orderId, d.deposit, d.crop, d.location, (data) => {
-        if (updateLocalOrder(d.orderId, { depositPaid: true, status: 'confirmed', invoiceNo: (data && data.invoiceNo) || '' })) {
-          renderOrdersList();
-          return;
-        }
-        holder.textContent = '';
-        const done = document.createElement('span');
-        done.className = 'ad-pill ad-pill--ok';
-        done.textContent = '定金已付清';
-        const inv = document.createElement('button');
-        inv.type = 'button';
-        inv.className = 'ad-btn ad-btn--secondary ad-btn--sm';
-        inv.textContent = '下載發票';
-        inv.addEventListener('click', () => AgriDocs.downloadInvoice(d.orderId, {
-          invoiceNo: (data && data.invoiceNo) || 'AG-88192041',
-          cropName: d.crop, amount: d.amount, deposit: d.deposit
-        }));
-        holder.append(done, inv);
+        updateLocalOrder(d.orderId, { depositPaid: true, status: 'confirmed', invoiceNo: (data && data.invoiceNo) || '' });
+        renderOrdersList();   // 以後端的最新狀態重畫（後端訂單不一定在本機紀錄裡）
       });
     }
 
@@ -1105,85 +979,178 @@
       if (window.scrollY > 200) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function renderOrdersList() {
+    // 我的訂單：以後端為準（GET /api/orders 只回本人訂單；demo 由 Mock 回應錄製資料，再依登入者 refId 過濾）。
+    // 連不上後端時（demo 離線展示）才退回本機 agri_orders；本機只補後端沒有的離線訂單。
+    const SKILL_OF_CATEGORY = { harvest_grading: 'harvest', pruning_bagging: 'pruning', tillage_planting: 'tillage', cold_chain_pack: 'packing' };
+    let teamNames = null;
+    let teamNamesLoading = null;   // 同時有多次重畫時共用同一個請求，避免後到者拿到空的名稱表
+    let ordersRenderSeq = 0;
+
+    function currentFarmerRef() {
+      try { const u = JSON.parse(sessionStorage.getItem('agri_user') || 'null'); return u && u.refId; } catch (e) { return null; }
+    }
+
+    function loadTeamNames(base) {
+      if (!teamNamesLoading) {
+        teamNamesLoading = (async () => {
+          const names = {};
+          try {
+            const res = await fetch(`${base}/dispatch/teams`);
+            if (res.ok) ((await res.json()).data || []).forEach((t) => { names[t.id] = t.name; });
+          } catch (e) { /* 只影響工班名稱顯示 */ }
+          teamNames = names;
+          return names;
+        })();
+      }
+      return teamNamesLoading;
+    }
+
+    async function fetchMyOrders() {
+      const base = (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+      let local = [];
+      try { local = JSON.parse(localStorage.getItem('agri_orders') || '[]'); } catch (e) {}
+      try {
+        const res = await fetch(`${base}/orders`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        let list = (await res.json()).data || [];
+        const ref = currentFarmerRef();
+        if (ref) list = list.filter((o) => o.farmerId === ref);   // 正式環境後端已只回本人訂單；demo 錄製資料含他人訂單
+        const ids = new Set(list.map((o) => o.id));
+        local.filter((o) => o.offline && !ids.has(o.id)).forEach((o) => list.push(o));
+        await loadTeamNames(base);
+        return list;
+      } catch (e) {
+        return local;   // 離線：沿用本機紀錄
+      }
+    }
+
+    function orderSortKey(o) {
+      const rank = { in_progress: 0, confirmed: 1, pending: 2, completed: 3, cancelled: 4 }[o.status];
+      return [rank == null ? 2 : rank, String(o.startDate || o.createdAt || '')];
+    }
+
+    async function renderOrdersList() {
       const box = document.getElementById('dynamicOrdersBox');
       const countBadge = document.getElementById('orderBadgeCount');
       if (!box) return;
+      const seq = ++ordersRenderSeq;
+      const orders = await fetchMyOrders();
+      if (seq !== ordersRenderSeq) return;   // 已有較新的重新整理
+      orders.sort((x, y) => { const a = orderSortKey(x), b = orderSortKey(y); return a[0] - b[0] || b[1].localeCompare(a[1]); });
 
-      let orders = [];
-      try {
-        orders = JSON.parse(localStorage.getItem('agri_orders') || '[]');
-      } catch (e) {}
-
-      const totalCount = 2 + orders.length;
-      if (countBadge) countBadge.innerText = String(totalCount);
-
+      if (countBadge) countBadge.innerText = String(orders.filter((o) => o.status !== 'cancelled').length);
       if (orders.length === 0) {
-        box.innerHTML = '';
+        box.innerHTML = `<div class="ad-card" style="padding: 24px;"><p class="ad-caption" style="margin: 0 0 12px;">目前沒有訂單。</p><button type="button" class="ad-btn ad-btn--accent ad-btn--sm" onclick="switchFarmerTab('booking')">新增預約</button></div>`;
         return;
       }
 
-      box.innerHTML = orders.map(ord => {
-        const days = ord.suggestedWorkers ? Math.round(ord.totalHours / (ord.suggestedWorkers * 8)) : '';
+      const money = (n) => (n ? Number(n).toLocaleString() : '0');
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      box.innerHTML = orders.map((ord) => {
+        const id = escHtml(ord.id);
+        const crew = ord.requestedWorkers || ord.suggestedWorkers || '';
+        const days = ord.startDate && ord.endDate
+          ? Math.round((new Date(ord.endDate) - new Date(ord.startDate)) / 86400000) + 1
+          : (crew && ord.totalHours ? Math.max(1, Math.round(ord.totalHours / (crew * 8))) : '');
         const when = ord.startDate
           ? ord.startDate + (ord.endDate && ord.endDate !== ord.startDate ? ' ～ ' + ord.endDate : '')
-          : (ord.createdAt ? ord.createdAt.split('T')[0] : '明日');
-        const pay = escHtml(JSON.stringify({
-          orderId: ord.id, deposit: ord.depositAmount || 4480, crop: ord.cropName,
-          location: ord.farmLocation, amount: ord.finalAmount || 22400
-        }));
-        const money = (n) => (n ? Number(n).toLocaleString() : '0');
-        // 付款狀態：已付定金 → 已排定；免定金方案（如彈性兼職包）直接已排定
+          : (ord.createdAt ? String(ord.createdAt).slice(0, 10) : '待排定');
+        const created = ord.createdAt ? new Date(String(ord.createdAt).replace(' ', 'T')) : null;
+        const isNew = created && !isNaN(created) && (Date.now() - created.getTime()) < 30 * 60 * 1000;
         const needDeposit = Number(ord.depositAmount) > 0;
         const paid = !!ord.depositPaid;
-        const statusPill = paid
-          ? '<span class="ad-pill ad-pill--ok">已排定・定金已付</span>'
-          : (needDeposit ? '<span class="ad-pill ad-pill--warn">已預約・待付 20% 定金</span>' : '<span class="ad-pill ad-pill--ok">已排定・免定金</span>');
+        const st = ord.status;
+        const statusPill = st === 'cancelled' ? '<span class="ad-pill">已取消</span>'
+          : st === 'completed' ? '<span class="ad-pill ad-pill--ok">已完工</span>'
+          : st === 'in_progress' ? '<span class="ad-pill ad-pill--ok"><span class="ad-pill__dot"></span>施工中</span>'
+          : (paid ? '<span class="ad-pill ad-pill--ok">已排定・定金已付</span>'
+            : (needDeposit ? '<span class="ad-pill ad-pill--warn">已預約・待付 20% 定金</span>'
+              : (st === 'confirmed' ? '<span class="ad-pill ad-pill--ok">已排定・免定金</span>' : '<span class="ad-pill">待合作社確認</span>')));
+        const teamId = ord.assignedTeamId || '';
+        const teamName = teamId ? ((teamNames && teamNames[teamId]) || teamId) : '';
+        const insurancePill = teamId && (st === 'in_progress' || st === 'confirmed')
+          ? `<span data-team-insurance="${escHtml(teamId)}" class="ad-pill">加保狀態查詢中…</span>` : '';
+        const skill = SKILL_OF_CATEGORY[ord.dispatchCategory];
+        const pay = escHtml(JSON.stringify({ orderId: ord.id, deposit: ord.depositAmount, crop: ord.cropName, location: ord.farmLocation, amount: ord.finalAmount }));
+
+        let progress = '';
+        if (st === 'in_progress' && ord.startDate && days) {
+          const day = Math.min(days, Math.max(1, Math.floor((today - new Date(ord.startDate + 'T00:00:00')) / 86400000) + 1));
+          const pct = Math.round(day / days * 100);
+          progress = `
+          <div style="margin-top: 16px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;" class="ad-caption"><span>工期進度（第 ${day} 天／共 ${days} 天）</span><strong class="ad-num" style="color: var(--ad-primary-text);">${pct}%</strong></div>
+            <div class="ad-progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><div class="ad-progress__bar" style="width: ${pct}%;"></div></div>
+          </div>`;
+        }
+
         const depositLine = !needDeposit
           ? '<p class="ad-caption">此方案免付定金，派工依排班確認</p>'
-          : `<p class="ad-caption">${paid ? '已付定金' : '待付定金'}（20%）：<span class="ad-num" style="color: ${paid ? 'var(--ad-primary-text)' : 'var(--ad-accent-text)'}; font-weight: 700;">NT$ ${money(ord.depositAmount)}</span></p>
-              <p class="ad-caption">${paid ? '已啟動專車派遣與早鳥鎖約' : '付定金後啟動專車派遣與早鳥鎖約'}</p>`;
-        const action = paid
-          ? `<span class="ad-pill ad-pill--ok">定金已付清</span><button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" data-pay="${pay}" data-invoice="${escHtml(ord.invoiceNo || '')}" onclick="downloadPaidInvoice(this)">下載發票</button>`
-          : (needDeposit ? `<button type="button" class="ad-btn ad-btn--accent ad-btn--sm" data-pay="${pay}" onclick="payDeposit(this)">付定金 NT$ ${money(ord.depositAmount)}</button>` : '');
+          : `<p class="ad-caption">${paid ? '已付定金' : '待付定金'}（20%）：<span class="ad-num" style="color: ${paid ? 'var(--ad-primary-text)' : 'var(--ad-accent-text)'}; font-weight: 700;">NT$ ${money(ord.depositAmount)}</span></p>`;
+        const actions = [];
+        if (st !== 'cancelled' && needDeposit && !paid && !ord.offline) actions.push(`<button type="button" class="ad-btn ad-btn--accent ad-btn--sm" data-pay="${pay}" onclick="payDeposit(this)">付定金 NT$ ${money(ord.depositAmount)}</button>`);
+        if (paid) actions.push(`<button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" data-pay="${pay}" data-invoice="${escHtml(ord.invoiceNo || '')}" onclick="downloadPaidInvoice(this)">下載發票</button>`);
+        if (ord.foremanPhone && st !== 'cancelled') actions.push(`<a href="tel:${escHtml(String(ord.foremanPhone).replace(/[^0-9+]/g, ''))}" class="ad-btn ad-btn--secondary ad-btn--sm">致電小工頭</a>`);
+        if (st === 'pending') actions.push(`<button type="button" onclick="switchFarmerTab('booking')" class="ad-btn ad-btn--secondary ad-btn--sm">修改預約</button>`);
+
+        const worked = st === 'in_progress' || st === 'completed';
+        const compliance = worked
+          ? `<a href="farmer-certificate.html?order=${encodeURIComponent(ord.id)}" class="ad-btn ad-btn--ghost ad-btn--sm">合法用工證明</a>
+             <a href="expenses.html" class="ad-btn ad-btn--ghost ad-btn--sm">勞務費明細</a>
+             ${teamId ? `<button type="button" id="rateBtn-${id}" data-order="${id}" data-team="${escHtml(teamId)}" data-team-name="${escHtml(teamName)}" onclick="openRatingModal(this.dataset.order, this.dataset.teamName, this.dataset.team)" class="ad-btn ad-btn--ghost ad-btn--sm">評價工班</button>` : ''}`
+          : `<a href="expenses.html" class="ad-btn ad-btn--ghost ad-btn--sm">勞務費明細</a><span class="ad-caption">出工後提供合法用工證明與工班評價</span>`;
+
         return `
         <div class="ad-card" style="padding: 24px;">
           <div class="ad-card__head" style="flex-wrap: wrap;">
             <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;">
-              <span class="ad-heading ad-num">${escHtml(ord.id)}</span>
+              <span class="ad-heading ad-num">${id}</span>
               ${statusPill}
-              <span class="ad-pill ad-pill--ok">剛剛送出</span>
+              ${insurancePill}
+              ${isNew ? '<span class="ad-pill ad-pill--ok">剛剛送出</span>' : ''}
+              ${ord.offline ? '<span class="ad-pill ad-pill--warn">尚未同步（離線）</span>' : ''}
             </div>
-            <div class="ad-caption">預計起工 <strong class="ad-num" style="color: var(--ad-text);">${escHtml(when)}</strong>（共 ${days} 天・${escHtml(ord.totalHours)} 工時）</div>
+            <div class="ad-caption">${worked ? '工期' : '預計起工'} <strong class="ad-num" style="color: var(--ad-text);">${escHtml(when)}</strong>（${days ? `共 ${days} 天・` : ''}${escHtml(ord.totalHours)} 工時）</div>
           </div>
 
           <div class="ad-form-grid ad-form-grid--3">
             <div class="ad-card--inset ad-card">
               <div class="ad-label">作物與面積</div>
               <div class="ad-heading" style="margin-top: 4px;">${escHtml(ord.cropName)}（${escHtml(ord.area)} 分地）</div>
-              <p class="ad-caption">${escHtml(ord.farmLocation)}</p>
+              <p class="ad-caption">${escHtml(ord.farmLocation || '')}</p>
             </div>
             <div class="ad-card--inset ad-card">
               <div class="ad-label">工班與現場小工頭</div>
-              <div class="ad-heading" style="margin-top: 4px;">${escHtml(ord.suggestedWorkers)} 人外展專隊</div>
+              <div class="ad-heading" style="margin-top: 4px;">${teamName ? `${escHtml(teamName)}（${escHtml(crew)} 人）` : `${escHtml(crew)} 人・工班待分派`}</div>
+              ${teamId ? `<p class="ad-caption" data-team-rating="${escHtml(teamId)}">工班評價載入中…</p>` : ''}
+              ${teamId && skill ? `<div style="display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0;"><span class="ad-hint" data-team-skills="${escHtml(teamId)}" data-skill="${skill}">技能標籤載入中…</span></div>` : ''}
               <p class="ad-caption">小工頭：<strong style="color: var(--ad-text);">${escHtml(ord.foremanName || '未指定')}</strong> ${escHtml(ord.foremanPhone || '')}</p>
               <p class="ad-caption">指示：${escHtml(ord.foremanNotes || '無特殊備註')}</p>
             </div>
             <div class="ad-card--inset ad-card">
-              <div class="ad-label">費用（${escHtml(ord.planName)}）</div>
-              <div class="ad-price ad-price--accent" style="margin-top: 4px; font-size: 1.125rem;">應付總額 NT$ ${money(ord.finalAmount)}</div>
+              <div class="ad-label">費用${ord.planName ? `（${escHtml(ord.planName)}）` : ''}</div>
+              <div class="ad-price ad-price--accent" style="margin-top: 4px; font-size: 1.125rem;">總額 NT$ ${money(ord.finalAmount)}</div>
               ${depositLine}
             </div>
           </div>
+          ${progress}
 
           <div class="ad-card__foot" style="justify-content: space-between; flex-wrap: wrap;">
-            <span class="ad-caption">派工項目：<span style="color: var(--ad-text);">${escHtml(ord.categoryName)}</span></span>
-            <div style="display: flex; gap: 8px;">
-              ${action}
-            </div>
+            <span class="ad-caption">派工項目：<span style="color: var(--ad-text);">${escHtml(ord.categoryName || '')}</span></span>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">${actions.join('')}</div>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px;">
+            <span class="ad-caption">合規與評價</span>
+            ${compliance}
           </div>
         </div>`;
       }).join('');
+
+      // 卡片上的工班評價、加保狀態、技能標籤（依卡片上的 data-team-* 載入）
+      loadTeamRatings();
+      loadTeamInsurance();
+      loadTeamSkills();
     }
 
     document.addEventListener('DOMContentLoaded', () => {

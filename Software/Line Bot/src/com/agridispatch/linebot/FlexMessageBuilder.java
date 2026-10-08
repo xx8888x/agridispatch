@@ -5,6 +5,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -115,7 +116,8 @@ public class FlexMessageBuilder {
     /** F-07 農場主帳號綁定卡（不顯示 LINE userId） */
     public static String getFarmerBindingFlex(String userId) {
         return wrapFlex("智農派工 - 農場主帳號綁定", simpleBubble("#0F766E", "智農派工（農場主）", "帳號綁定",
-                List.of("綁定後可查看您的訂單與派工確認單、天候對訂單的影響，並使用黑轉白服務。"),
+                List.of(Config.FEATURE_LEGALIZE ? "綁定後可查看您的訂單與派工確認單、天候對訂單的影響，並使用黑轉白服務。"
+                        : "綁定後可查看您的訂單與派工確認單，以及天候對訂單的影響。"),
                 List.of(uriButton("農場主帳號綁定", bindUrl(Channel.FARMER, Identity.FARMER, null, userId), "#059669"))));
     }
 
@@ -130,15 +132,20 @@ public class FlexMessageBuilder {
     /** F-08 農場主服務導覽（只列農場主功能） */
     public static String getFarmerHelpFlex() {
         return wrapFlex("智農派工（農場主）- 服務導覽", simpleBubble("#047857", "智農派工（農場主）", "服務導覽",
-                List.of("請點下方選單，或輸入下列文字：",
-                        "• 「派工」「訂單」：我的訂單與派工確認單",
-                        "• 「黑轉白」：現有工班依身分轉為合法聘僱",
-                        "• 「早鳥」：產季早鳥保證工時包",
-                        "• 「避險」：天候對訂單的影響",
-                        "• 「機耕」：無人機代噴與農機預約",
-                        "• 「費率」「產曆」：服務費率與全台產曆",
-                        "• 「綁定」：帳號綁定"),
+                farmerHelpLines(),
                 List.of()));
+    }
+
+    private static List<String> farmerHelpLines() {
+        List<String> lines = new ArrayList<>(List.of("請點下方選單，或輸入下列文字：",
+                "• 「派工」「訂單」：我的訂單與派工確認單"));
+        if (Config.FEATURE_LEGALIZE) lines.add("• 「黑轉白」：現有工班依身分轉為合法聘僱");
+        lines.addAll(List.of("• 「早鳥」：產季早鳥保證工時包",
+                "• 「避險」：天候對訂單的影響",
+                "• 「機耕」：無人機代噴與農機預約",
+                "• 「費率」「產曆」：服務費率與全台產曆",
+                "• 「綁定」：帳號綁定"));
+        return lines;
     }
 
     /** W-08 工作者使用說明（依語言） */

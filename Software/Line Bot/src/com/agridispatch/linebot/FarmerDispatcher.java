@@ -42,8 +42,8 @@ final class FarmerDispatcher {
     /** 文字訊息 → 動作代碼（與圖文選單 postback 的 a= 相同，規格 5.2） */
     static String actionOf(String raw) {
         String t = raw == null ? "" : raw.trim().toLowerCase();
-        // 黑轉白須在「派工」之前判斷，避免「改派」等字被派工規則吃掉
-        if (has(t, "黑轉白", "黑工")) return "legalize";
+        // 黑轉白須在「派工」之前判斷，避免「改派」等字被派工規則吃掉；功能下架時不辨識（落到服務導覽）
+        if (Config.FEATURE_LEGALIZE && has(t, "黑轉白", "黑工")) return "legalize";
         if (has(t, "派工", "訂單", "單號", "ord-", "工單", "進度")) return "orders";
         if (has(t, "避險", "天氣", "天候", "暴雨", "颱風", "雨")) return "weather";
         if (has(t, "早鳥", "預購", "優惠", "工時包", "early")) return "early_bird";
@@ -67,6 +67,11 @@ final class FarmerDispatcher {
                 return reply != null && !reply.isEmpty() ? reply : List.of(FlexMessageBuilder.getFarmerOrderFlex());
             }
             case "legalize": {
+                // 功能下架（Config.FEATURE_LEGALIZE=false）：手機上尚未更新的舊圖文選單仍可能送來 a=legalize
+                if (!Config.FEATURE_LEGALIZE) {
+                    return List.of(FlexMessageBuilder.wrapText("工班合法化（黑轉白）服務暫停提供，請點下方選單使用其他功能。"),
+                            FlexMessageBuilder.getFarmerHelpFlex());
+                }
                 if (!me.isFarmer()) return bindingRequired(userId);
                 String key = params.get("t");
                 String typeText = key != null && LEGALIZE_KEYS.containsKey(key) ? LEGALIZE_KEYS.get(key) : text;

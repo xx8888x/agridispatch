@@ -30,20 +30,6 @@
       },
       "action": {
         "type": "postback",
-        "label": "現有工班黑轉白",
-        "data": "a=legalize",
-        "displayText": "現有工班黑轉白"
-      }
-    },
-    {
-      "bounds": {
-        "x": 1250,
-        "y": 0,
-        "width": 625,
-        "height": 843
-      },
-      "action": {
-        "type": "postback",
         "label": "早鳥工時包",
         "data": "a=early_bird",
         "displayText": "早鳥工時包"
@@ -51,7 +37,7 @@
     },
     {
       "bounds": {
-        "x": 1875,
+        "x": 1250,
         "y": 0,
         "width": 625,
         "height": 843
@@ -65,8 +51,8 @@
     },
     {
       "bounds": {
-        "x": 0,
-        "y": 843,
+        "x": 1875,
+        "y": 0,
         "width": 625,
         "height": 843
       },
@@ -79,6 +65,20 @@
     },
     {
       "bounds": {
+        "x": 0,
+        "y": 843,
+        "width": 625,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "費率試算",
+        "data": "a=rates",
+        "displayText": "費率試算"
+      }
+    },
+    {
+      "bounds": {
         "x": 625,
         "y": 843,
         "width": 625,
@@ -86,9 +86,9 @@
       },
       "action": {
         "type": "postback",
-        "label": "費率與產曆",
-        "data": "a=rates_calendar",
-        "displayText": "費率與產曆"
+        "label": "產曆查詢",
+        "data": "a=calendar",
+        "displayText": "產曆查詢"
       }
     },
     {

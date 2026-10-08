@@ -42,6 +42,30 @@ C = {
     "rose": "#9F1239",    # 求助
 }
 
+# 功能開關：工班合法化（黑轉白）。False＝暫時下架（與 Line Bot 的 feature.legalize、前端 features.legalize 一致），
+# 農場主已綁定選單改把「費率與產曆」拆成「費率試算」「產曆查詢」兩格補位；改 True 後重新執行並上傳即恢復。
+FEATURE_LEGALIZE = False
+
+FARMER_MAIN_CELLS = [
+    ("clipboard-list", "我的訂單", ["派工確認單"], "a=orders", "green"),
+    ("refresh-cw", "現有工班黑轉白", ["依身分合法轉換"], "a=legalize", "green"),
+    ("zap", "早鳥工時包", ["鎖定名額"], "a=early_bird", "amber"),
+    ("cloud-rain", "天候避險", ["訂單受影響情形"], "a=weather", "blue"),
+    ("tractor", "機耕代噴預約", ["T50 植保・曳引機"], "a=machinery_book", "slate"),
+    ("coins", "費率與產曆", ["服務費率・全台產曆"], "a=rates_calendar", "slate"),
+    ("user", "我的帳號", ["綁定與解除"], "a=account", "slate"),
+    ("sprout", "服務導覽", ["功能說明"], "a=help", "slate"),
+] if FEATURE_LEGALIZE else [
+    ("clipboard-list", "我的訂單", ["派工確認單"], "a=orders", "green"),
+    ("zap", "早鳥工時包", ["鎖定名額"], "a=early_bird", "amber"),
+    ("cloud-rain", "天候避險", ["訂單受影響情形"], "a=weather", "blue"),
+    ("tractor", "機耕代噴預約", ["T50 植保・曳引機"], "a=machinery_book", "slate"),
+    ("coins", "費率試算", ["時薪・日薪・包工"], "a=rates", "slate"),
+    ("calendar-days", "產曆查詢", ["全台作物採收期"], "a=calendar", "green"),
+    ("user", "我的帳號", ["綁定與解除"], "a=account", "slate"),
+    ("sprout", "服務導覽", ["功能說明"], "a=help", "slate"),
+]
+
 # 每格：(lucide 圖示, 主標, 副標清單, postback data, 顏色)
 MENUS = {
     "farmer_guest": {
@@ -61,16 +85,7 @@ MENUS = {
         "chatBarText": "農場主選單",
         "name": "智農派工（農場主）已綁定選單",
         "cols": 4,
-        "cells": [
-            ("clipboard-list", "我的訂單", ["派工確認單"], "a=orders", "green"),
-            ("refresh-cw", "現有工班黑轉白", ["依身分合法轉換"], "a=legalize", "green"),
-            ("zap", "早鳥工時包", ["鎖定名額"], "a=early_bird", "amber"),
-            ("cloud-rain", "天候避險", ["訂單受影響情形"], "a=weather", "blue"),
-            ("tractor", "機耕代噴預約", ["T50 植保・曳引機"], "a=machinery_book", "slate"),
-            ("coins", "費率與產曆", ["服務費率・全台產曆"], "a=rates_calendar", "slate"),
-            ("user", "我的帳號", ["綁定與解除"], "a=account", "slate"),
-            ("sprout", "服務導覽", ["功能說明"], "a=help", "slate"),
-        ],
+        "cells": FARMER_MAIN_CELLS,
     },
     "worker_guest": {
         "chatBarText": "Menu / 選單",

@@ -59,6 +59,13 @@ public class Config {
     /** 合作社服務專線（工作者帳號「聯絡合作社」按鈕）；未設定時只顯示勞動部 1955 專線。來源：COOP_CONTACT_PHONE／coop.contact.phone */
     public static String COOP_CONTACT_PHONE = null;
 
+    /**
+     * 功能開關：工班合法化（黑轉白）。預設 false（暫時下架，與前端 app-config.js 的 features.legalize 一致）：
+     * 農場主帳號不回黑轉白卡片、服務導覽不列此項。改回 true 即恢復；圖文選單另需以 tools/make_rich_menus.py 重產並上傳。
+     * 來源：環境變數 FEATURE_LEGALIZE，或 config.properties 的 feature.legalize（true／false）。
+     */
+    public static boolean FEATURE_LEGALIZE = false;
+
     /** 是否以舊的單一帳號設定（LINE_CHANNEL_*／line.channel.*）當作農場主帳號 */
     public static boolean LEGACY_FARMER_CONFIG = false;
 
@@ -131,6 +138,8 @@ public class Config {
         if (INTERNAL_KEY != null && INTERNAL_KEY.startsWith("請填入")) INTERNAL_KEY = null;
 
         COOP_CONTACT_PHONE = pick(prop, "COOP_CONTACT_PHONE", "coop.contact.phone");
+
+        FEATURE_LEGALIZE = "true".equalsIgnoreCase(pick(prop, "FEATURE_LEGALIZE", "feature.legalize"));
 
         LIFF_BIND_ID = pick(prop, "LIFF_BIND_ID", "liff.bind.id");
         if (LIFF_BIND_ID != null && LIFF_BIND_ID.startsWith("請填入")) LIFF_BIND_ID = null;

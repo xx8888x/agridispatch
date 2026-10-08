@@ -88,9 +88,17 @@ public class TestSimulator {
 
         // 農場主帳號（Mock 模式未指定身分時視為示範農場主）
         failed += check("F-01 派工確認單", F, null, text("派工"), 0, "派工確認單");
+        // F-02 黑轉白：預設下架（Config.FEATURE_LEGALIZE=false），兩種狀態都檢核，最後還原設定
+        boolean legalizeSetting = Config.FEATURE_LEGALIZE;
+        Config.FEATURE_LEGALIZE = false;
+        failed += check("F-02 黑轉白下架：文字回服務導覽", F, null, text("黑轉白"), 0, "服務導覽");
+        failed += check("F-02 黑轉白下架：導覽不列黑轉白", F, null, text("服務導覽"), 0, "!黑轉白");
+        failed += check("F-02 黑轉白下架：舊選單 postback", F, null, pb("a=legalize&t=borrowed"), 0, "暫停提供");
+        Config.FEATURE_LEGALIZE = true;
         failed += check("F-02 黑轉白身分選單", F, null, text("黑轉白"), 0, "請選擇工人身分");
         failed += check("F-02 黑轉白（文字）", F, null, text("黑轉白：失聯移工"), 0, "失聯");
         failed += check("F-02 黑轉白（postback）", F, null, pb("a=legalize&t=borrowed"), 0, "借用");
+        Config.FEATURE_LEGALIZE = legalizeSetting;
         failed += check("F-03 早鳥工時包", F, null, text("早鳥工時包"), 0, "早鳥");
         failed += check("F-04 天候避險", F, null, text("天候避險"), 0, "暴雨");
         failed += check("F-05 機耕代噴預約", F, null, text("機耕代噴"), 0, "機耕代噴預約");
@@ -227,7 +235,8 @@ public class TestSimulator {
 
     private static int expect(String name, List<String> replies, int index, String expected) {
         String got = index < replies.size() ? replies.get(index) : "";
-        boolean ok = got.contains(expected);
+        // 「!文字」：該則有內容且不得含此文字
+        boolean ok = expected.startsWith("!") ? !got.isEmpty() && !got.contains(expected.substring(1)) : got.contains(expected);
         System.out.printf("  %s %-36s → %s%n", ok ? "✅" : "❌", name, ok ? summary(got) : "預期第 " + (index + 1)
                 + " 則含「" + expected + "」，實際：" + (got.isEmpty() ? "（無）" : summary(got)));
         return ok ? 0 : 1;

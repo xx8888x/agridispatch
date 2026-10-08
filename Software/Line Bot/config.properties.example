@@ -30,6 +30,10 @@ liff.bind.id=
 # start_all.bat 未設定此環境變數時會自動產生一組給後端與 Line Bot 共用。
 internal.key=
 
+# 功能開關：工班合法化（黑轉白），預設 false＝暫時下架（農場主帳號不回黑轉白卡片、服務導覽不列）。
+# 改 true 即恢復；圖文選單另需把 tools/make_rich_menus.py 的 FEATURE_LEGALIZE 改 True、重產並上傳。
+feature.legalize=false
+
 # 本地伺服器監聽埠號 (預設 5000)
 server.port=5000
 

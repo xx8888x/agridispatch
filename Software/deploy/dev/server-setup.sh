@@ -106,7 +106,7 @@ done
 podman logs $ORA_NAME 2>&1 | grep "DATABASE IS READY TO USE" >/dev/null || { echo; echo "資料庫未就緒，請看 podman logs $ORA_NAME"; exit 1; }
 
 log "6/7 建立應用程式帳號 AGRIDISPATCH（已存在則略過）"
-podman exec -i $ORA_NAME sqlplus -s /nolog <<EOF
+podman exec -i -e NLS_LANG=AMERICAN_AMERICA.AL32UTF8 $ORA_NAME sqlplus -s /nolog <<EOF
 whenever sqlerror exit failure
 connect sys/"$ORACLE_PWD"@//localhost:1521/FREEPDB1 as sysdba
 set serveroutput on

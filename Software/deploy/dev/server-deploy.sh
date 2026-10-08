@@ -13,9 +13,9 @@ ORA_NAME=agri-oracle
 # shellcheck disable=SC1091
 source /etc/agridispatch/oracle.env
 
-sql_app() {   # 以 AGRIDISPATCH 執行 stdin 的 SQL
+sql_app() {   # 以 AGRIDISPATCH 執行 stdin 的 SQL（NLS_LANG 指定 UTF-8，否則中文會存成 U+FFFD）
   { echo "whenever sqlerror exit failure"; echo "connect AGRIDISPATCH/\"$AGRI_DB_PASSWORD\"@//localhost:1521/FREEPDB1"; echo "set define off"; cat; echo "exit"; } \
-    | podman exec -i $ORA_NAME sqlplus -s /nolog
+    | podman exec -i -e NLS_LANG=AMERICAN_AMERICA.AL32UTF8 $ORA_NAME sqlplus -s /nolog
 }
 
 echo "[deploy] 1/4 資料表"

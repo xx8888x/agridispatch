@@ -87,6 +87,6 @@ API 回傳的 `arcNumber`、`passportNumber` 一律遮罩為前 2 碼 + `****` +
 ## 8. 其他安全設定
 
 - H2 console：預設關閉；demo 模式開啟但 `web-allow-others: false`（僅本機）。
-- CORS：只允許 `agri.cors.allowed-origins`（預設 `http://localhost:3000,http://localhost:5000,http://127.0.0.1:3000`）。
+- CORS：只允許 `agri.cors.allowed-origins`（環境變數 `AGRI_CORS_ALLOWED_ORIGINS`；預設 `http://localhost:3000,http://localhost:5000,http://127.0.0.1:3000,https://appassets.androidplatform.net`）。`https://appassets.androidplatform.net` 是 Android App 以 WebViewAssetLoader 載入內建網頁的固定來源（見 06 Android 規格第陸章）；原本 `file:///android_asset/` 的來源是 `null`，一律被擋。來源為 `null` 或不在名單內的預檢請求回 403（2026-10-08 模擬器實測）。
 - 密碼以 PBKDF2-HMAC-SHA256（310,000 次、16 bytes salt）雜湊儲存，格式 `pbkdf2$<iter>$<saltB64>$<hashB64>`；啟動時自動把舊明碼升級為雜湊。
 - 管理員初始密碼：環境變數 `AGRI_ADMIN_PASSWORD`；demo 模式沿用示範密碼；兩者皆無時隨機產生並只在啟動 log 顯示一次。

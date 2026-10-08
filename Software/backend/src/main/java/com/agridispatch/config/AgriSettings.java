@@ -25,8 +25,8 @@ public class AgriSettings {
     @Value("${agri.security.admin-password:}")
     private String adminPassword;
 
-    /** CORS 白名單（逗號分隔） */
-    @Value("${agri.cors.allowed-origins:http://localhost:3000,http://localhost:5000,http://127.0.0.1:3000}")
+    /** CORS 白名單（逗號分隔）；https://appassets.androidplatform.net 是 Android App WebViewAssetLoader 的固定來源（規格 06 第陸章） */
+    @Value("${agri.cors.allowed-origins:http://localhost:3000,http://localhost:5000,http://127.0.0.1:3000,https://appassets.androidplatform.net}")
     private String corsAllowedOrigins;
 
     /** 金流供應者：mock | ecpay */

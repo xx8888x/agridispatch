@@ -27,7 +27,8 @@
 已在本機實際建置成功：`assembleDebug` → `app/build/outputs/apk/debug/app-debug.apk`（約 7.3 MB）。
 2026-10-02 已在模擬器（Pixel 6、Android 15，`AgriTest_API35`）安裝執行 client／server 兩支 debug APK（`JAVA_HOME=D:\Android\jdk17`，`gradlew assembleDebug` 約 2 分鐘）：
 - ✅ 兩支 App 可同機安裝並啟動；client 進農場主登入、免密進預約頁，版面正常、無 JS 例外；離線示範報價（愛文芒果 5 分地、早鳥）顯示 128 小時、NT$ 40,320；server 進管理人員登入頁。
-- ❌ **App 連不到後端**：WebView 從 `file:///android_asset/` 載入，網頁來源是 `null`，後端 CORS 白名單（`agri.cors.allowed-origins`）沒有它，所有 `/api` 請求被擋，畫面只剩離線示範資料（提示「後端未連線」）。要連後端需另案決定：加 WebViewAssetLoader（`https://appassets.androidplatform.net` 來源並加入白名單），或改載遠端站台。
+- ✅ **CORS 已解決（2026-10-08）**：原本 WebView 從 `file:///android_asset/` 載入，網頁來源是 `null`，後端 CORS 一律擋。現改以 WebViewAssetLoader 由 `https://appassets.androidplatform.net/www/` 提供內建網頁，後端白名單加入此來源；模擬器實測頁面內 GET／POST（含預檢）／帶 token 請求皆成功，舊白名單對照組被擋（詳見 06 規格 7.4）。
+- ⚠️ **App 仍未實際使用後端**：內建網頁是 demo 同步來的 `mock: true`，且 `apiBase` 在 App 內會算成 `https://appassets.androidplatform.net/api`；要連正式後端需另訂 App 用的後端網址並關閉 Mock（待決定）。
 - ⚠️ 尚未在實體手機驗證（沒有裝置接上；FCM 推播、GPS 打卡、LINE 開啟都要實機）。
 - 模擬器測後端：`adb reverse tcp:3000 tcp:3000`（與 5000），前端 `localhost:3000` 才指得到宿主機。
 

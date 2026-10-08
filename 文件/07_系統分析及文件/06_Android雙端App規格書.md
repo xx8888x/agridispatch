@@ -221,7 +221,8 @@ flowchart TD
 | 後台頁面外流 | 客戶端 APK 不含 `科技後台/` 的 27 個檔案（建置後以 APK 內容比對確認）；後台 App 不公開上架 |
 | 身分竄改 | 身分存在獨立的 SharedPreferences `AgriDispatchProfile`，與網頁可寫入的 `AgriDispatchCache`（`saveOfflineData`）分開，網頁無法改寫 |
 | 身分不等於授權 | App 端的身分只決定啟動頁與語言，**不是授權依據**；API 權限仍以後端登入 token 與 `users.role` 判斷（見 03 認證規格） |
-| 既有防護（不變） | WebView 只信任內建 assets 與 `allowed_web_domain`（HTTPS）；外部連結交給系統瀏覽器；敏感橋接方法只在受信任頁面回應；明文 HTTP 僅限開發位址 |
+| 內建網頁來源（2026-10-08） | 內建 `assets/www/` 改以 `WebViewAssetLoader` 由 `https://appassets.androidplatform.net/www/` 提供（取代 `file:///android_asset/www/`），並關閉 `file://` 存取。網頁來源從 `null` 變成固定的 https 來源，後端 CORS 白名單加入此來源後即可呼叫 `/api`（見 03 認證規格第 8 節）。PathHandler 須補回 `www/` 前綴，否則會開到 `assets/` 根目錄而回空回應（ERR_INVALID_RESPONSE） |
+| 既有防護（不變） | WebView 只信任內建 assets（`appassets.androidplatform.net/www/`）與 `allowed_web_domain`（HTTPS）；外部連結交給系統瀏覽器；敏感橋接方法只在受信任頁面回應；明文 HTTP 僅限開發位址 |
 
 ---
 
@@ -267,6 +268,20 @@ flowchart TD
 | 9 | 後台 App → 直接開 `科技後台/admin-login.html`，`platformRole` = `admin_tech` | ✅ |
 | 10 | 狀態列、手勢列不遮擋網頁與選擇畫面 | ✅（實測發現 targetSdk 35 強制滿版造成遮擋，已以 `SystemBarInsets` 修正） |
 | 11 | WebView 主控台錯誤 | ✅ 無（僅 Tailwind CDN 的既有提示） |
+
+### 7.4 模擬器實測紀錄：WebViewAssetLoader 與 CORS（2026-10-08）
+
+同一台 AVD `AgriTest_API35`，debug 版（模擬器上原本裝的 1.0.9 是正式簽章，debug 版簽章不同無法覆蓋安裝，已先移除）。以 `adb reverse tcp:3000 tcp:3000` 連本機後端（demo 模式），透過 WebView 偵錯通道（CDP）在頁面內實際送出請求：
+
+| # | 測試 | 結果 |
+|---|---|---|
+| 1 | 客戶端、後台 App 啟動頁皆從 `https://appassets.androidplatform.net/www/…` 載入，本地資源全部成功（只缺 `favicon.ico`） | ✅（原始改動未補 `www/` 前綴，所有頁面 ERR_INVALID_RESPONSE，已修正） |
+| 2 | 頁面內 GET `/api/crops`、POST `/api/auth/demo-login`（JSON，需預檢）、帶 token GET `/api/orders` | ✅ 皆 200 |
+| 3 | 頁面內 POST `/api/talents/register` 寫入，主機端以管理員查詢看得到該筆 | ✅ 201，確認請求真的到達後端 |
+| 4 | 對照組：後端改回舊白名單（不含此來源）再送同樣請求 | ✅ 被 CORS 擋下 |
+| 5 | 直接進入示範登入 → 預約頁；導向 `../科技後台/admin.html` 被攔截留在原頁；導向 `login.html` 回到原生身分選擇畫面 | ✅ |
+
+> **尚未讓 App 實際使用後端（待決定）**：`assets/www/` 由同步腳本自 demo 產生，`app-config.js` 為 `mock: true`（請求由純前端 Mock 回應，不會打後端）；且 `apiBase` 依 `location.origin` 計算，在 App 內會變成 `https://appassets.androidplatform.net/api`（不是後端）。上表 2～4 是直接指定 `http://localhost:3000/api` 驗證 CORS。要讓 App 連正式後端，需另訂 App 用的 `apiBase`（正式網域）並關閉 Mock，正式環境的後端網址須為 HTTPS。
 
 **Release 簽章版 1.0.5 複測（2026-10-02）**：由 1.0.0 覆蓋升級（同一把上傳金鑰），兩支 App 皆非 debuggable、通知權限正常授予；升級後保留原身分（越南）直接進越南語登入頁；上表 2～9 全部重測通過，另確認外籍移工工單頁依國別切換（越南、印尼），以及後台 App 可進入 `admin.html`；全程無閃退。
 

@@ -33,7 +33,7 @@ agri:
     token-secret: ${AGRI_TOKEN_SECRET:}
     admin-password: ${AGRI_ADMIN_PASSWORD:}
   cors:
-    allowed-origins: ${AGRI_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5000,http://127.0.0.1:3000}
+    allowed-origins: ${AGRI_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5000,http://127.0.0.1:3000,https://appassets.androidplatform.net}
   payment:
     provider: ${AGRI_PAYMENT_PROVIDER:mock}
     ecpay:

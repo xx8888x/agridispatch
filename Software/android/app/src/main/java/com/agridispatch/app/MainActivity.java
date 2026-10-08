@@ -10,6 +10,7 @@ import android.webkit.GeolocationPermissions;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -19,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 import androidx.core.content.ContextCompat;
+import androidx.webkit.WebViewAssetLoader;
 import com.agridispatch.app.profile.AppSide;
 import com.agridispatch.app.profile.ProfileStore;
 import com.agridispatch.app.profile.UserProfile;
@@ -32,8 +34,16 @@ import java.util.Map;
  */
 public class MainActivity extends AppCompatActivity {
 
-    private static final String ASSET_WWW = "file:///android_asset/www/";
-    private static final String ASSET_WWW_PATH = "/android_asset/www/";
+    /**
+     * 內建網頁改由 WebViewAssetLoader 以 https://appassets.androidplatform.net/www/ 提供 (規格 06 第陸章)：
+     * file:///android_asset/ 的網頁來源 (origin) 是 "null"，後端 CORS 一定擋，App 只能看離線示範資料；
+     * 換成固定的 https 來源後，後端白名單 (agri.cors.allowed-origins) 加入此來源即可呼叫 /api。
+     */
+    static final String ASSET_HOST = "appassets.androidplatform.net";
+    static final String ASSET_WWW = "https://" + ASSET_HOST + "/www/";
+    private static final String ASSET_WWW_PATH = "/www/";
+
+    private WebViewAssetLoader assetLoader;
 
     private WebView bindingWebView;
     private UserProfile profile;
@@ -104,6 +114,15 @@ public class MainActivity extends AppCompatActivity {
         // debug 版開放 chrome://inspect 偵錯 WebView；release 版關閉
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
 
+        // 內建 assets/www 以 https://appassets.androidplatform.net/www/ 提供 (見 ASSET_WWW 說明)
+        // PathHandler 收到的是去掉 "/www/" 後的路徑，要補回 "www/" 才是 assets 內的位置
+        // （直接掛 AssetsPathHandler 會去開 assets/index.html，找不到時回空回應 → ERR_INVALID_RESPONSE）
+        WebViewAssetLoader.AssetsPathHandler assets = new WebViewAssetLoader.AssetsPathHandler(this);
+        assetLoader = new WebViewAssetLoader.Builder()
+                .setDomain(ASSET_HOST)
+                .addPathHandler(ASSET_WWW_PATH, path -> assets.handle("www/" + path))
+                .build();
+
         configureWebView(bindingWebView);
 
         // 依端與身分載入本地離線資產的啟動頁
@@ -116,8 +135,7 @@ public class MainActivity extends AppCompatActivity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
-        // 停用任意檔案系統存取；僅停用 file:// 對一般檔案系統的存取，
-        // 不影響內建 file:///android_asset/ 與 file:///android_res/ 資源載入。
+        // 停用 file:// 存取：內建網頁已改走 WebViewAssetLoader (https)，不再需要 file:///android_asset/
         settings.setAllowFileAccess(false);
         settings.setAllowFileAccessFromFileURLs(false);
         settings.setAllowUniversalAccessFromFileURLs(false);
@@ -130,6 +148,12 @@ public class MainActivity extends AppCompatActivity {
         webView.addJavascriptInterface(new WebAppInterface(this), "AgriNativeBridge");
 
         webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                // appassets.androidplatform.net/www/** → assets/www/**；其他網址 (後端 API、正式網域) 照常走網路
+                return assetLoader.shouldInterceptRequest(request.getUrl());
+            }
+
             @Override
             public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
@@ -179,13 +203,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * 判斷網址是否為受信任來源：內建 asset，或白名單正式網域 (含子網域，需 HTTPS)。
+     * 判斷網址是否為受信任來源：內建 asset (appassets.androidplatform.net/www/)，或白名單正式網域 (含子網域，需 HTTPS)。
      */
     private boolean isTrustedUrl(String url) {
         if (url == null) {
             return false;
         }
-        if (url.startsWith("file:///android_asset/")) {
+        if (url.startsWith(ASSET_WWW)) {
             return true;
         }
         try {
@@ -208,7 +232,7 @@ public class MainActivity extends AppCompatActivity {
      * 客戶端不打包科技後台，點到後台連結改提示；點到網頁的「切換角色」(login.html) 改回原生身分選擇畫面。
      */
     private boolean interceptForSide(Uri uri) {
-        if (!"file".equals(uri.getScheme()) || profile.side != AppSide.CLIENT) {
+        if (!ASSET_HOST.equals(uri.getHost()) || profile.side != AppSide.CLIENT) {
             return false;
         }
         String path = uri.getPath();

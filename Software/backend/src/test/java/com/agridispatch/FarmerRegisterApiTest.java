@@ -73,6 +73,7 @@ class FarmerRegisterApiTest extends ApiTestSupport {
         assertNotEquals("F001", refId);   // 不可與種子帳號 F001、F002 撞號
         assertNotEquals("F002", refId);
         assertTrue(farmerRepository.findById(refId).isPresent());
+        assertEquals("個人農戶", farmerRepository.findById(refId).get().getFarmType());   // 未填農場類型時的預設，與註冊頁一致
         assertFalse(res.toString().contains("Farm#2026pw"));
 
         // 回傳的 token 可用

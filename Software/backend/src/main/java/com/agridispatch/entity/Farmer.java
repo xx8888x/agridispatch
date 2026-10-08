@@ -40,7 +40,7 @@ public class Farmer {
             createdAt = LocalDateTime.now();
         }
         if (farmType == null || farmType.isEmpty()) {
-            farmType = "產銷班";
+            farmType = "個人農戶";
         }
     }
 

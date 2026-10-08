@@ -142,7 +142,7 @@ CREATE TABLE farmers (
     phone              VARCHAR2(30 CHAR)   NOT NULL,
     address            VARCHAR2(255 CHAR)  NOT NULL,
     tax_id             VARCHAR2(20 CHAR),
-    farm_type          VARCHAR2(50 CHAR)   DEFAULT '產銷班' NOT NULL,
+    farm_type          VARCHAR2(50 CHAR)   DEFAULT '個人農戶' NOT NULL,
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
     CONSTRAINT pk_farmers PRIMARY KEY (id)
 );
@@ -153,7 +153,7 @@ COMMENT ON COLUMN farmers.name IS '農場名稱或負責人姓名';
 COMMENT ON COLUMN farmers.phone IS '聯絡手機 / LINE 綁定號碼';
 COMMENT ON COLUMN farmers.address IS '農場/溫室田區地址';
 COMMENT ON COLUMN farmers.tax_id IS '統一編號 (供合作社開立合規發票扣抵營業稅)';
-COMMENT ON COLUMN farmers.farm_type IS '農場型態 (產銷班 / 契作農企業 / 獨立小農)';
+COMMENT ON COLUMN farmers.farm_type IS '農場型態 (個人農戶 / 產銷班 / 農企業 / 農會／合作社)';
 
 -- ====================================================================
 -- 3. 調度工班與專車表 (DISPATCH_TEAMS)

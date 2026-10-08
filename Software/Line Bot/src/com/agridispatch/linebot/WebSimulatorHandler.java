@@ -287,10 +287,10 @@ public class WebSimulatorHandler implements HttpHandler {
             let currentMenu = null;
             async function showMenu(key) {
               if (!key || (currentMenu && currentMenu.key === key)) return;
-              const res = await fetch('/rich_menu/' + key + '.json');
+              const res = await fetch('rich_menu/' + key + '.json');
               if (!res.ok) return;
               currentMenu = Object.assign({ key: key }, await res.json());
-              document.getElementById('rm-img').src = '/rich_menu/' + key + '.jpg';
+              document.getElementById('rm-img').src = 'rich_menu/' + key + '.jpg';
               document.getElementById('rm-bar').textContent = currentMenu.chatBarText;
               document.getElementById('rm-key').textContent = key;
             }
@@ -322,7 +322,7 @@ public class WebSimulatorHandler implements HttpHandler {
               const payload = Object.assign({ channel: channel, as: document.getElementById('sim-as').value,
                                               userId: 'U_WEB_SIM_' + channel, multi: true }, fields);
               try {
-                const res = await fetch('/mock/chat', {
+                const res = await fetch('mock/chat', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(payload)

@@ -261,6 +261,7 @@ CREATE TABLE workers (
     dispatch_status     VARCHAR2(30 CHAR),
     phone               VARCHAR2(30 CHAR),
     password_hash       VARCHAR2(255 CHAR),
+    token_version       NUMBER(10)     DEFAULT 0 NOT NULL,   -- 改密碼／重設／變更層級時 +1，舊 token 立即失效
     created_at          TIMESTAMP     DEFAULT SYSTIMESTAMP NOT NULL,
     CONSTRAINT pk_workers PRIMARY KEY (id),
     CONSTRAINT fk_workers_team FOREIGN KEY (team_id) REFERENCES dispatch_teams(id),
@@ -506,6 +507,7 @@ CREATE TABLE users (
     role               VARCHAR2(32 CHAR)   NOT NULL,
     ref_id             VARCHAR2(64 CHAR),
     role_desc          VARCHAR2(200 CHAR),
+    token_version      NUMBER(10)     DEFAULT 0 NOT NULL,   -- 改密碼／重設／變更角色時 +1，舊 token 立即失效
     CONSTRAINT pk_users PRIMARY KEY (username),
     CONSTRAINT chk_user_role CHECK (role IN ('admin_tech', 'farmer', 'worker_foreign', 'worker_local'))
 );

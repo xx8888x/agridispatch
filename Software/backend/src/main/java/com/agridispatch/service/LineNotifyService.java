@@ -1,11 +1,13 @@
 package com.agridispatch.service;
 
+import com.agridispatch.config.AgriSettings;
 import com.agridispatch.entity.LineUser;
 import com.agridispatch.entity.Order;
 import com.agridispatch.repository.DispatchTeamRepository;
 import com.agridispatch.repository.LineUserRepository;
 import com.agridispatch.repository.OrderRepository;
 import com.agridispatch.repository.WorkerRepository;
+import com.agridispatch.security.AuthContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -46,6 +49,7 @@ public class LineNotifyService {
     private final WorkerRepository workerRepository;
     private final DispatchTeamRepository teamRepository;
     private final LineBotClient lineBotClient;
+    private final AgriSettings settings;
     private final boolean async;
     private final LocalTime workerFrom;
     private final LocalTime workerTo;
@@ -63,7 +67,7 @@ public class LineNotifyService {
 
     public LineNotifyService(LineUserRepository lineUserRepository, OrderRepository orderRepository,
                              WorkerRepository workerRepository, DispatchTeamRepository teamRepository,
-                             LineBotClient lineBotClient,
+                             LineBotClient lineBotClient, AgriSettings settings,
                              @Value("${agri.line.notify.async:true}") boolean async,
                              @Value("${agri.line.notify.worker-hours:07:00-20:00}") String workerHours) {
         this.lineUserRepository = lineUserRepository;
@@ -71,6 +75,7 @@ public class LineNotifyService {
         this.workerRepository = workerRepository;
         this.teamRepository = teamRepository;
         this.lineBotClient = lineBotClient;
+        this.settings = settings;
         this.async = async;
         String[] h = (workerHours == null || !workerHours.contains("-") ? "07:00-20:00" : workerHours).split("-");
         this.workerFrom = parseTime(h[0], LocalTime.of(7, 0));
@@ -223,8 +228,20 @@ public class LineNotifyService {
         return recipients(LineUser.CHANNEL_FARMER, farmerIds);
     }
 
+    /** 外籍移工功能關閉時，不推播給外籍工人（依工人 tier 判斷，也排除綁定身分為 worker_foreign 的 LINE 帳號） */
     List<Map<String, String>> workerRecipients(Collection<String> workerIds) {
-        return recipients(LineUser.CHANNEL_WORKER, workerIds);
+        if (settings.isForeignWorkersEnabled()) return recipients(LineUser.CHANNEL_WORKER, workerIds);
+        Set<String> local = new LinkedHashSet<>();
+        for (String id : workerIds) {
+            if (id != null && workerRepository.findById(id.trim()).map(settings::isWorkerAvailable).orElse(false)) local.add(id);
+        }
+        Set<String> foreignBound = new HashSet<>();
+        for (LineUser u : lineUserRepository.findAllByChannelAndIsBound(LineUser.CHANNEL_WORKER, "Y")) {
+            if (AuthContext.ROLE_WORKER_FOREIGN.equals(u.getRole())) foreignBound.add(u.getLineUserId());
+        }
+        List<Map<String, String>> out = new ArrayList<>(recipients(LineUser.CHANNEL_WORKER, local));
+        out.removeIf(r -> foreignBound.contains(r.get("lineUserId")));
+        return out;
     }
 
     /** 出工名單；沒有名單時以已分派工班的成員代替（與派工前加保檢查相同規則） */

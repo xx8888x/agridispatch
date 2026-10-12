@@ -32,6 +32,10 @@ agri:
     demo-data: ${AGRI_SEED_DEMO_DATA:}
   demo:
     enabled: false
+  features:
+    # 外籍移工：false＝暫時下架（派工媒合不列入、LINE 不推播給外籍工人；資料與程式保留）。
+    # 與前端 app-config.js 的 features.foreignWorkers、LINE Bot 的 FEATURE_FOREIGN_WORKERS 一起改
+    foreign-workers: ${AGRI_FEATURE_FOREIGN_WORKERS:false}
   security:
     token-secret: ${AGRI_TOKEN_SECRET:}
     admin-password: ${AGRI_ADMIN_PASSWORD:}

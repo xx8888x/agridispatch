@@ -1,6 +1,7 @@
 package com.agridispatch.service;
 
 import com.agridispatch.common.ApiException;
+import com.agridispatch.config.AgriSettings;
 import com.agridispatch.entity.*;
 import com.agridispatch.repository.*;
 import org.springframework.stereotype.Service;
@@ -33,10 +34,12 @@ public class MatchingService {
     private final InsuranceService insuranceService;
     private final SkillService skillService;
     private final RatingService ratingService;
+    private final AgriSettings settings;
 
     public MatchingService(OrderService orderService, OrderRepository orderRepository, DispatchTeamRepository teamRepository,
                            WorkerRepository workerRepository, InsuranceRecordRepository insuranceRecordRepository,
-                           InsuranceService insuranceService, SkillService skillService, RatingService ratingService) {
+                           InsuranceService insuranceService, SkillService skillService, RatingService ratingService,
+                           AgriSettings settings) {
         this.orderService = orderService;
         this.orderRepository = orderRepository;
         this.teamRepository = teamRepository;
@@ -45,6 +48,12 @@ public class MatchingService {
         this.insuranceService = insuranceService;
         this.skillService = skillService;
         this.ratingService = ratingService;
+        this.settings = settings;
+    }
+
+    /** 可參與派工的工班成員（外籍移工功能關閉時不含外籍工人） */
+    private List<Worker> membersOf(String teamId) {
+        return workerRepository.findByTeamId(teamId).stream().filter(settings::isWorkerAvailable).toList();
     }
 
     /** 訂單媒合總覽：工班排序＋（已分派或排第一的）工班出工名單建議 */
@@ -90,6 +99,10 @@ public class MatchingService {
         for (String id : crew) {
             Worker w = members.get(id);
             if (w == null) throw ApiException.badRequest(id + " 不是 " + teamId + " 的成員");
+            if (!settings.isWorkerAvailable(w)) {
+                problems.add(displayName(w) + "：外籍移工服務暫停中，不可派工");
+                continue;
+            }
             String reason = ineligibleReason(w, records, today);
             if (reason == null && busy.containsKey(id)) reason = clashText(busy.get(id));
             if (reason != null) problems.add(displayName(w) + "：" + reason);
@@ -115,7 +128,7 @@ public class MatchingService {
         Map<String, Order> busy = busyWorkers(order);
         List<Map<String, Object>> out = new ArrayList<>();
         for (DispatchTeam t : teamRepository.findAll()) {
-            List<Worker> members = workerRepository.findByTeamId(t.getId());
+            List<Worker> members = membersOf(t.getId());
             List<InsuranceRecord> records = insuranceRecordRepository.findByWorkerIdIn(members.stream().map(Worker::getId).toList());
             int eligibleCount = 0, skilled = 0, senior = 0;
             for (Worker w : members) {
@@ -181,7 +194,7 @@ public class MatchingService {
     private Map<String, Object> recommendCrew(Order order, String skill, String teamId) {
         LocalDate today = LocalDate.now();
         int needed = Math.max(1, order.getSuggestedWorkers());
-        List<Worker> members = workerRepository.findByTeamId(teamId);
+        List<Worker> members = membersOf(teamId);
         List<InsuranceRecord> records = insuranceRecordRepository.findByWorkerIdIn(members.stream().map(Worker::getId).toList());
 
         Map<String, Order> busy = busyWorkers(order);

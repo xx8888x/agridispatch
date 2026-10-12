@@ -65,6 +65,10 @@ public class AgriSettings {
     private String cwaApiKey;
 
     /** 氣象資料快取分鐘數（環境變數 AGRI_WEATHER_CACHE_MINUTES） */
+    /** 外籍移工功能開關（與前端 features.foreignWorkers、LINE Bot FEATURE_FOREIGN_WORKERS 一致）；預設 false＝暫時下架 */
+    @Value("${agri.features.foreign-workers:false}")
+    private boolean foreignWorkersEnabled;
+
     @Value("${agri.weather.cache-minutes:30}")
     private int weatherCacheMinutes;
 
@@ -73,6 +77,14 @@ public class AgriSettings {
     public int getWeatherCacheMinutes() { return Math.max(1, weatherCacheMinutes); }
 
     public boolean isDemoEnabled() { return demoEnabled; }
+
+    /** 外籍移工功能是否開放；關閉時派工媒合不列入、LINE 不推播給外籍工人（資料保留） */
+    public boolean isForeignWorkersEnabled() { return foreignWorkersEnabled; }
+
+    /** tier1_foreign 工人在外籍移工功能關閉時不參與派工與推播 */
+    public boolean isWorkerAvailable(com.agridispatch.entity.Worker w) {
+        return w != null && (foreignWorkersEnabled || !"tier1_foreign".equals(w.getTier()));
+    }
 
     public boolean isLoginLockAdminOnly() { return loginLockAdminOnly; }
 

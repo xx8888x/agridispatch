@@ -5,6 +5,7 @@ import com.agridispatch.entity.Worker;
 import com.agridispatch.repository.AttendanceRepository;
 import com.agridispatch.repository.DispatchTeamRepository;
 import com.agridispatch.repository.OrderRepository;
+import com.agridispatch.repository.TeamRatingRepository;
 import com.agridispatch.repository.WeatherStateRepository;
 import com.agridispatch.repository.WorkerRepository;
 import com.agridispatch.service.DispatchService;
@@ -45,6 +46,7 @@ class DemoModeApiTest extends ApiTestSupport {
     @Autowired DispatchService dispatchService;
     @Autowired DispatchTeamRepository teamRepository;
     @Autowired WeatherStateRepository weatherStateRepository;
+    @Autowired TeamRatingRepository teamRatingRepository;
 
     // ------------------------------------------------------------------ demo 登入
 
@@ -255,7 +257,8 @@ class DemoModeApiTest extends ApiTestSupport {
     @Test
     void weatherStateRestoredFromDb() {
         dispatchService.applyWeatherScenario("typhoon");
-        DispatchService fresh = new DispatchService(teamRepository, weatherStateRepository);
+        DispatchService fresh = new DispatchService(teamRepository, weatherStateRepository,
+                workerRepository, orderRepository, teamRatingRepository);
         assertEquals("cloudy", fresh.getCurrentScenarioId());
         fresh.restoreStateFromDb();
         assertEquals("typhoon", fresh.getCurrentScenarioId());

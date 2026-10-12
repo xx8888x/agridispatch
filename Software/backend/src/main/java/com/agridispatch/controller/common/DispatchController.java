@@ -26,25 +26,32 @@ public class DispatchController {
     public ResponseEntity<?> getOverview() {
         Map<String, Object> overview = dispatchService.getOverview();
         AuthContext ctx = AuthContext.current();
-        if (ctx == null || !ctx.isAdmin()) {
+        if (!isAdmin()) {
             overview.remove("securedRevenue");
             List<Map<String, Object>> teams = new ArrayList<>();
-            for (Object o : (List<?>) overview.get("teams")) {
-                DispatchTeam t = (DispatchTeam) o;
-                Map<String, Object> m = new LinkedHashMap<>();
-                m.put("id", t.getId());
-                m.put("name", t.getName());
-                m.put("workerCount", t.getWorkerCount());
-                m.put("normalLocation", t.getNormalLocation());
-                m.put("normalTask", t.getNormalTask());
-                m.put("hedgeLocation", t.getHedgeLocation());
-                m.put("hedgeTask", t.getHedgeTask());
-                m.put("status", t.getStatus());
-                teams.add(m);
-            }
+            for (Object o : (List<?>) overview.get("teams")) teams.add(publicView((DispatchTeam) o));
             overview.put("teams", teams);
         }
         return ResponseEntity.ok(Map.of("success", true, "data", overview));
+    }
+
+    private static boolean isAdmin() {
+        AuthContext ctx = AuthContext.current();
+        return ctx != null && ctx.isAdmin();
+    }
+
+    /** 非 admin 看到的工班：不含領班電話、司機與車輛（個資與調度資訊只給科技後台） */
+    private static Map<String, Object> publicView(DispatchTeam t) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", t.getId());
+        m.put("name", t.getName());
+        m.put("workerCount", t.getWorkerCount());
+        m.put("normalLocation", t.getNormalLocation());
+        m.put("normalTask", t.getNormalTask());
+        m.put("hedgeLocation", t.getHedgeLocation());
+        m.put("hedgeTask", t.getHedgeTask());
+        m.put("status", t.getStatus());
+        return m;
     }
 
     @GetMapping("/weather-state")
@@ -70,17 +77,35 @@ public class DispatchController {
         return ResponseEntity.ok(Map.of("success", true, "data", updated, "message", "產區微氣候資料已更新"));
     }
 
+    /** 需登入；非 admin（農場主看工班名稱、工人）只回公開欄位 */
     @GetMapping("/teams")
     public ResponseEntity<?> getAllTeams() {
-        return ResponseEntity.ok(Map.of("success", true, "data", dispatchService.getAllTeams()));
+        List<DispatchTeam> teams = dispatchService.getAllTeams();
+        Object data = isAdmin() ? teams : teams.stream().map(DispatchController::publicView).toList();
+        return ResponseEntity.ok(Map.of("success", true, "data", data));
     }
 
     @GetMapping("/teams/{id}")
     public ResponseEntity<?> getTeamById(@PathVariable String id) {
         return dispatchService.getTeamById(id)
-                .map(team -> ResponseEntity.ok(Map.of("success", true, "data", team)))
+                .map(team -> ResponseEntity.ok(Map.of("success", true, "data", isAdmin() ? team : publicView(team))))
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("success", false, "error", "找不到該工班代號: " + id)));
+    }
+
+    /** 新增工班（admin，AuthInterceptor 擋 POST /api/dispatch/**） */
+    @PostMapping("/teams")
+    public ResponseEntity<?> createTeam(@RequestBody DispatchTeam team) {
+        DispatchTeam created = dispatchService.createTeam(team);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(Map.of("success", true, "data", created, "message", "成功新增工班: " + created.getName()));
+    }
+
+    /** 刪除工班（admin）：仍有工人、訂單或評價時回 409 */
+    @DeleteMapping("/teams/{id}")
+    public ResponseEntity<?> deleteTeam(@PathVariable String id) {
+        dispatchService.deleteTeam(id);
+        return ResponseEntity.ok(Map.of("success", true, "message", "成功刪除工班: " + id));
     }
 
     @PutMapping("/teams/{id}")

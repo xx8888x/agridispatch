@@ -1,11 +1,15 @@
 package com.agridispatch.service;
 
 import com.agridispatch.common.ApiException;
+import com.agridispatch.common.IdGenerator;
 import com.agridispatch.common.PartialUpdate;
 import com.agridispatch.entity.DispatchTeam;
 import com.agridispatch.entity.WeatherState;
 import com.agridispatch.repository.DispatchTeamRepository;
+import com.agridispatch.repository.OrderRepository;
+import com.agridispatch.repository.TeamRatingRepository;
 import com.agridispatch.repository.WeatherStateRepository;
+import com.agridispatch.repository.WorkerRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -29,6 +33,9 @@ public class DispatchService {
 
     private final DispatchTeamRepository teamRepository;
     private final WeatherStateRepository weatherStateRepository;
+    private final WorkerRepository workerRepository;
+    private final OrderRepository orderRepository;
+    private final TeamRatingRepository teamRatingRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private String currentScenarioId = "cloudy";
@@ -42,9 +49,15 @@ public class DispatchService {
     private List<Map<String, Object>> currentRegionalWeather = new ArrayList<>();
 
     public DispatchService(DispatchTeamRepository teamRepository,
-                           WeatherStateRepository weatherStateRepository) {
+                           WeatherStateRepository weatherStateRepository,
+                           WorkerRepository workerRepository,
+                           OrderRepository orderRepository,
+                           TeamRatingRepository teamRatingRepository) {
         this.teamRepository = teamRepository;
         this.weatherStateRepository = weatherStateRepository;
+        this.workerRepository = workerRepository;
+        this.orderRepository = orderRepository;
+        this.teamRatingRepository = teamRatingRepository;
         initDefaultRegionalWeather();
     }
 
@@ -88,7 +101,35 @@ public class DispatchService {
         return teamRepository.findById(id);
     }
 
+    /**
+     * 新增工班：名稱、領班、領班電話必填；未給代號時自動編 team_01、team_02…。
+     * 車輛、司機、晴雨天地點與任務在 Oracle 為 NOT NULL（空字串在 Oracle 即 NULL），未填一律存「待安排」。
+     */
     public DispatchTeam createTeam(DispatchTeam team) {
+        if (team == null) throw ApiException.badRequest("缺少工班資料");
+        team.setName(requireText(team.getName(), "工班名稱 (name)", 50));
+        team.setLeader(requireText(team.getLeader(), "領班姓名 (leader)", 50));
+        team.setLeaderPhone(requireText(team.getLeaderPhone(), "領班電話 (leaderPhone)", 30));
+        team.setVehicle(orPending(team.getVehicle(), "車輛 (vehicle)", 100));
+        team.setDriver(orPending(team.getDriver(), "司機 (driver)", 50));
+        team.setNormalLocation(orPending(team.getNormalLocation(), "晴天作業地點", 255));
+        team.setNormalTask(orPending(team.getNormalTask(), "晴天作業內容", 255));
+        team.setHedgeLocation(orPending(team.getHedgeLocation(), "雨天避險地點", 255));
+        team.setHedgeTask(orPending(team.getHedgeTask(), "雨天避險內容", 255));
+        if (team.getStatus() == null || team.getStatus().isBlank()) team.setStatus("active_field");
+        if (!TEAM_STATUSES.contains(team.getStatus())) throw ApiException.badRequest("工班狀態只能是 " + TEAM_STATUSES);
+        if (team.getWorkerCount() < 0) throw ApiException.badRequest("工班人數不可為負數");
+
+        String id = team.getId() == null ? "" : team.getId().trim();
+        if (id.isEmpty()) {
+            List<String> ids = teamRepository.findAll().stream().map(DispatchTeam::getId).toList();
+            id = IdGenerator.next("team_", 2, ids, teamRepository::existsById);
+        } else if (!id.matches("[A-Za-z0-9_-]{1,32}")) {
+            throw ApiException.badRequest("工班代號只能用英數字、底線、連字號，最多 32 字");
+        } else if (teamRepository.existsById(id)) {
+            throw ApiException.conflict("工班代號已存在: " + id);
+        }
+        team.setId(id);
         return teamRepository.save(team);
     }
 
@@ -102,8 +143,33 @@ public class DispatchService {
         return teamRepository.save(existing);
     }
 
+    /** 刪除工班：仍有工人、訂單或評價掛在這個工班時拒絕（409），請先移走工人或改派訂單 */
     public void deleteTeam(String id) {
+        if (!teamRepository.existsById(id)) throw ApiException.notFound("找不到該工班代號: " + id);
+        int workers = workerRepository.findByTeamId(id).size();
+        int orders = orderRepository.findByAssignedTeamId(id).size();
+        int ratings = teamRatingRepository.findByTeamIdOrderByCreatedAtDesc(id).size();
+        if (workers + orders + ratings > 0) {
+            throw ApiException.conflict(String.format(
+                    "工班 %s 仍有 %d 位工人、%d 張訂單、%d 筆評價，請先移走工人或改派訂單後再刪除", id, workers, orders, ratings));
+        }
         teamRepository.deleteById(id);
+    }
+
+    private static final Set<String> TEAM_STATUSES = Set.of("active_field", "hedged_indoor", "standby");
+
+    private static String requireText(String value, String label, int maxLen) {
+        if (value == null || value.isBlank()) throw ApiException.badRequest(label + " 為必填欄位");
+        return limit(value.trim(), label, maxLen);
+    }
+
+    private static String orPending(String value, String label, int maxLen) {
+        return value == null || value.isBlank() ? "待安排" : limit(value.trim(), label, maxLen);
+    }
+
+    private static String limit(String value, String label, int maxLen) {
+        if (value.length() > maxLen) throw ApiException.badRequest(label + " 最多 " + maxLen + " 字");
+        return value;
     }
 
     public synchronized boolean isRainMode() { return isRainMode; }

@@ -169,6 +169,8 @@ public class OrderService {
         data.put("suggestedWorkers", crew);
         data.put("requestedWorkers", requestedWorkers);
         data.put("estDays", Math.round((b.getHours() / (crew * 8.0)) * 10.0) / 10.0);
+        data.put("workHours", b.getHours());
+        data.put("minimumTopUpHours", 0);
         data.put("unitRate", (int) Math.round(b.getDiscountPrice() / (double) b.getHours()));
         data.put("standardTotal", b.getOriginalPrice() + surcharge);
         data.put("actualTotal", b.getDiscountPrice() + surcharge);
@@ -177,12 +179,29 @@ public class OrderService {
         return data;
     }
 
-    /**
-     * 試算。requestedWorkers 為農場主指定的每日工人數（null = 由系統依面積估算）：
-     * 金額只看作業量（工時 × 時薪），人數不同只影響編制與預估天數（天數 = 工時 ÷ (人數 × 8)）。
-     */
     public Map<String, Object> calculateOrder(String cropId, double area, String plan, String zone, String dispatchCategory,
                                               Integer requestedWorkers) {
+        return calculateOrder(cropId, area, plan, zone, dispatchCategory, requestedWorkers, Order.FULL_DAY);
+    }
+
+    /** 時段代碼正規化：空白 = 整天；不認得回 400 */
+    public static String normalizeSlot(String timeSlot) {
+        if (timeSlot == null || timeSlot.isBlank()) return Order.FULL_DAY;
+        String s = timeSlot.trim();
+        if (!Order.TIME_SLOTS.contains(s)) throw ApiException.badRequest("時段 (timeSlot) 必須為 full_day / morning / afternoon");
+        return s;
+    }
+
+    /**
+     * 試算。requestedWorkers 為農場主指定的每日工人數（null = 由系統依面積估算）：
+     * 整天：金額只看作業量（工時 × 時薪），人數不同只影響編制與預估天數（天數 = 工時 ÷ (人數 × 8)）。
+     * 半日（上午／下午）：每人每天 4 小時，天數 = 工時 ÷ (人數 × 4) 無條件進位；
+     *   最低計費每人每天 4 小時——計費工時 = 人數 × 天數 × 4（≥ 作業工時），差額為 minimumTopUpHours，
+     *   讓工人跑一趟至少有半天工資【待確認：F2 尚未納入半日最低計費情境】。
+     */
+    public Map<String, Object> calculateOrder(String cropId, double area, String plan, String zone, String dispatchCategory,
+                                              Integer requestedWorkers, String timeSlot) {
+        String slot = normalizeSlot(timeSlot);
         if (requestedWorkers != null && (requestedWorkers < 1 || requestedWorkers > MAX_REQUESTED_WORKERS)) {
             throw ApiException.badRequest("每日工人數 (workers) 必須介於 1 ～ " + MAX_REQUESTED_WORKERS);
         }
@@ -258,7 +277,15 @@ public class OrderService {
         int suggestedWorkers = requestedWorkers != null
                 ? requestedWorkers
                 : Math.max(2, (int) Math.round(workersPerFen * (area > 3 ? 1.5 : 1)));
-        double estDays = Math.round((totalHours / (suggestedWorkers * 8.0)) * 10.0) / 10.0;
+        int workHours = totalHours;
+        double estDays;
+        if (Order.FULL_DAY.equals(slot)) {
+            estDays = Math.round((totalHours / (suggestedWorkers * 8.0)) * 10.0) / 10.0;
+        } else {
+            int days = (int) Math.ceil(totalHours / (suggestedWorkers * 4.0));
+            totalHours = suggestedWorkers * days * 4;   // 計費工時（最低計費：每人每天 4 小時）
+            estDays = days;
+        }
 
         double discount = 1.0;
         String planName = "【Tier 1】產季早鳥工時包 (鎖定名額・優先排班)";
@@ -301,6 +328,11 @@ public class OrderService {
         data.put("transportZone", zone);
         data.put("transportSurcharge", surcharge);
         data.put("totalHours", totalHours);
+        data.put("workHours", workHours);
+        data.put("minimumTopUpHours", totalHours - workHours);
+        data.put("timeSlot", slot);
+        data.put("timeSlotLabel", Order.slotLabel(slot));
+        data.put("hoursPerDay", Order.hoursPerDay(slot));
         data.put("suggestedWorkers", suggestedWorkers);
         data.put("requestedWorkers", requestedWorkers);
         data.put("estDays", estDays);
@@ -444,6 +476,7 @@ public class OrderService {
         order.setForemanNotes(input.getForemanNotes());
         order.setAssignedTeamId(input.getAssignedTeamId());
         order.setRequestedWorkers(input.getRequestedWorkers());   // 範圍由試算驗證
+        order.setTimeSlot(normalizeSlot(input.getTimeSlot()));
         order.setPackageId(input.getPackageId() == null || input.getPackageId().isBlank() ? null : input.getPackageId().trim());
         validatePeriod(input.getStartDate(), input.getEndDate());
         order.setStartDate(input.getStartDate());
@@ -518,8 +551,16 @@ public class OrderService {
             existing.setDispatchCategory(updated.getDispatchCategory());
             pricingChanged = true;
         }
+        // 時段：影響計費工時與撞期，規則同工期（農場主只能在待付定金時改）
+        if (updated.getTimeSlot() != null && !normalizeSlot(updated.getTimeSlot()).equals(existing.slot())) {
+            if (!isAdmin && !PENDING.equals(existing.getStatus())) {
+                throw ApiException.conflict("訂單已排定，時段調整請聯絡合作社（可能影響已安排的出工名單）");
+            }
+            existing.setTimeSlot(normalizeSlot(updated.getTimeSlot()));
+            pricingChanged = true;
+        }
         if (pricingChanged && existing.isDepositPaid()) {
-            throw ApiException.conflict("已付定金的訂單不可變更作物、面積或方案，請聯繫調度中心");
+            throw ApiException.conflict("已付定金的訂單不可變更作物、面積、方案或時段，請聯繫調度中心");
         }
         if (pricingChanged && existing.getPackageId() != null) {
             existing.setPackageId(null);   // 改成自訂規格：之後依作物與面積計價，不再適用工時包固定價
@@ -597,10 +638,16 @@ public class OrderService {
     /** 依訂單目前規格取得報價：有工時包就用 DM 固定價，否則依作物與面積 */
     private Map<String, Object> quoteFor(Order order) {
         if (order.getPackageId() != null) {
+            requirePackageSlot(order.slot());
             return calculatePackage(order.getPackageId(), order.getTransportZone(), order.getRequestedWorkers());
         }
         return calculateOrder(order.getCropId(), order.getArea(), order.getPlan(),
-                order.getTransportZone(), order.getDispatchCategory(), order.getRequestedWorkers());
+                order.getTransportZone(), order.getDispatchCategory(), order.getRequestedWorkers(), order.slot());
+    }
+
+    /** 工時包（DM 標價）以整天班編制，不提供半日時段 */
+    public static void requirePackageSlot(String slot) {
+        if (!Order.FULL_DAY.equals(slot)) throw ApiException.badRequest("工時包為整天班，不提供半日時段；半日請改用一般預約");
     }
 
     private Map<String, Object> applyPricing(Order order) {

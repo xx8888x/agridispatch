@@ -28,7 +28,8 @@
       upcoming: '接下來的工作',
       upcomingEmpty: '目前沒有已排定的後續工作，後台排班後會出現在這裡並推播 LINE。',
       period: '工期', location: '地點', contact: '現場對口', van: '接送',
-      depart: '06:30 發車', content: '作業內容', farmer: '農場主',
+      depart: '06:30 發車', departPm: '12:30 發車', content: '作業內容', farmer: '農場主',
+      slot: '時段', slots: { morning: '上午 07:00–11:00', afternoon: '下午 13:00–17:00' },
       hedge: function (loc) { return '遇雨改派：' + loc; },
       loading: '讀取排班中…',
       error: '目前讀不到排班資料，請稍後再試或洽帶隊小工頭。',
@@ -47,7 +48,8 @@
       upcoming: 'Công việc sắp tới',
       upcomingEmpty: 'Chưa có công việc sắp tới. Khi được xếp lịch sẽ hiện ở đây và gửi thông báo LINE.',
       period: 'Thời gian', location: 'Địa điểm', contact: 'Người phụ trách', van: 'Xe đưa đón',
-      depart: 'xuất phát 06:30', content: 'Công việc', farmer: 'Chủ nông trại',
+      depart: 'xuất phát 06:30', departPm: 'xuất phát 12:30', content: 'Công việc', farmer: 'Chủ nông trại',
+      slot: 'Ca làm', slots: { morning: 'Buổi sáng 07:00–11:00', afternoon: 'Buổi chiều 13:00–17:00' },
       hedge: function (loc) { return 'Nếu mưa chuyển sang: ' + loc; },
       loading: 'Đang tải lịch…',
       error: 'Không tải được lịch làm việc, vui lòng thử lại sau hoặc hỏi trưởng nhóm.',
@@ -66,7 +68,8 @@
       upcoming: 'Pekerjaan berikutnya',
       upcomingEmpty: 'Belum ada pekerjaan terjadwal. Jadwal baru akan muncul di sini dan dikirim lewat LINE.',
       period: 'Periode', location: 'Lokasi', contact: 'Penanggung jawab', van: 'Antar-jemput',
-      depart: 'berangkat 06:30', content: 'Pekerjaan', farmer: 'Pemilik kebun',
+      depart: 'berangkat 06:30', departPm: 'berangkat 12:30', content: 'Pekerjaan', farmer: 'Pemilik kebun',
+      slot: 'Sesi', slots: { morning: 'Pagi 07:00–11:00', afternoon: 'Siang 13:00–17:00' },
       hedge: function (loc) { return 'Jika hujan pindah ke: ' + loc; },
       loading: 'Memuat jadwal…',
       error: 'Jadwal tidak dapat dimuat, coba lagi nanti atau hubungi mandor.',
@@ -189,7 +192,10 @@
         var o = Object.assign({}, i);
         o.id = i.orderId || i.id;
         return o;
-      }).sort(function (a, b) { return String(a.startDate).localeCompare(String(b.startDate)) || String(a.id).localeCompare(String(b.id)); });
+      }).sort(function (a, b) {
+        var pm = function (o) { return o.timeSlot === 'afternoon' ? 1 : 0; };   // 同一天：上午（含整天）在前、下午在後
+        return String(a.startDate).localeCompare(String(b.startDate)) || pm(a) - pm(b) || String(a.id).localeCompare(String(b.id));
+      });
       state.noTeam = state.variant === 'worker' && !(data && data.teamId) && !state.orders.length;
     } catch (e) {
       if (seq !== state.seq) return;
@@ -206,9 +212,10 @@
     var contact = o.foremanName || team.leader || '';
     var phone = o.foremanPhone || team.leaderPhone || '';
     var vehicle = o.vehicle || team.vehicle;
-    var van = vehicle ? short(vehicle) + '・' + tx.depart : '';
+    var van = vehicle ? short(vehicle) + '・' + (o.timeSlot === 'afternoon' ? tx.departPm : tx.depart) : '';
     var rows = [];
     if (withPeriod) rows.push([tx.period, period]);
+    if (tx.slots && tx.slots[o.timeSlot]) rows.push([tx.slot, tx.slots[o.timeSlot]]);   // 半日時段（整天不顯示）
     rows.push([tx.location, short(o.farmName ? o.farmName + '・' + (o.farmLocation || '') : o.farmLocation) || short(team.normalLocation)]);
     if (content) rows.push([tx.content, content]);
     if (state.variant === 'farmer') {

@@ -59,8 +59,9 @@ public class PreferredWorkerService {
     /**
      * 農場主合作過的工人（合作次數多者在前），給了工期（start、end）時附上該期間能不能排班
      */
-    public List<Map<String, Object>> pastWorkers(AuthContext ctx, String start, String end) {
+    public List<Map<String, Object>> pastWorkers(AuthContext ctx, String start, String end, String timeSlot) {
         String farmerId = requireFarmerId(ctx);
+        String slot = OrderService.normalizeSlot(timeSlot);
         LocalDate from = parseDate(start, "start");
         LocalDate to = parseDate(end, "end");
         if (from != null && to == null) to = from;
@@ -73,7 +74,7 @@ public class PreferredWorkerService {
         for (Worker w : workerRepository.findAllById(history.keySet())) {
             if (settings.isWorkerAvailable(w)) workers.put(w.getId(), w);
         }
-        Map<String, Order> busy = from == null ? Map.of() : matchingService.busyWorkers(probe(from, to));
+        Map<String, Order> busy = from == null ? Map.of() : matchingService.busyWorkers(probe(from, to, slot));
         List<InsuranceRecord> records = from == null ? List.of() : insuranceRecordRepository.findByWorkerIdIn(workers.keySet());
         LocalDate today = LocalDate.now();
         Map<String, String> teamNames = new HashMap<>();
@@ -111,7 +112,7 @@ public class PreferredWorkerService {
      * 建單時驗證指名；未指名回 null。
      * @param farmerId 下單農場主；admin 代建時傳 null（不限合作過的工人，其餘檢查相同）
      */
-    public Worker resolveForNewOrder(String farmerId, String workerId, LocalDate start, LocalDate end) {
+    public Worker resolveForNewOrder(String farmerId, String workerId, LocalDate start, LocalDate end, String timeSlot) {
         if (workerId == null || workerId.isBlank()) return null;
         String id = workerId.trim();
         Worker w = workerRepository.findById(id).filter(settings::isWorkerAvailable)
@@ -122,8 +123,10 @@ public class PreferredWorkerService {
         if (start == null || end == null) throw ApiException.badRequest("指名工人須先選起工日期");
         checkPeriod(start, end);
         String name = MatchingService.displayName(w);
-        if (matchingService.busyWorkers(probe(start, end)).containsKey(id)) {
-            throw ApiException.conflict(name + " 在 " + start + " 起的工期已有排班，請改期或不指名");
+        String slot = OrderService.normalizeSlot(timeSlot);
+        if (matchingService.busyWorkers(probe(start, end, slot)).containsKey(id)) {
+            throw ApiException.conflict(name + " 在 " + start + " 起的工期" + (Order.FULL_DAY.equals(slot) ? "" : "（" + Order.slotLabel(slot) + "）")
+                    + "已有排班，請改期、改時段或不指名");
         }
         LocalDate today = LocalDate.now();
         if (matchingService.ineligibleReason(w, insuranceRecordRepository.findByWorkerIdIn(List.of(id)), today) != null) {
@@ -158,8 +161,9 @@ public class PreferredWorkerService {
     }
 
     /** 只用來查撞期的虛擬訂單（不存檔） */
-    private static Order probe(LocalDate start, LocalDate end) {
+    private static Order probe(LocalDate start, LocalDate end, String slot) {
         Order o = new Order();
+        o.setTimeSlot(slot);
         o.setStartDate(start);
         o.setEndDate(end);
         return o;

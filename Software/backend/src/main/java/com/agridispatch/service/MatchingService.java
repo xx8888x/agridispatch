@@ -334,7 +334,8 @@ public class MatchingService {
     }
 
     private static String clashText(Order o) {
-        return "工期撞期：已排入 " + o.getId() + "（" + md(o.getStartDate()) + "–" + md(o.getEndDate()) + "）";
+        return "工期撞期：已排入 " + o.getId() + "（" + md(o.getStartDate()) + "–" + md(o.getEndDate())
+                + (o.isHalfDay() ? "・" + Order.slotLabel(o.slot()) : "") + "）";
     }
 
     private static String md(LocalDate d) {
@@ -383,6 +384,8 @@ public class MatchingService {
         m.put("suggestedWorkers", o.getSuggestedWorkers());
         m.put("startDate", o.getStartDate() == null ? null : o.getStartDate().toString());
         m.put("endDate", o.getEndDate() == null ? null : o.getEndDate().toString());
+        m.put("timeSlot", o.slot());
+        m.put("timeSlotLabel", Order.slotLabel(o.slot()));
         m.put("assignedTeamId", o.getAssignedTeamId());
         m.put("crew", o.crewList());
         m.put("preferredWorkerId", o.getPreferredWorkerId());

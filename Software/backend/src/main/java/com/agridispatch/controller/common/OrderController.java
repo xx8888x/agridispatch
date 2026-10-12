@@ -60,10 +60,15 @@ public class OrderController {
             }
         }
 
+        String slot = OrderService.normalizeSlot(str(req.get("timeSlot"), null));
         Object pkg = req.get("packageId");
-        Map<String, Object> result = (pkg != null && !pkg.toString().isBlank())
-                ? orderService.calculatePackage(pkg.toString().trim(), zone, requestedWorkers)
-                : orderService.calculateOrder(cropId, area, plan, zone, dispatchCategory, requestedWorkers);
+        Map<String, Object> result;
+        if (pkg != null && !pkg.toString().isBlank()) {
+            OrderService.requirePackageSlot(slot);
+            result = orderService.calculatePackage(pkg.toString().trim(), zone, requestedWorkers);
+        } else {
+            result = orderService.calculateOrder(cropId, area, plan, zone, dispatchCategory, requestedWorkers, slot);
+        }
         return ResponseEntity.ok(Map.of("success", true, "data", result));
     }
 
@@ -81,7 +86,7 @@ public class OrderController {
             throw ApiException.forbidden();
         }
         var preferred = preferredWorkerService.resolveForNewOrder(ctx.isAdmin() ? null : farmerId,
-                order.getPreferredWorkerId(), order.getStartDate(), order.getEndDate());
+                order.getPreferredWorkerId(), order.getStartDate(), order.getEndDate(), order.getTimeSlot());
         Order created = orderService.createOrder(order, farmerId, preferred);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("success", true, "data", created, "message", "成功建立派工訂單"));

@@ -242,6 +242,15 @@
                 <label class="ad-label ad-label--req" for="fStartDate">起工日期</label>
                 <input type="date" id="fStartDate" class="ad-input" required oninput="calcFarmerForm()">
               </div>
+              <div class="ad-field">
+                <span class="ad-label" id="fSlotLabel">每天的時段</span>
+                <div class="ad-seg" role="radiogroup" aria-labelledby="fSlotLabel" id="fSlotSeg" style="align-self: flex-start;">
+                  <label class="ad-seg__btn is-active"><input type="radio" name="fSlot" value="full_day" checked onchange="calcFarmerForm()">整天</label>
+                  <label class="ad-seg__btn"><input type="radio" name="fSlot" value="morning" onchange="calcFarmerForm()">上午 07–11</label>
+                  <label class="ad-seg__btn"><input type="radio" name="fSlot" value="afternoon" onchange="calcFarmerForm()">下午 13–17</label>
+                </div>
+                <span id="fSlotHint" class="ad-hint">小面積只需半天時選上午或下午，同一位工人可上午、下午跑不同農場</span>
+              </div>
               <div class="ad-field" style="max-width: 240px;">
                 <label class="ad-label" for="fWorkersCount">每日工人數（選填）</label>
                 <input type="number" id="fWorkersCount" class="ad-input ad-num" inputmode="numeric" min="1" max="30" placeholder="不填由系統估" oninput="calcFarmerForm()">
@@ -747,6 +756,8 @@
       document.getElementById('fWorkersCount').value = p.workers || '';
       const early = document.querySelector('input[name="fPlan"][value="early_bird"]');
       if (early) early.checked = true;
+      const fullDay = document.querySelector('input[name="fSlot"][value="full_day"]');
+      if (fullDay) fullDay.checked = true;   // 工時包為整天班
       if (p.location && document.documentElement.classList.contains('is-demo')) {
         document.getElementById('fFarmLocation').value = p.location;
       }
@@ -990,10 +1001,13 @@
       turnkey: '依作物費率 95 折，預付 30%，驗收後結清'
     };
 
-    function localQuote(cropId, area, plan, category, workers) {
+    function localQuote(cropId, area, plan, category, workers, slot) {
       const [baseHours, workersPerFen, cropRate] = OFFLINE_CROPS[cropId] || [20, 3, 290];
-      const hours = Math.round(baseHours * area);
+      const workHours = Math.round(baseHours * area);
       const crew = workers || Math.max(2, Math.round(workersPerFen * (area > 3 ? 1.5 : 1)));
+      const half = slot === 'morning' || slot === 'afternoon';
+      const halfDays = Math.ceil(workHours / (crew * 4));
+      const hours = half ? crew * halfDays * 4 : workHours;   // 半日最低計費：每人每天 4 小時
       let rate = cropRate;
       if (plan === 'early_bird' && category !== 'typhoon_emergency') rate = 315;
       else if (plan === 'hourly_flex' && category !== 'typhoon_emergency') rate = 310;
@@ -1002,7 +1016,8 @@
       const actual = plan === 'turnkey' ? Math.round(standard * 0.95) : standard;
       const deposit = plan === 'early_bird' ? Math.round(actual * 0.2) : (plan === 'turnkey' ? Math.round(actual * 0.3) : 0);
       return {
-        totalHours: hours, suggestedWorkers: crew, requestedWorkers: workers || null, estDays: Math.round((hours / (crew * 8)) * 10) / 10,
+        totalHours: hours, workHours, minimumTopUpHours: hours - workHours, timeSlot: slot || 'full_day', hoursPerDay: half ? 4 : 8,
+        suggestedWorkers: crew, requestedWorkers: workers || null, estDays: half ? halfDays : Math.round((hours / (crew * 8)) * 10) / 10,
         unitRate: rate, standardTotal: standard, actualTotal: actual, deposit, savings: standard - actual, offline: true
       };
     }
@@ -1012,7 +1027,8 @@
       const p = PACKAGES[id];
       const crew = workers || p.workers;
       return {
-        packageId: id, totalHours: p.hours, suggestedWorkers: crew, requestedWorkers: workers || null,
+        packageId: id, totalHours: p.hours, workHours: p.hours, minimumTopUpHours: 0, timeSlot: 'full_day', hoursPerDay: 8,
+        suggestedWorkers: crew, requestedWorkers: workers || null,
         estDays: Math.round((p.hours / (crew * 8)) * 10) / 10, unitRate: Math.round(p.price / p.hours),
         standardTotal: p.original, actualTotal: p.price, deposit: p.deposit, savings: Math.max(0, p.original - p.price), offline: true
       };
@@ -1028,6 +1044,7 @@
         dispatchCategory: catSelect.value,
         packageId: activePkg,
         workers: parseInt(document.getElementById('fWorkersCount').value, 10) || null,   // 沒填 = 由系統估算（工時包預設 DM 建議編制）
+        timeSlot: (document.querySelector('input[name="fSlot"]:checked') || {}).value || 'full_day',
         categoryHint: catSelect.options[catSelect.selectedIndex].getAttribute('data-hint') || ''
       };
     }
@@ -1038,7 +1055,7 @@
         const res = await fetch(`${(window.AgriAuth && window.AgriAuth.API_BASE) || '/api'}/orders/calculate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cropId: q.cropId, area: q.area, plan: q.plan, dispatchCategory: q.dispatchCategory, workers: q.workers, packageId: q.packageId })
+          body: JSON.stringify({ cropId: q.cropId, area: q.area, plan: q.plan, dispatchCategory: q.dispatchCategory, workers: q.workers, packageId: q.packageId, timeSlot: q.timeSlot })
         });
         const body = await res.json().catch(() => ({}));
         if (!res.ok || body.success === false) throw Object.assign(new Error(body.error || `HTTP ${res.status}`), { fromServer: true });
@@ -1047,8 +1064,11 @@
         const demo = !window.AGRI_CONFIG || window.AGRI_CONFIG.mode !== 'production';
         if (err.fromServer || !demo) throw err;
         if (q.workers && (q.workers < 1 || q.workers > 30)) throw new Error('每日工人數必須介於 1 ～ 30');
-        if (q.packageId) return localPackageQuote(q.packageId, q.workers);
-        return localQuote(q.cropId, q.area, q.plan, q.dispatchCategory, q.workers);   // 連不上後端：demo 離線試算
+        if (q.packageId) {
+          if (q.timeSlot !== 'full_day') throw new Error('工時包為整天班，不提供半日時段；半日請改用一般預約');
+          return localPackageQuote(q.packageId, q.workers);
+        }
+        return localQuote(q.cropId, q.area, q.plan, q.dispatchCategory, q.workers, q.timeSlot);   // 連不上後端：demo 離線試算
       }
     }
 
@@ -1066,11 +1086,11 @@
     let pastWorkers = [];
     let pendingPrefer = new URLSearchParams(window.location.search).get('prefer');
 
-    async function refreshPastWorkers(startStr, endStr) {
-      const key = `${startStr || ''}|${endStr || ''}`;
+    async function refreshPastWorkers(startStr, endStr, slot) {
+      const key = `${startStr || ''}|${endStr || ''}|${slot || ''}`;
       if (key === pastWorkersKey) return;
       pastWorkersKey = key;
-      const qs = startStr ? `?start=${encodeURIComponent(startStr)}&end=${encodeURIComponent(endStr || startStr)}` : '';
+      const qs = startStr ? `?start=${encodeURIComponent(startStr)}&end=${encodeURIComponent(endStr || startStr)}&timeSlot=${encodeURIComponent(slot || 'full_day')}` : '';
       let list = [];
       try {
         const res = await fetch(`${(window.AgriAuth && window.AgriAuth.API_BASE) || '/api'}/farmers/me/past-workers${qs}`);
@@ -1104,7 +1124,7 @@
       if (!w) {
         const busy = pastWorkers.filter((x) => x.available === false).length;
         hint.textContent = '只列出曾到您農場出工的工人；指名不加價，合作社會優先排他到場'
-          + (busy ? `。有 ${busy} 位在這段工期已有排班，可改起工日期再選` : '');
+          + (busy ? `。有 ${busy} 位在這段工期已有排班，可改起工日期或時段再選` : '');
         return;
       }
       hint.textContent = `${w.name}${w.teamName ? '（' + w.teamName + '）' : ''}・上次出工 ${w.lastWorkedOn || '—'}。`
@@ -1118,7 +1138,8 @@
     function renderQuote(q, input) {
       const money = (n) => `NT$ ${Number(n).toLocaleString()}`;
       document.getElementById('fOutHours').innerText = `${q.totalHours} 小時`;
-      document.getElementById('fOutWorkers').innerText = `${q.suggestedWorkers} 人 × ${Math.max(1, Math.ceil(q.estDays))} 天 (${input.area} 分地)`;
+      const halfDay = input.timeSlot === 'morning' || input.timeSlot === 'afternoon';
+      document.getElementById('fOutWorkers').innerText = `${q.suggestedWorkers} 人 × ${Math.max(1, Math.ceil(q.estDays))} ${halfDay ? '個半天' : '天'} (${input.area} 分地)`;
       document.getElementById('fWorkersCount').placeholder = q.requestedWorkers ? '不填由系統估' : `系統估 ${q.suggestedWorkers} 人`;
       const stdEl = document.getElementById('fOutStandard');
       stdEl.innerText = money(q.standardTotal);
@@ -1130,12 +1151,14 @@
       document.getElementById('fOutSavings').innerText = q.savings > 0
         ? `已省下 ${money(q.savings)} (${Math.round((q.savings / q.standardTotal) * 100)}% 優惠)`
         : (input.plan === 'early_bird' ? '早鳥 315 元/hr・鎖定名額・優先排班' : '標準費率計價');
-      document.getElementById('fQuoteNote').textContent = q.offline
+      const topUp = q.minimumTopUpHours > 0
+        ? `半日每人每天至少計 4 小時：作業約 ${q.workHours} 小時，補足 ${q.minimumTopUpHours} 小時。` : '';
+      document.getElementById('fQuoteNote').textContent = topUp + (q.offline
         ? '離線試算：未連上伺服器，金額僅供參考。'
-        : '金額由系統依作物與面積即時試算，送出後以合作社確認為準。';
+        : '金額由系統依作物與面積即時試算，送出後以合作社確認為準。');
       document.getElementById('fSubmitBtn').disabled = false;
       const startStr = document.getElementById('fStartDate').value || null;
-      refreshPastWorkers(startStr, endDateFor(startStr, q.estDays));
+      refreshPastWorkers(startStr, endDateFor(startStr, q.estDays), input.timeSlot);
     }
 
     function renderQuoteError(msg) {
@@ -1147,7 +1170,7 @@
       const input = currentQuoteInput();
       const hintEl = document.getElementById('fCategoryHint');
       if (hintEl) hintEl.textContent = input.categoryHint;
-      document.querySelectorAll('#fPlanSeg .ad-seg__btn').forEach((lab) => {
+      document.querySelectorAll('#fPlanSeg .ad-seg__btn, #fSlotSeg .ad-seg__btn').forEach((lab) => {
         const radio = lab.querySelector('input');
         lab.classList.toggle('is-active', !!(radio && radio.checked));
       });
@@ -1216,6 +1239,7 @@
         totalHours: quote.totalHours,
         suggestedWorkers: quote.suggestedWorkers,
         requestedWorkers: input.workers,
+        timeSlot: input.timeSlot,   // 整天／上午／下午；半日由後端依每人每天 4 小時最低計費
         unitRate: quote.unitRate,
         standardAmount: quote.standardTotal,
         finalAmount: quote.actualTotal,
@@ -1436,8 +1460,9 @@
         const days = ord.startDate && ord.endDate
           ? Math.round((new Date(ord.endDate) - new Date(ord.startDate)) / 86400000) + 1
           : (crew && ord.totalHours ? Math.max(1, Math.round(ord.totalHours / (crew * 8))) : '');
+        const slotText = { morning: '・上午 07–11', afternoon: '・下午 13–17' }[ord.timeSlot] || '';
         const when = ord.startDate
-          ? ord.startDate + (ord.endDate && ord.endDate !== ord.startDate ? ' ～ ' + ord.endDate : '')
+          ? ord.startDate + (ord.endDate && ord.endDate !== ord.startDate ? ' ～ ' + ord.endDate : '') + slotText
           : (ord.createdAt ? String(ord.createdAt).slice(0, 10) : '待排定');
         const created = ord.createdAt ? new Date(String(ord.createdAt).replace(' ', 'T')) : null;
         const isNew = created && !isNaN(created) && (Date.now() - created.getTime()) < 30 * 60 * 1000;

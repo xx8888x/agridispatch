@@ -135,7 +135,7 @@
           <span><span class="ad-caption">訂單</span> <span class="ad-num" style="color: var(--ad-accent-text); font-weight: 600;">${esc(o.orderId)}</span>（${esc(o.statusLabel)}）</span>
           <span><span class="ad-caption">農場</span> ${esc(o.farmerName)}</span>
           <span><span class="ad-caption">作業</span> ${esc(o.categoryName)}</span>
-          <span><span class="ad-caption">需求</span> ${o.suggestedWorkers} 人</span>
+          <span><span class="ad-caption">需求</span> ${o.suggestedWorkers} 人${o.timeSlot && o.timeSlot !== 'full_day' ? `・<strong>${esc(o.timeSlotLabel || o.timeSlot)}</strong>` : ''}</span>
           ${o.preferredWorkerId ? `<span><span class="ad-caption">農場主指名</span> <strong>${esc(o.preferredWorkerName || '')}</strong> <span class="ad-num">${esc(o.preferredWorkerId)}</span></span>` : ''}
           <span><span class="ad-caption">依據技能</span> ${esc(plain(o.skillLabel) || '證照類（不依經驗標籤）')}</span>
           <span><span class="ad-caption">目前派工</span> ${esc(o.assignedTeamId || '—')}${o.crew.length ? `・名單 ${o.crew.length} 人` : '・尚無出工名單'}</span>

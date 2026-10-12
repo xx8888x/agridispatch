@@ -130,6 +130,8 @@ public class WorkerScheduleService {
         m.put("startDate", start.toString());
         m.put("endDate", end.toString());
         m.put("assignedVia", via);
+        m.put("timeSlot", o.slot());
+        m.put("timeSlotLabel", Order.slotLabel(o.slot()));
         m.put("preferredByFarmer", workerId.equals(o.getPreferredWorkerId()));   // 農場主指名本人（回頭客）
         m.put("teamId", o.getAssignedTeamId());
         m.put("cropName", o.getCropName());

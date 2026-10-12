@@ -80,7 +80,51 @@ public class Order {
     @jakarta.persistence.Column(name = "preferred_worker_name", length = 100)
     private String preferredWorkerName;
 
+    /**
+     * 每日時段：full_day 整天（預設；舊資料 null 視同整天）、morning 上午 07:00–11:00、afternoon 下午 13:00–17:00。
+     * 半日時段讓同一位工人一天可以跑上午、下午兩個農場；中間兩小時為午休與移動
+     * （移動時間是否計入工時、交通由誰負擔【待確認】）
+     */
+    @jakarta.persistence.Column(name = "time_slot", length = 16)
+    private String timeSlot;
+
+    public static final String FULL_DAY = "full_day";
+    public static final String MORNING = "morning";
+    public static final String AFTERNOON = "afternoon";
+    public static final java.util.List<String> TIME_SLOTS = java.util.List.of(FULL_DAY, MORNING, AFTERNOON);
+
     public Order() {}
+
+    public String getTimeSlot() { return timeSlot; }
+    public void setTimeSlot(String timeSlot) { this.timeSlot = timeSlot; }
+
+    /** 時段（null 視同整天） */
+    public String slot() { return timeSlot == null || timeSlot.isBlank() ? FULL_DAY : timeSlot; }
+
+    public boolean isHalfDay() { return !FULL_DAY.equals(slot()); }
+
+    /** 每人每日工時：整天 8、半日 4 */
+    public static int hoursPerDay(String slot) { return slot == null || FULL_DAY.equals(slot) ? 8 : 4; }
+
+    public static String slotLabel(String slot) {
+        if (MORNING.equals(slot)) return "上午 07:00–11:00";
+        if (AFTERNOON.equals(slot)) return "下午 13:00–17:00";
+        return "整天";
+    }
+
+    /** 兩個時段是否重疊：整天與任何時段重疊；上午與下午不重疊 */
+    public static boolean slotsOverlap(String a, String b) {
+        String x = a == null ? FULL_DAY : a, y = b == null ? FULL_DAY : b;
+        return FULL_DAY.equals(x) || FULL_DAY.equals(y) || x.equals(y);
+    }
+
+    /** 某個時刻是否落在此訂單的時段（打卡判斷所屬訂單用；以中午 12:00 區分上午、下午） */
+    public boolean slotCovers(java.time.LocalTime t) {
+        String s = slot();
+        if (MORNING.equals(s)) return t.isBefore(java.time.LocalTime.NOON);
+        if (AFTERNOON.equals(s)) return !t.isBefore(java.time.LocalTime.NOON);
+        return true;
+    }
 
     public String getPreferredWorkerId() { return preferredWorkerId; }
     public void setPreferredWorkerId(String preferredWorkerId) { this.preferredWorkerId = preferredWorkerId; }
@@ -110,10 +154,11 @@ public class Order {
         return hasPeriod() && !day.isBefore(startDate) && !day.isAfter(endDate);
     }
 
-    /** 兩張訂單工期是否重疊（任一未排定工期視為不重疊） */
+    /** 兩張訂單工期是否重疊（任一未排定工期視為不重疊）；同一天上午、下午兩個半日時段不算重疊 */
     public boolean overlaps(Order other) {
         return hasPeriod() && other.hasPeriod()
-                && !startDate.isAfter(other.endDate) && !other.startDate.isAfter(endDate);
+                && !startDate.isAfter(other.endDate) && !other.startDate.isAfter(endDate)
+                && slotsOverlap(slot(), other.slot());
     }
 
     public String getCrewWorkerIds() { return crewWorkerIds; }

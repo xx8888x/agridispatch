@@ -236,9 +236,10 @@
     var e = get('GET /farmers/me/past-workers');
     return (e && e.b && e.b.data) || [];
   }
-  function workerBusy(workerId, start, end) {
+  function workerBusy(workerId, start, end, slot) {
     return (listOf(get('GET /orders')) || []).some(function (o) {
       if (ACTIVE_ORDER.indexOf(o.status) < 0 || !o.startDate || !o.endDate || o.startDate > end || o.endDate < start) return false;
+      if (!slotsOverlap(slotOf(o), normSlot(slot))) return false;   // 同一天上午、下午不衝突
       var m = get('GET /matching/orders/' + encodeURIComponent(o.id));
       var crew = (m && m.b && m.b.data && m.b.data.order && m.b.data.order.crew) || [];
       return crew.length ? crew.indexOf(workerId) >= 0 : o.preferredWorkerId === workerId;
@@ -249,8 +250,10 @@
     if (!list) return respond(403, { success: false, error: 'FORBIDDEN' });
     var sq = /[?&]start=([^&]*)/.exec(query || ''), eq = /[?&]end=([^&]*)/.exec(query || '');
     var start = sq ? decodeURIComponent(sq[1]) : '', end = eq ? decodeURIComponent(eq[1]) : start;
+    var tq = /[?&]timeSlot=([^&]*)/.exec(query || ''), slot;
+    try { slot = normSlot(tq ? decodeURIComponent(tq[1]) : null); } catch (err) { return respond(400, { success: false, error: err.message }); }
     return respond(200, { success: true, data: list.map(function (w) {
-      var busy = start ? workerBusy(w.workerId, start, end) : null;
+      var busy = start ? workerBusy(w.workerId, start, end, slot) : null;
       return Object.assign({}, w, { available: start ? !busy : null, unavailableReason: busy ? '該期間已有排班' : null });
     }) });
   }
@@ -259,7 +262,17 @@
     for (var i = 0; i < list.length; i++) if (String(list[i].id) === String(id)) return list[i];
     return null;
   }
-  function calcOrder(cropId, area, plan, zone, cat, reqWorkers) {
+  // 每日時段（同後端 Order／OrderService）：整天 8 小時；上午 07–11、下午 13–17 各 4 小時，半日最低計費每人每天 4 小時
+  var SLOTS = { full_day: '整天', morning: '上午 07:00–11:00', afternoon: '下午 13:00–17:00' };
+  function normSlot(v) {
+    if (blank(v)) return 'full_day';
+    if (!SLOTS[String(v).trim()]) throw new Error('時段 (timeSlot) 必須為 full_day / morning / afternoon');
+    return String(v).trim();
+  }
+  function slotOf(o) { return blank(o.timeSlot) ? 'full_day' : o.timeSlot; }
+  function slotsOverlap(a, b) { return a === 'full_day' || b === 'full_day' || a === b; }
+  function calcOrder(cropId, area, plan, zone, cat, reqWorkers, slot) {
+    slot = normSlot(slot);
     if (reqWorkers != null && (reqWorkers < 1 || reqWorkers > MAX_WORKERS)) throw new Error('每日工人數 (workers) 必須介於 1 ～ ' + MAX_WORKERS);
     cat = blank(cat) ? 'harvest_grading' : cat;
     if (!CATEGORY[cat]) throw new Error('不支援的派工類別：' + cat);
@@ -275,7 +288,13 @@
     if (cat === 'typhoon_emergency') unitRate = Math.max(unitRate, 360);
     var totalHours = Math.round(crop.baseHoursPerFen * area);
     var workers = reqWorkers != null ? reqWorkers : Math.max(2, Math.round(crop.workersPerFen * (area > 3 ? 1.5 : 1)));
-    var estDays = Math.round((totalHours / (workers * 8)) * 10) / 10;
+    var workHours = totalHours, estDays;
+    if (slot === 'full_day') {
+      estDays = Math.round((totalHours / (workers * 8)) * 10) / 10;
+    } else {
+      estDays = Math.ceil(totalHours / (workers * 4));
+      totalHours = workers * estDays * 4;   // 計費工時（最低計費：每人每天 4 小時）
+    }
     var discount = 1, surcharge = zone === 'cross_region' ? 1200 : 0, planName;
     if (plan === 'early_bird') {
       if (cat !== 'typhoon_emergency') unitRate = EARLY_BIRD_RATE;
@@ -292,6 +311,8 @@
       cropId: crop.id, cropName: crop.name, area: area, plan: plan, planName: planName,
       dispatchCategory: cat, categoryName: c[0], suggestedTeam: c[1], suggestedTeamName: c[2],
       transportZone: zone, transportSurcharge: surcharge, totalHours: totalHours,
+      workHours: workHours, minimumTopUpHours: totalHours - workHours, timeSlot: slot, timeSlotLabel: SLOTS[slot],
+      hoursPerDay: slot === 'full_day' ? 8 : 4,
       suggestedWorkers: workers, requestedWorkers: reqWorkers, estDays: estDays, unitRate: unitRate,
       standardTotal: standard + surcharge, actualTotal: discounted + surcharge,
       deposit: plan === 'early_bird' ? Math.round(discounted * 0.2) : (plan === 'turnkey' ? Math.round(discounted * 0.3) : 0),
@@ -303,7 +324,9 @@
     var w = req.workers != null ? req.workers : req.requestedWorkers;
     var reqWorkers = blank(w) ? null : Math.round(Number(w));
     if (reqWorkers !== null && isNaN(reqWorkers)) throw new Error('每日工人數 (workers) 必須為數字');
+    var slot = normSlot(req.timeSlot);
     if (!blank(req.packageId)) {
+      if (slot !== 'full_day') throw new Error('工時包為整天班，不提供半日時段；半日請改用一般預約');
       var spec = PACKAGE_SPECS[String(req.packageId).trim()];
       if (!spec) throw new Error('此工時包尚未開放線上預約：' + req.packageId);
       var b = findIn('GET /brochures', req.packageId);
@@ -314,26 +337,27 @@
       return Object.assign(d, {
         packageId: req.packageId, plan: 'early_bird', planName: name.slice(0, 100), totalHours: b.hours,
         suggestedWorkers: crew, requestedWorkers: reqWorkers, estDays: Math.round((b.hours / (crew * 8)) * 10) / 10,
+        workHours: b.hours, minimumTopUpHours: 0,
         unitRate: Math.round(b.discountPrice / b.hours), standardTotal: b.originalPrice + d.transportSurcharge,
         actualTotal: b.discountPrice + d.transportSurcharge, deposit: b.depositAmount,
         savings: Math.max(0, b.originalPrice - b.discountPrice)
       });
     }
     var area = req.area != null ? parseFloat(req.area) : 5;
-    return calcOrder(blank(req.cropId) ? 'taoyuan_veg' : req.cropId, area, req.plan, zone, req.dispatchCategory, reqWorkers);
+    return calcOrder(blank(req.cropId) ? 'taoyuan_veg' : req.cropId, area, req.plan, zone, req.dispatchCategory, reqWorkers, slot);
   }
   function createOrder(o) {
     if (blank(o.farmerName)) throw new Error('農場主姓名為必填');
     var u = currentUser() || {};
     var calc = calculate({
       cropId: o.cropId, area: o.area, plan: o.plan, zone: o.transportZone,
-      dispatchCategory: o.dispatchCategory, workers: o.requestedWorkers, packageId: o.packageId
+      dispatchCategory: o.dispatchCategory, workers: o.requestedWorkers, packageId: o.packageId, timeSlot: o.timeSlot
     });
     var pad = function (n) { return (n < 10 ? '0' : '') + n; };
     var now = new Date();
     var order = Object.assign({}, o, {
       farmerId: o.farmerId || (u.role === 'farmer' ? u.refId : null),
-      plan: calc.plan, transportZone: calc.transportZone, dispatchCategory: calc.dispatchCategory,
+      plan: calc.plan, transportZone: calc.transportZone, dispatchCategory: calc.dispatchCategory, timeSlot: normSlot(o.timeSlot),
       cropId: calc.cropId, area: calc.area,
       foremanName: blank(o.foremanName) ? o.farmerName + ' (本人帶隊)' : o.foremanName,
       foremanPhone: blank(o.foremanPhone) ? o.phone : o.foremanPhone,
@@ -363,7 +387,9 @@
       var pw = (pastWorkerList() || []).filter(function (w) { return w.workerId === o.preferredWorkerId; })[0];
       if (!pw) throw new Error('只能指名曾到您農場出工的工人');
       if (!o.startDate || !o.endDate) throw new Error('指名工人須先選起工日期');
-      if (workerBusy(pw.workerId, o.startDate, o.endDate)) throw new Error(pw.name + ' 在 ' + o.startDate + ' 起的工期已有排班，請改期或不指名');
+      if (workerBusy(pw.workerId, o.startDate, o.endDate, order.timeSlot)) {
+        throw new Error(pw.name + ' 在 ' + o.startDate + ' 起的工期' + (order.timeSlot === 'full_day' ? '' : '（' + SLOTS[order.timeSlot] + '）') + '已有排班，請改期、改時段或不指名');
+      }
       order.preferredWorkerName = pw.name;
       if (pw.teamId) order.assignedTeamId = pw.teamId;   // 農場主不能自選工班，交給指名工人的工班
     }
@@ -404,7 +430,16 @@
     ['plan', 'transportZone', 'dispatchCategory'].forEach(function (f) {
       if (u[f] != null && u[f] !== o[f]) { o[f] = u[f]; priced = true; }
     });
-    if (priced && o.depositPaid) return respond(409, { success: false, error: '已付定金的訂單不可變更作物、面積或方案，請聯繫調度中心' });
+    if (u.timeSlot != null) {
+      var ns;
+      try { ns = normSlot(u.timeSlot); } catch (err) { return respond(400, { success: false, error: err.message }); }
+      if (ns !== slotOf(o)) {
+        var me = currentUser() || {};
+        if (me.role === 'farmer' && o.status !== 'pending') return respond(409, { success: false, error: '訂單已排定，時段調整請聯絡合作社（可能影響已安排的出工名單）' });
+        o.timeSlot = ns; priced = true;
+      }
+    }
+    if (priced && o.depositPaid) return respond(409, { success: false, error: '已付定金的訂單不可變更作物、面積、方案或時段，請聯繫調度中心' });
     if (priced && o.packageId) o.packageId = null;
     if (u.requestedWorkers != null) o.requestedWorkers = u.requestedWorkers;
     if (!blank(u.farmerName)) o.farmerName = u.farmerName;
@@ -419,7 +454,7 @@
     if (priced) {
       var c;
       try {
-        c = calculate({ cropId: o.cropId, area: o.area, plan: o.plan, zone: o.transportZone, dispatchCategory: o.dispatchCategory, workers: o.requestedWorkers });
+        c = calculate({ cropId: o.cropId, area: o.area, plan: o.plan, zone: o.transportZone, dispatchCategory: o.dispatchCategory, workers: o.requestedWorkers, timeSlot: o.timeSlot });
       } catch (err) { return respond(400, { success: false, error: err.message }); }
       Object.assign(o, {
         cropName: c.cropName, planName: c.planName, categoryName: c.categoryName, totalHours: c.totalHours,
@@ -765,6 +800,7 @@
       items.push({
         orderId: o.id, status: o.status, statusLabel: STATUS_LABEL[o.status] || o.status,
         startDate: o.startDate, endDate: end, assignedVia: via, teamId: o.assignedTeamId,
+        timeSlot: slotOf(o), timeSlotLabel: SLOTS[slotOf(o)], preferredByFarmer: o.preferredWorkerId === workerId,
         cropName: o.cropName, area: o.area, categoryName: o.categoryName, farmLocation: o.farmLocation,
         farmerName: o.farmerName, foremanName: o.foremanName || t.leader || null,
         foremanPhone: o.foremanPhone || t.leaderPhone || null, foremanNotes: o.foremanNotes || null,
@@ -800,7 +836,9 @@
       order: Object.assign({}, tm.order, {
         orderId: o.id, status: o.status, statusLabel: STATUS_LABEL[o.status] || o.status, farmerName: o.farmerName,
         cropName: o.cropName, categoryName: o.categoryName, suggestedWorkers: o.suggestedWorkers,
-        startDate: o.startDate || null, endDate: o.endDate || null, assignedTeamId: team, crew: []
+        startDate: o.startDate || null, endDate: o.endDate || null, assignedTeamId: team, crew: [],
+        timeSlot: slotOf(o), timeSlotLabel: SLOTS[slotOf(o)],
+        preferredWorkerId: o.preferredWorkerId || null, preferredWorkerName: o.preferredWorkerName || null
       }),
       teams: tm.teams, crew: null
     };

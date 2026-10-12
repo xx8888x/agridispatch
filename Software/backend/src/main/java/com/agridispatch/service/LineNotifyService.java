@@ -317,7 +317,8 @@ public class LineNotifyService {
 
     private static String period(Order o) {
         if (o.getStartDate() == null) return "";
-        return o.getStartDate() + (o.getEndDate() != null && !o.getEndDate().equals(o.getStartDate()) ? " ～ " + o.getEndDate() : "");
+        return o.getStartDate() + (o.getEndDate() != null && !o.getEndDate().equals(o.getStartDate()) ? " ～ " + o.getEndDate() : "")
+                + (o.isHalfDay() ? "（" + Order.slotLabel(o.slot()) + "）" : "");
     }
 
     private static int num(Object o) {

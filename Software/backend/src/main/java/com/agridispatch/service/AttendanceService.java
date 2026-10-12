@@ -70,7 +70,11 @@ public class AttendanceService {
                 .filter(o -> o.crewList().isEmpty() || o.crewList().contains(workerId))
                 .filter(o -> o.coversDate(today))
                 .toList();
-        return inPeriod.size() == 1 ? inPeriod.get(0).getId() : null;
+        if (inPeriod.size() == 1) return inPeriod.get(0).getId();
+        // 同一天上午、下午跑兩個農場：依打卡時間（中午 12:00 前算上午）選時段相符的那張
+        java.time.LocalTime now = java.time.LocalTime.now();
+        List<Order> inSlot = inPeriod.stream().filter(o -> o.slotCovers(now)).toList();
+        return inSlot.size() == 1 ? inSlot.get(0).getId() : null;
     }
 
     private void requireWorker(String workerId) {

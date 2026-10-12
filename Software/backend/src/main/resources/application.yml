@@ -56,6 +56,10 @@ agri:
     notify:
       worker-hours: ${AGRI_LINE_WORKER_HOURS:07:00-20:00}
       tomorrow-cron: ${AGRI_LINE_TOMORROW_CRON:0 0 18 * * *}
+  # 天候戰情：中央氣象署開放資料授權碼（https://opendata.cwa.gov.tw 會員取得），只在後端使用
+  weather:
+    cwa-api-key: ${CWA_API_KEY:}
+    cache-minutes: ${AGRI_WEATHER_CACHE_MINUTES:30}
   # LINE Bot（Software/Line Bot，port 5000）內部端點：共用金鑰未設定時 /api/line/internal/** 一律 403
   linebot:
     internal-key: ${AGRI_LINEBOT_INTERNAL_KEY:}

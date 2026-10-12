@@ -125,7 +125,7 @@
               </div>
               <p class="ad-caption" style="margin-top: 4px;">
                 <template v-if="wx.loading">氣象資料載入中…</template>
-                <template v-else-if="wx.at">22 縣市・{{ wx.list.length }} 鄉鎮市區・觀測時間 {{ wxObsTime }}・資料來源 Open-Meteo</template>
+                <template v-else-if="wx.at">22 縣市・{{ wx.list.length }} 鄉鎮市區・{{ wx.provider === 'cwa' ? '預報時段' : '觀測時間' }} {{ wxObsTime }}・資料來源 {{ wx.source }}<span v-if="wx.stale" class="text-amber-400">（氣象署暫時無法連線，顯示上次資料）</span></template>
                 <template v-else>尚未取得氣象資料</template>
               </p>
             </div>
@@ -193,7 +193,7 @@
             <table class="ad-table" style="min-width: 1080px; white-space: nowrap;">
               <thead>
                 <tr>
-                  <th>鄉鎮市區</th><th>天氣</th><th>氣溫（體感）</th><th>今日高／低</th><th>降雨機率</th><th>日雨量</th><th>濕度</th><th>風速／陣風</th><th>紫外線</th><th>明日</th><th>作業建議</th>
+                  <th>鄉鎮市區</th><th>天氣</th><th>氣溫（體感）</th><th>今日高／低</th><th>降雨機率</th><th>日雨量</th><th>濕度</th><th>{{ wx.provider === 'cwa' ? '風速／今日最大' : '風速／陣風' }}</th><th>紫外線</th><th>明日</th><th>作業建議</th>
                 </tr>
               </thead>
               <tbody>
@@ -209,9 +209,9 @@
                   <td class="font-mono">{{ w.temp }}°<span class="text-slate-400">（{{ w.feels }}°）</span></td>
                   <td class="font-mono">{{ w.tMax }}° / {{ w.tMin }}°</td>
                   <td class="font-mono" :class="w.rainProb >= 60 ? 'text-amber-400 font-bold' : ''">{{ w.rainProb != null ? w.rainProb + '%' : '—' }}</td>
-                  <td class="font-mono" :class="w.rainSum >= 80 ? 'text-rose-400 font-bold' : ''">{{ w.rainSum }} mm</td>
+                  <td class="font-mono" :class="w.rainSum >= 80 ? 'text-rose-400 font-bold' : ''">{{ w.rainSum != null ? w.rainSum + ' mm' : '—' }}</td>
                   <td class="font-mono">{{ w.humidity }}%</td>
-                  <td class="font-mono" :class="Math.max(w.gust || 0, w.gustMax || 0) >= 13.9 ? 'text-amber-400' : ''">{{ w.wind }} / {{ w.gustMax || w.gust }} m/s</td>
+                  <td class="font-mono" :class="wxWindPeak(w) >= 13.9 ? 'text-amber-400' : ''">{{ w.wind != null ? w.wind : '—' }} / {{ w.gustMax != null ? w.gustMax : (w.gust != null ? w.gust : (w.windMax != null ? w.windMax : '—')) }} m/s</td>
                   <td class="font-mono" :class="w.uv >= 8 ? 'text-amber-400' : ''">{{ w.uv != null ? w.uv : '—' }}</td>
                   <td class="text-slate-300">{{ w.tomorrow.text }}・{{ w.tomorrow.rainProb != null ? w.tomorrow.rainProb + '%' : '—' }}</td>
                   <td>
@@ -222,7 +222,7 @@
               </tbody>
             </table>
           </div>
-          <p class="ad-caption">作業建議為依即時值與今日預報自動判讀（陣風 8 級、日雨量 80 mm、雷雨、體感 38°C 以上建議避險），實際停工仍以現場領班與農場主判斷為準。</p>
+          <p class="ad-caption">作業建議為依即時值與今日預報自動判讀（風力 8 級、日雨量 80 mm、雷雨、體感 38°C 以上建議避險），實際停工仍以現場領班與農場主判斷為準。</p>
         </div>
 
         <!-- 作業中農場與工班 -->
@@ -258,7 +258,7 @@
                   <span class="text-[1.5rem] font-bold text-white font-mono">{{ a.wx.temp }}°C</span>
                   <span class="text-slate-200">{{ a.wx.text }}</span>
                   <span class="text-slate-400">降雨 <b class="font-mono" :class="a.wx.rainProb >= 60 ? 'text-amber-400' : 'text-slate-200'">{{ a.wx.rainProb }}%</b></span>
-                  <span class="text-slate-400">陣風 <b class="font-mono text-slate-200">{{ a.wx.gustMax || a.wx.gust }} m/s</b></span>
+                  <span class="text-slate-400">{{ a.wx.gustMax != null || a.wx.gust != null ? '陣風' : '最大風速' }} <b class="font-mono text-slate-200">{{ wxWindPeak(a.wx) }} m/s</b></span>
                   <span class="text-slate-400">明日 {{ a.wx.tomorrow.text }} {{ a.wx.tomorrow.rainProb }}%</span>
                 </div>
                 <div v-else class="ad-caption" style="margin-top: 4px;">{{ wx.loading ? '氣象載入中…' : '暫無氣象資料' }}</div>
@@ -2469,7 +2469,7 @@
         };
 
         // 全台鄉鎮即時氣象（js/agri-weather.js → Open-Meteo）
-        const wx = reactive({ loading: false, error: '', at: 0, list: [] });
+        const wx = reactive({ loading: false, error: '', at: 0, provider: '', source: '', stale: false, list: [] });
         const wxCounty = ref('');
         const wxQuery = ref('');
         const wxFilter = ref('all');
@@ -2479,8 +2479,11 @@
           wx.loading = true;
           wx.error = '';
           try {
-            const r = await window.AgriWeather.fetchAll(force);
+            const r = await window.AgriWeather.fetchAll(force, API_BASE);
             wx.at = r.at;
+            wx.provider = r.provider;
+            wx.source = r.source;
+            wx.stale = !!r.stale;
             wx.list = r.list;
             if (force) showToast('氣象資料已更新');
           } catch (e) {
@@ -2501,6 +2504,11 @@
           const t = wx.list.length && wx.list[0].time;
           return t ? t.replace('T', ' ').slice(5) : '—';
         });
+
+        // 風力峰值：有陣風用陣風，沒有（氣象署鄉鎮預報）用今日最大平均風速
+        const wxWindPeak = (w) => (w.gust != null || w.gustMax != null)
+          ? Math.max(w.gust || 0, w.gustMax || 0)
+          : Math.max(w.wind || 0, w.windMax || 0);
 
         const wxLevelPill = (level) => level === 'stop' ? 'ad-pill--danger' : (level === 'caution' ? 'ad-pill--warn' : 'ad-pill--ok');
 
@@ -3222,6 +3230,7 @@
           wxFilter,
           wxObsTime,
           wxLevelPill,
+          wxWindPeak,
           wxCountySummary,
           wxTownRows,
           wxFarmTownKeys,

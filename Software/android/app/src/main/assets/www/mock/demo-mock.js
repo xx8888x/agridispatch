@@ -1118,6 +1118,8 @@
         var syn = mm[2] ? (tq && synthCrew(decodeURIComponent(mm[1]), decodeURIComponent(tq))) : synthMatching(decodeURIComponent(mm[1]));
         if (syn) return respond(syn.s, syn.b);
       }
+      // 天候戰情：純前端示範沒有後端代理中央氣象署，比照後端未設授權碼回 503，前端改用 Open-Meteo
+      if (sp.path === '/weather/towns') return respond(503, { success: false, error: '示範模式未連接中央氣象署（CWA_API_KEY）' });
       var hit = findGet(p);
       if (hit) return respond(hit.s, hit.b);
       if (global.console) console.warn('[demo-mock] 沒有示範資料：GET ' + p);

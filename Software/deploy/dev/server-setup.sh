@@ -161,6 +161,8 @@ mkdir -p $BOT_DIR && chown agri:agri $BOT_DIR
 # 後端與 LINE Bot 互相呼叫內部端點的共用金鑰（規格 05 第 6.3 節）；後端須知道 LINE Bot 位址
 grep -q '^AGRI_LINEBOT_INTERNAL_KEY=' "$ENV_FILE" || echo "AGRI_LINEBOT_INTERNAL_KEY=$(rand 40)" >> "$ENV_FILE"
 grep -q '^AGRI_LINEBOT_BASE_URL=' "$ENV_FILE" || echo "AGRI_LINEBOT_BASE_URL=http://127.0.0.1:5000" >> "$ENV_FILE"
+# 天候戰情：中央氣象署開放資料授權碼（留空則 /api/weather/towns 回 503），取得後手動填入再 systemctl restart agridispatch
+grep -q '^CWA_API_KEY=' "$ENV_FILE" || echo "CWA_API_KEY=" >> "$ENV_FILE"
 INTERNAL_KEY=$(grep '^AGRI_LINEBOT_INTERNAL_KEY=' "$ENV_FILE" | cut -d= -f2-)
 if [ ! -f "$BOT_ENV" ]; then
   umask 077

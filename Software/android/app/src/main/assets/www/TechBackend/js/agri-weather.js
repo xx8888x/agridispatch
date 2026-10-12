@@ -1,19 +1,22 @@
 /**
  * 天候戰情：全台 368 鄉鎮市區即時氣象 + 農務作業建議。
  *
- * 資料來源：Open-Meteo Forecast API（免金鑰、瀏覽器直呼，一次批次查 368 個座標）。
- *   - 座標表：js/taiwan-towns.js（window.AGRI_TW_TOWNS）
- *   - 快取：記憶體 + localStorage，15 分鐘內不重抓（Open-Meteo 每 15 分更新一次即時值）
- *   - 【待確認】Open-Meteo 免費 API 限非商業用途；正式營運前改接中央氣象署開放資料（需授權碼，經後端代理）或購買 Open-Meteo 商用方案。
+ * 資料來源（依序）：
+ *   1. 後端 GET /api/weather/towns → 中央氣象署鄉鎮天氣預報（授權碼 CWA_API_KEY 只在後端）
+ *   2. 後端沒設定授權碼或離線、且非 production 模式（demo／純前端 Mock）→ Open-Meteo（免金鑰、瀏覽器直呼，一次批次查 368 個座標）
+ *      Open-Meteo 免費 API 限非商業用途，production 模式一律不用，後端失敗就顯示錯誤。
+ *   - 座標表：js/taiwan-towns.js（window.AGRI_TW_TOWNS）；縣市鄉鎮名稱一律用「台」
+ *   - 快取：記憶體 + localStorage 15 分鐘（後端另有 30 分鐘快取）
  *
  * 作業建議門檻（啟發式，非官方判定）：
- *   避險：陣風 ≥ 17.2 m/s（蒲福 8 級）、日雨量 ≥ 80 mm（氣象署大雨標準）、15 分鐘雨量 ≥ 10 mm、雷雨、體感 ≥ 38°C、氣溫 ≤ 6°C
- *   注意：降雨機率 ≥ 60%、陣風 ≥ 13.9 m/s（7 級）、體感 ≥ 35°C、氣溫 ≤ 10°C、正在下雨（紫外線只顯示不列入）
+ *   避險：風力 ≥ 17.2 m/s（蒲福 8 級）、日雨量 ≥ 80 mm（氣象署大雨標準）、15 分鐘雨量 ≥ 10 mm、雷雨、體感 ≥ 38°C、氣溫 ≤ 6°C
+ *   注意：降雨機率 ≥ 60%、風力 ≥ 13.9 m/s（7 級）、體感 ≥ 35°C、氣溫 ≤ 10°C、正在下雨（紫外線只顯示不列入）
+ *   風力用陣風；氣象署鄉鎮預報沒有陣風，改用今日預報最大平均風速（比陣風保守）。雨量、紫外線同理缺資料時不判讀。
  */
 (function (global) {
   'use strict';
 
-  var CACHE_KEY = 'agri_wx_towns_v1';
+  var CACHE_KEY = 'agri_wx_towns_v2';
   var TTL_MS = 15 * 60 * 1000;
   var API = 'https://api.open-meteo.com/v1/forecast';
   var CURRENT = 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_gusts_10m';
@@ -27,7 +30,8 @@
     var list = [];
     Object.keys(src).forEach(function (county) {
       src[county].forEach(function (t) {
-        list.push({ county: county, town: t[0], lat: t[1], lon: t[2], key: county + t[0] });
+        var town = t[0].replace(/臺/g, '台');
+        list.push({ county: county, town: town, lat: t[1], lon: t[2], key: county + town });
       });
     });
     return list;
@@ -57,13 +61,15 @@
   // 依即時值與今日預報給作業建議：level = stop（建議避險）/ caution（注意）/ ok（適合作業）
   function assess(w) {
     var stop = [], caution = [];
-    var gust = Math.max(w.gust || 0, w.gustMax || 0);
-    if (gust >= 17.2) stop.push('陣風 8 級以上');
-    else if (gust >= 13.9) caution.push('陣風 7 級以上');
+    var hasGust = w.gust != null || w.gustMax != null;
+    var gust = hasGust ? Math.max(w.gust || 0, w.gustMax || 0) : Math.max(w.wind || 0, w.windMax || 0);
+    var gustName = hasGust ? '陣風' : '風力';
+    if (gust >= 17.2) stop.push(gustName + ' 8 級以上');
+    else if (gust >= 13.9) caution.push(gustName + ' 7 級以上');
     if (w.rainSum >= 80) stop.push('日雨量 ' + Math.round(w.rainSum) + ' mm');
     if (w.precip >= 10) stop.push('強降雨中');
     else if (w.precip > 0.2) caution.push('降雨中');
-    if (w.code >= 95) stop.push('雷雨');
+    if (w.code >= 95 || w.thunder) stop.push('雷雨');
     if (w.feels >= 38) stop.push('體感 ' + Math.round(w.feels) + '°C 高溫');
     else if (w.feels >= 35) caution.push('體感 ' + Math.round(w.feels) + '°C 注意中暑');
     if (w.temp != null && w.temp <= 6) stop.push('低溫 ' + Math.round(w.temp) + '°C');
@@ -119,8 +125,32 @@
     try { global.localStorage.setItem(CACHE_KEY, JSON.stringify(c)); } catch (e) { /* 無痕模式等情況略過 */ }
   }
 
-  /** 取得全台鄉鎮氣象；回傳 { at: 抓取時間 ms, list: [...] }。force=true 略過快取。 */
-  function fetchAll(force) {
+  // 後端（中央氣象署）回傳的鄉鎮補上 key 與作業建議
+  function fromBackend(data) {
+    var list = (data.list || []).map(function (w) {
+      w.county = String(w.county || '').replace(/臺/g, '台');
+      w.town = String(w.town || '').replace(/臺/g, '台');
+      w.key = w.county + w.town;
+      ['temp', 'feels'].forEach(function (k) { w[k] = round(w[k], 1); });
+      ['tMax', 'tMin'].forEach(function (k) { w[k] = round(w[k], 0); });
+      w.tomorrow = w.tomorrow || {};
+      w.assess = assess(w);
+      return w;
+    });
+    // 依座標表的縣市鄉鎮順序排列，表格與 Open-Meteo 版一致
+    var order = {};
+    towns().forEach(function (t, i) { order[t.key] = i; });
+    list.sort(function (a, b) { return (order[a.key] != null ? order[a.key] : 9999) - (order[b.key] != null ? order[b.key] : 9999); });
+    return { at: Date.now(), provider: 'cwa', source: data.source || '中央氣象署', stale: !!data.stale, list: list };
+  }
+
+  function isProduction() { return !!(global.AGRI_CONFIG && global.AGRI_CONFIG.mode === 'production'); }
+
+  /**
+   * 取得全台鄉鎮氣象；回傳 { at, provider: 'cwa' | 'open-meteo', source, stale, list: [...] }。
+   * apiBase：後端 API 根（例 http://localhost:3000/api）；force=true 略過快取。
+   */
+  function fetchAll(force, apiBase) {
     if (!force) {
       if (memo && Date.now() - memo.at < TTL_MS) return Promise.resolve(memo);
       var cached = readCache();
@@ -130,6 +160,24 @@
         return Promise.resolve(cached);
       }
     }
+    var backendError = null;
+    var backend = apiBase
+      ? fetch(apiBase + '/weather/towns' + (force ? '?force=true' : '')).then(function (res) {
+          return res.json().catch(function () { return {}; }).then(function (json) {
+            if (res.ok && json && json.success && json.data && json.data.list && json.data.list.length) return fromBackend(json.data);
+            backendError = (json && (json.error || json.message)) || ('HTTP ' + res.status);
+            return null;
+          });
+        }).catch(function (e) { backendError = '無法連線後端'; return null; })
+      : Promise.resolve(null);
+    return backend.then(function (r) {
+      if (r) { memo = r; writeCache(r); return r; }
+      if (isProduction()) throw new Error('中央氣象署資料取得失敗（' + (backendError || '未設定 API') + '）');
+      return fetchOpenMeteo();
+    });
+  }
+
+  function fetchOpenMeteo() {
     var list = towns();
     if (!list.length) return Promise.reject(new Error('缺少鄉鎮座標表 taiwan-towns.js'));
     var url = API +
@@ -143,7 +191,7 @@
     }).then(function (json) {
       var arr = Array.isArray(json) ? json : [json];
       if (arr.length !== list.length) throw new Error('氣象 API 回傳筆數不符（' + arr.length + '/' + list.length + '）');
-      memo = { at: Date.now(), list: list.map(function (t, i) { return normalize(t, arr[i]); }) };
+      memo = { at: Date.now(), provider: 'open-meteo', source: 'Open-Meteo（示範用）', stale: false, list: list.map(function (t, i) { return normalize(t, arr[i]); }) };
       writeCache(memo);
       return memo;
     });

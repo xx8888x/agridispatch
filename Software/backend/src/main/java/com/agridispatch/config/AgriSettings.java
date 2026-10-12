@@ -60,6 +60,18 @@ public class AgriSettings {
     @Value("${agri.security.login-lock-admin-only:false}")
     private boolean loginLockAdminOnly;
 
+    /** 中央氣象署開放資料授權碼（環境變數 CWA_API_KEY）；未設定時 /api/weather/** 回 503 */
+    @Value("${agri.weather.cwa-api-key:}")
+    private String cwaApiKey;
+
+    /** 氣象資料快取分鐘數（環境變數 AGRI_WEATHER_CACHE_MINUTES） */
+    @Value("${agri.weather.cache-minutes:30}")
+    private int weatherCacheMinutes;
+
+    public String getCwaApiKey() { return blankToNull(cwaApiKey); }
+
+    public int getWeatherCacheMinutes() { return Math.max(1, weatherCacheMinutes); }
+
     public boolean isDemoEnabled() { return demoEnabled; }
 
     public boolean isLoginLockAdminOnly() { return loginLockAdminOnly; }

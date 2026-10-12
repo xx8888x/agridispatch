@@ -109,6 +109,36 @@ public class TestSimulator {
         failed += check("F 未綁定查早鳥（公開）", F, "unbound", text("早鳥"), 0, "早鳥");
         failed += check("F 未綁定加好友 → 綁定卡", F, "unbound", follow(null), 1, "農場主帳號綁定");
 
+        // 外籍移工功能：預設下架（Config.FEATURE_FOREIGN_WORKERS=false），先檢核下架狀態，
+        // 之後的工作者案例（多語、外籍身分）暫時打開開關檢核恢復狀態，最後還原設定
+        boolean foreignSetting = Config.FEATURE_FOREIGN_WORKERS;
+        Config.FEATURE_FOREIGN_WORKERS = false;
+        failed += check("W 外勞下架：加好友（越語介面）→ 中文歡迎", W, null, follow("vi"), 0, "本國籍工作者");
+        failed += check("W 外勞下架：加好友不出三語歡迎", W, null, follow("vi"), 0, "!Chào mừng");
+        failed += check("W 外勞下架：加好友不出語言選擇", W, null, follow("vi"), 1, "!Chọn ngôn ngữ");
+        failed += check("W 外勞下架：綁定卡只有本國籍入口", W, null, text("帳號綁定"), 0, "本國籍工作者");
+        failed += check("W 外勞下架：綁定卡無外籍入口", W, null, text("帳號綁定"), 0, "!外籍移工");
+        failed += check("W 外勞下架：綁定卡無 worker_foreign 網址", W, null, text("帳號綁定"), 0, "!role=worker_foreign");
+        failed += expectEq("W 外勞下架：不產生 worker_foreign 綁定網址",
+                String.valueOf(FlexMessageBuilder.bindUrl(W, Identity.WORKER_FOREIGN, "vi", null)), "null");
+        failed += check("W 外勞下架：越南籍舊使用者 → 暫停說明", W, "vn", text("nhiệm vụ"), 0, "外籍工作者服務暫停中");
+        failed += check("W 外勞下架：越南籍舊使用者 → 聯絡卡", W, "vn", text("nhiệm vụ"), 1, "聯絡合作社");
+        failed += check("W 外勞下架：印尼籍選單 postback → 暫停", W, "id", pb("a=clock"), 0, "暫停中");
+        failed += check("W 外勞下架：越南籍加好友 → 暫停", W, "vn", follow("vi"), 0, "暫停中");
+        failed += check("W 外勞下架：本勞任務卡", W, "local", text("今日任務"), 0, "今日派工任務卡");
+        failed += check("W 外勞下架：輸入越南語不切換", W, "local", text("Tiếng Việt"), 0, "使用說明");
+        failed += check("W 外勞下架：切換語言 → 僅中文", W, "local", text("切換語言"), 0, "僅提供繁體中文");
+        failed += check("W 外勞下架：舊選單 a=lang&v=vi", W, null, pb("a=lang&v=vi"), 0, "僅提供繁體中文");
+        failed += check("W 外勞下架：舊選單語言・說明 → 說明", W, "local", pb("a=lang_help"), 0, "使用說明");
+        failed += check("W 外勞下架：說明不列切換語言", W, "local", text("使用說明"), 0, "!切換語言");
+        failed += check("F 外勞下架：引導文案不提外勞", F, null, text("薪資"), 0, "!外勞");
+        String vuid = "U_CHECK_FOREIGN_OFF";
+        IdentityStore.override(W, vuid, IdentityStore.preset("local").withLang("vi", true));
+        failed += expect("W 外勞下架：本勞選過越語仍為中文", LineBotDispatcher.handle(BotEvent.text(W, vuid, "任務")), 0, "今日派工任務卡");
+        failed += expectEq("選單（外勞下架）：越南籍 → 預設選單", RichMenus.menuKeyFor(W, IdentityStore.preset("vn")), "worker_guest");
+        failed += expectEq("選單（外勞下架）：本勞選越語仍中文", RichMenus.menuKeyFor(W, IdentityStore.preset("local").withLang("vi", true)), "worker_main_zh");
+        Config.FEATURE_FOREIGN_WORKERS = true;
+
         // 工作者帳號
         failed += check("W 加好友（越語介面）→ 三語歡迎", W, null, follow("vi"), 0, "Chào mừng");
         failed += check("W 加好友（越語介面）→ 越語綁定卡", W, null, follow("vi"), 2, "Liên kết tài khoản");
@@ -216,6 +246,7 @@ public class TestSimulator {
             F.secret = savedSecret; F.accessToken = savedToken;
             W.secret = savedWs; W.accessToken = savedWt;
         }
+        Config.FEATURE_FOREIGN_WORKERS = foreignSetting;
 
         System.out.println(failed == 0 ? "✅ 自動檢核全部通過！" : "❌ 自動檢核失敗 " + failed + " 項");
         return failed;

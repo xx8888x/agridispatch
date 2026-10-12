@@ -4,8 +4,8 @@
     "height": 1686
   },
   "selected": true,
-  "name": "智農派工（工作者）未綁定選單（三語）",
-  "chatBarText": "Menu / 選單",
+  "name": "智農派工（工作者）未綁定選單",
+  "chatBarText": "選單",
   "areas": [
     {
       "bounds": {
@@ -16,9 +16,9 @@
       },
       "action": {
         "type": "postback",
-        "label": "繁體中文",
-        "data": "a=lang&v=zh",
-        "displayText": "繁體中文"
+        "label": "今日任務",
+        "data": "a=task",
+        "displayText": "今日任務"
       }
     },
     {
@@ -30,9 +30,9 @@
       },
       "action": {
         "type": "postback",
-        "label": "Tiếng Việt",
-        "data": "a=lang&v=vi",
-        "displayText": "Tiếng Việt"
+        "label": "上下班打卡",
+        "data": "a=clock",
+        "displayText": "上下班打卡"
       }
     },
     {
@@ -44,9 +44,9 @@
       },
       "action": {
         "type": "postback",
-        "label": "Bahasa Indonesia",
-        "data": "a=lang&v=id",
-        "displayText": "Bahasa Indonesia"
+        "label": "薪資明細",
+        "data": "a=salary",
+        "displayText": "薪資明細"
       }
     },
     {

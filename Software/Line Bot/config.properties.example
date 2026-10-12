@@ -34,6 +34,11 @@ internal.key=
 # 改 true 即恢復；圖文選單另需把 tools/make_rich_menus.py 的 FEATURE_LEGALIZE 改 True、重產並上傳。
 feature.legalize=false
 
+# 功能開關：外籍移工（外勞）服務，預設 false＝暫時下架（先以本國勞工為主）：工作者帳號綁定卡不提供外籍入口、
+# 不出語言切換（一律繁體中文），已綁定的外籍工作者只回「服務暫停中，請洽合作社」。
+# 改 true 即恢復；圖文選單另需把 tools/make_rich_menus.py 的 FEATURE_FOREIGN_WORKERS 改 True、重產並上傳。
+feature.foreign-workers=false
+
 # 本地伺服器監聽埠號 (預設 5000)
 server.port=5000
 

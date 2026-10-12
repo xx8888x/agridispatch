@@ -35,6 +35,8 @@ public final class RichMenus {
     /** 規格第捌章：依身分與語言決定選單代碼（與後端 LineBindingService.menuKey 相同規則） */
     public static String menuKeyFor(Channel channel, Identity id) {
         if (channel == Channel.FARMER) return id.isFarmer() ? "farmer_main" : "farmer_guest";
+        // 外籍移工功能下架：外籍使用者回帳號預設選單、本勞一律中文選單
+        if (!Config.FEATURE_FOREIGN_WORKERS) return id.isWorker() && !id.isForeign() ? "worker_main_zh" : "worker_guest";
         return id.isWorker() ? "worker_main_" + I18n.normalize(id.lang()) : "worker_guest";
     }
 

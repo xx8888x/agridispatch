@@ -49,7 +49,8 @@ public final class IdentityStore {
      * 加好友：記錄追蹤；工作者帳號未主動選過語言時，以 LINE 介面語言（vi／id）為預設（規格 3.2 第 3 點）
      */
     public static void recordFollow(Channel channel, String userId, String profileLang) {
-        String lang = channel == Channel.WORKER && profileLang != null && !"zh".equals(profileLang)
+        // 外籍移工功能下架時不採用 LINE 介面語言（一律中文）
+        String lang = Config.FEATURE_FOREIGN_WORKERS && channel == Channel.WORKER && profileLang != null && !"zh".equals(profileLang)
                 && I18n.SUPPORTED.contains(profileLang) ? profileLang : null;
         String k = key(channel, userId);
         Identity o = overrides.get(k);

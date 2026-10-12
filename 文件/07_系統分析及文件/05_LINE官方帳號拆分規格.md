@@ -4,6 +4,7 @@
 > **實作進度**：P1 ✅（Line Bot 雙帳號骨架）、P2 ✅（後端 `line_users`、內部端點、綁定 API；LIFF 綁定頁屬 P4）、P3 ✅（6 份圖文選單、上傳工具、依身分自動連結；實機上傳待 P0 帳號）、P4 ✅（LIFF 綁定頁 `line-bind.html`、科技後台 `admin-line.html`、LINE 模擬器雙帳號）、P5 ✅（推播：訂單狀態、定金、天候、明日出工、農場主方案通知；薪資入帳待發薪功能）、P6 ⏳（模擬驗收 15/15 ✅、文件同步 ✅；實機驗收待 P0，步驟見 `07_LINE官方帳號上線與實機驗收手冊.md`）
 > **適用範圍**：`Software/Line Bot/`（port 5000）、`Software/backend/`（port 3000）的 LINE 相關程式、`Software/demo/linebot/line.html` 模擬器、科技後台 LINE 設定頁
 > **相關文件**：`01_系統分析與架構設計規格書.md` 第陸章（LINE 子系統現況）、`02_資料庫實體關聯圖與資料字典(ERD).md`（`line_users`）、`03_認證與API安全規格.md`（端點權限）、`Software/android/docs/角色與人力分類表.md`（身分與國別代碼）
+> **功能下架（2026-10-12）**：外籍移工（外勞）功能暫時下架，平台先以本國勞工（正職、兼職、中高齡、打工、學生打工）為主。Line Bot 以功能開關 `FEATURE_FOREIGN_WORKERS`（環境變數；或 `config.properties` 的 `feature.foreign-workers`）處理、不刪程式，**預設 `false`**，與前端 `features.foreignWorkers` 一致。關閉時工作者帳號：綁定卡只有本國籍入口、不產生 `role=worker_foreign` 的綁定網址；不出語言選擇與三語歡迎、不辨識語言切換、不採用 LINE 介面語言，回覆與推播一律繁體中文；已綁定為 `worker_foreign` 的舊使用者只回「外籍工作者服務暫停中，請洽合作社或帶班師傅」與聯絡合作社卡，選單回帳號預設 `worker_guest`；舊選單送來 `a=lang`、`a=lang_help` 時回「目前僅提供繁體中文介面」或使用說明。圖文選單 `worker_guest` 改為中文功能格（今日任務、上下班打卡、薪資明細、帳號綁定、使用說明、聯絡合作社），`worker_main_zh` 的「語言・說明」改「使用說明」（`a=help`）。**恢復方式**：設 `FEATURE_FOREIGN_WORKERS=true`（或 `feature.foreign-workers=true`）重啟 Line Bot；圖文選單另把 `tools/make_rich_menus.py` 的 `FEATURE_FOREIGN_WORKERS` 改 `True`、重新產生並以 `RichMenuUploader` 上傳。下文第參、肆、捌、玖章所述多語與外籍流程為開關打開時的行為。後端 `worker_foreign` 角色與資料未變動。
 > **狀態**：本規格只定義目標設計，程式尚未修改。實作完成後須同步更新上列 01、02、03 文件與 `Software/Line Bot/README.md`。
 
 ---
@@ -160,6 +161,8 @@
 | W-06 | 切換語言 | ✅ | `a=lang&v=zh|vi|id` ／ 中文、越南、印尼 | — | 語言切換（改為 postback 並存資料庫） |
 | W-07 | 帳號綁定 ／ 我的帳號 | ✅ | `a=account` ／ 綁定、帳號 | LIFF；畫面提供本勞、外勞兩種入口 | `getBindingFlex`（補本勞按鈕） |
 | W-08 | 使用說明 | ✅ | `a=help` ／ 無法辨識的訊息 | 依語言 | `getHelpMenuFlex`（改為工人版、三語） |
+
+> 外籍移工功能下架期間（`FEATURE_FOREIGN_WORKERS=false`，預設）：W-06 不提供（回「目前僅提供繁體中文介面」）、W-07 只有本國籍入口、W-08 不列「語言」；已綁定外籍工作者的所有功能回暫停說明與聯絡卡。詳見文件開頭「功能下架」說明。
 
 ### 4.3 跨帳號關鍵字處理
 
@@ -400,6 +403,8 @@ LINE 官方帳號依「每月主動推播則數」計費，**回覆訊息（Repl
 |---|---|---|---|
 | **機耕代噴預約 F-05** | **費率與產曆 F-06** | **我的帳號 F-07** | **服務導覽 F-08** |
 
+> 外籍移工功能下架期間（預設）：`worker_guest` 改為「今日任務 W-01｜上下班打卡 W-02｜薪資明細 W-04／帳號綁定 W-07｜使用說明 W-08｜聯絡合作社」（只有中文）；`worker_main_zh` 第 6 格改「使用說明 W-08」（`a=help`）；`worker_main_vi`／`_id` 照舊產生但不會連結給任何人。以下為開關打開時的版型。
+
 **`worker_guest`**（每格同時標中文、越語、印尼語）
 
 | 中文 W-06 | Tiếng Việt W-06 | Bahasa Indonesia W-06 |
@@ -431,6 +436,7 @@ LINE 官方帳號依「每月主動推播則數」計費，**回覆訊息（Repl
 | 泰語 | `th` | 工作者 | 保留（國別未開放） |
 | 他加祿語／英語 | `tl` | 工作者 | 保留（國別未開放） |
 
+- 外籍移工功能下架期間（`FEATURE_FOREIGN_WORKERS=false`，預設）工作者帳號一律繁體中文，越語、印尼語資源檔保留、恢復開關後即可使用。
 - 工作者帳號所有回覆文字、Flex 範本、選單圖面都要有三語版本；缺翻譯時退回 `zh`，並在 log 記錄缺漏的鍵值。
 - Flex 範本檔名規則：`flex_templates/<功能代碼>_<lang>.json`（例 `W-01_vi.json`）；現行 `02/03/04_worker_task_*.json` 改名對齊。
 - 固定文字集中為語系資源檔（`i18n/worker_zh.properties` 等，UTF-8），不再寫在 Java 字串中。

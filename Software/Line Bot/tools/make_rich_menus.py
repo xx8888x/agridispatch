@@ -66,6 +66,27 @@ FARMER_MAIN_CELLS = [
     ("sprout", "服務導覽", ["功能說明"], "a=help", "slate"),
 ]
 
+# 功能開關：外籍移工（外勞）服務。False＝暫時下架（與 Line Bot 的 feature.foreign-workers、前端 features.foreignWorkers 一致），
+# 先以本國勞工為主：工作者未綁定選單拿掉三語切換、改為中文功能格；已綁定中文選單「語言・說明」改「使用說明」。
+# 越語、印尼語選單檔照舊產生（下架期間不會連結給任何人）。改 True 後重新執行並上傳即恢復。
+FEATURE_FOREIGN_WORKERS = False
+
+WORKER_GUEST_CELLS = [
+    ("languages", "繁體中文", ["切換為中文介面"], "a=lang&v=zh", "green"),
+    ("languages", "Tiếng Việt", ["越南語"], "a=lang&v=vi", "green"),
+    ("languages", "Bahasa Indonesia", ["印尼語"], "a=lang&v=id", "green"),
+    ("link", "帳號綁定", ["Liên kết tài khoản", "Hubungkan akun"], "a=account", "slate"),
+    ("book-open", "使用說明", ["Hướng dẫn", "Panduan"], "a=help", "slate"),
+    ("phone-call", "聯絡合作社", ["Liên hệ hợp tác xã", "Hubungi koperasi"], "a=contact", "rose"),
+] if FEATURE_FOREIGN_WORKERS else [
+    ("clipboard-list", "今日任務", ["綁定後查看"], "a=task", "green"),
+    ("clock", "上下班打卡", ["綁定後使用"], "a=clock", "green"),
+    ("wallet", "薪資明細", ["綁定後查看"], "a=salary", "amber"),
+    ("link", "帳號綁定", ["本國籍工作者"], "a=account", "slate"),
+    ("book-open", "使用說明", ["功能說明"], "a=help", "slate"),
+    ("phone-call", "聯絡合作社", ["服務專線・1955"], "a=contact", "rose"),
+]
+
 # 每格：(lucide 圖示, 主標, 副標清單, postback data, 顏色)
 MENUS = {
     "farmer_guest": {
@@ -88,17 +109,10 @@ MENUS = {
         "cells": FARMER_MAIN_CELLS,
     },
     "worker_guest": {
-        "chatBarText": "Menu / 選單",
-        "name": "智農派工（工作者）未綁定選單（三語）",
+        "chatBarText": "Menu / 選單" if FEATURE_FOREIGN_WORKERS else "選單",
+        "name": "智農派工（工作者）未綁定選單（三語）" if FEATURE_FOREIGN_WORKERS else "智農派工（工作者）未綁定選單",
         "cols": 3,
-        "cells": [
-            ("languages", "繁體中文", ["切換為中文介面"], "a=lang&v=zh", "green"),
-            ("languages", "Tiếng Việt", ["越南語"], "a=lang&v=vi", "green"),
-            ("languages", "Bahasa Indonesia", ["印尼語"], "a=lang&v=id", "green"),
-            ("link", "帳號綁定", ["Liên kết tài khoản", "Hubungkan akun"], "a=account", "slate"),
-            ("book-open", "使用說明", ["Hướng dẫn", "Panduan"], "a=help", "slate"),
-            ("phone-call", "聯絡合作社", ["Liên hệ hợp tác xã", "Hubungi koperasi"], "a=contact", "rose"),
-        ],
+        "cells": WORKER_GUEST_CELLS,
     },
 }
 
@@ -120,6 +134,9 @@ for lang in ("zh", "vi", "id"):
         "cols": 3,
         "cells": [(icon, labels[lang][0], [labels[lang][1]], data, color) for icon, data, color, labels in WORKER_MAIN],
     }
+if not FEATURE_FOREIGN_WORKERS:
+    # 下架期間中文選單不提供切換語言：最後一格改為使用說明
+    MENUS["worker_main_zh"]["cells"][-1] = ("book-open", "使用說明", ["功能說明"], "a=help", "slate")
 
 CJK_RE = re.compile(r"[\u3000-\u9fff\uff00-\uffef]")
 

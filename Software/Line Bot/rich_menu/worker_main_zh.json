@@ -86,9 +86,9 @@
       },
       "action": {
         "type": "postback",
-        "label": "語言・說明",
-        "data": "a=lang_help",
-        "displayText": "語言・說明"
+        "label": "使用說明",
+        "data": "a=help",
+        "displayText": "使用說明"
       }
     }
   ]

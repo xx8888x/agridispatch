@@ -56,6 +56,8 @@
 | `WEB_BASE_URL` | 前端正式站根網址（卡片按鈕連結），例 `https://<前端網域>/web` |
 | `COOP_CONTACT_PHONE` | 合作社服務專線（選填） |
 | `LINEBOT_ADMIN_KEY` | `/api/config` 管理金鑰（選填） |
+| `FEATURE_FOREIGN_WORKERS` | 外籍移工功能開關（選填，`config.properties` 為 `feature.foreign-workers`）。**預設 `false`＝暫時下架**（2026-10-12 起先以本國勞工為主）：工作者帳號只有本國籍綁定入口、一律繁體中文，已綁定外籍工作者回「服務暫停中，請洽合作社」。恢復：設 `true` 重啟，並把 `tools/make_rich_menus.py` 的 `FEATURE_FOREIGN_WORKERS` 改 `True`、重產並重新上傳圖文選單 |
+| `FEATURE_LEGALIZE` | 工班合法化（黑轉白）開關（選填，`feature.legalize`），預設 `false`＝暫時下架 |
 
 ### 2.2 後端（`Software/backend`，production 模式）
 
@@ -97,6 +99,8 @@
 ---
 
 ## 肆、 實機驗收（規格第拾參章）
+
+> **外籍移工功能下架期間**（`FEATURE_FOREIGN_WORKERS=false`，預設）：下表第 2、3、4、14 條的越語、印尼語與外籍綁定情境要先把開關設 `true`（並上傳開關打開時的圖文選單）才能驗收；下架狀態另驗：B 加工作者帳號好友只收到中文歡迎與「本國籍工作者」綁定卡、選單為中文版 `worker_guest`；已綁定外籍的帳號點任何功能都回「外籍工作者服務暫停中」與聯絡合作社卡。模擬環境兩種狀態都由 `TestSimulator --check` 檢核，`tools/acceptance_mock.py` 以開關打開執行 15 條情境。
 
 準備：至少 3 個 LINE 帳號（A：農場主、B：越南籍工人、C：印尼籍工人），再加一個「本國籍工人」與一個「機耕師」可用同一支手機先後綁定測試；平台上對應的帳號密碼由合作社提供。
 

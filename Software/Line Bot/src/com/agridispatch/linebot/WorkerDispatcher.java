@@ -10,6 +10,9 @@ import static com.agridispatch.linebot.FarmerDispatcher.has;
 /**
  * 智農派工 - 工作者帳號分派器（規格 4.2；本勞與外勞共用，多語）
  * W-01 今日任務、W-02 打卡、W-03 天候與集合、W-04 薪資、W-05 出勤紀錄、W-06 切換語言、W-07 帳號綁定、W-08 使用說明
+ *
+ * 外籍移工功能下架（Config.FEATURE_FOREIGN_WORKERS=false）時：一律繁體中文、不辨識語言切換，
+ * 已綁定為 worker_foreign 的使用者只回暫停說明與聯絡卡（見 foreignSuspended）。
  */
 final class WorkerDispatcher {
     private WorkerDispatcher() {}
@@ -25,6 +28,10 @@ final class WorkerDispatcher {
         if (ev.type() == BotEvent.Type.FOLLOW) return follow(ev);
 
         Identity me = IdentityStore.get(CH, ev.userId());
+        if (!Config.FEATURE_FOREIGN_WORKERS) {
+            if (me.isForeign()) return foreignSuspended();
+            me = me.withLang("zh", me.langLocked());
+        }
         String lang = me.lang();
         return switch (ev.type()) {
             case OTHER_MESSAGE -> List.of(FlexMessageBuilder.wrapText(I18n.t(lang, "unsupported")),
@@ -32,7 +39,7 @@ final class WorkerDispatcher {
             case POSTBACK -> run(ev.action(), ev.postback(), me, ev.userId());
             default -> {
                 String t = ev.text() == null ? "" : ev.text().trim().toLowerCase();
-                String chosen = langOf(t);
+                String chosen = Config.FEATURE_FOREIGN_WORKERS ? langOf(t) : null;
                 yield chosen != null
                         ? run("lang", Map.of("v", chosen), me, ev.userId())
                         : run(actionOf(t, me), Map.of(), me, ev.userId());
@@ -46,6 +53,16 @@ final class WorkerDispatcher {
     private static List<String> follow(BotEvent ev) {
         // 追蹤狀態與 LINE 介面語言已由 LineBotDispatcher 記錄（IdentityStore.recordFollow）
         Identity me = IdentityStore.get(CH, ev.userId());
+        if (!Config.FEATURE_FOREIGN_WORKERS) {
+            if (me.isForeign()) return foreignSuspended();
+            if (me.isWorker()) {
+                return List.of(FlexMessageBuilder.wrapText(I18n.t("zh", "welcome.bound")),
+                        FlexMessageBuilder.getWorkerHelpFlex("zh"));
+            }
+            // 未綁定：只用中文歡迎＋綁定卡（只有本國籍入口），不出語言選擇
+            return List.of(FlexMessageBuilder.wrapText(I18n.t("zh", "welcome.guest.local")),
+                    FlexMessageBuilder.getWorkerBindingFlex("zh", ev.userId()));
+        }
         String lang = me.lang();
         if (me.isWorker()) {
             return List.of(FlexMessageBuilder.wrapText(I18n.t(lang, "welcome.bound")),
@@ -118,15 +135,20 @@ final class WorkerDispatcher {
             case "attendance":
                 if (!me.isWorker()) return bindingRequired(lang, userId);
                 return List.of(FlexMessageBuilder.getWorkerLinkFlex(lang, "attendance", FlexMessageBuilder.workerPageUrl(me)));
-            case "lang": {
+            case "lang":
+            case "lang_select":
+                // 外籍移工功能下架：手機上尚未更新的舊選單（三語切換、語言・說明）仍可能送來
+                if (!Config.FEATURE_FOREIGN_WORKERS) {
+                    return List.of(FlexMessageBuilder.wrapText(I18n.t("zh", "lang.zh.only")),
+                            me.isWorker() ? FlexMessageBuilder.getWorkerHelpFlex("zh") : FlexMessageBuilder.getWorkerBindingFlex("zh", userId));
+                }
+                if ("lang_select".equals(action)) return List.of(FlexMessageBuilder.getLanguageSelectFlex());
                 String v = I18n.normalize(params.get("v"));
                 Identity updated = IdentityStore.setLang(CH, userId, v);
                 return List.of(FlexMessageBuilder.wrapText(I18n.t(v, "lang.switched")),
                         updated.isWorker() ? FlexMessageBuilder.getWorkerHelpFlex(v) : FlexMessageBuilder.getWorkerBindingFlex(v, userId));
-            }
-            case "lang_select":
-                return List.of(FlexMessageBuilder.getLanguageSelectFlex());
             case "lang_help":
+                if (!Config.FEATURE_FOREIGN_WORKERS) return List.of(FlexMessageBuilder.getWorkerHelpFlex(lang));
                 return List.of(FlexMessageBuilder.getLanguageSelectFlex(), FlexMessageBuilder.getWorkerHelpFlex(lang));
             case "contact":
                 return List.of(FlexMessageBuilder.getContactFlex(lang));
@@ -141,6 +163,12 @@ final class WorkerDispatcher {
                 System.err.println("⚠️ [worker] 未知的 postback 動作: " + action);
                 return List.of(FlexMessageBuilder.getWorkerHelpFlex(lang));
         }
+    }
+
+    /** 外籍移工功能下架期間，已綁定為 worker_foreign 的使用者：中文說明＋聯絡合作社卡（不回任務、打卡等內容） */
+    static List<String> foreignSuspended() {
+        return List.of(FlexMessageBuilder.wrapText(I18n.t("zh", "foreign.suspended")),
+                FlexMessageBuilder.getContactFlex("zh"));
     }
 
     private static List<String> bindingRequired(String lang, String userId) {

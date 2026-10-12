@@ -86,7 +86,8 @@ public class InternalHandler implements HttpHandler {
             Map<String, Object> r = (Map<String, Object>) o;
             String uid = r.get("lineUserId") == null ? "" : String.valueOf(r.get("lineUserId"));
             if (uid.isBlank()) continue;
-            String lang = channel == Channel.FARMER ? "zh" : I18n.normalize(r.get("lang") == null ? null : String.valueOf(r.get("lang")));
+            // 外籍移工功能下架（Config.FEATURE_FOREIGN_WORKERS=false）時工作者推播一律中文；收件名單由後端決定
+            String lang = channel == Channel.FARMER || !Config.FEATURE_FOREIGN_WORKERS ? "zh" : I18n.normalize(r.get("lang") == null ? null : String.valueOf(r.get("lang")));
             byLang.computeIfAbsent(lang, k -> new ArrayList<>()).add(uid);
         }
         int total = 0, sent = 0;

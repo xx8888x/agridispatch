@@ -66,6 +66,16 @@ public class Config {
      */
     public static boolean FEATURE_LEGALIZE = false;
 
+    /**
+     * 功能開關：外籍移工（外勞）服務。預設 false（暫時下架：平台先以本國勞工——正職、兼職、中高齡、打工、學生打工——為主，
+     * 與前端 app-config.js 的 features.foreignWorkers 一致）。關閉時工作者帳號：
+     * 綁定卡不提供「外籍移工」入口、不產生 role=worker_foreign 的綁定網址、不出語言切換（一律繁體中文），
+     * 已綁定為 worker_foreign 的舊使用者只回「外籍工作者服務暫停中，請洽合作社」說明與聯絡卡。
+     * 改回 true 即恢復；圖文選單另需把 tools/make_rich_menus.py 的 FEATURE_FOREIGN_WORKERS 改 True、重產並上傳。
+     * 來源：環境變數 FEATURE_FOREIGN_WORKERS，或 config.properties 的 feature.foreign-workers（true／false）。
+     */
+    public static boolean FEATURE_FOREIGN_WORKERS = false;
+
     /** 是否以舊的單一帳號設定（LINE_CHANNEL_*／line.channel.*）當作農場主帳號 */
     public static boolean LEGACY_FARMER_CONFIG = false;
 
@@ -140,6 +150,7 @@ public class Config {
         COOP_CONTACT_PHONE = pick(prop, "COOP_CONTACT_PHONE", "coop.contact.phone");
 
         FEATURE_LEGALIZE = "true".equalsIgnoreCase(pick(prop, "FEATURE_LEGALIZE", "feature.legalize"));
+        FEATURE_FOREIGN_WORKERS = "true".equalsIgnoreCase(pick(prop, "FEATURE_FOREIGN_WORKERS", "feature.foreign-workers"));
 
         LIFF_BIND_ID = pick(prop, "LIFF_BIND_ID", "liff.bind.id");
         if (LIFF_BIND_ID != null && LIFF_BIND_ID.startsWith("請填入")) LIFF_BIND_ID = null;

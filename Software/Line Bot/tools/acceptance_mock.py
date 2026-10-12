@@ -152,6 +152,9 @@ def linebot_dir(name):
 def start_linebot(tag, port, extra_env, cwd_name="lb_main"):
     env = {k: v for k, v in os.environ.items() if not k.startswith(("LINE_", "AGRI_LINEBOT", "LINEBOT_"))}
     env.update(PORT=str(port), BACKEND_API_BASE="http://localhost:%d/api" % BE_PORT)
+    # 驗收情境含越南籍綁定、多語推播：外籍移工功能預設下架（feature.foreign-workers=false），
+    # 這裡打開開關驗收恢復狀態；下架狀態由 TestSimulator --check 檢核
+    env.update(FEATURE_FOREIGN_WORKERS="true")
     env.update(extra_env)
     log_path = os.path.join(TMP, "linebot_%s.log" % tag)
     log = open(log_path, "wb")

@@ -96,8 +96,10 @@ public class FlexMessageBuilder {
     /**
      * 綁定頁網址（規格 5.3）：設定 LIFF_BIND_ID 時走 LIFF，否則直接開 line-bind.html。網址不帶個資；
      * 只有該帳號為 Mock 模式時才附上模擬用的 userId（mockUid），讓模擬器綁定後接得上同一個聊天使用者。
+     * 外籍移工功能下架（Config.FEATURE_FOREIGN_WORKERS=false）時，role=worker_foreign 不產生網址，回傳 null。
      */
     static String bindUrl(Channel channel, String role, String lang, String userId) {
+        if (!Config.FEATURE_FOREIGN_WORKERS && Identity.WORKER_FOREIGN.equals(role)) return null;
         String q = "channel=" + channel.key + "&role=" + role + (lang == null ? "" : "&lang=" + I18n.normalize(lang));
         if (Config.LIFF_BIND_ID != null) {
             return "https://liff.line.me/" + Config.LIFF_BIND_ID + "?" + q;
@@ -119,8 +121,13 @@ public class FlexMessageBuilder {
                 List.of(uriButton("農場主帳號綁定", bindUrl(Channel.FARMER, Identity.FARMER, null, userId), "#059669"))));
     }
 
-    /** W-07 工作者帳號綁定卡：本勞、外勞兩種入口 */
+    /** W-07 工作者帳號綁定卡：本勞、外勞兩種入口；外籍移工功能下架時只有本國籍入口、一律中文 */
     public static String getWorkerBindingFlex(String lang, String userId) {
+        if (!Config.FEATURE_FOREIGN_WORKERS) {
+            return wrapFlex(I18n.t("zh", "bind.title"), simpleBubble("#0F766E", "智農派工（工作者）", I18n.t("zh", "bind.title"),
+                    List.of(I18n.t("zh", "bind.desc.local")),
+                    List.of(uriButton(I18n.t("zh", "bind.local"), bindUrl(Channel.WORKER, Identity.WORKER_LOCAL, "zh", userId), "#059669"))));
+        }
         return wrapFlex(I18n.t(lang, "bind.title"), simpleBubble("#0F766E", "智農派工（工作者）", I18n.t(lang, "bind.title"),
                 List.of(I18n.t(lang, "bind.desc")),
                 List.of(uriButton(I18n.t(lang, "bind.local"), bindUrl(Channel.WORKER, Identity.WORKER_LOCAL, lang, userId), "#059669"),
@@ -146,13 +153,13 @@ public class FlexMessageBuilder {
         return lines;
     }
 
-    /** W-08 工作者使用說明（依語言） */
+    /** W-08 工作者使用說明（依語言；外籍移工功能下架時一律中文、不列「切換語言」） */
     public static String getWorkerHelpFlex(String lang) {
+        List<String> lines = new ArrayList<>(List.of(I18n.t(lang, "help.intro"), I18n.t(lang, "help.task"), I18n.t(lang, "help.clock"),
+                I18n.t(lang, "help.weather"), I18n.t(lang, "help.salary"), I18n.t(lang, "help.attendance")));
+        if (Config.FEATURE_FOREIGN_WORKERS) lines.add(I18n.t(lang, "help.lang"));
         return wrapFlex(I18n.t(lang, "help.title"), simpleBubble("#047857", "智農派工（工作者）", I18n.t(lang, "help.title"),
-                List.of(I18n.t(lang, "help.intro"), I18n.t(lang, "help.task"), I18n.t(lang, "help.clock"),
-                        I18n.t(lang, "help.weather"), I18n.t(lang, "help.salary"), I18n.t(lang, "help.attendance"),
-                        I18n.t(lang, "help.lang")),
-                List.of()));
+                lines, List.of()));
     }
 
     /**
@@ -163,7 +170,9 @@ public class FlexMessageBuilder {
         String title, body, label;
         if (from == Channel.FARMER) {
             title = "此帳號提供農場主使用";
-            body = "工作人員（本勞、外勞）的任務、打卡、薪資與多語介面，請加入「" + to.displayName + "」帳號。";
+            body = Config.FEATURE_FOREIGN_WORKERS
+                    ? "工作人員（本勞、外勞）的任務、打卡、薪資與多語介面，請加入「" + to.displayName + "」帳號。"
+                    : "工作人員的任務、打卡與薪資，請加入「" + to.displayName + "」帳號。";
             label = "加入工作者帳號";
         } else {
             title = I18n.t(lang, "cross.title");

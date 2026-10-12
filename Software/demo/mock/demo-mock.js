@@ -682,6 +682,21 @@
     return respond(200, { success: true, data: rec });
   }
 
+  // ---------------- 本工班名冊（移植 WorkerScheduleService.teamRosterOf） ----------------
+  function teamRoster(workerId) {
+    var w = findIn('GET /workers', workerId);
+    if (!w) return respond(404, { success: false, error: '找不到該農工編號：' + workerId });
+    var members = !w.teamId ? [] : (listOf(get('GET /workers')) || [])
+      .filter(function (x) { return x.teamId === w.teamId && x.id !== w.id; })
+      .map(function (x) {
+        return { id: x.id, name: x.name, chineseName: x.chineseName, nationality: x.nationality,
+          tier: x.tier, employmentType: x.employmentType || null, leader: !!x.leader };
+      })
+      .sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); });
+    var t = (listOf(get('GET /dispatch/teams')) || []).filter(function (x) { return x.id === w.teamId; })[0];
+    return respond(200, { success: true, data: { workerId: w.id, teamId: w.teamId || null, teamName: t ? t.name : null, members: members } });
+  }
+
   // ---------------- 工人本人排班（移植 WorkerScheduleService.scheduleOf） ----------------
   // 由目前的訂單（含示範時新下的單、媒合結果）即時算出，不另外錄製
   function workerSchedule(workerId, query) {
@@ -1181,6 +1196,8 @@
       }
       var ws = /^\/workers\/([^/]+)\/schedule$/.exec(sp.path);
       if (ws) return workerSchedule(decodeURIComponent(ws[1]), sp.query);
+      var tmb = /^\/workers\/([^/]+)\/team-members$/.exec(sp.path);
+      if (tmb) return teamRoster(decodeURIComponent(tmb[1]));
       var mm = /^\/matching\/orders\/([^/]+)(\/crew)?$/.exec(sp.path);
       if (mm && !get('GET ' + p) && !(mm[2] ? null : get('GET ' + sp.path))) {
         var tq = (/[?&]teamId=([^&]+)/.exec(sp.query) || [])[1];

@@ -21,6 +21,9 @@ import java.util.*;
  * 已取消、尚未排定工期（無 startDate）的訂單不列入。
  *
  * 只回現場需要的欄位：不含金額、定金、方案等計價資料，也不含農場主電話（現場聯絡一律找帶隊對口）。
+ *
+ * 另提供本工班名冊（GET /api/workers/{id}/team-members，領班組員簽核名冊用）：
+ * 只回同工班其他成員的工號、姓名、國籍、身分別（tier）、工作型態與是否為領班，不含證號、電話、薪資與保險資料。
  */
 @Service
 public class WorkerScheduleService {
@@ -77,6 +80,35 @@ public class WorkerScheduleService {
         data.put("from", fromDate == null ? null : fromDate.toString());
         data.put("to", toDate == null ? null : toDate.toString());
         data.put("items", items);
+        return data;
+    }
+
+    /** 本工班名冊（不含本人）；工人尚未編入工班時 members 為空陣列 */
+    public Map<String, Object> teamRosterOf(String workerId) {
+        Worker worker = workerService.requireWorker(workerId);
+        String teamId = worker.getTeamId();
+        List<Map<String, Object>> members = new ArrayList<>();
+        if (teamId != null) {
+            for (Worker w : workerService.getWorkersByTeam(teamId)) {
+                if (w.getId().equals(worker.getId())) continue;
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("id", w.getId());
+                m.put("name", w.getName());
+                m.put("chineseName", w.getChineseName());
+                m.put("nationality", w.getNationality());
+                m.put("tier", w.getTier());
+                m.put("employmentType", w.getEmploymentType());
+                m.put("leader", w.isLeader());
+                members.add(m);
+            }
+            members.sort(Comparator.comparing(m -> m.get("id").toString()));
+        }
+        DispatchTeam team = teamId == null ? null : teamRepository.findById(teamId).orElse(null);
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("workerId", worker.getId());
+        data.put("teamId", teamId);
+        data.put("teamName", team == null ? null : team.getName());
+        data.put("members", members);
         return data;
     }
 

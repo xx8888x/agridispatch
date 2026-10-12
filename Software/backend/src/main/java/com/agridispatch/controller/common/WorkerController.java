@@ -197,5 +197,13 @@ public class WorkerController {
             @RequestParam(required = false) String to) {
         return ResponseEntity.ok(Map.of("success", true, "data", scheduleService.scheduleOf(id, from, to)));
     }
+
+    /**
+     * 本工班名冊（領班組員簽核名冊）：同工班其他成員的工號、姓名、國籍、身分別、工作型態、是否領班；不含證號、電話、薪資。
+     */
+    @GetMapping("/{id}/team-members")
+    public ResponseEntity<?> getTeamMembers(@PathVariable String id) {
+        return ResponseEntity.ok(Map.of("success", true, "data", scheduleService.teamRosterOf(id)));
+    }
 }
 

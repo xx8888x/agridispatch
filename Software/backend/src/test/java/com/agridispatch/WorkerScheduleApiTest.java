@@ -109,6 +109,29 @@ class WorkerScheduleApiTest extends ApiTestSupport {
     }
 
     @Test
+    @org.junit.jupiter.api.Order(5)
+    void teamRosterOnlyBasicFieldsAndSelfOrAdmin() throws Exception {
+        String t = workerToken("W026");
+        var r = call("GET", "/api/workers/W026/team-members", t, null);
+        assertEquals(200, r.getResponse().getStatus());
+        JsonNode data = json(r).get("data");
+        assertEquals("team_b", data.get("teamId").asText());
+        Set<String> ids = new TreeSet<>();
+        for (JsonNode m : data.get("members")) {
+            ids.add(m.get("id").asText());
+            Set<String> fields = new TreeSet<>();
+            m.fieldNames().forEachRemaining(fields::add);
+            assertEquals(new TreeSet<>(List.of("id", "name", "chineseName", "nationality", "tier", "employmentType", "leader")), fields);
+        }
+        assertFalse(ids.contains("W026"), "不含本人");
+        assertTrue(ids.containsAll(List.of("W006", "W008", "W011")));
+
+        assertEquals(403, call("GET", "/api/workers/W008/team-members", t, null).getResponse().getStatus());
+        assertEquals(401, call("GET", "/api/workers/W026/team-members", null, null).getResponse().getStatus());
+        assertEquals(200, call("GET", "/api/workers/W008/team-members", admin, null).getResponse().getStatus());
+    }
+
+    @Test
     @org.junit.jupiter.api.Order(4)
     void dateRangeFilterAndValidation() throws Exception {
         String t = workerToken("W026");

@@ -938,8 +938,6 @@
         if (!res.ok) throw new Error(path);
         return (await res.json()).data;
       };
-      // 組員名冊要讀完整名冊（正式版僅 admin），讀不到時任務卡照常顯示、名冊沿用示範文字
-      const workers = await get('/workers').catch(() => null);
       await Promise.all(Object.keys(DEMO_WORKER).map(async (track) => {
         const id = taskWorkerId(track);
         const data = await get(`/workers/${encodeURIComponent(id)}/schedule`).catch(() => null);
@@ -950,7 +948,9 @@
         if (!order) return;
         // 出工名單可能是別工班的訂單：接送車以訂單所屬工班為準
         const team = Object.assign({}, data.team, order.vehicle ? { vehicle: order.vehicle, driver: order.driver } : {});
-        const members = Array.isArray(workers) ? AgriTheme.visibleWorkers(workers).filter((x) => x.teamId === data.team.id && x.id !== id) : null;
+        // 組員名冊：本工班名冊 API（本人或 admin，不含證號、電話、薪資）；讀不到時名冊沿用示範文字，任務卡照常顯示
+        const roster = track === 'foreman' ? await get(`/workers/${encodeURIComponent(id)}/team-members`).catch(() => null) : null;
+        const members = roster && Array.isArray(roster.members) ? AgriTheme.visibleWorkers(roster.members) : null;
         LOCAL_TASKS[track] = { order, team, mine, members };
       }));
       applyLocalTasks();

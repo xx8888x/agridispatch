@@ -16,6 +16,7 @@ import java.util.Map;
  *   userId       模擬的 LINE userId（預設 U_MOCK_USER）
  *   text         文字訊息
  *   postback     postback data，例 a=lang&v=vi
+ *   voice        模擬語音訊息的辨識結果（不呼叫 Whisper，規格 5.5）；voiceError 可帶 too_long／failed 模擬未辨識
  *   event        follow／unfollow（不帶時依 text／postback 判斷）
  *   as           示範身分：farmer、local、foreman、machinery、machinery_leader、vn、id、th、unbound（見 IdentityStore.preset）
  *   lineLanguage 模擬 follow 時的 LINE 介面語言（例 vi）
@@ -75,6 +76,8 @@ public class MockChatHandler implements HttpHandler {
             ev = BotEvent.follow(channel, userId, str(f.get("lineLanguage"), null));
         } else if ("unfollow".equalsIgnoreCase(eventName)) {
             ev = BotEvent.of(channel, userId, BotEvent.Type.UNFOLLOW);
+        } else if (f.get("voice") != null || f.get("voiceError") != null) {
+            ev = BotEvent.voice(channel, userId, str(f.get("voice"), ""), str(f.get("voiceError"), null));
         } else if (f.get("postback") != null) {
             ev = BotEvent.postback(channel, userId, String.valueOf(f.get("postback")));
         } else {

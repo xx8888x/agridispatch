@@ -58,6 +58,7 @@
 | `LINEBOT_ADMIN_KEY` | `/api/config` 管理金鑰（選填） |
 | `FEATURE_FOREIGN_WORKERS` | 外籍移工功能開關（選填，`config.properties` 為 `feature.foreign-workers`）。**預設 `false`＝暫時下架**（2026-10-12 起先以本國勞工為主）：工作者帳號只有本國籍綁定入口、一律繁體中文，已綁定外籍工作者回「服務暫停中，請洽合作社」。恢復：設 `true` 重啟，並把 `tools/make_rich_menus.py` 的 `FEATURE_FOREIGN_WORKERS` 改 `True`、重產並重新上傳圖文選單 |
 | `FEATURE_LEGALIZE` | 工班合法化（黑轉白）開關（選填，`feature.legalize`），預設 `false`＝暫時下架 |
+| `FEATURE_WORKER_VOICE`、`OPENAI_API_KEY` | 工作者帳號語音訊息（選填，規格 5.5；`feature.worker-voice`、`stt.api.key`）。預設關閉；兩者都設定才啟用。語音會送 OpenAI 辨識，啟用前須完成個資告知與同意【待確認】 |
 
 ### 2.2 後端（`Software/backend`，production 模式）
 
@@ -132,6 +133,17 @@
 | 科技後台發送農場主方案通知 | 所有農場主好友收到；工作者帳號沒有 | |
 | 解除綁定（綁定頁或科技後台） | 該使用者的選單回到未綁定選單 | |
 
+補充驗收（語音訊息，規格 5.5；先設定 `FEATURE_WORKER_VOICE=true` 與 `OPENAI_API_KEY`）：
+
+| 操作 | 預期 | 實機結果 |
+|---|---|---|
+| 本國籍工人在工作者帳號按麥克風說「今天的任務」 | 出現「處理中」動畫，數秒內收到確認卡「我聽到：「今天的任務」」；點「查看今日任務」收到任務卡 | |
+| 說「明天在哪裡集合」「我的薪水」「出勤紀錄」 | 確認卡按鈕分別為天候與集合、薪資、出勤紀錄 | |
+| 說一句與功能無關的話（例如「你好」） | 「聽不出要查詢什麼」＋使用說明卡 | |
+| 傳一段超過 60 秒的語音 | 「語音請在 60 秒內說完」 | |
+| 在吵雜環境（田邊、車上）說「今天的任務」 | 記錄辨識文字；準確度作為是否擴大使用的依據 | |
+| 農場主帳號傳語音 | 「目前只看得懂文字訊息」（農場主帳號不辨識） | |
+
 ---
 
 ## 伍、 模擬環境驗收（每次改版後跑）
@@ -159,6 +171,8 @@ python tools/acceptance_mock.py --report 驗收結果.md
 | 「推播 … failed／partial」 | LINE Bot log | 對方封鎖、token 失效、推播額度用完（LINE 後台查看） |
 | 綁定頁「請從 LINE 官方帳號的選單開啟此頁」 | 使用者回報 | 前端 `liffBindId` 未填或 LIFF Endpoint URL 不符 |
 | 「工作者帳號推播時段外，略過」 | 後端 log | 屬設計行為；時段依【待確認】結果調整 `AGRI_LINE_WORKER_HOURS` |
+| 「語音辨識失敗 [HTTP 401／429]」 | LINE Bot log | `OPENAI_API_KEY` 失效或額度用完（OpenAI 後台查看） |
+| 「下載訊息內容失敗」 | LINE Bot log | 工作者帳號 channel access token 是否有效 |
 
 ---
 
@@ -173,5 +187,6 @@ python tools/acceptance_mock.py --report 驗收結果.md
 | 外籍移工綁定的個資告知與同意文字 | 綁定頁顯示暫定文字並要求勾選同意 |
 | 8,800 元就業獎勵適用對象 | 薪資卡對所有工人顯示原內容 |
 | 越語、印尼語文案母語校對 | 程式內為暫定翻譯 |
+| 語音送 OpenAI（境外）辨識的個資告知與同意 | 功能預設關閉；未拍板前不開啟 |
 | 兩帳號申請名義、顯示名稱、認證帳號 | — |
 | 真人客服是否開啟 | — |

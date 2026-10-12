@@ -32,7 +32,8 @@ final class FarmerDispatcher {
                               FlexMessageBuilder.getFarmerHelpFlex())
                     : List.of(FlexMessageBuilder.wrapText("歡迎加入「" + CH.displayName + "」！完成帳號綁定後即可查看您的訂單與派工確認單。"),
                               FlexMessageBuilder.getFarmerBindingFlex(ev.userId()));
-            case OTHER_MESSAGE -> List.of(FlexMessageBuilder.wrapText("目前只看得懂文字訊息，請點下方選單或輸入文字。"),
+            // 語音只在工作者帳號辨識（規格 5.5）；農場主帳號照舊
+            case OTHER_MESSAGE, VOICE -> List.of(FlexMessageBuilder.wrapText("目前只看得懂文字訊息，請點下方選單或輸入文字。"),
                     FlexMessageBuilder.getFarmerHelpFlex());
             case POSTBACK -> run(ev.action(), ev.postback(), "", me, ev.userId());
             case TEXT -> run(actionOf(ev.text()), Map.of(), ev.text(), me, ev.userId());

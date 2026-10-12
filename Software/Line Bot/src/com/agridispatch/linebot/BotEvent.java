@@ -15,26 +15,36 @@ import java.util.Map;
  * @param text        文字訊息內容（TEXT 才有）
  * @param postback    postback data 解析結果（POSTBACK 才有，格式 a=動作&參數=值，規格 5.2）
  * @param profileLang LINE 使用者介面語言（FOLLOW 時由 Get Profile 取得，可能為 null，規格 3.2 第 3 點）
+ * @param voiceError  語音訊息未能辨識的原因（VOICE 才有，null 表示成功）：VOICE_TOO_LONG、VOICE_FAILED
  */
 public record BotEvent(Channel channel, String userId, Type type, String text,
-                       Map<String, String> postback, String profileLang) {
+                       Map<String, String> postback, String profileLang, String voiceError) {
 
-    public enum Type { FOLLOW, UNFOLLOW, TEXT, POSTBACK, OTHER_MESSAGE }
+    /** VOICE：語音訊息已轉成文字（text 為辨識結果），規格 5.5 */
+    public enum Type { FOLLOW, UNFOLLOW, TEXT, POSTBACK, VOICE, OTHER_MESSAGE }
+
+    public static final String VOICE_TOO_LONG = "too_long";
+    public static final String VOICE_FAILED = "failed";
 
     public static BotEvent text(Channel channel, String userId, String text) {
-        return new BotEvent(channel, userId, Type.TEXT, text == null ? "" : text, Map.of(), null);
+        return new BotEvent(channel, userId, Type.TEXT, text == null ? "" : text, Map.of(), null, null);
     }
 
     public static BotEvent postback(Channel channel, String userId, String data) {
-        return new BotEvent(channel, userId, Type.POSTBACK, "", parsePostback(data), null);
+        return new BotEvent(channel, userId, Type.POSTBACK, "", parsePostback(data), null, null);
     }
 
     public static BotEvent follow(Channel channel, String userId, String profileLang) {
-        return new BotEvent(channel, userId, Type.FOLLOW, "", Map.of(), profileLang);
+        return new BotEvent(channel, userId, Type.FOLLOW, "", Map.of(), profileLang, null);
+    }
+
+    /** 語音訊息：transcript 為辨識結果；error 不為 null 時表示未辨識（transcript 忽略） */
+    public static BotEvent voice(Channel channel, String userId, String transcript, String error) {
+        return new BotEvent(channel, userId, Type.VOICE, transcript == null ? "" : transcript, Map.of(), null, error);
     }
 
     public static BotEvent of(Channel channel, String userId, Type type) {
-        return new BotEvent(channel, userId, type, "", Map.of(), null);
+        return new BotEvent(channel, userId, type, "", Map.of(), null, null);
     }
 
     /** postback 的動作代碼（參數 a）；非 postback 或缺少時為空字串 */

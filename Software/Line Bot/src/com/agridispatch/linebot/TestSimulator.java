@@ -34,6 +34,7 @@ public class TestSimulator {
         System.out.println("  /as <身分>              farmer、local、foreman、machinery、machinery_leader、vn、id、th、unbound");
         System.out.println("  /follow [語言]          模擬加好友（可帶 LINE 介面語言，例 /follow vi）");
         System.out.println("  /pb <data>              模擬選單 postback，例 /pb a=lang&v=vi");
+        System.out.println("  /voice <文字>           模擬語音訊息（直接給辨識結果，不呼叫 Whisper）");
         System.out.println("  exit                    結束");
         Scanner scanner = new Scanner(System.in);
         String userId = "U_TEST_USER_001";
@@ -67,6 +68,8 @@ public class TestSimulator {
                 ev = BotEvent.follow(channel, userId, lang);
             } else if (line.startsWith("/pb ")) {
                 ev = BotEvent.postback(channel, userId, line.substring(4));
+            } else if (line.startsWith("/voice ")) {
+                ev = BotEvent.voice(channel, userId, line.substring(7), null);
             } else {
                 ev = BotEvent.text(channel, userId, line);
             }
@@ -137,6 +140,7 @@ public class TestSimulator {
         failed += expect("W 外勞下架：本勞選過越語仍為中文", LineBotDispatcher.handle(BotEvent.text(W, vuid, "任務")), 0, "今日派工任務卡");
         failed += expectEq("選單（外勞下架）：越南籍 → 預設選單", RichMenus.menuKeyFor(W, IdentityStore.preset("vn")), "worker_guest");
         failed += expectEq("選單（外勞下架）：本勞選越語仍中文", RichMenus.menuKeyFor(W, IdentityStore.preset("local").withLang("vi", true)), "worker_main_zh");
+        failed += voiceChecks();
         Config.FEATURE_FOREIGN_WORKERS = true;
 
         // 工作者帳號
@@ -257,6 +261,90 @@ public class TestSimulator {
     private static Ev text(String t) { return (c, u) -> BotEvent.text(c, u, t); }
     private static Ev pb(String d) { return (c, u) -> BotEvent.postback(c, u, d); }
     private static Ev follow(String lang) { return (c, u) -> BotEvent.follow(c, u, lang); }
+    private static Ev voice(String t) { return (c, u) -> BotEvent.voice(c, u, t, null); }
+    private static Ev voiceError(String err) { return (c, u) -> BotEvent.voice(c, u, "", err); }
+
+    /**
+     * 語音訊息（規格 5.5）：分派器的確認卡，以及以本機假 Whisper 伺服器驗證 multipart 上傳與回應解析（不呼叫 OpenAI）
+     */
+    private static int voiceChecks() {
+        int failed = 0;
+        Channel F = Channel.FARMER, W = Channel.WORKER;
+        failed += check("V 語音：今天的任務 → 確認卡", W, "local", voice("我今天的任務是什麼"), 0, "我聽到：「我今天的任務是什麼」");
+        failed += check("V 語音：確認鈕送 a=task", W, "local", voice("我今天的任務是什麼"), 0, "\"data\": \"a=task\"");
+        failed += expectEq("V 語音：只回一張確認卡", String.valueOf(LineBotDispatcher.handle(BotEvent.voice(W, "U_V1", "薪資", null)).size()), "1");
+        failed += check("V 語音：薪資 → a=salary", W, "local", voice("查一下我的薪資"), 0, "a=salary");
+        failed += check("V 語音：集合地點 → a=weather", W, "local", voice("明天在哪裡集合"), 0, "a=weather");
+        failed += check("V 語音：都不是 → a=help", W, "local", voice("出勤紀錄"), 0, "a=help");
+        failed += check("V 語音：聽不出動作 → 說明", W, "local", voice("你好"), 0, "聽不出要查詢什麼");
+        failed += check("V 語音：聽不出動作附說明卡", W, "local", voice("你好"), 1, "使用說明");
+        failed += check("V 語音：辨識失敗", W, "local", voiceError(BotEvent.VOICE_FAILED), 0, "沒有聽清楚");
+        failed += check("V 語音：超過 60 秒", W, "local", voiceError(BotEvent.VOICE_TOO_LONG), 0, "60 秒");
+        failed += check("V 語音：空白結果視為失敗", W, "local", voice("  "), 0, "沒有聽清楚");
+        failed += check("V 語音：外勞下架越南籍 → 暫停", W, "vn", voice("nhiệm vụ"), 0, "暫停中");
+        failed += check("V 語音：農場主帳號不辨識", F, null, voice("派工"), 0, "只看得懂文字");
+        failed += check("V 語音：問農場主功能 → 引導鈕", W, "local", voice("費率多少錢"), 0, "a=cross");
+        // 外籍開關打開時：依使用者語言回覆
+        Config.FEATURE_FOREIGN_WORKERS = true;
+        failed += check("V 語音（越語）：確認卡", W, "vn", voice("nhiệm vụ hôm nay"), 0, "Tôi nghe được");
+        failed += check("V 語音（越語）：說中文 → 切換語言鈕", W, "vn", voice("中文"), 0, "a=lang&v=zh");
+        Config.FEATURE_FOREIGN_WORKERS = false;
+
+        failed += expectEq("V 簡轉繁（關鍵字）", SpeechToText.toTraditional("查一下我的薪资和出勤纪录，台风天在哪集合"),
+                "查一下我的薪資和出勤紀錄，颱風天在哪集合");
+        failed += expectEq("V 提示詞回聲視為未辨識", String.valueOf(SpeechToText.isPromptEcho(I18n.t("zh", "voice.prompt"), "zh")), "true");
+        failed += expectEq("V 正常句子不是回聲", String.valueOf(SpeechToText.isPromptEcho("今天的任務和天氣", "zh")), "false");
+
+        // 功能開關：預設停用（未設定金鑰）時，webhook 的語音照舊轉成 OTHER_MESSAGE
+        boolean voiceSetting = Config.FEATURE_WORKER_VOICE;
+        String keySetting = Config.STT_API_KEY, urlSetting = Config.STT_API_URL;
+        Config.FEATURE_WORKER_VOICE = false;
+        failed += expectEq("V 開關關閉：說明卡不提語音", String.valueOf(FlexMessageBuilder.getWorkerHelpFlex("zh").contains("語音")), "false");
+        failed += expectEq("V 語音事件解析（不辨識時）", String.valueOf(WebhookHandler.toBotEvent(W, "U_V",
+                Map.of("type", "message", "message", Map.of("type", "audio", "id", "1", "duration", 3000))).type()), "OTHER_MESSAGE");
+
+        com.sun.net.httpserver.HttpServer fake = null;
+        try {
+            fake = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+            final String[] got = new String[2];
+            fake.createContext("/v1/audio/transcriptions", ex -> {
+                got[0] = ex.getRequestHeaders().getFirst("Authorization");
+                got[1] = new String(ex.getRequestBody().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                byte[] out = "{\"text\":\"我今天的任务\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                ex.getResponseHeaders().set("Content-Type", "application/json");
+                ex.sendResponseHeaders(200, out.length);
+                ex.getResponseBody().write(out);
+                ex.close();
+            });
+            fake.createContext("/fail", ex -> { ex.sendResponseHeaders(401, -1); ex.close(); });
+            fake.start();
+            String base = "http://127.0.0.1:" + fake.getAddress().getPort();
+            Config.FEATURE_WORKER_VOICE = true;
+            Config.STT_API_KEY = "sk-test-check";
+            Config.STT_API_URL = base + "/v1/audio/transcriptions";
+            failed += expectEq("V 開關打開：說明卡提語音", String.valueOf(FlexMessageBuilder.getWorkerHelpFlex("zh").contains("語音")), "true");
+            String text = SpeechToText.transcribe("FAKE-M4A".getBytes(java.nio.charset.StandardCharsets.UTF_8), "zh");
+            failed += expectEq("V Whisper 回應解析＋簡轉繁", String.valueOf(text), "我今天的任務");
+            failed += expectEq("V Whisper 帶 Bearer 金鑰", String.valueOf(got[0]), "Bearer sk-test-check");
+            String body = String.valueOf(got[1]);
+            failed += expectEq("V multipart 含模型、語言、提示詞、檔案", String.valueOf(body.contains("name=\"model\"\r\n\r\n" + Config.STT_MODEL)
+                    && body.contains("name=\"language\"\r\n\r\nzh") && body.contains("name=\"prompt\"")
+                    && body.contains("filename=\"voice.m4a\"") && body.contains("FAKE-M4A")), "true");
+            Config.STT_API_URL = base + "/fail";
+            failed += expectEq("V Whisper 失敗回 null", String.valueOf(SpeechToText.transcribe(new byte[]{1}, "zh")), "null");
+            // Mock 模式不下載 LINE 音檔 → 辨識失敗事件
+            failed += expectEq("V Mock 模式下載不到音檔 → failed", String.valueOf(SpeechToText.toEvent(W, "U_V2", "123", 3000).voiceError()), BotEvent.VOICE_FAILED);
+            failed += expectEq("V 超過 60 秒不下載", String.valueOf(SpeechToText.toEvent(W, "U_V3", "123", 61_000).voiceError()), BotEvent.VOICE_TOO_LONG);
+        } catch (java.io.IOException e) {
+            failed += expectEq("V 假 Whisper 伺服器啟動", e.getMessage(), "OK");
+        } finally {
+            if (fake != null) fake.stop(0);
+            Config.FEATURE_WORKER_VOICE = voiceSetting;
+            Config.STT_API_KEY = keySetting;
+            Config.STT_API_URL = urlSetting;
+        }
+        return failed;
+    }
 
     private static int check(String name, Channel channel, String as, Ev ev, int index, String expected) {
         String userId = "U_CHECK_" + (++seq);

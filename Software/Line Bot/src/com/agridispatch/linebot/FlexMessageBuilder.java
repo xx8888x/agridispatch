@@ -158,8 +158,21 @@ public class FlexMessageBuilder {
         List<String> lines = new ArrayList<>(List.of(I18n.t(lang, "help.intro"), I18n.t(lang, "help.task"), I18n.t(lang, "help.clock"),
                 I18n.t(lang, "help.weather"), I18n.t(lang, "help.salary"), I18n.t(lang, "help.attendance")));
         if (Config.FEATURE_FOREIGN_WORKERS) lines.add(I18n.t(lang, "help.lang"));
+        if (SpeechToText.enabled()) lines.add(I18n.t(lang, "help.voice"));
         return wrapFlex(I18n.t(lang, "help.title"), simpleBubble("#047857", "智農派工（工作者）", I18n.t(lang, "help.title"),
                 lines, List.of()));
+    }
+
+    /** 5.5 語音確認卡：顯示辨識結果，按鈕送出對應的 postback（與圖文選單相同），另一鈕看使用說明 */
+    public static String getVoiceConfirmFlex(String lang, String heard, String actionLabel, String postbackData) {
+        String other = """
+            { "type": "button", "style": "secondary", "height": "sm", "action": { "type": "postback", "label": "%s", "data": "a=help", "displayText": "%s" } }"""
+                .formatted(escapeJson(I18n.t(lang, "voice.other")), escapeJson(I18n.t(lang, "voice.other")));
+        String sep = "zh".equals(I18n.normalize(lang)) ? "：" : ": ";
+        return wrapFlex(I18n.t(lang, "voice.title") + sep + (heard.length() > 60 ? heard.substring(0, 60) + "…" : heard),
+                simpleBubble("#047857", "智農派工（工作者）", I18n.t(lang, "voice.title"),
+                        List.of(I18n.t(lang, "voice.heard").replace("{text}", heard), I18n.t(lang, "voice.confirm")),
+                        List.of(notifyPostbackButton(actionLabel, postbackData), other)));
     }
 
     /**

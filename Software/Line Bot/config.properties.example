@@ -39,6 +39,16 @@ feature.legalize=false
 # 改 true 即恢復；圖文選單另需把 tools/make_rich_menus.py 的 FEATURE_FOREIGN_WORKERS 改 True、重產並上傳。
 feature.foreign-workers=false
 
+# 功能開關：工作者帳號語音訊息（規格 05 第 5.5 節），預設 false。
+# 改 true 且填入 stt.api.key（或環境變數 OPENAI_API_KEY）才啟用：工作者傳語音 → OpenAI Whisper 轉文字 → 回確認卡。
+# 語音會傳到 OpenAI（境外）辨識，啟用前須完成個資告知與同意【待確認】。農場主帳號不受影響。
+feature.worker-voice=false
+# OpenAI API 金鑰：建議用環境變數 OPENAI_API_KEY，不要提交到 repo
+stt.api.key=
+# 語音轉文字 API（OpenAI 相容的 /audio/transcriptions）與模型；一般不用改
+stt.api.url=https://api.openai.com/v1/audio/transcriptions
+stt.model=whisper-1
+
 # 本地伺服器監聽埠號 (預設 5000)
 server.port=5000
 

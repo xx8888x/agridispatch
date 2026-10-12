@@ -123,6 +123,16 @@ public class WebhookHandler implements HttpHandler {
         }
         if (userId == null) return; // 群組／聊天室事件不處理
 
+        // 工作者帳號語音（規格 5.5）：辨識要數秒，改在背景處理並回覆，webhook 先回 200
+        if (channel == Channel.WORKER && SpeechToText.enabled()
+                && event.get("message") instanceof Map<?, ?> m && "audio".equals(String.valueOf(m.get("type")))) {
+            long duration = m.get("duration") instanceof Number n ? n.longValue() : 0L;
+            Object token = event.get("replyToken");
+            SpeechToText.handleAsync(channel, userId, String.valueOf(m.get("id")), duration,
+                    token == null ? null : String.valueOf(token));
+            return;
+        }
+
         BotEvent ev = toBotEvent(channel, userId, event);
         if (ev == null) return;
 

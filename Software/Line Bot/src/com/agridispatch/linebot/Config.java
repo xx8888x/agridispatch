@@ -76,6 +76,21 @@ public class Config {
      */
     public static boolean FEATURE_FOREIGN_WORKERS = false;
 
+    /**
+     * 功能開關：工作者帳號語音訊息（規格 5.5）。預設 false；須同時設定 STT_API_KEY 才會啟用，否則語音照舊回「只看得懂文字」。
+     * 來源：環境變數 FEATURE_WORKER_VOICE，或 config.properties 的 feature.worker-voice（true／false）。
+     */
+    public static boolean FEATURE_WORKER_VOICE = false;
+
+    /** 語音轉文字 API 金鑰（OpenAI）。來源：環境變數 OPENAI_API_KEY，或 config.properties 的 stt.api.key */
+    public static String STT_API_KEY = null;
+
+    /** 語音轉文字 API 位址（OpenAI 相容的 /audio/transcriptions）。來源：STT_API_URL／stt.api.url */
+    public static String STT_API_URL = "https://api.openai.com/v1/audio/transcriptions";
+
+    /** 語音轉文字模型。來源：STT_MODEL／stt.model */
+    public static String STT_MODEL = "whisper-1";
+
     /** 是否以舊的單一帳號設定（LINE_CHANNEL_*／line.channel.*）當作農場主帳號 */
     public static boolean LEGACY_FARMER_CONFIG = false;
 
@@ -151,6 +166,17 @@ public class Config {
 
         FEATURE_LEGALIZE = "true".equalsIgnoreCase(pick(prop, "FEATURE_LEGALIZE", "feature.legalize"));
         FEATURE_FOREIGN_WORKERS = "true".equalsIgnoreCase(pick(prop, "FEATURE_FOREIGN_WORKERS", "feature.foreign-workers"));
+        FEATURE_WORKER_VOICE = "true".equalsIgnoreCase(pick(prop, "FEATURE_WORKER_VOICE", "feature.worker-voice"));
+
+        STT_API_KEY = pick(prop, "OPENAI_API_KEY", "stt.api.key");
+        if (STT_API_KEY != null && STT_API_KEY.startsWith("請填入")) STT_API_KEY = null;
+        String sttUrl = pick(prop, "STT_API_URL", "stt.api.url");
+        if (sttUrl != null) STT_API_URL = sttUrl;
+        String sttModel = pick(prop, "STT_MODEL", "stt.model");
+        if (sttModel != null) STT_MODEL = sttModel;
+        if (FEATURE_WORKER_VOICE && STT_API_KEY == null) {
+            System.out.println("⚠️ 已開啟 feature.worker-voice，但未設定 OPENAI_API_KEY（stt.api.key），語音訊息維持停用。");
+        }
 
         LIFF_BIND_ID = pick(prop, "LIFF_BIND_ID", "liff.bind.id");
         if (LIFF_BIND_ID != null && LIFF_BIND_ID.startsWith("請填入")) LIFF_BIND_ID = null;

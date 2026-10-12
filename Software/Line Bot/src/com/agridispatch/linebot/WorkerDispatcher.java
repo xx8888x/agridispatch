@@ -9,7 +9,8 @@ import static com.agridispatch.linebot.FarmerDispatcher.has;
 
 /**
  * 智農派工 - 工作者帳號分派器（規格 4.2；本勞與外勞共用，多語）
- * W-01 今日任務、W-02 打卡、W-03 天候與集合、W-04 薪資、W-05 出勤紀錄、W-06 切換語言、W-07 帳號綁定、W-08 使用說明
+ * W-01 今日任務、W-02 打卡、W-03 天候與集合、W-04 薪資、W-05 出勤紀錄、W-06 切換語言、W-07 帳號綁定、W-08 使用說明；
+ * 語音訊息（規格 5.5）辨識後以確認卡呈現
  *
  * 外籍移工功能下架（Config.FEATURE_FOREIGN_WORKERS=false）時：一律繁體中文、不辨識語言切換，
  * 已綁定為 worker_foreign 的使用者只回暫停說明與聯絡卡（見 foreignSuspended）。
@@ -37,6 +38,7 @@ final class WorkerDispatcher {
             case OTHER_MESSAGE -> List.of(FlexMessageBuilder.wrapText(I18n.t(lang, "unsupported")),
                     FlexMessageBuilder.getWorkerHelpFlex(lang));
             case POSTBACK -> run(ev.action(), ev.postback(), me, ev.userId());
+            case VOICE -> voice(ev, me);
             default -> {
                 String t = ev.text() == null ? "" : ev.text().trim().toLowerCase();
                 String chosen = Config.FEATURE_FOREIGN_WORKERS ? langOf(t) : null;
@@ -74,6 +76,32 @@ final class WorkerDispatcher {
         return List.of(FlexMessageBuilder.wrapText(welcome),
                 FlexMessageBuilder.getLanguageSelectFlex(),
                 FlexMessageBuilder.getWorkerBindingFlex(lang, ev.userId()));
+    }
+
+    /**
+     * 語音訊息（規格 5.5）：辨識結果以確認卡呈現，使用者點按鈕（postback，與圖文選單相同）才執行；
+     * 聽不出動作、辨識失敗或太長時回說明。
+     */
+    private static List<String> voice(BotEvent ev, Identity me) {
+        String lang = me.lang();
+        if (BotEvent.VOICE_TOO_LONG.equals(ev.voiceError())) {
+            return List.of(FlexMessageBuilder.wrapText(I18n.t(lang, "voice.too_long")), FlexMessageBuilder.getWorkerHelpFlex(lang));
+        }
+        String heard = ev.text() == null ? "" : ev.text().trim();
+        if (ev.voiceError() != null || heard.isEmpty()) {
+            return List.of(FlexMessageBuilder.wrapText(I18n.t(lang, "voice.failed")), FlexMessageBuilder.getWorkerHelpFlex(lang));
+        }
+        String shown = heard.length() > 100 ? heard.substring(0, 100) + "…" : heard;
+        String t = heard.toLowerCase();
+        String chosen = Config.FEATURE_FOREIGN_WORKERS ? langOf(t) : null;
+        String action = chosen != null ? "lang" : actionOf(t, me);
+        if ("help".equals(action)) {
+            return List.of(FlexMessageBuilder.wrapText(I18n.t(lang, "voice.heard").replace("{text}", shown)
+                    + "\n" + I18n.t(lang, "voice.none")), FlexMessageBuilder.getWorkerHelpFlex(lang));
+        }
+        String data = chosen != null ? "a=lang&v=" + chosen : "a=" + action;
+        String label = I18n.t(lang, "voice.action." + (chosen != null ? "lang_select" : action));
+        return List.of(FlexMessageBuilder.getVoiceConfirmFlex(lang, shown, label, data));
     }
 
     /** 文字中指定的語言；沒有指定回傳 null */

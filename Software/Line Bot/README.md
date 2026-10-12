@@ -73,6 +73,7 @@ Software\Line Bot\
 6. **2026-10-12 起外籍移工功能暫時下架**：預設 `feature.foreign-workers=false`（環境變數 `FEATURE_FOREIGN_WORKERS`），工作者帳號只有本國籍綁定入口、一律繁體中文，`/as vn`、`/as id` 等外籍身分只回「外籍工作者服務暫停中」；改 `true` 即恢復下列多語行為（圖文選單另需 `make_rich_menus.py` 的 `FEATURE_FOREIGN_WORKERS=True` 重產上傳）。
    工作者帳號（先 `/worker`、`/as vn`）可輸入：`nhiệm vụ`／`任務`（今日任務）、`chấm công`／`打卡`、`thời tiết`／`天氣`（集合通知）、`lương`／`薪資`、`出勤`、`切換語言`、`帳號綁定`。
 7. 在一個帳號問另一個帳號的功能（例如工作者帳號輸入「黑轉白」「早鳥」「費率」），只會收到「請加入另一個帳號」的引導，不會回覆該功能內容。
+8. **工作者帳號語音訊息**（規格 05 第 5.5 節）：預設關閉，`feature.worker-voice=true` 且設定 `OPENAI_API_KEY`（`stt.api.key`）才啟用；語音送 OpenAI Whisper 轉文字後回確認卡（「我聽到：…」＋動作按鈕），不直接執行。模擬器輸入 `/voice 今天的任務` 可直接給辨識結果測試（不呼叫 Whisper）。
 
 ---
 
@@ -192,7 +193,7 @@ python tools/acceptance_mock.py --report 驗收結果.md
 ### `/mock/chat` 除錯端點
 此端點僅供本地離線模擬測試使用，**只有在所指定的帳號為模擬模式（Mock Mode，金鑰未填或仍為範例值）時才會回應**；該帳號填入真實金鑰後，此端點對該帳號回應 403，避免正式環境曝露內部對話邏輯供外部匿名呼叫。
 
-Body 欄位（JSON）：`channel`（`farmer` 預設／`worker`）、`userId`、`text`、`postback`（例 `a=lang&v=vi`）、`event`（`follow`／`unfollow`）、`as`（示範身分，同 TestSimulator 的 `/as`）、`lineLanguage`（模擬加好友時的 LINE 介面語言）、`multi`（`true` 時回傳 `{"channel":…,"messages":[…]}`，否則只回第一則訊息物件，相容舊版模擬器）。
+Body 欄位（JSON）：`channel`（`farmer` 預設／`worker`）、`userId`、`text`、`postback`（例 `a=lang&v=vi`）、`event`（`follow`／`unfollow`）、`as`（示範身分，同 TestSimulator 的 `/as`）、`lineLanguage`（模擬加好友時的 LINE 介面語言）、`voice`（模擬語音訊息的辨識結果）／`voiceError`（`too_long`、`failed`）、`multi`（`true` 時回傳 `{"channel":…,"messages":[…]}`，否則只回第一則訊息物件，相容舊版模擬器）。
 
 ---
 

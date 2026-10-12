@@ -83,6 +83,9 @@
 | `LIFF_BIND_ID` | `liff.bind.id` | Line Bot、前端 | 綁定頁 LIFF ID，產生綁定按鈕連結 |
 | `AGRI_LINEBOT_INTERNAL_KEY` | `agri.linebot.internal-key` ／ `internal.key` | 後端、Line Bot | Line Bot 與後端互相呼叫內部端點的共用金鑰（取代以 channel secret 簽章） |
 | `LINEBOT_ADMIN_KEY` | `admin.key` | Line Bot | 沿用：保護 `/api/config` |
+| `FEATURE_WORKER_VOICE` | `feature.worker-voice` | Line Bot | 工作者帳號語音訊息開關（5.5），預設 `false` |
+| `OPENAI_API_KEY` | `stt.api.key` | Line Bot | 語音轉文字（Whisper）金鑰；未設定時語音功能停用 |
+| `STT_API_URL`／`STT_MODEL` | `stt.api.url`／`stt.model` | Line Bot | 預設 `https://api.openai.com/v1/audio/transcriptions`、`whisper-1` |
 
 - **只有 Line Bot 持有兩個帳號的 channel access token**；後端需要推播或切換選單時，呼叫 Line Bot 的內部端點（見 6.3），後端不再設定 channel token。
 - **過渡相容**：若只設定舊的 `LINE_CHANNEL_SECRET`／`LINE_CHANNEL_ACCESS_TOKEN`，Line Bot 視為 `farmer` 帳號並在啟動 log 警告；工作者帳號維持 Mock 模式。
@@ -190,7 +193,8 @@
 | `follow`（加好友、解除封鎖） | 1. 呼叫後端 `follow-state` 記錄已追蹤；2. 依 3.2 決定語言；3. 已綁定 → 連結對應選單並回覆歡迎；未綁定 → 回覆身分說明與綁定按鈕（工作者帳號以三語同時呈現） |
 | `unfollow`（封鎖） | 呼叫後端 `follow-state` 記錄已封鎖；不回覆（LINE 不允許） |
 | `message`（文字） | 依 4.1／4.2 關鍵字表分派；不在表中 → 服務導覽或使用說明 |
-| `message`（貼圖、圖片、位置等） | 回覆服務導覽或使用說明（目前直接略過，改為回覆） |
+| `message`（語音，工作者帳號且已啟用 5.5） | 背景辨識後回覆確認卡（5.5） |
+| `message`（貼圖、圖片、位置等；農場主帳號的語音） | 回覆服務導覽或使用說明（目前直接略過，改為回覆） |
 | `postback` | 解析 `data`（5.2）分派；圖文選單按鈕一律使用 postback，不再送出文字 |
 
 所有回覆使用 **Reply API**（免費、不計推播則數）。Push 只用於第柒章的主動通知。
@@ -244,6 +248,25 @@ sequenceDiagram
 - 本人：綁定頁「解除綁定」，或在 LINE 內 `a=account` → 解除。
 - admin：科技後台可解除任一綁定（離職、帳號遭冒用時）。
 - 解除後：`is_bound='N'`、選單改回 guest 選單；推播名單即時排除。
+
+---
+
+### 5.5 工作者帳號語音訊息
+
+讓不方便打字的工作者用說的查詢。只在工作者帳號提供；`feature.worker-voice=true` 且設定 `OPENAI_API_KEY` 才啟用，否則語音照舊回「目前只看得懂文字訊息」。
+
+1. webhook 收到 `message.type=audio`：先回 200，在背景執行緒處理（辨識要數秒）。
+2. 已綁定外籍工作者且外籍功能下架 → 不送辨識，直接回暫停說明。
+3. 語音超過 60 秒 → 不送辨識，回「語音請在 60 秒內說完」（控制費用）。
+4. 顯示 LINE「處理中」動畫（`/v2/bot/chat/loading/start`），從 `api-data.line.me/v2/bot/message/{id}/content` 下載 m4a。
+5. 呼叫 OpenAI Whisper（`/v1/audio/transcriptions`，模型 `whisper-1`）：`language` 為使用者語言（外籍下架時一律 `zh`），`prompt` 帶工作者常用詞（i18n `voice.prompt`）。中文結果把關鍵字常用簡體字轉繁體；結果含 4 個以上提示詞時視為靜音回聲、當作未辨識。
+6. 辨識結果以 4.2 的關鍵字表判斷動作，**不直接執行**：回覆確認卡「我聽到：「…」」＋動作按鈕（postback，與圖文選單相同）＋「都不是，看使用說明」。判斷不出動作、辨識失敗時回說明與使用說明卡。
+7. 以 reply token 回覆；回覆失敗（例如辨識太久、token 逾時）改用 Push。
+
+- 音檔只在記憶體中轉送，不落地、不保存；log 與文字訊息相同，只記辨識文字與遮罩後的 userId。
+- 使用說明卡在功能啟用時加一行「也可以直接傳語音」。
+- 測試：`TestSimulator --check` 的「V」案例以本機假 Whisper 伺服器驗證上傳格式與回應解析；`/mock/chat` 可帶 `voice`（辨識結果）或 `voiceError`（`too_long`／`failed`）模擬。實際辨識準確度須以真實錄音驗收（`07_LINE官方帳號上線與實機驗收手冊.md`）。
+- 台語、農場主帳號暫不提供：一般語音辨識對台語效果差，需另找模型並以實際錄音評估。
 
 ---
 
@@ -452,6 +475,7 @@ LINE 官方帳號依「每月主動推播則數」計費，**回覆訊息（Repl
 4. 黑轉白（F-02）只在農場主帳號且已綁定時回覆；卡片保留現行「※ 示範流程；標示【待確認】處以律師或主管機關意見為準」字樣。
 5. `/mock/chat` 維持只在 Mock 模式開放：所指定的帳號為正式模式時回 403。
 6. 內部端點金鑰 `AGRI_LINEBOT_INTERNAL_KEY` 不得與 `LINEBOT_ADMIN_KEY`、channel secret 相同；未設定時內部端點整組停用。
+7. 語音訊息（5.5）會把工作者的聲音傳到 OpenAI（境外）辨識：啟用前須在個資告知中載明並取得同意【待確認】；音檔不保存。
 
 ---
 
@@ -535,3 +559,4 @@ LINE 官方帳號依「每月主動推播則數」計費，**回覆訊息（Repl
 | 9 | 越語、印尼語文案校對人選 | 營運 |
 | 10 | 泰國、菲律賓開放時程（決定 `th`／`tl` 選單何時製作） | 主管機關 |
 | 11 | 若啟用 `line_messages` 保存對話，保存期限與個資處理 | 律師 |
+| 12 | 語音訊息送 OpenAI（境外）辨識的個資告知、同意方式與跨境傳輸是否合規（5.5） | 律師 |

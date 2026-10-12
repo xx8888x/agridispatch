@@ -1,0 +1,97 @@
+{
+ "success": "true",
+ "records": {
+  "Locations": [
+   {
+    "DatasetDescription": "臺灣各縣市鄉鎮未來1週逐12小時天氣預報",
+    "LocationsName": "宜蘭縣",
+    "Dataid": "D0047-003",
+    "Location": [
+     {
+      "LocationName": "宜蘭市",
+      "Geocode": "10002010",
+      "Latitude": "24.753707",
+      "Longitude": "121.745083",
+      "WeatherElement": [
+       {
+        "ElementName": "紫外線指數",
+        "Time": [
+         {
+          "StartTime": "2026-10-12T12:00:00+08:00",
+          "EndTime": "2026-10-12T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "UVIndex": "7",
+            "UVExposureLevel": "高量級"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-10-13T06:00:00+08:00",
+          "EndTime": "2026-10-13T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "UVIndex": "8",
+            "UVExposureLevel": "過量級"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-10-14T06:00:00+08:00",
+          "EndTime": "2026-10-14T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "UVIndex": "6",
+            "UVExposureLevel": "高量級"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-10-15T06:00:00+08:00",
+          "EndTime": "2026-10-15T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "UVIndex": "5",
+            "UVExposureLevel": "中量級"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-10-16T06:00:00+08:00",
+          "EndTime": "2026-10-16T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "UVIndex": "6",
+            "UVExposureLevel": "高量級"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-10-17T06:00:00+08:00",
+          "EndTime": "2026-10-17T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "UVIndex": "7",
+            "UVExposureLevel": "高量級"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-10-18T06:00:00+08:00",
+          "EndTime": "2026-10-18T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "UVIndex": "7",
+            "UVExposureLevel": "高量級"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

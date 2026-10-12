@@ -96,6 +96,29 @@ class WeatherServiceTest {
         assertNotEquals("—", t.get("text"));
     }
 
+    /** 2026-10-12 實際打一週預報 F-D0047-003（宜蘭市）紫外線指數：今日 12–18 時 7 高量級、明日 8 過量級 */
+    @Test
+    void mergesUvIndexFromWeeklyForecast() throws Exception {
+        String main = new String(getClass().getResourceAsStream("/cwa-f-d0047-093-sample.json").readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        String week = new String(getClass().getResourceAsStream("/cwa-f-d0047-093-uv-sample.json").readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        ObjectMapper om = new ObjectMapper();
+        List<Map<String, Object>> list = WeatherService.parse(om.readTree(main), LocalDateTime.of(2026, 10, 12, 13, 30));
+        WeatherService.mergeUv(list, WeatherService.parseUv(om.readTree(week)), java.time.LocalDate.of(2026, 10, 12));
+        Map<String, Object> w = list.get(0);
+        assertEquals(7.0, w.get("uv"));
+        assertEquals("高量級", w.get("uvLevel"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> t = (Map<String, Object>) w.get("tomorrow");
+        assertEquals(8.0, t.get("uv"));
+        assertEquals("過量級", t.get("uvLevel"));
+    }
+
+    @Test
+    void weekDatasetIsThreeDayPlusTwo() {
+        assertEquals("F-D0047-003", WeatherService.weekDataset("F-D0047-001"));
+        assertEquals("F-D0047-087", WeatherService.weekDataset("F-D0047-085"));
+    }
+
     @Test
     void acceptsLowercaseFieldNamesAndNormalizesTai() throws Exception {
         String lower = SAMPLE.replace("\"Locations\"", "\"locations\"").replace("\"LocationsName\":\"宜蘭縣\"", "\"locationsName\":\"臺東縣\"")

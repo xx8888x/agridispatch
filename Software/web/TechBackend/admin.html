@@ -212,8 +212,8 @@
                   <td class="font-mono" :class="w.rainSum >= 80 ? 'text-rose-400 font-bold' : ''">{{ w.rainSum != null ? w.rainSum + ' mm' : '—' }}</td>
                   <td class="font-mono">{{ w.humidity }}%</td>
                   <td class="font-mono" :class="wxWindPeak(w) >= 13.9 ? 'text-amber-400' : ''">{{ w.wind != null ? w.wind : '—' }} / {{ w.gustMax != null ? w.gustMax : (w.gust != null ? w.gust : (w.windMax != null ? w.windMax : '—')) }} m/s</td>
-                  <td class="font-mono" :class="w.uv >= 8 ? 'text-amber-400' : ''">{{ w.uv != null ? w.uv : '—' }}</td>
-                  <td class="text-slate-300">{{ w.tomorrow.text }}・{{ w.tomorrow.rainProb != null ? w.tomorrow.rainProb + '%' : '—' }}</td>
+                  <td :class="w.uv >= 8 ? 'text-amber-400' : ''"><span class="font-mono">{{ w.uv != null ? w.uv : '—' }}</span><span v-if="w.uvLevel" class="text-[12px]" :class="w.uv >= 8 ? '' : 'text-slate-400'" style="margin-left: 4px;">{{ w.uvLevel.replace('級', '') }}</span></td>
+                  <td class="text-slate-300">{{ w.tomorrow.text }}・{{ w.tomorrow.rainProb != null ? w.tomorrow.rainProb + '%' : '—' }}<template v-if="w.tomorrow.uv != null">・UV {{ w.tomorrow.uv }}</template></td>
                   <td>
                     <span class="ad-pill" :class="wxLevelPill(w.assess.level)" :title="w.assess.reasons.join('、')"><span class="ad-pill__dot"></span>{{ w.assess.label }}</span>
                     <div v-if="w.assess.reasons.length" class="text-slate-400 text-[12px]" style="margin-top: 2px;">{{ w.assess.reasons.join('、') }}</div>
@@ -259,7 +259,8 @@
                   <span class="text-slate-200">{{ a.wx.text }}</span>
                   <span class="text-slate-400">降雨 <b class="font-mono" :class="a.wx.rainProb >= 60 ? 'text-amber-400' : 'text-slate-200'">{{ a.wx.rainProb }}%</b></span>
                   <span class="text-slate-400">{{ a.wx.gustMax != null || a.wx.gust != null ? '陣風' : '最大風速' }} <b class="font-mono text-slate-200">{{ wxWindPeak(a.wx) }} m/s</b></span>
-                  <span class="text-slate-400">明日 {{ a.wx.tomorrow.text }} {{ a.wx.tomorrow.rainProb }}%</span>
+                  <span v-if="a.wx.uv != null" class="text-slate-400">紫外線 <b class="font-mono" :class="a.wx.uv >= 8 ? 'text-amber-400' : 'text-slate-200'">{{ a.wx.uv }}</b> {{ a.wx.uvLevel }}</span>
+                  <span class="text-slate-400">明日 {{ a.wx.tomorrow.text }} {{ a.wx.tomorrow.rainProb }}%<template v-if="a.wx.tomorrow.uv != null">・UV {{ a.wx.tomorrow.uv }}</template></span>
                 </div>
                 <div v-else class="ad-caption" style="margin-top: 4px;">{{ wx.loading ? '氣象載入中…' : '暫無氣象資料' }}</div>
                 <div v-if="a.wx && a.wx.assess.reasons.length" class="text-[12px]" :class="a.wx.assess.level === 'stop' ? 'text-rose-300' : 'text-amber-300'" style="margin-top: 4px;">{{ a.wx.assess.reasons.join('、') }}</div>

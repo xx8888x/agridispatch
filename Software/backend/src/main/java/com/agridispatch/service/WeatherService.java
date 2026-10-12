@@ -36,7 +36,9 @@ import java.util.concurrent.CompletableFuture;
  * - 授權碼：環境變數 CWA_API_KEY（只在後端使用，不給前端）；未設定時 503
  * - 快取：agri.weather.cache-minutes（預設 30 分鐘）；更新失敗時沿用上一份資料並標 stale
  * - 輸出欄位與前端 js/agri-weather.js 一致：取「最接近現在」的預報時段當即時值，今日／明日彙整高低溫與最高降雨機率
- *   氣象署鄉鎮預報沒有陣風、雨量、紫外線，這三項回 null
+ * - 紫外線：另抓一週預報（各縣市 3 天資料集代碼 +2，元素「紫外線指數」，每天白天一筆），併入今日／明日；
+ *   一週預報失敗不影響主資料（紫外線留 null）
+ *   氣象署鄉鎮預報沒有陣風、雨量，這兩項回 null
  */
 @Service
 public class WeatherService {
@@ -46,6 +48,7 @@ public class WeatherService {
     private static final ZoneId TPE = ZoneId.of("Asia/Taipei");
     private static final DateTimeFormatter Q_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
     private static final String ELEMENTS = "溫度,體感溫度,相對濕度,風速,3小時降雨機率,天氣現象";
+    private static final String WEEK_ELEMENTS = "紫外線指數";
 
     /** 縣市 → 鄉鎮未來 3 天預報資料集（依氣象署 API 文件 /v1/rest/datastore/F-D0047-0xx 摘要對照） */
     static final Map<String, String> COUNTY_DATASETS = new LinkedHashMap<>();
@@ -104,12 +107,38 @@ public class WeatherService {
         String from = now.toLocalDate().atStartOfDay().format(Q_TIME);
         String to = now.toLocalDate().plusDays(2).atStartOfDay().format(Q_TIME);
         List<String> ids = new ArrayList<>(COUNTY_DATASETS.values());
+        List<String> weekIds = ids.stream().map(WeatherService::weekDataset).toList();
+        // 主資料與紫外線同時發出，各 5 批
+        List<CompletableFuture<String>> calls = batches(key, ids, ELEMENTS, from, to);
+        List<CompletableFuture<String>> uvCalls = batches(key, weekIds, WEEK_ELEMENTS, from, to);
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (CompletableFuture<String> c : calls) {
+            list.addAll(parse(mapper.readTree(c.get()), now));
+        }
+        if (list.isEmpty()) throw new IllegalStateException("CWA 回傳 0 筆鄉鎮資料");
+        try {
+            Map<String, Map<LocalDate, String[]>> uv = new LinkedHashMap<>();
+            for (CompletableFuture<String> c : uvCalls) uv.putAll(parseUv(mapper.readTree(c.get())));
+            mergeUv(list, uv, now.toLocalDate());
+        } catch (Exception e) {
+            log.warn("中央氣象署一週預報（紫外線）抓取失敗，紫外線留空：{}", e.toString());
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("provider", "cwa");
+        out.put("source", "中央氣象署 鄉鎮天氣預報（F-D0047-093）");
+        out.put("fetchedAt", now.withNano(0).toString());
+        out.put("stale", false);
+        out.put("list", list);
+        return out;
+    }
+
+    private List<CompletableFuture<String>> batches(String key, List<String> ids, String elements, String from, String to) {
         List<CompletableFuture<String>> calls = new ArrayList<>();
         for (int i = 0; i < ids.size(); i += 5) {
             String url = API + "?Authorization=" + enc(key)
                     + "&format=JSON"
                     + "&locationId=" + String.join(",", ids.subList(i, Math.min(i + 5, ids.size())))
-                    + "&ElementName=" + enc(ELEMENTS)
+                    + "&ElementName=" + enc(elements)
                     + "&timeFrom=" + from + "&timeTo=" + to;
             HttpRequest req = HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(20)).GET().build();
             calls.add(http.sendAsync(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).thenApply(res -> {
@@ -120,18 +149,13 @@ public class WeatherService {
                 return res.body();
             }));
         }
-        List<Map<String, Object>> list = new ArrayList<>();
-        for (CompletableFuture<String> c : calls) {
-            list.addAll(parse(mapper.readTree(c.get()), now));
-        }
-        if (list.isEmpty()) throw new IllegalStateException("CWA 回傳 0 筆鄉鎮資料");
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("provider", "cwa");
-        out.put("source", "中央氣象署 鄉鎮天氣預報（F-D0047-093）");
-        out.put("fetchedAt", now.withNano(0).toString());
-        out.put("stale", false);
-        out.put("list", list);
-        return out;
+        return calls;
+    }
+
+    /** 3 天資料集 → 同縣市一週資料集（F-D0047-001 → 003） */
+    static String weekDataset(String threeDay) {
+        int n = Integer.parseInt(threeDay.substring(threeDay.lastIndexOf('-') + 1));
+        return String.format("F-D0047-%03d", n + 2);
     }
 
     private static String enc(String s) { return URLEncoder.encode(s, StandardCharsets.UTF_8); }
@@ -151,6 +175,47 @@ public class WeatherService {
             }
         }
         return out;
+    }
+
+    /** 一週預報的紫外線：縣市+鄉鎮 → 日期 → [指數, 等級]（每天白天一筆，以開始時間的日期歸日） */
+    static Map<String, Map<LocalDate, String[]>> parseUv(JsonNode root) {
+        Map<String, Map<LocalDate, String[]>> out = new LinkedHashMap<>();
+        for (JsonNode group : iter(f(f(root, "records"), "Locations"))) {
+            String county = normalize(f(group, "LocationsName").asText(""));
+            for (JsonNode loc : iter(f(group, "Location"))) {
+                String town = normalize(f(loc, "LocationName").asText(""));
+                Map<LocalDate, String[]> days = new LinkedHashMap<>();
+                for (JsonNode we : iter(f(loc, "WeatherElement"))) {
+                    if (!"紫外線指數".equals(f(we, "ElementName").asText(""))) continue;
+                    for (JsonNode t : iter(f(we, "Time"))) {
+                        LocalDateTime start = time(f(t, "StartTime"), f(t, "DataTime"));
+                        JsonNode v = first(f(t, "ElementValue"));
+                        String idx = str(v, "UVIndex");
+                        if (start != null && idx != null) {
+                            days.put(start.toLocalDate(), new String[]{idx, str(v, "UVExposureLevel")});
+                        }
+                    }
+                }
+                if (!town.isEmpty() && !days.isEmpty()) out.put(county + town, days);
+            }
+        }
+        return out;
+    }
+
+    @SuppressWarnings("unchecked")
+    static void mergeUv(List<Map<String, Object>> list, Map<String, Map<LocalDate, String[]>> uv, LocalDate today) {
+        for (Map<String, Object> w : list) {
+            Map<LocalDate, String[]> days = uv.get(w.get("county") + "" + w.get("town"));
+            if (days == null) continue;
+            String[] d0 = days.get(today), d1 = days.get(today.plusDays(1));
+            if (d0 != null) { w.put("uv", toNum(d0[0])); w.put("uvLevel", d0[1]); }
+            Map<String, Object> t = (Map<String, Object>) w.get("tomorrow");
+            if (d1 != null && t != null) { t.put("uv", toNum(d1[0])); t.put("uvLevel", d1[1]); }
+        }
+    }
+
+    private static Double toNum(String s) {
+        try { return Double.parseDouble(s); } catch (NumberFormatException e) { return null; }
     }
 
     private static Map<String, Object> town(String county, JsonNode loc, LocalDateTime now) {
@@ -206,6 +271,7 @@ public class WeatherService {
         w.put("gust", null);
         w.put("gustMax", null);
         w.put("uv", null);
+        w.put("uvLevel", null);
         w.put("tMax", max(el.get("溫度"), today, "Temperature"));
         w.put("tMin", min(el.get("溫度"), today, "Temperature"));
         w.put("rainProb", max(el.get("3小時降雨機率"), today, "ProbabilityOfPrecipitation"));

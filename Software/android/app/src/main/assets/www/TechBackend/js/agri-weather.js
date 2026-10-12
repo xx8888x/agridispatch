@@ -11,12 +11,13 @@
  * 作業建議門檻（啟發式，非官方判定）：
  *   避險：風力 ≥ 17.2 m/s（蒲福 8 級）、日雨量 ≥ 80 mm（氣象署大雨標準）、15 分鐘雨量 ≥ 10 mm、雷雨、體感 ≥ 38°C、氣溫 ≤ 6°C
  *   注意：降雨機率 ≥ 60%、風力 ≥ 13.9 m/s（7 級）、體感 ≥ 35°C、氣溫 ≤ 10°C、正在下雨（紫外線只顯示不列入）
- *   風力用陣風；氣象署鄉鎮預報沒有陣風，改用今日預報最大平均風速（比陣風保守）。雨量、紫外線同理缺資料時不判讀。
+ *   風力用陣風；氣象署鄉鎮預報沒有陣風，改用今日預報最大平均風速（比陣風保守）。雨量缺資料時不判讀。
+ *   紫外線：氣象署取自一週預報（白天時段），當天 18 時後沒有今日值，只剩明日。
  */
 (function (global) {
   'use strict';
 
-  var CACHE_KEY = 'agri_wx_towns_v2';
+  var CACHE_KEY = 'agri_wx_towns_v3';
   var TTL_MS = 15 * 60 * 1000;
   var API = 'https://api.open-meteo.com/v1/forecast';
   var CURRENT = 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_gusts_10m';
@@ -50,6 +51,12 @@
       95: '雷雨', 96: '雷雨伴冰雹', 99: '強雷雨伴冰雹'
     };
     return m[code] != null ? m[code] : '—';
+  }
+
+  // 紫外線等級（氣象署分級：0–2 低量、3–5 中量、6–7 高量、8–10 過量、11 以上危險）
+  function uvLevel(i) {
+    if (i == null || isNaN(i)) return null;
+    return i >= 11 ? '危險級' : i >= 8 ? '過量級' : i >= 6 ? '高量級' : i >= 3 ? '中量級' : '低量級';
   }
 
   function round(v, d) {
@@ -103,11 +110,14 @@
         code: at(d.weather_code, 1),
         tMax: round(at(d.temperature_2m_max, 1), 0),
         tMin: round(at(d.temperature_2m_min, 1), 0),
-        rainProb: at(d.precipitation_probability_max, 1)
+        rainProb: at(d.precipitation_probability_max, 1),
+        uv: round(at(d.uv_index_max, 1), 0)
       }
     };
     w.text = wmoText(w.code);
     w.tomorrow.text = wmoText(w.tomorrow.code);
+    w.uvLevel = uvLevel(w.uv);
+    w.tomorrow.uvLevel = uvLevel(w.tomorrow.uv);
     w.assess = assess(w);
     return w;
   }
@@ -134,6 +144,8 @@
       ['temp', 'feels'].forEach(function (k) { w[k] = round(w[k], 1); });
       ['tMax', 'tMin'].forEach(function (k) { w[k] = round(w[k], 0); });
       w.tomorrow = w.tomorrow || {};
+      if (!w.uvLevel) w.uvLevel = uvLevel(w.uv);
+      if (!w.tomorrow.uvLevel) w.tomorrow.uvLevel = uvLevel(w.tomorrow.uv);
       w.assess = assess(w);
       return w;
     });

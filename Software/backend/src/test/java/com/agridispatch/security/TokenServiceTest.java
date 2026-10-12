@@ -64,8 +64,10 @@ class TokenServiceTest {
     void tamperedSignatureAndGarbageRejected() {
         TokenService ts = new TokenService(settings(false, "unit-test-secret-0123456789abcdef-xyz"));
         String token = ts.issue("farmer", "farmer", "F001", false);
-        char last = token.charAt(token.length() - 1);
-        String flipped = token.substring(0, token.length() - 1) + (last == 'A' ? 'B' : 'A');
+        // 改簽章第一個字元（最後一個字元只有前 4 bits 有效，A↔B 解碼結果相同，會偶發驗證通過）
+        int sigStart = token.indexOf('.') + 1;
+        char first = token.charAt(sigStart);
+        String flipped = token.substring(0, sigStart) + (first == 'A' ? 'B' : 'A') + token.substring(sigStart + 1);
         assertTrue(ts.verify(flipped).isEmpty());
         assertTrue(ts.verify("jwt-token-admin_tech-123").isEmpty(), "舊版假 token 應拒絕");
         assertTrue(ts.verify("").isEmpty());

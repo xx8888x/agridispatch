@@ -504,6 +504,25 @@
   </div>
 
   <script>
+  <div id="cancelModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background: rgba(2, 6, 23, 0.7);">
+    <div class="ad-card w-full" style="max-width: 448px; display: flex; flex-direction: column; gap: 16px;" role="dialog" aria-modal="true" aria-labelledby="cancelTitle">
+      <div class="ad-card__head" style="margin: 0;">
+        <div>
+          <h3 id="cancelTitle" class="ad-title">確定取消這張訂單？</h3>
+          <p id="cancelSubtitle" class="ad-caption"></p>
+        </div>
+        <button type="button" onclick="closeCancelModal()" class="ad-btn ad-btn--ghost ad-btn--icon ad-btn--sm" aria-label="關閉"><i data-lucide="x" class="ad-icon"></i></button>
+      </div>
+      <p class="ad-caption" style="margin: 0;">取消後合作社不會再為這張訂單排班，且無法復原；如需重新派工請另外預約。已開工的訂單請直接聯繫調度中心。</p>
+      <p id="cancelDepositNote" class="hidden ad-notice ad-notice--warn" style="margin: 0;"></p>
+      <p id="cancelError" class="hidden ad-error"></p>
+      <div class="ad-card__foot" style="margin-top: 0;">
+        <button type="button" onclick="closeCancelModal()" class="ad-btn ad-btn--ghost">保留訂單</button>
+        <button type="button" id="cancelSubmit" onclick="confirmCancelOrder()" class="ad-btn ad-btn--danger">確定取消</button>
+      </div>
+    </div>
+  </div>
+
     // ------------------------------------------------------------------
     // 評價工班：資料存後端 team_ratings；工班出工後（in_progress / completed）才可評
     // ------------------------------------------------------------------
@@ -686,12 +705,75 @@
       } catch (e) { return false; }
     }
 
-    function downloadPaidInvoice(btn) {
+    // 下載發票：發票號碼、買受人、付款時間一律讀後端付款紀錄（GET /payments/{orderId}/status）；
+    // 還沒有開立發票號碼的付款（例如綠界付款尚未串接電子發票）就告知尚未開立，不在前端自己編號
+    async function downloadPaidInvoice(btn) {
       let d;
       try { d = JSON.parse(btn.dataset.pay); } catch (e) { return; }
-      AgriDocs.downloadInvoice(d.orderId, {
-        invoiceNo: btn.dataset.invoice || 'AG-88192041', cropName: d.crop, amount: d.amount, deposit: d.deposit
-      });
+      const base = (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${base}/payments/${encodeURIComponent(d.orderId)}/status`);
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) throw new Error(body.error || `HTTP ${res.status}`);
+        const s = body.data || {};
+        const tx = (s.transactions || []).find((t) => t.status === 'PAID' && t.invoiceNo);
+        if (!tx) {
+          farmerDemoNotice('電子發票尚未開立', `訂單 ${d.orderId} 的定金已收到，合作社開立電子發票後即可在這裡下載。`);
+          return;
+        }
+        AgriDocs.downloadInvoice(d.orderId, {
+          invoiceNo: tx.invoiceNo, buyerName: tx.payerName || s.farmerName, paidAt: tx.paidAt,
+          cropName: d.crop, planName: d.plan, amount: s.finalAmount, deposit: tx.amount
+        });
+      } catch (e) {
+        farmerDemoNotice('無法取得發票資料', `請稍後再試（${e.message}）。`);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // 取消訂單：DELETE /api/orders/{id}（農場主＝取消並保留紀錄；施工中以後由後端擋下，需聯繫調度中心）
+    let cancelOrderId = null;
+    function openCancelModal(orderId, paidDeposit) {
+      cancelOrderId = orderId;
+      document.getElementById('cancelSubtitle').textContent = `訂單 ${orderId}`;
+      document.getElementById('cancelDepositNote').textContent = paidDeposit
+        ? `此訂單已付定金 NT$ ${Number(paidDeposit).toLocaleString()}，取消後的定金處理依服務契約辦理，合作社會與您聯繫。`
+        : '';
+      document.getElementById('cancelDepositNote').classList.toggle('hidden', !paidDeposit);
+      document.getElementById('cancelError').classList.add('hidden');
+      const m = document.getElementById('cancelModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function closeCancelModal() {
+      const m = document.getElementById('cancelModal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    async function confirmCancelOrder() {
+      const btn = document.getElementById('cancelSubmit');
+      const err = document.getElementById('cancelError');
+      const base = (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+      btn.disabled = true;
+      err.classList.add('hidden');
+      try {
+        const res = await fetch(`${base}/orders/${encodeURIComponent(cancelOrderId)}`, { method: 'DELETE' });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) throw new Error(body.error || body.message || `HTTP ${res.status}`);
+        updateLocalOrder(cancelOrderId, { status: 'cancelled' });
+        closeCancelModal();
+        farmerDemoNotice('訂單已取消', `訂單 ${cancelOrderId} 已取消，紀錄會保留在「我的訂單」。`);
+        renderOrdersList();
+      } catch (e) {
+        err.textContent = `取消未完成：${e.message}`;
+        err.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+      }
     }
 
     // 載入時向後端（或 Mock）同步本機訂單的狀態與付款，避免在別處付款或改狀態後卡片還是舊的
@@ -1480,7 +1562,7 @@
         const insurancePill = teamId && (st === 'in_progress' || st === 'confirmed')
           ? `<span data-team-insurance="${escHtml(teamId)}" class="ad-pill">加保狀態查詢中…</span>` : '';
         const skill = SKILL_OF_CATEGORY[ord.dispatchCategory];
-        const pay = escHtml(JSON.stringify({ orderId: ord.id, deposit: ord.depositAmount, crop: ord.cropName, location: ord.farmLocation, amount: ord.finalAmount }));
+        const pay = escHtml(JSON.stringify({ orderId: ord.id, deposit: ord.depositAmount, crop: ord.cropName, location: ord.farmLocation, amount: ord.finalAmount, plan: ord.planName || '' }));
 
         let progress = '';
         if (st === 'in_progress' && ord.startDate && days) {
@@ -1498,10 +1580,11 @@
           : `<p class="ad-caption">${paid ? '已付定金' : '待付定金'}（20%）：<span class="ad-num" style="color: ${paid ? 'var(--ad-primary-text)' : 'var(--ad-accent-text)'}; font-weight: 700;">NT$ ${money(ord.depositAmount)}</span></p>`;
         const actions = [];
         if (st !== 'cancelled' && needDeposit && !paid && !ord.offline) actions.push(`<button type="button" class="ad-btn ad-btn--accent ad-btn--sm" data-pay="${pay}" onclick="payDeposit(this)">付定金 NT$ ${money(ord.depositAmount)}</button>`);
-        if (paid) actions.push(`<button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" data-pay="${pay}" data-invoice="${escHtml(ord.invoiceNo || '')}" onclick="downloadPaidInvoice(this)">下載發票</button>`);
+        if (paid) actions.push(`<button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" data-pay="${pay}" onclick="downloadPaidInvoice(this)">下載發票</button>`);
         if (ord.foremanPhone && st !== 'cancelled') actions.push(`<a href="tel:${escHtml(String(ord.foremanPhone).replace(/[^0-9+]/g, ''))}" class="ad-btn ad-btn--secondary ad-btn--sm">致電小工頭</a>`);
         if (st === 'pending') actions.push(`<button type="button" onclick="switchFarmerTab('booking')" class="ad-btn ad-btn--secondary ad-btn--sm">修改預約</button>`);
         if (st === 'in_progress' || st === 'completed') actions.push(`<button type="button" data-prefer="${escHtml(ord.preferredWorkerId || '')}" onclick="rebookWorker(this.dataset.prefer)" class="ad-btn ad-btn--secondary ad-btn--sm">${ord.preferredWorkerName ? '再約' + escHtml(ord.preferredWorkerName) : '再約合作過的工人'}</button>`);
+        if ((st === 'pending' || st === 'confirmed') && !ord.offline) actions.push(`<button type="button" class="ad-btn ad-btn--danger ad-btn--sm" data-order="${id}" data-deposit="${paid ? escHtml(ord.depositAmount) : ''}" onclick="openCancelModal(this.dataset.order, this.dataset.deposit)">取消訂單</button>`);
 
         const worked = st === 'in_progress' || st === 'completed';
         const compliance = worked

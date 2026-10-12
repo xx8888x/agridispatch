@@ -37,14 +37,26 @@ const AgriDocs = (function () {
   ensureStyles();
 
   // 1. 下載電子發票 (財政部電子發票載具規範)
+  // 發票號碼、買受人、付款時間須由呼叫端從後端付款紀錄帶入；沒有發票號碼就不產生（不在前端編號）
   function downloadInvoice(orderId, customOptions = {}) {
-    const invNo = customOptions.invoiceNo || 'AG-' + Math.floor(10000000 + Math.random() * 90000000);
-    const dateStr = customOptions.date || new Date().toISOString().slice(0, 10);
-    const timeStr = customOptions.time || new Date().toLocaleTimeString('zh-TW', { hour12: false });
-    const amount = customOptions.amount || 22400;
-    const deposit = customOptions.deposit || Math.round(amount * 0.2);
-    const buyerName = customOptions.buyerName || '陳建龍 (八德有機蔬菜產銷班)';
-    const cropName = customOptions.cropName || '有機溫室蔬菜 / 高接梨採收派工';
+    if (!customOptions.invoiceNo) {
+      notify('電子發票尚未開立', '這筆付款還沒有發票號碼，開立後即可下載。', { channel: 'system' });
+      return;
+    }
+    const rawInvNo = String(customOptions.invoiceNo);
+    const invNo = escHtml(rawInvNo);
+    const paidAt = customOptions.paidAt ? new Date(String(customOptions.paidAt).replace(' ', 'T')) : null;
+    const when = paidAt && !isNaN(paidAt) ? paidAt : new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const dateStr = `${when.getFullYear()}-${pad(when.getMonth() + 1)}-${pad(when.getDate())}`;
+    const timeStr = `${pad(when.getHours())}:${pad(when.getMinutes())}:${pad(when.getSeconds())}`;
+    const deposit = Number(customOptions.deposit) || 0;
+    const amount = Number(customOptions.amount) || deposit;
+    const depositPct = amount ? Math.round(deposit / amount * 100) : 100;
+    const buyerName = escHtml(customOptions.buyerName || '（未提供）');
+    const cropName = escHtml(customOptions.cropName || '農務派工');
+    const planName = escHtml(customOptions.planName || '');
+    orderId = escHtml(orderId || '');
 
     // 雙軌分流精算：82% 合作社勞務免稅，18% 科技公司代管應稅
     const coopAmount = Math.round(amount * 0.82);
@@ -102,7 +114,7 @@ const AgriDocs = (function () {
       </tr>
       <tr>
         <td><strong>買受人：</strong>${buyerName}</td>
-        <td style="text-align:right;"><strong>訂單編號：</strong>${orderId || 'ORD-2026-002'}</td>
+        <td style="text-align:right;"><strong>訂單編號：</strong>${orderId}</td>
       </tr>
     </table>
 
@@ -117,17 +129,17 @@ const AgriDocs = (function () {
       </thead>
       <tbody>
         <tr>
-          <td>${cropName} (早鳥工時包)</td>
+          <td>${cropName}${planName ? ` (${planName})` : ''}</td>
           <td style="text-align:right;">NT$ ${amount.toLocaleString()}</td>
           <td style="text-align:center;">1 式</td>
           <td style="text-align:right;">NT$ ${amount.toLocaleString()}</td>
         </tr>
         <tr>
-          <td colspan="3" style="text-align:right;"><strong>履約定金 (20% 已付)：</strong></td>
+          <td colspan="3" style="text-align:right;"><strong>履約定金 (${depositPct}% 已付)：</strong></td>
           <td style="text-align:right; color:#059669; font-weight:bold;">NT$ ${deposit.toLocaleString()}</td>
         </tr>
         <tr>
-          <td colspan="3" style="text-align:right;"><strong>待完工尾款 (80%)：</strong></td>
+          <td colspan="3" style="text-align:right;"><strong>待完工尾款 (${100 - depositPct}%)：</strong></td>
           <td style="text-align:right; font-weight:bold;">NT$ ${(amount - deposit).toLocaleString()}</td>
         </tr>
       </tbody>
@@ -142,7 +154,7 @@ const AgriDocs = (function () {
 
     <div class="barcode-area">
       <div class="barcode-mock"></div>
-      <div style="font-family:monospace; font-size:10px; color:#4b5563; margin-top:3px;">11509${invNo.replace('-', '')}8892</div>
+      <div style="font-family:monospace; font-size:10px; color:#4b5563; margin-top:3px;">11509${escHtml(rawInvNo.replace(/-/g, ''))}8892</div>
     </div>
 
     <div class="qr-area">
@@ -164,7 +176,7 @@ const AgriDocs = (function () {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `智農派工_電子發票_${invNo}.html`;
+    a.download = `智農派工_電子發票_${rawInvNo.replace(/[^A-Za-z0-9-]/g, '')}.html`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

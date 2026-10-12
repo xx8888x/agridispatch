@@ -614,7 +614,38 @@ public class SeedService {
                     orderRepository.save(e);
                 });
             }
+            seedPayments(orders);
         }
+    }
+
+    /** 已付定金的種子訂單補上對應的已付款交易（含發票號碼），訂單頁「下載發票」才讀得到付款紀錄 */
+    private void seedPayments(List<Order> orders) {
+        List<PaymentTransaction> txs = new java.util.ArrayList<>();
+        for (Order seed : orders) {
+            Order o = orderRepository.findById(seed.getId()).orElse(null);
+            if (o == null || !o.isDepositPaid() || o.getDepositAmount() <= 0) continue;
+            String digits = o.getId().replaceAll("[^0-9]", "");
+            java.time.LocalDateTime paidAt;
+            try {
+                paidAt = java.time.LocalDateTime.parse(String.valueOf(o.getCreatedAt()).replace(' ', 'T')).plusHours(1);
+            } catch (java.time.format.DateTimeParseException e) {
+                paidAt = java.time.LocalDateTime.of(2026, 9, 1, 10, 0);
+            }
+            PaymentTransaction tx = new PaymentTransaction();
+            tx.setId("SEED" + digits);
+            tx.setOrderId(o.getId());
+            tx.setAmount(o.getDepositAmount());
+            tx.setProvider("mock");
+            tx.setPaymentMethod("credit_card");
+            tx.setPayerName(o.getFarmerName());
+            tx.setStatus(PaymentTransaction.PAID);
+            tx.setAuthCode("SEED" + digits.substring(Math.max(0, digits.length() - 6)));
+            tx.setInvoiceNo("AG-SEED-" + digits);
+            tx.setCreatedAt(paidAt);
+            tx.setPaidAt(paidAt);
+            txs.add(tx);
+        }
+        saveMissing(paymentTransactionRepository, txs, PaymentTransaction::getId);
     }
 
     /** 示範工人的加保紀錄：每位工人依身分加保應加險種，投保薪資取月薪與基本工資較高者 */

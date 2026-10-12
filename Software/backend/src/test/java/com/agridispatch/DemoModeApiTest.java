@@ -153,6 +153,31 @@ class DemoModeApiTest extends ApiTestSupport {
     }
 
     @Test
+    void seededPaidOrdersHaveInvoicedPayment() throws Exception {
+        String admin = login("admin_tech", "admin888");
+        int paidOrders = 0;
+        for (int n = 1; n <= 14; n++) {   // 種子訂單 ORD-2026-001～014（其他測試新建的訂單不看）
+            var o = orderRepository.findById(String.format("ORD-2026-%03d", n)).orElse(null);
+            if (o == null) continue;
+            JsonNode status = json(call("GET", "/api/payments/" + o.getId() + "/status", admin, null)).get("data");
+            JsonNode txs = status.get("transactions");
+            if (o.isDepositPaid() && o.getDepositAmount() > 0) {
+                paidOrders++;
+                assertEquals(1, txs.size(), o.getId() + " 已付定金應有一筆付款紀錄");
+                assertEquals("PAID", txs.get(0).get("status").asText());
+                assertEquals(o.getDepositAmount(), txs.get(0).get("amount").asInt());
+                assertFalse(txs.get(0).get("invoiceNo").asText("").isBlank(), "下載發票需要發票號碼");
+                assertNotNull(txs.get(0).get("paidAt").asText(null));
+            } else {
+                assertEquals(0, txs.size(), o.getId() + " 未付定金不應有付款紀錄");
+            }
+        }
+        assertTrue(paidOrders > 0, "種子資料應有已付定金的訂單");
+        seedService.seedAll(false);   // 重跑種子不重複建交易
+        assertEquals(1, json(call("GET", "/api/payments/ORD-2026-001/status", admin, null)).get("data").get("transactions").size());
+    }
+
+    @Test
     void cancelledOrderRejectsPayment() throws Exception {
         String admin = login("admin_tech", "admin888");
         MvcResult r = call("POST", "/api/payments/checkout", admin, Map.of("orderId", "ORD-2026-010")); // seed：cancelled

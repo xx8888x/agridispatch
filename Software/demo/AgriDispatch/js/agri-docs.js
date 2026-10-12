@@ -397,7 +397,7 @@ const AgriDocs = (function () {
     }
   }
 
-  // 3. 實體互動金流收銀台 (ECPay / LINE Pay / ATM)
+  // 3. 定金收銀台：付款在綠界付款頁完成（信用卡／ATM／超商由付款人在綠界選），本頁不收卡號
   function openPaymentCashier(orderId, amount, cropName, farmLocation, onSuccessCallback) {
     ensureStyles();
     const existingModal = document.getElementById('agriCheckoutModal');
@@ -406,9 +406,6 @@ const AgriDocs = (function () {
     const depositAmount = amount || 4480;
     const oid = orderId || 'ORD-2026-002';
     const isDemo = !window.AGRI_CONFIG || window.AGRI_CONFIG.mode !== 'production';
-    const due = new Date(Date.now() + 3 * 86400000);
-    const dueText = `${due.getFullYear()}/${String(due.getMonth() + 1).padStart(2, '0')}/${String(due.getDate()).padStart(2, '0')} 23:59 止`;
-    const testCard = isDemo ? { num: '4311-9522-2222-2222', exp: '12/28', cvv: '888' } : { num: '', exp: '', cvv: '' };
 
     const modalHtml = `
     <div id="agriCheckoutModal" class="ad-modal" role="dialog" aria-modal="true" aria-labelledby="agriCheckoutTitle">
@@ -432,57 +429,10 @@ const AgriDocs = (function () {
           </div>
         </div>
 
-        <div>
-          <div class="ad-label" style="margin-bottom: 6px;">付款方式</div>
-          <div class="ad-seg" role="group" aria-label="付款方式" style="display: flex;">
-            <button type="button" id="payTab_card" class="ad-seg__btn is-active" style="flex: 1;" onclick="AgriDocs._selectPayTab('card')">信用卡</button>
-            <button type="button" id="payTab_line" class="ad-seg__btn" style="flex: 1;" onclick="AgriDocs._selectPayTab('line')">LINE Pay</button>
-            <button type="button" id="payTab_atm" class="ad-seg__btn" style="flex: 1;" onclick="AgriDocs._selectPayTab('atm')">ATM 轉帳</button>
-          </div>
-        </div>
-
-        <div id="payContent_card">
-          <div class="ad-card ad-card--inset" style="display: flex; flex-direction: column; gap: 12px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-              <span class="ad-caption">綠界科技 ECPay 3D 驗證環境</span>
-              ${isDemo ? '<button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" onclick="AgriDocs._fillTestCard()">填入測試卡號</button>' : ''}
-            </div>
-            <div class="ad-field">
-              <label class="ad-label" for="input_card_num">信用卡卡號（16 碼）</label>
-              <input id="input_card_num" class="ad-input ad-num" type="text" inputmode="numeric" autocomplete="cc-number" value="${testCard.num}">
-            </div>
-            <div class="ad-form-grid ad-form-grid--2">
-              <div class="ad-field">
-                <label class="ad-label" for="input_card_exp">有效月年（MM/YY）</label>
-                <input id="input_card_exp" class="ad-input ad-num" type="text" inputmode="numeric" autocomplete="cc-exp" value="${testCard.exp}">
-              </div>
-              <div class="ad-field">
-                <label class="ad-label" for="input_card_cvv">背面末三碼（CVV）</label>
-                <input id="input_card_cvv" class="ad-input ad-num" type="text" inputmode="numeric" autocomplete="cc-csc" value="${testCard.cvv}">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="payContent_line" hidden>
-          <div class="ad-card ad-card--inset" style="text-align: center;">
-            <div class="ad-heading" style="margin-bottom: 12px;">LINE Pay 快速條碼結帳</div>
-            <div style="width: 112px; height: 112px; margin: 0 auto; padding: 8px; background: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-              <div style="font-family: monospace; font-size: 10px; color: #111; word-break: break-all; text-align: center;">
-                [ LINE PAY QR ]<br>NT$ ${depositAmount}<br>${escHtml(oid)}
-              </div>
-            </div>
-            <p class="ad-caption" style="margin-top: 12px;">用手機 LINE「錢包」掃描上方條碼即可授權付款。</p>
-          </div>
-        </div>
-
-        <div id="payContent_atm" hidden>
-          <div class="ad-card ad-card--inset" style="display: flex; flex-direction: column; gap: 8px;">
-            <div class="ad-heading">台灣 Pay／跨行虛擬轉帳帳號</div>
-            <div style="display: flex; justify-content: space-between; gap: 12px;"><span class="ad-caption">收款行庫</span><span class="ad-num" style="font-weight: 600;">013 國泰世華商業銀行</span></div>
-            <div style="display: flex; justify-content: space-between; gap: 12px;"><span class="ad-caption">專屬繳款帳號</span><span class="ad-num" style="font-weight: 700; color: var(--ad-accent-text);">9812-0923-4480-1288</span></div>
-            <div style="display: flex; justify-content: space-between; gap: 12px;"><span class="ad-caption">繳費期限</span><span class="ad-num" style="font-weight: 600;">${dueText}</span></div>
-          </div>
+        <div class="ad-card ad-card--inset" style="display: flex; flex-direction: column; gap: 6px;">
+          <div class="ad-heading">綠界科技 ECPay 付款</div>
+          <p class="ad-caption" style="margin: 0;">按下付款後會前往綠界的安全付款頁，可選信用卡、ATM 轉帳或超商代碼繳費；本頁不會收集你的卡號。</p>
+          ${isDemo ? '<p class="ad-caption" style="margin: 0;">展示模式使用模擬金流，不會實際扣款。</p>' : ''}
         </div>
 
         <div id="checkoutFeedbackBox" role="status" hidden></div>
@@ -505,21 +455,6 @@ const AgriDocs = (function () {
     modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
     document.addEventListener('keydown', onKey);
     document.getElementById('btnSubmitPayment').addEventListener('click', () => _doSubmitPayment(oid, depositAmount));
-  }
-
-  function _selectPayTab(tab) {
-    ['card', 'line', 'atm'].forEach((t) => {
-      const btn = document.getElementById(`payTab_${t}`);
-      const content = document.getElementById(`payContent_${t}`);
-      if (btn) btn.classList.toggle('is-active', t === tab);
-      if (content) content.hidden = (t !== tab);
-    });
-  }
-
-  function _fillTestCard() {
-    document.getElementById('input_card_num').value = '4311-9522-2222-2222';
-    document.getElementById('input_card_exp').value = '12/28';
-    document.getElementById('input_card_cvv').value = '888';
   }
 
   async function _doSubmitPayment(orderId, amount) {
@@ -840,8 +775,6 @@ const AgriDocs = (function () {
     clockAction,
     sendEmergencyAlert,
     showGpsLocation,
-    _selectPayTab,
-    _fillTestCard,
     _doSubmitPayment
   };
 })();

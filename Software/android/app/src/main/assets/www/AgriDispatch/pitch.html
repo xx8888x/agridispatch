@@ -1027,8 +1027,8 @@
           window.AgriNativeBridge.vibrate(200);
         }
       }
-      // 導流至派工系統下單試算
-      window.location.href = `../TechBackend/vue-crud.html?crop=${cropId}&ref=harvest`;
+      // 導流至農場主預約派工（預選採收分級；未登入會先到農場主登入頁）
+      window.location.href = 'farmer.html?category=harvest_grading';
     }
 
     function selectQuarter(q) {

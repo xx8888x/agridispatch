@@ -1219,57 +1219,18 @@
           <div class="lg:col-span-6 p-5 rounded-xl bg-slate-800/70 border border-slate-700/60 space-y-4">
             <div class="flex items-center justify-between border-b border-slate-700 pb-2">
               <h3 class="ad-heading">各類別營收</h3>
-              <span class="ad-caption">2026 年累計（示範數字）</span>
+              <span class="ad-caption">依訂單即時計算（不含已取消）</span>
             </div>
 
             <div class="space-y-2.5 text-[13px]">
-              <div>
+              <p v-if="categoryRevenue.length === 0" class="ad-caption">尚無訂單</p>
+              <div v-for="c in categoryRevenue" :key="c.name">
                 <div class="flex items-center justify-between mb-1">
-                  <span class="text-slate-300 font-semibold">採收搬運與套袋 (外展農工)</span>
-                  <span class="font-mono text-emerald-400 font-bold">38% (NT$ 3,089,780)</span>
+                  <span class="text-slate-300 font-semibold">{{ c.name }}</span>
+                  <span class="font-mono text-emerald-400 font-bold">{{ c.pct }}% (NT$ {{ c.amount.toLocaleString() }})</span>
                 </div>
                 <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
-                  <div class="h-full bg-emerald-500 rounded-full" style="width: 38%"></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-slate-300 font-semibold">大型無人機精準植保 (代噴機隊)</span>
-                  <span class="font-mono text-emerald-400 font-bold">24% (NT$ 1,951,440)</span>
-                </div>
-                <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
-                  <div class="h-full bg-emerald-500 rounded-full" style="width: 24%"></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-slate-300 font-semibold">嫁接與高空修剪 (專業技工)</span>
-                  <span class="font-mono text-amber-400 font-bold">16% (NT$ 1,300,960)</span>
-                </div>
-                <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
-                  <div class="h-full bg-amber-500 rounded-full" style="width: 16%"></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-slate-300 font-semibold">設施溫室精緻管理 (溫室巡檢)</span>
-                  <span class="font-mono text-emerald-400 font-bold">12% (NT$ 975,720)</span>
-                </div>
-                <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
-                  <div class="h-full bg-emerald-500 rounded-full" style="width: 12%"></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-slate-300 font-semibold">蔬果清洗分級包裝 (採後冷鏈)</span>
-                  <span class="font-mono text-emerald-400 font-bold">10% (NT$ 813,100)</span>
-                </div>
-                <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
-                  <div class="h-full bg-emerald-500 rounded-full" style="width: 10%"></div>
+                  <div class="h-full bg-emerald-500 rounded-full" :style="{ width: c.pct + '%' }"></div>
                 </div>
               </div>
             </div>
@@ -1304,7 +1265,7 @@
                   <td class="font-mono font-bold text-emerald-400">{{ o.id }}</td>
                   <td>
                     <div class="font-bold text-white">{{ o.farmerName }}</div>
-                    <div class="text-[13px] text-slate-400">{{ o.location }}</div>
+                    <div class="text-[13px] text-slate-400">{{ o.farmLocation || o.farmName || '' }}</div>
                   </td>
                   <td>
                     <span :class="categoryBadge(o.dispatchCategory)" class="px-2 py-0.5 rounded text-[13px] font-semibold border">
@@ -1312,22 +1273,23 @@
                     </span>
                   </td>
                   <td class="font-mono font-bold text-white">
-                    NT$ {{ (o.totalPrice || 31680).toLocaleString() }}
+                    NT$ {{ orderAmount(o).toLocaleString() }}
                   </td>
                   <td class="font-mono">
-                    <div class="text-emerald-300 font-bold">NT$ {{ Math.round((o.totalPrice || 31680) * 0.18).toLocaleString() }}</div>
-                    <span class="text-[13px] text-slate-400 font-mono">發票 AB-{{ o.id.replace(/\D/g, '') || '88231001' }}</span>
+                    <div class="text-emerald-300 font-bold">NT$ {{ techOf(o).toLocaleString() }}</div>
+                    <span class="text-[13px] text-slate-400">發票未開立</span>
                   </td>
                   <td class="font-mono">
-                    <div class="text-emerald-400 font-bold">NT$ {{ Math.round((o.totalPrice || 31680) * 0.82).toLocaleString() }}</div>
+                    <div class="text-emerald-400 font-bold">NT$ {{ (orderAmount(o) - techOf(o)).toLocaleString() }}</div>
                     <span class="text-[13px] text-slate-400">移工法定平移款</span>
                   </td>
                   <td class="font-mono text-emerald-300 font-semibold">
-                    NT$ {{ Math.round((o.totalPrice || 31680) * 0.20).toLocaleString() }}
+                    NT$ {{ (o.depositAmount || 0).toLocaleString() }}
+                    <div class="text-[13px] text-slate-400">{{ o.depositPaid ? '已收' : '未收' }}</div>
                   </td>
                   <td>
-                    <span class="px-2 py-0.5 rounded-full text-[13px] font-bold" :class="o.status === 'completed' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : (o.status === 'in_progress' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30')">
-                      {{ o.status === 'completed' ? '✓ 全額撥付' : (o.status === 'in_progress' ? '定金入帳/尾款待結' : '款項託管中') }}
+                    <span class="px-2 py-0.5 rounded-full text-[13px] font-bold" :class="o.status === 'cancelled' ? 'bg-slate-500/20 text-slate-300 border border-slate-500/30' : (o.status === 'completed' || o.status === 'in_progress' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30')">
+                      {{ settlementLabel(o) }}
                     </span>
                   </td>
                 </tr>
@@ -1851,6 +1813,9 @@
         const API_BASE = window.location.origin.startsWith('http')
           ? `${window.location.origin}/api`
           : 'http://localhost:3000/api';
+        // 後端連不上時改在畫面上暫存（本地模式）只限 demo；正式版一律顯示失敗，不假裝成功
+        const LOCAL_FALLBACK = !(window.AGRI_CONFIG && window.AGRI_CONFIG.mode === 'production');
+        const OFFLINE_MSG = '無法連線伺服器，變更未送出，請稍後再試';
 
         const backendOnline = ref(true);
         const activeTab = ref('weather');
@@ -2169,11 +2134,12 @@
               workerModal.show = false;
               fetchWorkers();
               return;
-            } else {
-              showToast(json.error || '儲存失敗', 'error');
             }
+            showToast(json.error || '儲存失敗', 'error');
+            return;
           } catch (e) {
             console.warn('Backend unavailable, saving worker locally', e);
+            if (!LOCAL_FALLBACK) { showToast(OFFLINE_MSG, 'error'); return; }
           }
 
           if (workerModal.isEdit) {
@@ -2199,8 +2165,11 @@
               fetchWorkers();
               return;
             }
+            showToast(json.error || '刪除失敗', 'error');
+            return;
           } catch (e) {
             console.warn('Backend unavailable, deleting worker locally', e);
+            if (!LOCAL_FALLBACK) { showToast(OFFLINE_MSG, 'error'); return; }
           }
 
           workers.value = workers.value.filter(w => w.id !== id);
@@ -2245,11 +2214,12 @@
               cropModal.show = false;
               fetchCrops();
               return;
-            } else {
-              showToast(json.error || '儲存失敗', 'error');
             }
+            showToast(json.error || '儲存失敗', 'error');
+            return;
           } catch (e) {
             console.warn('Backend unavailable, saving crop locally', e);
+            if (!LOCAL_FALLBACK) { showToast(OFFLINE_MSG, 'error'); return; }
           }
 
           if (cropModal.isEdit) {
@@ -2272,8 +2242,11 @@
               fetchCrops();
               return;
             }
+            showToast(json.error || '刪除失敗', 'error');
+            return;
           } catch (e) {
             console.warn('Backend unavailable, deleting crop locally', e);
+            if (!LOCAL_FALLBACK) { showToast(OFFLINE_MSG, 'error'); return; }
           }
 
           crops.value = crops.value.filter(c => c.id !== id);
@@ -2379,11 +2352,12 @@
               showOrderCalc.value = false;
               fetchOrders();
               return;
-            } else {
-              showToast(json.error || '下單失敗', 'error');
             }
+            showToast(json.error || '下單失敗', 'error');
+            return;
           } catch (e) {
             console.warn('Backend unavailable, creating order locally', e);
+            if (!LOCAL_FALLBACK) { showToast(OFFLINE_MSG, 'error'); return; }
           }
 
           orders.value.unshift(payload);
@@ -2433,6 +2407,7 @@
             return;
           } catch (e) {
             console.warn('Backend unavailable, updating order locally', e);
+            if (!LOCAL_FALLBACK) { showToast(OFFLINE_MSG, 'error'); return; }
           }
 
           const idx = orders.value.findIndex(o => o.id === orderModal.form.id);
@@ -2453,8 +2428,11 @@
               fetchOrders();
               return;
             }
+            showToast(json.error || '刪除失敗', 'error');
+            return;
           } catch (e) {
             console.warn('Backend unavailable, deleting order locally', e);
+            if (!LOCAL_FALLBACK) { showToast(OFFLINE_MSG, 'error'); return; }
           }
 
           orders.value = orders.value.filter(o => o.id !== id);
@@ -2480,8 +2458,11 @@
               showToast(rain ? '已啟動暴雨避險：工班轉室內冷鏈作業，並 LINE 通知受影響農場主' : '已恢復田間作業');
               return;
             }
+            showToast(json.error || '天候切換失敗', 'error');
+            return;
           } catch (e) {
             console.warn('Backend unavailable, rain mode updated locally', e);
+            if (!LOCAL_FALLBACK) { showToast(OFFLINE_MSG, 'error'); return; }
           }
           // 後端離線：本地套用（晴天時 D 組固定在室內冷鏈）
           currentScenario.value = scenarioId;
@@ -2680,8 +2661,11 @@
               fetchTalents();
               return;
             }
+            showToast(json.error || '儲存失敗', 'error');
+            return;
           } catch (e) {
             console.warn('Backend unavailable, saving talent locally', e);
+            if (!LOCAL_FALLBACK) { showToast(OFFLINE_MSG, 'error'); return; }
           }
 
           if (talentModal.isEdit) {
@@ -2707,8 +2691,11 @@
               fetchTalents();
               return;
             }
+            showToast(json.error || '刪除失敗', 'error');
+            return;
           } catch (e) {
             console.warn('Backend unavailable, deleting talent locally', e);
+            if (!LOCAL_FALLBACK) { showToast(OFFLINE_MSG, 'error'); return; }
           }
 
           talents.value = talents.value.filter(t => t.id !== id);
@@ -2882,7 +2869,7 @@
               showToast(json.error || '儲存失敗', 'error');
             }
           } catch (e) {
-            // Local fallback
+            if (!LOCAL_FALLBACK) { showToast(OFFLINE_MSG, 'error'); return; }
             const idx = brochures.value.findIndex(b => b.id === brochureModal.form.id);
             if (idx >= 0) {
               brochures.value[idx] = { ...brochureModal.form };
@@ -2897,16 +2884,23 @@
 
         const toggleBrochureStatus = async (dm) => {
           const newStatus = dm.status === 'active' ? 'draft' : 'active';
-          dm.status = newStatus;
           try {
-            await fetch(`${API_BASE}/brochures/${dm.id}`, {
+            const res = await fetch(`${API_BASE}/brochures/${dm.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(dm)
+              body: JSON.stringify({ ...dm, status: newStatus })
             });
+            const json = plainDeep(await res.json());
+            if (!json.success) {
+              showToast(json.error || 'DM 狀態更新失敗', 'error');
+              return;
+            }
+            dm.status = newStatus;
             localStorage.setItem('agri_brochures', JSON.stringify(brochures.value));
             showToast(newStatus === 'active' ? '已將該 DM 上架至前台展示' : '已將該 DM 轉為草稿暫存');
           } catch (e) {
+            if (!LOCAL_FALLBACK) { showToast(OFFLINE_MSG, 'error'); return; }
+            dm.status = newStatus;
             localStorage.setItem('agri_brochures', JSON.stringify(brochures.value));
             showToast('已更新本地 DM 狀態');
           }
@@ -2920,8 +2914,11 @@
             if (json.success) {
               showToast(`產品文宣 DM ${id} 已成功刪除`);
               fetchBrochures();
+            } else {
+              showToast(json.error || '刪除失敗', 'error');
             }
           } catch (e) {
+            if (!LOCAL_FALLBACK) { showToast(OFFLINE_MSG, 'error'); return; }
             brochures.value = brochures.value.filter(b => b.id !== id);
             localStorage.setItem('agri_brochures', JSON.stringify(brochures.value));
             showToast(`已從本地移除產品文宣 DM`);
@@ -2937,8 +2934,11 @@
               fetchBrochures();
               return;
             }
+            showToast(json.error || '重置失敗', 'error');
+            return;
           } catch (e) {
             console.warn('Backend seed failed, reloading local brochures', e);
+            if (!LOCAL_FALLBACK) { showToast(OFFLINE_MSG, 'error'); return; }
           }
 
           if (initialData && initialData.brochures) {
@@ -3111,40 +3111,55 @@
         };
 
         // Revenue Computations & CSV Export for Tab 3
-        const totalGMV = computed(() => {
-          if (!orders.value || orders.value.length === 0) return 8131000;
-          const sum = orders.value.reduce((acc, o) => acc + (o.totalPrice || 0), 0);
-          return sum > 0 ? sum : 8131000;
-        });
+        // 科技公司代管費率（畫面文字仍寫 18%；F2 定版是否改 16% 待決定，改這裡與文字即可）
+        const TECH_RATE = 0.18;
+        const orderAmount = (o) => Number(o.finalAmount) || 0;
+        const techOf = (o) => Math.round(orderAmount(o) * TECH_RATE);
+        const billableOrders = computed(() => (orders.value || []).filter(o => o.status !== 'cancelled'));
+        const settlementLabel = (o) => ({ cancelled: '已取消', completed: '✓ 全額撥付', in_progress: '定金入帳/尾款待結' })[o.status]
+          || (o.depositPaid ? '定金已收' : '待付定金');
 
-        const techShare = computed(() => Math.round(totalGMV.value * 0.18));
-        const coopShare = computed(() => Math.round(totalGMV.value * 0.82));
-        const depositTotal = computed(() => Math.round(totalGMV.value * 0.20));
+        const totalGMV = computed(() => billableOrders.value.reduce((acc, o) => acc + orderAmount(o), 0));
+        const techShare = computed(() => billableOrders.value.reduce((acc, o) => acc + techOf(o), 0));
+        const coopShare = computed(() => totalGMV.value - techShare.value);
+        const depositTotal = computed(() => billableOrders.value
+          .filter(o => o.depositPaid).reduce((acc, o) => acc + (Number(o.depositAmount) || 0), 0));
+        const categoryRevenue = computed(() => {
+          const byName = {};
+          billableOrders.value.forEach(o => {
+            const name = o.categoryName || '未分類';
+            byName[name] = (byName[name] || 0) + orderAmount(o);
+          });
+          const total = totalGMV.value;
+          return Object.entries(byName)
+            .map(([name, amount]) => ({ name, amount, pct: total > 0 ? Math.round(amount * 100 / total) : 0 }))
+            .sort((a, b) => b.amount - a.amount);
+        });
 
         const exportRevenueCSV = () => {
           if (!orders.value || orders.value.length === 0) {
             showToast('目前無訂單財務資料可匯出', 'error');
             return;
           }
-          const headers = ['訂單編號', '委任農場主', '連絡電話', '作業地點', '作物類別', '派工類別', '訂單總額(NT$)', '科技公司18%技術費(NT$)', '合作社82%移工平移款(NT$)', '20%定金(NT$)', '發票號碼', '撥款狀態'];
+          const headers = ['訂單編號', '委任農場主', '連絡電話', '作業地點', '作物類別', '派工類別', '訂單總額(NT$)', '科技公司18%技術費(NT$)', '合作社82%移工平移款(NT$)', '定金(NT$)', '發票號碼', '撥款狀態'];
           const rows = orders.value.map(o => {
-            const tot = o.totalPrice || 31680;
-            const tech = Math.round(tot * 0.18);
+            const tot = orderAmount(o);
+            const tech = techOf(o);
             const coop = tot - tech;
-            const dep = Math.round(tot * 0.20);
+            const dep = Number(o.depositAmount) || 0;
             return [
               o.id,
               o.farmerName || '',
               o.phone || '',
-              o.location || '',
+              o.farmLocation || '',
               o.cropName || '',
               o.categoryName || '',
               tot,
               tech,
               coop,
               dep,
-              'AB-' + (o.id.replace(/\D/g, '') || '88231001'),
-              o.status === 'completed' ? '已全額撥付' : (o.status === 'in_progress' ? '定金入帳/尾款待結' : '款項託管中')
+              '',
+              settlementLabel(o).replace('✓ ', '')
             ];
           });
           const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\r\n');
@@ -3186,6 +3201,10 @@
           techShare,
           coopShare,
           depositTotal,
+          categoryRevenue,
+          orderAmount,
+          techOf,
+          settlementLabel,
           exportRevenueCSV,
 
           workers,

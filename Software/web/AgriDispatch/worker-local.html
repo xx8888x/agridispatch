@@ -35,6 +35,7 @@
   </script>
   <!-- AgriDocs: Document & Payslip Downloader -->
   <script src="js/agri-docs.js"></script>
+  <script src="js/worker-calendar.js"></script>
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/agri.css">
@@ -51,6 +52,7 @@
       </a>
       <nav class="ad-nav" aria-label="本國工作台導覽">
         <button type="button" id="tabBtnLocalTask" class="ad-nav__link is-active" data-tab="task" onclick="switchLocalWorkerTab('task')">今日任務</button>
+        <button type="button" id="tabBtnLocalCalendar" class="ad-nav__link" data-tab="calendar" onclick="switchLocalWorkerTab('calendar')">行事曆</button>
         <button type="button" id="tabBtnLocalPayroll" class="ad-nav__link" data-tab="payroll" onclick="switchLocalWorkerTab('payroll')">薪酬</button>
         <a id="navEvaluation" class="ad-nav__link" href="worker-local-evaluation.html">逐人評核</a>
         <a class="ad-nav__link" href="worker-skills.html">技能進度</a>
@@ -66,6 +68,7 @@
   <!-- 手機底部導覽（桌機隱藏） -->
   <nav class="ad-tabbar" aria-label="本國工作台導覽">
     <button type="button" class="ad-tabbar__item is-active" data-tab="task" onclick="switchLocalWorkerTab('task')"><i data-lucide="clipboard-check" class="ad-icon"></i>任務</button>
+    <button type="button" class="ad-tabbar__item" data-tab="calendar" onclick="switchLocalWorkerTab('calendar')"><i data-lucide="calendar-days" class="ad-icon"></i>行事曆</button>
     <button type="button" class="ad-tabbar__item" data-tab="payroll" onclick="switchLocalWorkerTab('payroll')"><i data-lucide="wallet" class="ad-icon"></i>薪酬</button>
     <a id="tabbarEvaluation" class="ad-tabbar__item" href="worker-local-evaluation.html"><i data-lucide="user-check" class="ad-icon"></i>評核</a>
     <a class="ad-tabbar__item" href="worker-skills.html"><i data-lucide="trending-up" class="ad-icon"></i>技能</a>
@@ -511,6 +514,13 @@
       </div>
     </div>
 
+    <!-- TAB: 行事曆（後台排給所屬工班的工作，依工期排在月曆上；由 js/worker-calendar.js 繪製） -->
+    <div id="tabContentLocalCalendar" class="hidden">
+      <div class="ad-card" style="padding: 24px;">
+        <div id="localCalendar"></div>
+      </div>
+    </div>
+
     <!-- TAB 2: 薪酬與分紅 -->
     <div id="tabContentLocalPayroll" class="hidden space-y-6">
 
@@ -630,7 +640,7 @@
     function updatePageTitle() {
       const el = document.getElementById('pageTitle');
       const meta = TRACK_META[currentTrack] || TRACK_META.foreman;
-      if (el) el.textContent = currentLocalTab === 'payroll' ? '薪酬與分紅' : meta.title;
+      if (el) el.textContent = currentLocalTab === 'payroll' ? '薪酬與分紅' : (currentLocalTab === 'calendar' ? '工作行事曆' : meta.title);
     }
 
     function switchLocalTrack(track) {
@@ -663,6 +673,7 @@
 
       updatePageTitle();
       loadLocalPayroll();
+      if (currentLocalTab === 'calendar') mountLocalCalendar();
       if (track !== 'foreman') syncPunch('local', localWorkerId());
     }
 
@@ -680,17 +691,23 @@
 
     // 頁籤切換：桌機導覽與手機 tabbar 上所有 [data-tab] 一起更新，標題跟著換
     function switchLocalWorkerTab(tab) {
-      const isTask = (tab === 'task');
-      currentLocalTab = isTask ? 'task' : 'payroll';
-      const tabTask = document.getElementById('tabContentLocalTask');
-      const tabPayroll = document.getElementById('tabContentLocalPayroll');
-      if (tabTask) tabTask.classList.toggle('hidden', !isTask);
-      if (tabPayroll) tabPayroll.classList.toggle('hidden', isTask);
+      const panels = { task: 'tabContentLocalTask', calendar: 'tabContentLocalCalendar', payroll: 'tabContentLocalPayroll' };
+      currentLocalTab = panels[tab] ? tab : 'task';
+      Object.keys(panels).forEach((k) => {
+        const el = document.getElementById(panels[k]);
+        if (el) el.classList.toggle('hidden', k !== currentLocalTab);
+      });
+      if (currentLocalTab === 'calendar') mountLocalCalendar();
       document.querySelectorAll('[data-tab]').forEach(el => {
         el.classList.toggle('is-active', el.dataset.tab === currentLocalTab);
       });
       updatePageTitle();
       if (window.scrollY > 200) window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 行事曆：與薪資同一個工人（真正登入的本國工人，或目前示範身分的帳號）
+    function mountLocalCalendar() {
+      if (window.WorkerCalendar) WorkerCalendar.mount(document.getElementById('localCalendar'), { workerId: payrollWorkerId(), lang: 'zh' });
     }
 
     // ===== 薪資：數字一律來自後端 /workers/{id}/payroll（與外籍工人頁同一套）=====

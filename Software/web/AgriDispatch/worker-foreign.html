@@ -35,6 +35,7 @@
   </script>
   <!-- AgriDocs: Document & Payslip Downloader -->
   <script src="js/agri-docs.js"></script>
+  <script src="js/worker-calendar.js"></script>
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/agri.css">
@@ -51,6 +52,7 @@
       </a>
       <nav class="ad-nav" aria-label="外展移工導覽">
         <button type="button" id="tabBtnTask" class="ad-nav__link is-active" data-tab="task" onclick="switchWorkerTab('task')"><span id="txt-tab-task" data-i18n="navTask">今日任務</span></button>
+        <button type="button" id="tabBtnCalendar" class="ad-nav__link" data-tab="calendar" onclick="switchWorkerTab('calendar')"><span data-i18n="navCalendar">行事曆</span></button>
         <button type="button" id="tabBtnPayroll" class="ad-nav__link" data-tab="payroll" onclick="switchWorkerTab('payroll')"><span id="txt-tab-payroll" data-i18n="navPayroll">薪資</span></button>
         <a class="ad-nav__link" href="worker-skills.html"><span data-i18n="navSkills">技能進度</span></a>
       </nav>
@@ -70,6 +72,7 @@
   <!-- 手機底部導覽（桌機隱藏） -->
   <nav class="ad-tabbar" aria-label="外展移工導覽">
     <button type="button" class="ad-tabbar__item is-active" data-tab="task" onclick="switchWorkerTab('task')"><i data-lucide="clipboard-check" class="ad-icon"></i><span data-i18n="navTask">今日任務</span></button>
+    <button type="button" class="ad-tabbar__item" data-tab="calendar" onclick="switchWorkerTab('calendar')"><i data-lucide="calendar-days" class="ad-icon"></i><span data-i18n="navCalendar">行事曆</span></button>
     <button type="button" class="ad-tabbar__item" data-tab="payroll" onclick="switchWorkerTab('payroll')"><i data-lucide="wallet" class="ad-icon"></i><span data-i18n="navPayroll">薪資</span></button>
     <a class="ad-tabbar__item" href="worker-skills.html"><i data-lucide="trending-up" class="ad-icon"></i><span data-i18n="navSkills">技能進度</span></a>
   </nav>
@@ -253,6 +256,13 @@
       </div>
     </div>
 
+    <!-- TAB: 行事曆（後台排給所屬工班的工作，依工期排在月曆上；由 js/worker-calendar.js 繪製） -->
+    <div id="tabContentCalendar" class="hidden">
+      <div class="ad-card" style="padding: 24px;">
+        <div id="workerCalendar"></div>
+      </div>
+    </div>
+
     <!-- TAB 2: 薪資與薪資單 -->
     <div id="tabContentPayroll" class="hidden space-y-6">
 
@@ -341,6 +351,8 @@
         navTask: "今日任務",
         navPayroll: "薪資",
         navSkills: "技能進度",
+        navCalendar: "行事曆",
+        calTitle: "工作行事曆",
         punchTitle: "上下班打卡",
         btnClockout: "下班打卡",
         notPunched: "未打卡",
@@ -398,6 +410,8 @@
         navTask: "Nhiệm vụ",
         navPayroll: "Lương",
         navSkills: "Kỹ năng",
+        navCalendar: "Lịch",
+        calTitle: "Lịch làm việc",
         punchTitle: "Chấm công vào/ra",
         btnClockout: "Chấm công ra",
         notPunched: "Chưa chấm",
@@ -455,6 +469,8 @@
         navTask: "Tugas",
         navPayroll: "Gaji",
         navSkills: "Keterampilan",
+        navCalendar: "Kalender",
+        calTitle: "Kalender kerja",
         punchTitle: "Absen masuk/pulang",
         btnClockout: "Absen pulang",
         notPunched: "Belum absen",
@@ -550,29 +566,34 @@
       updateTitle();
       renderPunchUI();
       applyTaskCard();
+      if (window.WorkerCalendar) WorkerCalendar.setLang(currentLang);
     }
 
     // 標題隨頁籤切換：任務頁籤顯示「今日任務」，薪資頁籤顯示「薪資」（並隱藏今日出勤狀態）
     let currentTab = 'task';
     function updateTitle() {
       const h1 = document.getElementById('txt-main-title');
-      if (h1) h1.textContent = currentTab === 'payroll' ? tr('payTitle') : tr('mainTitle');
+      if (h1) h1.textContent = currentTab === 'payroll' ? tr('payTitle') : (currentTab === 'calendar' ? tr('calTitle') : tr('mainTitle'));
       const status = document.getElementById('status-line');
-      if (status) status.hidden = (currentTab === 'payroll');
+      if (status) status.hidden = (currentTab !== 'task');
     }
 
     // 頁籤切換：桌機導覽與手機 tabbar 上所有 [data-tab] 一起更新
     function switchWorkerTab(tab) {
-      const isTask = (tab === 'task');
-      currentTab = isTask ? 'task' : 'payroll';
+      const panels = { task: 'tabContentTask', calendar: 'tabContentCalendar', payroll: 'tabContentPayroll' };
+      currentTab = panels[tab] ? tab : 'task';
       updateTitle();
-      const tabTask = document.getElementById('tabContentTask');
-      const tabPayroll = document.getElementById('tabContentPayroll');
-      if (tabTask) tabTask.classList.toggle('hidden', !isTask);
-      if (tabPayroll) tabPayroll.classList.toggle('hidden', isTask);
-      document.querySelectorAll('[data-tab]').forEach(el => {
-        el.classList.toggle('is-active', el.dataset.tab === (isTask ? 'task' : 'payroll'));
+      Object.keys(panels).forEach((k) => {
+        const el = document.getElementById(panels[k]);
+        if (el) el.classList.toggle('hidden', k !== currentTab);
       });
+      document.querySelectorAll('[data-tab]').forEach(el => {
+        el.classList.toggle('is-active', el.dataset.tab === currentTab);
+      });
+      // 行事曆：後台排給本人所屬工班的工作
+      if (currentTab === 'calendar' && window.WorkerCalendar) {
+        WorkerCalendar.mount(document.getElementById('workerCalendar'), { workerId: currentWorkerId(), lang: currentLang });
+      }
       if (window.scrollY > 200) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 

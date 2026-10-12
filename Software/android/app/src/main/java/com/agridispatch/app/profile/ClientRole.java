@@ -8,6 +8,7 @@ import com.agridispatch.app.R;
 public enum ClientRole {
     FARMER("farmer", R.drawable.ic_sprout, R.string.role_pick_farmer, R.string.role_pick_farmer_desc, "AgriDispatch/farmer-login.html"),
     WORKER_LOCAL("worker_local", R.drawable.ic_hard_hat, R.string.role_pick_worker_local, R.string.role_pick_worker_local_desc, "AgriDispatch/worker-local-login.html"),
+    /** 外籍移工入口目前下架 (FeatureFlags.FOREIGN_WORKERS=false)，保留列舉值以便恢復 */
     WORKER_FOREIGN("worker_foreign", 0, 0, 0, "AgriDispatch/worker-foreign-login.html");
 
     /** 對應後端 users.role */

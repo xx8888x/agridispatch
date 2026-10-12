@@ -38,8 +38,9 @@ public final class ProfileStore {
         }
         if (ClientRole.WORKER_FOREIGN.name().equals(role)) {
             Nationality n = Nationality.fromName(p.getString(KEY_NATIONALITY, ""));
-            // 已停用的國別 (offered=false) 視同未選擇，需重新選
-            return n == null || !n.offered ? null : UserProfile.foreignWorker(n);
+            // 已停用的國別 (offered=false)，或外籍移工入口下架 (FeatureFlags.FOREIGN_WORKERS=false)：
+            // 視同未選擇，回到身分選擇重新選，不讓舊使用者卡在外勞頁
+            return n == null || !n.selectable() ? null : UserProfile.foreignWorker(n);
         }
         return null;
     }

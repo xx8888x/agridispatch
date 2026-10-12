@@ -97,7 +97,7 @@ App 只問「做哪一種工作」，選項是會進不同頁面的三種軌別�
 | App 軌別 `LocalTrack` | 畫面文字 | 前端 `role=` | 涵蓋的細分類型 |
 |---|---|---|---|
 | `LABOR` | 一般農務｜採收、包裝、套袋 | `labor` | `SENIOR`、`RETURNING_WOMEN`、`STUDENT` |
-| `FOREMAN` | 帶班師傅｜帶領外籍工班 | `foreman` | `FOREMAN` |
+| `FOREMAN` | 帶班師傅｜帶領工班 | `foreman` | `FOREMAN` |
 | `MACHINERY` | 農機操作｜曳引機、無人機 | `machinery` | `MACHINERY` |
 
 
@@ -139,6 +139,8 @@ flowchart TD
     R --> L[我是本國工人] --> T["第二頁：你主要做哪一種工作？<br/>一般農務／帶班師傅／農機操作"] --> S
     S --> M
 ```
+
+> **外籍移工入口暫時下架（功能開關，2026-10-12）**：先以本國勞工（正職、兼職、中高齡、打工、學生打工）為主。`FeatureFlags.java`（`com.agridispatch.app`）的 `FOREIGN_WORKERS = false` 時，第一頁不顯示越南／印尼等外籍工人卡片，只列「農場主」「本國工人」；本機已存的外籍身分視同未選擇，開 App 會回到身分選擇畫面。程式、`Nationality` 列舉與 vi／id 語系資源皆保留。**恢復方式**：把 `FOREIGN_WORKERS` 改回 `true` 重新建置（各國是否開放仍由 `Nationality.offered` 控制），前端網頁同步把 `app-config.js` 的 `features.foreignWorkers` 改回 `true`。下圖與下表為恢復後的完整流程。
 
 依設計系統「不讓使用者思考」（`04_UI設計系統規範.md`）設計：
 

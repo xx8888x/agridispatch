@@ -26,6 +26,7 @@ import com.agridispatch.app.profile.UserProfile;
  * 智農派工 (AgriDispatch) - 客戶端原生身分選擇畫面
  * 依設計系統「不讓使用者思考」(文件/07_系統分析及文件/04_UI設計系統規範.md)：
  * 第一頁只問「你是誰」：農場主／本國工人／各國外籍工人 (外籍卡片標題用工人母語，一次點選就完成)；
+ * 外籍工人卡片目前下架 (FeatureFlags.FOREIGN_WORKERS=false)，只顯示農場主與本國工人；
  * 本國工人才有第二頁「做哪種工作」(一般農務／帶班師傅／農機操作，三者進不同頁面)。
  * 選定後寫入 ProfileStore 並開啟 MainActivity 載入對應登入頁。僅客戶端 (client flavor) 宣告此 Activity。
  */
@@ -71,7 +72,7 @@ public class RoleSelectActivity extends AppCompatActivity {
         addOption(iconView(ClientRole.WORKER_LOCAL.iconRes), getString(ClientRole.WORKER_LOCAL.labelRes),
                 getString(ClientRole.WORKER_LOCAL.descRes), v -> showLocalTracks());
         for (Nationality n : Nationality.values()) {
-            if (n.offered) {
+            if (n.selectable()) { // 外籍移工入口下架時全部不顯示 (FeatureFlags.FOREIGN_WORKERS)
                 addOption(badgeView(n.badge), n.nativeTitle, getString(n.descRes),
                         v -> finishWith(UserProfile.foreignWorker(n)));
             }

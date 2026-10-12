@@ -63,4 +63,13 @@ public class UserProfileTest {
         // 未開放國別即使被選到，語言也回到中文
         assertEquals("zh", UserProfile.foreignWorker(Nationality.TH).language());
     }
+
+    @Test
+    public void foreignWorkerEntryFollowsFeatureFlag() {
+        // 外籍移工入口下架 (FeatureFlags.FOREIGN_WORKERS=false) 時，所有國別都不可選
+        assertEquals(com.agridispatch.app.FeatureFlags.FOREIGN_WORKERS, Nationality.VN.selectable());
+        assertEquals(com.agridispatch.app.FeatureFlags.FOREIGN_WORKERS, Nationality.ID.selectable());
+        assertFalse(Nationality.TH.selectable());
+        assertFalse(Nationality.PH.selectable());
+    }
 }

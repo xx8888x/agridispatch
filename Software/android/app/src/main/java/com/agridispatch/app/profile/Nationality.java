@@ -1,5 +1,6 @@
 package com.agridispatch.app.profile;
 
+import com.agridispatch.app.FeatureFlags;
 import com.agridispatch.app.R;
 
 /**
@@ -7,6 +8,7 @@ import com.agridispatch.app.R;
  * 同工同酬、不以國籍差別定價；國別只影響介面語言與排班提醒。
  * 身分選擇畫面第一層就列出各國卡片，標題用工人的母語，讓看不懂中文的人也能一眼找到自己；
  * offered=false 者不顯示 (泰國、菲律賓：未規劃引進【待確認】)。
+ * 外籍移工入口整體目前下架 (FeatureFlags.FOREIGN_WORKERS=false)，所有國別都不顯示。
  */
 public enum Nationality {
     VN("VI", "Tôi là lao động Việt Nam", "vi", true, R.string.nation_vn_desc),
@@ -30,6 +32,11 @@ public enum Nationality {
         this.language = language;
         this.offered = offered;
         this.descRes = descRes;
+    }
+
+    /** 身分選擇畫面是否列出、已存身分是否有效：外籍移工入口開啟 (FeatureFlags.FOREIGN_WORKERS) 且該國有開放 */
+    public boolean selectable() {
+        return FeatureFlags.FOREIGN_WORKERS && offered;
     }
 
     public static Nationality fromName(String name) {

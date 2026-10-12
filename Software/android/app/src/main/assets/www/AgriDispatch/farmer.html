@@ -503,7 +503,6 @@
     </div>
   </div>
 
-  <script>
   <div id="cancelModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background: rgba(2, 6, 23, 0.7);">
     <div class="ad-card w-full" style="max-width: 448px; display: flex; flex-direction: column; gap: 16px;" role="dialog" aria-modal="true" aria-labelledby="cancelTitle">
       <div class="ad-card__head" style="margin: 0;">
@@ -523,6 +522,7 @@
     </div>
   </div>
 
+  <script>
     // ------------------------------------------------------------------
     // 評價工班：資料存後端 team_ratings；工班出工後（in_progress / completed）才可評
     // ------------------------------------------------------------------
@@ -1583,8 +1583,8 @@
         if (paid) actions.push(`<button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" data-pay="${pay}" onclick="downloadPaidInvoice(this)">下載發票</button>`);
         if (ord.foremanPhone && st !== 'cancelled') actions.push(`<a href="tel:${escHtml(String(ord.foremanPhone).replace(/[^0-9+]/g, ''))}" class="ad-btn ad-btn--secondary ad-btn--sm">致電小工頭</a>`);
         if (st === 'pending') actions.push(`<button type="button" onclick="switchFarmerTab('booking')" class="ad-btn ad-btn--secondary ad-btn--sm">修改預約</button>`);
-        if (st === 'in_progress' || st === 'completed') actions.push(`<button type="button" data-prefer="${escHtml(ord.preferredWorkerId || '')}" onclick="rebookWorker(this.dataset.prefer)" class="ad-btn ad-btn--secondary ad-btn--sm">${ord.preferredWorkerName ? '再約' + escHtml(ord.preferredWorkerName) : '再約合作過的工人'}</button>`);
         if ((st === 'pending' || st === 'confirmed') && !ord.offline) actions.push(`<button type="button" class="ad-btn ad-btn--danger ad-btn--sm" data-order="${id}" data-deposit="${paid ? escHtml(ord.depositAmount) : ''}" onclick="openCancelModal(this.dataset.order, this.dataset.deposit)">取消訂單</button>`);
+        if (st === 'in_progress' || st === 'completed') actions.push(`<button type="button" data-prefer="${escHtml(ord.preferredWorkerId || '')}" onclick="rebookWorker(this.dataset.prefer)" class="ad-btn ad-btn--secondary ad-btn--sm">${ord.preferredWorkerName ? '再約' + escHtml(ord.preferredWorkerName) : '再約合作過的工人'}</button>`);
 
         const worked = st === 'in_progress' || st === 'completed';
         const compliance = worked

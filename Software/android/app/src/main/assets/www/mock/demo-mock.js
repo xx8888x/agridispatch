@@ -490,6 +490,21 @@
     saveOrder(ref);
     return respond(200, { success: true, data: o });
   }
+  // 農場主取消自己的訂單（移植 OrderService.cancelOrder）：保留紀錄、狀態改 cancelled；施工中以後須聯繫調度中心
+  function cancelOrder(id) {
+    var ref = orderRef(id);
+    if (!ref) return respond(404, { success: false, error: '找不到該訂單編號: ' + id });
+    var o = ref.order, me = currentUser() || {};
+    if (o.farmerId && me.refId && o.farmerId !== me.refId) return respond(403, { success: false, error: '無權限操作此訂單' });
+    if (o.status !== 'cancelled') {
+      if (o.status !== 'pending' && o.status !== 'confirmed') {
+        return respond(409, { success: false, error: '此訂單目前狀態 (' + o.status + ') 無法自行取消，請聯繫調度中心' });
+      }
+      o.status = 'cancelled';
+      saveOrder(ref);
+    }
+    return respond(200, { success: true, data: o, message: '成功取消訂單: ' + id });
+  }
 
   // ---------------- 模擬金流：定金付款直接成功，訂單 pending → confirmed ----------------
   function checkout(b) {
@@ -504,7 +519,28 @@
     var patch = { depositPaid: true, status: order.status === 'pending' ? 'confirmed' : order.status };
     patchList('GET /orders', String(order.id), patch);
     put(dKey, { s: 200, b: { success: true, data: Object.assign({}, order, patch) } });
+    // 付款紀錄（GET /payments/{id}/status）：訂單頁「下載發票」從這裡讀發票號碼與付款時間
+    var sKey = 'GET /payments/' + encodeURIComponent(order.id) + '/status', se = get(sKey);
+    var sd = (se && se.b && se.b.data) || {
+      orderId: order.id, farmerName: order.farmerName, finalAmount: order.finalAmount,
+      depositAmount: order.depositAmount, depositRequired: true, transactions: []
+    };
+    var txs = sd.transactions || [];
     var now = new Date(), stamp = now.getTime().toString().slice(-8);
+    var local = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 19);
+    var tx = txs.filter(function (t) { return t.status === 'PAID'; })[0];
+    if (!tx) {
+      tx = {
+        id: 'TX-MOCK-' + stamp, orderId: order.id, amount: order.depositAmount, provider: 'mock',
+        paymentMethod: b.paymentMethod || 'credit_card', status: 'PAID', payerName: order.farmerName,
+        authCode: stamp.slice(-6), invoiceNo: 'AG-MOCK-' + stamp.slice(-6), createdAt: local, paidAt: local
+      };
+      txs.unshift(tx);
+    }
+    sd.transactions = txs;
+    sd.depositPaid = true;
+    sd.orderStatus = patch.status;
+    put(sKey, { s: 200, b: { success: true, data: sd } });
     return respond(200, {
       success: true, transactionId: tx.id, orderId: order.id, farmerName: order.farmerName,
       provider: 'mock', paymentMethod: tx.paymentMethod, amountPaid: tx.amount,
@@ -671,21 +707,6 @@
     var today = localStamp(new Date()).slice(0, 10), moved = false;
     // 錄製資料沒有出勤紀錄的示範工人：今天還沒任何紀錄時補一筆「已上班」，工作台一打開就能直接下班打卡
     var seed = DEMO_ON_SHIFT[workerId] && (teamTaskLocation(workerId) || DEMO_ON_SHIFT[workerId]);
-  // 農場主取消自己的訂單（移植 OrderService.cancelOrder）：保留紀錄、狀態改 cancelled；施工中以後須聯繫調度中心
-  function cancelOrder(id) {
-    var ref = orderRef(id);
-    if (!ref) return respond(404, { success: false, error: '找不到該訂單編號: ' + id });
-    var o = ref.order, me = currentUser() || {};
-    if (o.farmerId && me.refId && o.farmerId !== me.refId) return respond(403, { success: false, error: '無權限操作此訂單' });
-    if (o.status !== 'cancelled') {
-      if (o.status !== 'pending' && o.status !== 'confirmed') {
-        return respond(409, { success: false, error: '此訂單目前狀態 (' + o.status + ') 無法自行取消，請聯繫調度中心' });
-      }
-      o.status = 'cancelled';
-      saveOrder(ref);
-    }
-    return respond(200, { success: true, data: o, message: '成功取消訂單: ' + id });
-  }
     if (seed && !st.list.some(function (a) { return a.workDate === today || !a.clockOutTime; })) {
       var maxId = st.list.reduce(function (m, a) { return Math.max(m, +a.id || 0); }, 0);
       st.list.unshift({
@@ -700,28 +721,7 @@
       if (a._demoShift || (a.workDate && a.workDate < today)) {
         // 上班時間固定為「現在往前 8 小時」，下班前每次讀取都重算，路演幾點按下班都約 8 小時；
         // 地點改成工班目前訂單的地點，和工作台任務卡一致
-    // 付款紀錄（GET /payments/{id}/status）：訂單頁「下載發票」從這裡讀發票號碼與付款時間
-    var sKey = 'GET /payments/' + encodeURIComponent(order.id) + '/status', se = get(sKey);
-    var sd = (se && se.b && se.b.data) || {
-      orderId: order.id, farmerName: order.farmerName, finalAmount: order.finalAmount,
-      depositAmount: order.depositAmount, depositRequired: true, transactions: []
-    };
-    var txs = sd.transactions || [];
         if (!a._demoShift) a.location = teamTaskLocation(workerId) || a.location;
-    var local = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 19);
-    var tx = txs.filter(function (t) { return t.status === 'PAID'; })[0];
-    if (!tx) {
-      tx = {
-        id: 'TX-MOCK-' + stamp, orderId: order.id, amount: order.depositAmount, provider: 'mock',
-        paymentMethod: b.paymentMethod || 'credit_card', status: 'PAID', payerName: order.farmerName,
-        authCode: stamp.slice(-6), invoiceNo: 'AG-MOCK-' + stamp.slice(-6), createdAt: local, paidAt: local
-      };
-      txs.unshift(tx);
-    }
-    sd.transactions = txs;
-    sd.depositPaid = true;
-    sd.orderStatus = patch.status;
-    put(sKey, { s: 200, b: { success: true, data: sd } });
         a.clockInTime = localStamp(new Date(Date.now() - 8 * 3600e3));
         a.workDate = today;
         a._demoShift = true;
@@ -1136,6 +1136,7 @@
     }
     if (method === 'PUT' && /^\/evaluations\/attendance\/[^/]+$/.test(sp.path)) return rateShift(decodeURIComponent(seg[2]), body || {});
     if (method === 'PUT' && /^\/matching\/orders\/[^/]+$/.test(sp.path)) return saveCrew(decodeURIComponent(seg[2]), body || {});
+    if (method === 'DELETE' && /^\/orders\/[^/]+$/.test(sp.path) && (currentUser() || {}).role === 'farmer') return cancelOrder(decodeURIComponent(seg[1]));
     if (method === 'PUT' && /^\/orders\/[^/]+$/.test(sp.path)) return updateOrder(decodeURIComponent(seg[1]), body || {});
     if (method === 'PUT' && /^\/orders\/[^/]+\/status$/.test(sp.path)) return changeStatus(decodeURIComponent(seg[1]), (body || {}).status);
     if (method === 'POST' && /^\/skills\/workers\/[^/]+\/[^/]+\/restore$/.test(sp.path)) {
@@ -1323,7 +1324,6 @@
       var hit = findGet(p);
       if (hit) return respond(hit.s, hit.b);
       if (global.console) console.warn('[demo-mock] 沒有示範資料：GET ' + p);
-    if (method === 'DELETE' && /^\/orders\/[^/]+$/.test(sp.path) && (currentUser() || {}).role === 'farmer') return cancelOrder(decodeURIComponent(seg[1]));
       return respond(404, { success: false, error: '示範資料未涵蓋此查詢' });
     }
     return handleWrite(method, p, bodyText);

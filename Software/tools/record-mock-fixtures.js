@@ -110,7 +110,7 @@ const enc = encodeURIComponent;
     '/ratings/tags', '/ratings/teams', '/payments/methods', '/notifications',
     '/line/config', '/line/bindings', '/line/notify/status', '/public/config', '/auth/quick-profiles',
     '/dispatch/overview', '/dispatch/weather-state', '/dispatch/teams', '/attendance/summary/present-count',
-    '/skills/workers'
+    '/skills/workers', '/rosters'   // 共享班表以 admin 視角錄製（含名單與認領農戶），demo-mock 依登入角色過濾
   ];
   const got = {};
   for (const p of simple) got[p] = await record('GET', p);

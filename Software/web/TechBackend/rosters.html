@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 AgriDispatch - 共享班表</title>
+  <script src="js/app-config.js"></script>
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AgriAuth) window.AgriAuth.requireRole(['admin_tech'], 'admin-login.html');
+  </script>
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
+  <script src="js/agri-theme.js"></script>
+  <script src="js/vendor/lucide.min.js"></script>
+  <script>
+    if (typeof lucide === 'undefined') {
+      document.write('<script src="https://unpkg.com/lucide@1.47.0"><\/script>');
+    }
+  </script>
+  <link rel="stylesheet" href="css/agri.css">
+  <style>
+    .rs-grid { width: 100%; border-collapse: separate; border-spacing: 0 4px; font-size: 13px; }
+    .rs-grid th { text-align: left; font-weight: 500; color: var(--ad-text-2); padding: 0 6px; }
+    .rs-grid td { padding: 6px; background: var(--ad-surface-2); }
+    .rs-grid td:first-child { border-radius: 8px 0 0 8px; white-space: nowrap; }
+    .rs-grid td:last-child { border-radius: 0 8px 8px 0; }
+    .rs-bar { position: relative; height: 8px; border-radius: 999px; background: var(--ad-surface-2); overflow: hidden; }
+    .rs-bar__fill { position: absolute; inset: 0 auto 0 0; background: var(--ad-primary); }
+    .rs-bar__mark { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--ad-accent-text); }
+  </style>
+</head>
+<body class="ad-body ad-has-tabbar min-h-screen flex flex-col">
+
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner" style="max-width: 1280px;">
+      <a href="admin.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">營運後台</span>
+      </a>
+      <nav class="ad-nav" aria-label="營運工具">
+        <a class="ad-nav__link" href="insurance.html">保險登錄</a>
+        <a class="ad-nav__link" href="skills.html">技能複核</a>
+        <a class="ad-nav__link" href="matching.html">派工媒合</a>
+        <a class="ad-nav__link is-active" href="rosters.html">共享班表</a>
+      </nav>
+      <div class="ad-header__actions">
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()" aria-label="示範導覽"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span></button>
+        <a href="admin.html" class="ad-btn ad-btn--secondary ad-btn--sm"><i data-lucide="arrow-left" class="ad-icon ad-icon--sm"></i>回後台</a>
+      </div>
+    </div>
+  </header>
+
+  <nav class="ad-tabbar" aria-label="營運工具">
+    <a class="ad-tabbar__item" href="insurance.html"><i data-lucide="shield-check" class="ad-icon"></i>保險登錄</a>
+    <a class="ad-tabbar__item" href="matching.html"><i data-lucide="route" class="ad-icon"></i>派工媒合</a>
+    <a class="ad-tabbar__item is-active" href="rosters.html"><i data-lucide="users" class="ad-icon"></i>共享班表</a>
+    <a class="ad-tabbar__item" href="admin.html"><i data-lucide="layout-dashboard" class="ad-icon"></i>後台</a>
+  </nav>
+
+  <main class="flex-1 ad-container w-full" style="max-width: 1280px; padding-block: 24px 40px; display: flex; flex-direction: column; gap: 20px;">
+    <div>
+      <h1 class="ad-display">社區共享班表</h1>
+      <p class="ad-caption" style="margin-top: 6px; max-width: 860px;">把一組工班整段期間派駐同一村／產銷班，每天上午、下午兩格由當地農戶認領（每格一張訂單，照一般計價不打折）。截止日隔天凌晨自動判斷：達門檻就開班，未達門檻就取消班表與認領訂單；也可在截止前手動開班或取消。已付定金的退款請人工處理【待確認】。</p>
+    </div>
+
+    <div id="loadError" class="ad-notice ad-notice--danger" role="alert" hidden></div>
+    <div id="notice" class="ad-notice ad-notice--ok" role="status" hidden></div>
+
+    <div class="grid lg:grid-cols-12 gap-6">
+      <section class="lg:col-span-5">
+        <form class="ad-card" style="padding: 20px; display: flex; flex-direction: column; gap: 12px;" onsubmit="createRoster(event)">
+          <h2 class="ad-title">開新班表</h2>
+          <div class="ad-field"><label class="ad-label ad-label--req" for="nTitle">名稱</label><input id="nTitle" class="ad-input" maxlength="100" required placeholder="例如：枋山芒果產銷班 共享班表"></div>
+          <div class="ad-field"><label class="ad-label ad-label--req" for="nRegion">派駐地區</label><input id="nRegion" class="ad-input" maxlength="100" required placeholder="村里或產銷班"></div>
+          <div class="ad-field"><label class="ad-label" for="nDesc">說明（選填）</label><input id="nDesc" class="ad-input" maxlength="500"></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="ad-field"><label class="ad-label ad-label--req" for="nStart">開工日</label><input id="nStart" type="date" class="ad-input" required onchange="syncDeadline()"></div>
+            <div class="ad-field"><label class="ad-label ad-label--req" for="nEnd">結束日</label><input id="nEnd" type="date" class="ad-input" required></div>
+            <div class="ad-field"><label class="ad-label" for="nDeadline">認領截止</label><input id="nDeadline" type="date" class="ad-input"><span class="ad-hint">預設開工前 3 天</span></div>
+            <div class="ad-field"><label class="ad-label" for="nMin">門檻（%）</label><input id="nMin" type="number" min="1" max="100" value="60" class="ad-input ad-num"></div>
+          </div>
+          <div class="ad-field"><label class="ad-label" for="nCategory">派工類別</label><select id="nCategory" class="ad-select"></select></div>
+          <div class="ad-field"><label class="ad-label ad-label--req" for="nTeam">工班</label><select id="nTeam" class="ad-select" onchange="renderCrewPicker()"></select></div>
+          <div class="ad-field">
+            <span class="ad-label">固定出工名單</span>
+            <div id="nCrew" style="display: flex; flex-direction: column; gap: 6px;"></div>
+            <span class="ad-hint">名單須完整加保、工作許可有效，且整段期間沒有其他排班；每次認領整組一起到場</span>
+          </div>
+          <div id="nError" class="ad-caption" style="color: var(--ad-danger-text);" role="alert"></div>
+          <button type="submit" id="nSubmit" class="ad-btn ad-btn--primary">開放認領</button>
+        </form>
+      </section>
+      <section class="lg:col-span-7" style="display: flex; flex-direction: column; gap: 12px;">
+        <h2 class="ad-title">班表</h2>
+        <div id="list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const base = () => (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const money = (n) => `NT$ ${Number(n || 0).toLocaleString()}`;
+    const WEEK = ['日', '一', '二', '三', '四', '五', '六'];
+    const md = (iso) => { const d = new Date(iso + 'T00:00:00'); return `${d.getMonth() + 1}/${d.getDate()}（${WEEK[d.getDay()]}）`; };
+    const STATUS_PILL = { open: 'ad-pill ad-pill--warn', confirmed: 'ad-pill ad-pill--ok', cancelled: 'ad-pill ad-pill--danger', completed: 'ad-pill' };
+    let workers = [];
+
+    async function api(path, options) {
+      const res = await fetch(`${base()}${path}`, options);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body.success === false) throw new Error(body.error || body.message || `HTTP ${res.status}`);
+      return body.data;
+    }
+    function show(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg || '';
+      el.hidden = !msg;
+    }
+
+    async function init() {
+      try {
+        const [teams, ws, cats] = await Promise.all([api('/dispatch/teams'), api('/workers'), api('/orders/categories')]);
+        workers = ws || [];
+        document.getElementById('nTeam').innerHTML = (teams || []).map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
+        document.getElementById('nCategory').innerHTML = (cats || []).filter(c => c.id !== 'typhoon_emergency')
+          .map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+        renderCrewPicker();
+        await loadList();
+      } catch (e) {
+        show('loadError', `無法載入：${e.message}（請確認以管理員身分登入）`);
+      }
+    }
+
+    function renderCrewPicker() {
+      const teamId = document.getElementById('nTeam').value;
+      // 外籍移工功能關閉時不列外籍移工（與後台名冊相同的 AgriTheme.visibleWorkers；後端開班時也會再檢查）
+      const visible = window.AgriTheme && AgriTheme.visibleWorkers ? AgriTheme.visibleWorkers(workers) : workers;
+      const members = visible.filter(w => w.teamId === teamId);
+      document.getElementById('nCrew').innerHTML = members.length ? members.map(w => `
+        <label class="ad-choice" style="align-items: center; padding: 8px 12px;">
+          <input type="checkbox" value="${esc(w.id)}">
+          <span style="flex: 1;">${esc(w.chineseName || w.name)} <span class="ad-caption ad-num">${esc(w.id)}</span>${w.leader ? ' <span class="ad-pill">領班</span>' : ''}</span>
+        </label>`).join('') : '<span class="ad-caption">此工班沒有可派工的成員</span>';
+    }
+
+    function syncDeadline() {
+      const s = document.getElementById('nStart').value;
+      if (!s) return;
+      const d = new Date(s + 'T00:00:00');
+      d.setDate(d.getDate() - 3);
+      document.getElementById('nDeadline').value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      if (!document.getElementById('nEnd').value) {
+        const e = new Date(s + 'T00:00:00');
+        e.setDate(e.getDate() + 4);
+        document.getElementById('nEnd').value = `${e.getFullYear()}-${String(e.getMonth() + 1).padStart(2, '0')}-${String(e.getDate()).padStart(2, '0')}`;
+      }
+    }
+
+    async function createRoster(ev) {
+      ev.preventDefault();
+      const crew = [...document.querySelectorAll('#nCrew input:checked')].map(i => i.value);
+      const err = document.getElementById('nError');
+      if (!crew.length) { err.textContent = '請至少選 1 位工人'; return; }
+      const btn = document.getElementById('nSubmit');
+      btn.disabled = true;
+      err.textContent = '';
+      try {
+        const r = await api('/rosters', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: document.getElementById('nTitle').value, region: document.getElementById('nRegion').value,
+            description: document.getElementById('nDesc').value || null, teamId: document.getElementById('nTeam').value, crew,
+            dispatchCategory: document.getElementById('nCategory').value,
+            startDate: document.getElementById('nStart').value, endDate: document.getElementById('nEnd').value,
+            claimDeadline: document.getElementById('nDeadline').value || null,
+            minClaimPercent: parseInt(document.getElementById('nMin').value, 10) || 60
+          })
+        });
+        show('notice', `已開放認領：${r.id} ${r.title}（${r.totalSlots} 格，門檻 ${r.minClaimPercent}%）`);
+        ev.target.reset();
+        renderCrewPicker();
+        await loadList();
+      } catch (e) {
+        err.textContent = e.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function loadList() {
+      const list = await api('/rosters');
+      list.sort((a, b) => (a.status === 'cancelled' || a.status === 'completed') - (b.status === 'cancelled' || b.status === 'completed') || a.startDate.localeCompare(b.startDate));
+      document.getElementById('list').innerHTML = list.length ? list.map(r => {
+        const active = r.status === 'open' || r.status === 'confirmed';
+        const cellText = c => c.state === 'taken' || c.state === 'mine'
+          ? `<strong>${esc(c.farmerName || '')}</strong>${c.fullDay ? '（整天）' : ''}<br><a class="ad-num" href="matching.html?order=${encodeURIComponent(c.orderId)}" style="text-decoration: underline;">${esc(c.orderId)}</a>`
+          : `<span class="ad-caption">${c.state === 'free' ? '空檔' : '—'}</span>`;
+        return `
+        <div class="ad-card" style="padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px;">
+            <div>
+              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;"><span class="ad-num ad-caption">${esc(r.id)}</span><span class="ad-heading">${esc(r.title)}</span><span class="${STATUS_PILL[r.status] || 'ad-pill'}">${esc(r.statusLabel)}</span></div>
+              <div class="ad-caption">${esc(r.region)}・${esc(r.categoryName)}・${esc(r.teamName || r.teamId)}：${(r.crew || []).map(c => esc(c.name) + (c.leader ? '（領班）' : '')).join('、')}</div>
+              <div class="ad-caption">${md(r.startDate)} ～ ${md(r.endDate)}・認領截止 ${md(r.claimDeadline)}・半天 ${money(r.prices.halfDay.early_bird.total)}／格</div>
+              ${r.cancelReason ? `<div class="ad-caption" style="color: var(--ad-danger-text);">取消原因：${esc(r.cancelReason)}</div>` : ''}
+            </div>
+            ${active ? `<div style="display: flex; gap: 8px; align-items: flex-start;">
+              ${r.status === 'open' ? `<button type="button" class="ad-btn ad-btn--primary ad-btn--sm" data-id="${esc(r.id)}" onclick="confirmRoster(this.dataset.id)" ${r.thresholdMet ? '' : 'disabled title="未達門檻"'}>確認開班</button>` : ''}
+              <button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" data-id="${esc(r.id)}" onclick="cancelRoster(this.dataset.id)">取消班表</button>
+            </div>` : ''}
+          </div>
+          <div>
+            <div class="ad-caption">已認領 <strong class="ad-num">${r.claimedSlots}/${r.totalSlots} 格（${r.claimPercent}%）</strong>・門檻 ${r.minClaimPercent}%${r.thresholdMet ? '・<span style="color: var(--ad-primary-text);">已達標</span>' : ''}</div>
+            <div class="rs-bar" style="margin-top: 4px;"><div class="rs-bar__fill" style="width: ${Math.min(100, r.claimPercent)}%;"></div><div class="rs-bar__mark" style="left: ${r.minClaimPercent}%;"></div></div>
+          </div>
+          <details>
+            <summary class="ad-caption" style="cursor: pointer;">時段明細</summary>
+            <table class="rs-grid" style="margin-top: 6px;">
+              <thead><tr><th>日期</th><th>上午 07–11</th><th>下午 13–17</th></tr></thead>
+              <tbody>${r.days.map(d => `<tr><td class="ad-num">${md(d.date)}</td><td>${cellText(d.morning)}</td><td>${cellText(d.afternoon)}</td></tr>`).join('')}</tbody>
+            </table>
+          </details>
+        </div>`;
+      }).join('') : '<div class="ad-card ad-caption" style="padding: 20px;">還沒有共享班表</div>';
+    }
+
+    async function confirmRoster(id) {
+      try {
+        await api(`/rosters/${encodeURIComponent(id)}/confirm`, { method: 'POST' });
+        show('notice', `${id} 已開班`);
+        await loadList();
+      } catch (e) {
+        show('loadError', `無法開班：${e.message}`);
+      }
+    }
+
+    async function cancelRoster(id) {
+      const reason = prompt(`取消 ${id} 的原因（會一併取消所有認領訂單）`, '合作社取消');
+      if (reason === null) return;
+      try {
+        const r = await api(`/rosters/${encodeURIComponent(id)}/cancel`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason })
+        });
+        show('notice', `${id} 已取消，連帶取消 ${r.cancelledOrders.length} 張訂單${r.refundsNeeded ? `，其中 ${r.refundsNeeded} 筆已付定金需退款` : ''}`);
+        await loadList();
+      } catch (e) {
+        show('loadError', `無法取消：${e.message}`);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+
+  <script>
+    var demoNav = AgriTheme.demoNav();
+    if (window.lucide) lucide.createIcons();
+  </script>
+</body>
+</html>

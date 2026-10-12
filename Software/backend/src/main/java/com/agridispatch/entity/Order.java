@@ -88,6 +88,13 @@ public class Order {
     @jakarta.persistence.Column(name = "time_slot", length = 16)
     private String timeSlot;
 
+    /** 社區共享班表（shared_rosters.id）；有值表示這張訂單是農戶認領班表時段而成立，規格與時段不可修改，只能取消後重新認領 */
+    @jakarta.persistence.Column(name = "shared_roster_id", length = 32)
+    private String sharedRosterId;
+
+    public String getSharedRosterId() { return sharedRosterId; }
+    public void setSharedRosterId(String sharedRosterId) { this.sharedRosterId = sharedRosterId; }
+
     public static final String FULL_DAY = "full_day";
     public static final String MORNING = "morning";
     public static final String AFTERNOON = "afternoon";

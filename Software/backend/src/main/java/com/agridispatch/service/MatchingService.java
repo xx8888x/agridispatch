@@ -22,6 +22,7 @@ import java.util.*;
  * 農場主指名（order.preferredWorkerId）：指名工人所屬工班排在合格工班第一位、指名工人排在出工名單第一位（角色「農場主指名」）；
  *   指名工人不合格或撞期時照常推薦其他人，並以 preferredWarning 提醒調度告知農場主。
  *   尚未排出工名單、但已指名的訂單，視同已佔用指名工人該工期（撞期檢查一併計入）。
+ * 社區共享班表（開放認領或已開班）：整段期間佔用班表的固定名單（整天），只有該班表自己的認領訂單不受影響。
  */
 @Service
 public class MatchingService {
@@ -38,11 +39,12 @@ public class MatchingService {
     private final SkillService skillService;
     private final RatingService ratingService;
     private final AgriSettings settings;
+    private final SharedRosterRepository rosterRepository;
 
     public MatchingService(OrderService orderService, OrderRepository orderRepository, DispatchTeamRepository teamRepository,
                            WorkerRepository workerRepository, InsuranceRecordRepository insuranceRecordRepository,
                            InsuranceService insuranceService, SkillService skillService, RatingService ratingService,
-                           AgriSettings settings) {
+                           AgriSettings settings, SharedRosterRepository rosterRepository) {
         this.orderService = orderService;
         this.orderRepository = orderRepository;
         this.teamRepository = teamRepository;
@@ -52,6 +54,7 @@ public class MatchingService {
         this.skillService = skillService;
         this.ratingService = ratingService;
         this.settings = settings;
+        this.rosterRepository = rosterRepository;
     }
 
     /** 可參與派工的工班成員（外籍移工功能關閉時不含外籍工人） */
@@ -329,7 +332,23 @@ public class MatchingService {
             for (String id : crew) busy.putIfAbsent(id, o);
             if (crew.isEmpty() && o.getPreferredWorkerId() != null) busy.putIfAbsent(o.getPreferredWorkerId(), o);
         }
+        for (SharedRoster r : rosterRepository.findByStatusIn(List.of(SharedRoster.OPEN, SharedRoster.CONFIRMED))) {
+            if (r.getId().equals(order.getSharedRosterId())) continue;
+            Order hold = rosterHold(r);
+            if (!hold.overlaps(order)) continue;
+            for (String id : r.crewList()) busy.putIfAbsent(id, hold);
+        }
         return busy;
+    }
+
+    /** 班表佔用期間（整天）以虛擬訂單表示，撞期訊息顯示班表編號 */
+    private static Order rosterHold(SharedRoster r) {
+        Order o = new Order();
+        o.setId(r.getId());
+        o.setStartDate(r.getStartDate());
+        o.setEndDate(r.getEndDate());
+        o.setTimeSlot(Order.FULL_DAY);
+        return o;
     }
 
     /** 訂單的指名工人；未指名、已刪除或目前不開放派工（外籍移工下架）時回 null */

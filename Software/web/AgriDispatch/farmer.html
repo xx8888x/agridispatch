@@ -61,6 +61,7 @@
         <button type="button" id="tabBtnBooking" class="ad-nav__link is-active" data-tab="booking" onclick="switchFarmerTab('booking')">預約派工</button>
         <button type="button" id="tabBtnOrders" class="ad-nav__link" data-tab="orders" onclick="switchFarmerTab('orders')">我的訂單 <span id="orderBadgeCount" class="ad-tab__count">2</span></button>
         <button type="button" id="tabBtnCalendar" class="ad-nav__link" data-tab="calendar" onclick="switchFarmerTab('calendar')">派工行事曆</button>
+        <a class="ad-nav__link" href="rosters.html">社區班表</a>
         <a class="ad-nav__link" href="legalize.html" data-feature="legalize">工班合法化</a>
         <a class="ad-nav__link" href="expenses.html">支出明細</a>
       </nav>
@@ -249,7 +250,7 @@
                   <label class="ad-seg__btn"><input type="radio" name="fSlot" value="morning" onchange="calcFarmerForm()">上午 07–11</label>
                   <label class="ad-seg__btn"><input type="radio" name="fSlot" value="afternoon" onchange="calcFarmerForm()">下午 13–17</label>
                 </div>
-                <span id="fSlotHint" class="ad-hint">小面積只需半天時選上午或下午，同一位工人可上午、下午跑不同農場</span>
+                <span id="fSlotHint" class="ad-hint">小面積只需半天時選上午或下午，同一位工人可上午、下午跑不同農場；也可以到<a href="rosters.html" style="text-decoration: underline;">社區共享班表</a>認領工班駐點的時段</span>
               </div>
               <div class="ad-field" style="max-width: 240px;">
                 <label class="ad-label" for="fWorkersCount">每日工人數（選填）</label>
@@ -1601,6 +1602,7 @@
               ${statusPill}
               ${insurancePill}
               ${isNew ? '<span class="ad-pill ad-pill--ok">剛剛送出</span>' : ''}
+              ${ord.sharedRosterId ? `<a href="rosters.html" class="ad-pill" title="社區共享班表認領的時段">共享班表</a>` : ''}
               ${ord.offline ? '<span class="ad-pill ad-pill--warn">尚未同步（離線）</span>' : ''}
             </div>
             <div class="ad-caption">${worked ? '工期' : '預計起工'} <strong class="ad-num" style="color: var(--ad-text);">${escHtml(when)}</strong>（${days ? `共 ${days} 天・` : ''}${escHtml(ord.totalHours)} 工時）</div>

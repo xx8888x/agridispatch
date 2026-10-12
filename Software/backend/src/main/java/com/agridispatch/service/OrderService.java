@@ -525,6 +525,9 @@ public class OrderService {
             throw ApiException.badRequest("面積必須大於 0");
         }
         validateTextLengths(updated);
+        if (existing.getSharedRosterId() != null && rosterSpecChanged(existing, updated)) {
+            throw ApiException.conflict("共享班表的時段訂單不可修改作物、面積、方案、人數、工期或時段；請取消後重新認領");
+        }
 
         boolean pricingChanged = false;
         if (updated.getCropId() != null && !updated.getCropId().equals(existing.getCropId())) {
@@ -612,6 +615,20 @@ public class OrderService {
         return orderRepository.save(existing);
     }
 
+    /** 共享班表訂單的規格是否有變動（只允許改聯絡資訊與現場交辦） */
+    private static boolean rosterSpecChanged(Order existing, Order u) {
+        return (u.getCropId() != null && !u.getCropId().equals(existing.getCropId()))
+                || (u.getArea() > 0 && u.getArea() != existing.getArea())
+                || (u.getPlan() != null && !u.getPlan().equals(existing.getPlan()))
+                || (u.getTransportZone() != null && !u.getTransportZone().equals(existing.getTransportZone()))
+                || (u.getDispatchCategory() != null && !u.getDispatchCategory().equals(existing.getDispatchCategory()))
+                || (u.getRequestedWorkers() != null && !u.getRequestedWorkers().equals(existing.getRequestedWorkers()))
+                || (u.getStartDate() != null && !u.getStartDate().equals(existing.getStartDate()))
+                || (u.getEndDate() != null && !u.getEndDate().equals(existing.getEndDate()))
+                || (u.getTimeSlot() != null && !normalizeSlot(u.getTimeSlot()).equals(existing.slot()))
+                || (u.getAssignedTeamId() != null && !u.getAssignedTeamId().equals(existing.getAssignedTeamId()));
+    }
+
     /** admin 硬刪除 */
     public void deleteOrder(String id) {
         if (!orderRepository.existsById(id)) {
@@ -639,6 +656,110 @@ public class OrderService {
         }
         return calculateOrder(order.getCropId(), order.getArea(), order.getPlan(),
                 order.getTransportZone(), order.getDispatchCategory(), order.getRequestedWorkers(), order.slot());
+    }
+
+    /**
+     * 共享班表時段報價：整組工班到場，計費工時 = 工班人數 × 時段工時（上午／下午 4、整天 8）；
+     * 拼團不打折，時薪與定金依方案（早鳥 315 元／20% 定金、彈性計時 310 元／免定金）。成果統包按驗收計價，不適用。
+     */
+    public Map<String, Object> quoteRosterSlot(int crewSize, String timeSlot, String plan) {
+        String slot = normalizeSlot(timeSlot);
+        if (plan == null || plan.isBlank()) plan = "early_bird";
+        if (!"early_bird".equals(plan) && !"hourly_flex".equals(plan)) {
+            throw ApiException.badRequest("共享班表只提供早鳥工時包或彈性計時（成果統包按驗收計價，不適用）");
+        }
+        int hours = crewSize * Order.hoursPerDay(slot);
+        int rate = "early_bird".equals(plan) ? EARLY_BIRD_RATE : 310;
+        int total = hours * rate;
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("plan", plan);
+        data.put("planName", "early_bird".equals(plan)
+                ? "【共享班表】早鳥工時包 ($315/hr・20%定金)" : "【共享班表】彈性計時 ($310/hr・免定金)");
+        data.put("timeSlot", slot);
+        data.put("timeSlotLabel", Order.slotLabel(slot));
+        data.put("crewSize", crewSize);
+        data.put("totalHours", hours);
+        data.put("unitRate", rate);
+        data.put("actualTotal", total);
+        data.put("deposit", "early_bird".equals(plan) ? (int) Math.round(total * 0.2) : 0);
+        return data;
+    }
+
+    /**
+     * 建立共享班表的認領訂單（由 RosterService 驗證班表狀態、日期與時段未被認領後呼叫）：
+     * 工班與出工名單沿用班表，工期就是認領的那一天，金額依 quoteRosterSlot
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public Order createRosterClaim(Order input, String farmerId, com.agridispatch.entity.SharedRoster roster,
+                                   java.time.LocalDate day, String timeSlot) {
+        if (input.getFarmerName() == null || input.getFarmerName().isBlank()) {
+            throw ApiException.badRequest("農場主姓名 (farmerName) 為必填欄位");
+        }
+        validateTextLengths(input);
+        Crop crop = cropRepository.findById(input.getCropId() == null ? "" : input.getCropId())
+                .orElseThrow(() -> ApiException.badRequest("查無作物代號：" + input.getCropId()));
+        double area = input.getArea();
+        if (Double.isNaN(area) || area <= 0 || area > MAX_AREA) {
+            throw ApiException.badRequest("面積 (area) 必須大於 0 且不超過 " + (int) MAX_AREA + " 分地");
+        }
+        List<String> crew = roster.crewList();
+        Map<String, Object> q = quoteRosterSlot(crew.size(), timeSlot, input.getPlan());
+
+        Order order = new Order();
+        order.setFarmerId(farmerId);
+        if (input.getFarmId() != null && !input.getFarmId().isBlank()) {
+            com.agridispatch.entity.Farm farm = farmRepository.findById(input.getFarmId().trim())
+                    .filter(f -> farmerId.equals(f.getFarmerId()))
+                    .orElseThrow(() -> ApiException.badRequest("找不到選擇的農場，請重新選擇"));
+            order.setFarmId(farm.getId());
+            order.setFarmName(farm.getName());
+        }
+        order.setFarmerName(input.getFarmerName().trim());
+        order.setPhone(input.getPhone());
+        order.setFarmLocation(input.getFarmLocation());
+        order.setCropId(crop.getId());
+        order.setCropName(crop.getName());
+        order.setArea(area);
+        order.setPlan((String) q.get("plan"));
+        order.setPlanName((String) q.get("planName"));
+        order.setDispatchCategory(roster.getDispatchCategory());
+        order.setCategoryName(categoryNameOf(roster.getDispatchCategory()));
+        order.setTransportZone("core_35km");
+        order.setTransportSurcharge(0);
+        order.setTotalHours((int) q.get("totalHours"));
+        order.setSuggestedWorkers(crew.size());
+        order.setRequestedWorkers(crew.size());
+        order.setUnitRate((int) q.get("unitRate"));
+        order.setStandardAmount((int) q.get("actualTotal"));
+        order.setFinalAmount((int) q.get("actualTotal"));
+        order.setDepositAmount((int) q.get("deposit"));
+        order.setForemanName(input.getForemanName() == null || input.getForemanName().isBlank()
+                ? order.getFarmerName() + " (本人帶隊)" : input.getForemanName());
+        order.setForemanPhone(input.getForemanPhone() == null || input.getForemanPhone().isBlank()
+                ? order.getPhone() : input.getForemanPhone());
+        order.setForemanNotes(input.getForemanNotes());
+        order.setAssignedTeamId(roster.getTeamId());
+        order.setCrewWorkerIds(String.join(",", crew));
+        order.setSharedRosterId(roster.getId());
+        order.setStartDate(day);
+        order.setEndDate(day);
+        order.setTimeSlot((String) q.get("timeSlot"));
+        order.setCreatedAt(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+        order.setDepositPaid(false);
+        order.setStatus(order.getDepositAmount() > 0 ? PENDING : CONFIRMED);
+        synchronized (idLock) {
+            String prefix = "ORD-" + new SimpleDateFormat("yyyy").format(new Date()) + "-";
+            order.setId(IdGenerator.next(prefix, 3, orderRepository.findIdsByPrefix(prefix), orderRepository::existsById));
+            return orderRepository.saveAndFlush(order);
+        }
+    }
+
+    /** 派工類別代碼 → 名稱（與一般訂單試算的類別名稱一致） */
+    public String categoryNameOf(String category) {
+        for (Map<String, Object> c : getDispatchCategories()) {
+            if (java.util.Objects.equals(c.get("id"), category)) return (String) c.get("name");
+        }
+        return category;
     }
 
     /** 工時包（DM 標價）以整天班編制，不提供半日時段 */

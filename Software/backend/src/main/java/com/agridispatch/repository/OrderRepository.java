@@ -11,6 +11,7 @@ import java.util.List;
 public interface OrderRepository extends JpaRepository<Order, String> {
     List<Order> findByStatus(String status);
     List<Order> findByAssignedTeamId(String assignedTeamId);
+    List<Order> findBySharedRosterId(String sharedRosterId);
 
     /** 取出指定前綴的訂單編號（產生不重複序號用） */
     @Query("SELECT o.id FROM Order o WHERE o.id LIKE CONCAT(:prefix, '%')")

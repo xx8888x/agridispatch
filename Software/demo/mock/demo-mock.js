@@ -257,6 +257,183 @@
       return Object.assign({}, w, { available: start ? !busy : null, unavailableReason: busy ? '該期間已有排班' : null });
     }) });
   }
+  // ---------------- 社區共享班表（移植 RosterService）：班表基本資料取錄製（admin 視角），時段格依目前訂單即時算 ----------------
+  var ROSTER_LABEL = { open: '開放認領', confirmed: '已開班', cancelled: '已取消', completed: '已結束' };
+  function isoDay(d) { return localStamp(d).slice(0, 10); }
+  function addDaysIso(iso, n) { var d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return isoDay(d); }
+  function rosterList() {
+    var e = get('GET /rosters') || { s: 200, b: { success: true, data: [] } };
+    return { entry: e, list: listOf(e) || [] };
+  }
+  function saveRoster(r) {
+    var st = rosterList(), found = false;
+    st.list = st.list.map(function (x) { if (x.id === r.id) { found = true; return r; } return x; });
+    if (!found) st.list.push(r);
+    st.entry.b.data = st.list;
+    put('GET /rosters', st.entry);
+  }
+  function rosterClaims(r) {
+    return (listOf(get('GET /orders')) || []).filter(function (o) {
+      return o.sharedRosterId === r.id && ['pending', 'confirmed', 'in_progress', 'completed'].indexOf(o.status) >= 0;
+    });
+  }
+  function rosterPercent(r) {
+    var days = Math.round((new Date(r.endDate + 'T00:00:00') - new Date(r.startDate + 'T00:00:00')) / 86400000) + 1;
+    var claimed = rosterClaims(r).reduce(function (t, o) { return t + (slotOf(o) === 'full_day' ? 2 : 1); }, 0);
+    return { total: days * 2, claimed: claimed, pct: Math.floor(claimed * 100 / (days * 2)) };
+  }
+  function rosterView(r) {
+    var me = currentUser() || {}, admin = me.role === 'admin_tech', today = isoDay(new Date());
+    var v = clone(r), p = rosterPercent(r), claims = rosterClaims(r);
+    var claimable = (r.status === 'open' || r.status === 'confirmed') && !(r.status === 'open' && today > r.claimDeadline);
+    v.statusLabel = ROSTER_LABEL[r.status] || r.status;
+    v.totalSlots = p.total; v.claimedSlots = p.claimed; v.claimPercent = p.pct;
+    v.thresholdMet = p.pct >= r.minClaimPercent; v.claimable = claimable;
+    v.days = [];
+    for (var d = r.startDate; d <= r.endDate; d = addDaysIso(d, 1)) {
+      var day = { date: d };
+      ['morning', 'afternoon'].forEach(function (slot) {
+        var taken = claims.filter(function (o) { return o.startDate === d && slotsOverlap(slot, slotOf(o)); })[0];
+        var mine = taken && me.role === 'farmer' && taken.farmerId === me.refId;
+        var cell = { state: taken ? (mine ? 'mine' : 'taken') : (claimable && d > today ? 'free' : 'closed') };
+        if (taken && (admin || mine)) { cell.orderId = taken.id; cell.orderStatus = taken.status; cell.fullDay = slotOf(taken) === 'full_day'; }
+        if (taken && admin) { cell.farmerName = taken.farmerName; cell.farmLocation = taken.farmLocation; }
+        day[slot] = cell;
+      });
+      v.days.push(day);
+    }
+    if (!admin) delete v.crew;
+    return v;
+  }
+  function rosterPrices(n) {
+    var q = function (hours, plan) {
+      var total = n * hours * (plan === 'early_bird' ? EARLY_BIRD_RATE : 310);
+      return { total: total, deposit: plan === 'early_bird' ? Math.round(total * 0.2) : 0, hours: n * hours };
+    };
+    return { halfDay: { early_bird: q(4, 'early_bird'), hourly_flex: q(4, 'hourly_flex') },
+      fullDay: { early_bird: q(8, 'early_bird'), hourly_flex: q(8, 'hourly_flex') } };
+  }
+  function rostersApi(id) {
+    var me = currentUser() || {};
+    if (me.role !== 'admin_tech' && me.role !== 'farmer') return respond(403, { success: false, error: 'FORBIDDEN' });
+    var list = rosterList().list.filter(function (r) { return me.role === 'admin_tech' || r.status === 'open' || r.status === 'confirmed'; });
+    if (id) {
+      var r = list.filter(function (x) { return x.id === id; })[0];
+      return r ? respond(200, { success: true, data: rosterView(r) }) : respond(404, { success: false, error: '找不到共享班表：' + id });
+    }
+    list.sort(function (a, b) { return a.startDate < b.startDate ? -1 : a.startDate > b.startDate ? 1 : String(a.id).localeCompare(String(b.id)); });
+    return respond(200, { success: true, data: list.map(rosterView) });
+  }
+  function rosterCreate(b) {
+    if ((currentUser() || {}).role !== 'admin_tech') return respond(403, { success: false, error: 'FORBIDDEN' });
+    var today = isoDay(new Date());
+    if (blank(b.title) || blank(b.region)) return respond(400, { success: false, error: '名稱與派駐地區為必填' });
+    if (!b.startDate || !b.endDate || b.startDate <= today) return respond(400, { success: false, error: '開工日須在今天之後' });
+    if (b.endDate < b.startDate) return respond(400, { success: false, error: '結束日不可早於開工日' });
+    if (addDaysIso(b.startDate, 30) < b.endDate) return respond(400, { success: false, error: '共享班表最長 31 天' });
+    var crew = (b.crew || []).map(function (id) { return findIn('GET /workers', id); });
+    if (!crew.length || crew.some(function (w) { return !w || w.teamId !== b.teamId; })) return respond(400, { success: false, error: '名單須為該工班成員' });
+    var deadline = b.claimDeadline || addDaysIso(b.startDate, -3);
+    if (deadline < today) deadline = today;
+    if (deadline >= b.startDate) return respond(400, { success: false, error: '認領截止日須早於開工日' });
+    var cat = blank(b.dispatchCategory) ? 'harvest_grading' : b.dispatchCategory;
+    if (cat === 'typhoon_emergency' || !CATEGORY[cat]) return respond(400, { success: false, error: '不支援的派工類別：' + cat });
+    var team = (listOf(get('GET /dispatch/teams')) || []).filter(function (t) { return t.id === b.teamId; })[0] || {};
+    var leader = crew.filter(function (w) { return w.leader; })[0];
+    var st = rosterList();
+    var r = {
+      id: nextId(st.list.filter(function (x) { return /^SR-\d{4}-\d+$/.test(x.id); }), 'SR-' + today.slice(0, 4) + '-'),
+      title: String(b.title).trim(), region: String(b.region).trim(), description: blank(b.description) ? null : String(b.description),
+      status: 'open', cancelReason: null, dispatchCategory: cat, categoryName: CATEGORY[cat][0],
+      startDate: b.startDate, endDate: b.endDate, claimDeadline: deadline,
+      minClaimPercent: Math.min(100, Math.max(1, parseInt(b.minClaimPercent, 10) || 60)),
+      teamId: b.teamId, teamName: team.name || b.teamId, crewSize: crew.length, leaderName: leader ? (leader.chineseName || leader.name) : undefined,
+      crew: crew.map(function (w) { return { workerId: w.id, name: w.chineseName || w.name, leader: !!w.leader }; }),
+      prices: rosterPrices(crew.length)
+    };
+    saveRoster(r);
+    return respond(201, { success: true, data: rosterView(r), message: '共享班表已開放認領' });
+  }
+  function rosterClaim(id, b) {
+    var me = currentUser() || {};
+    if (me.role !== 'farmer') return respond(403, { success: false, error: 'FORBIDDEN' });
+    var r = rosterList().list.filter(function (x) { return x.id === id; })[0];
+    if (!r) return respond(404, { success: false, error: '找不到共享班表：' + id });
+    var today = isoDay(new Date()), slot;
+    try { slot = normSlot(b.timeSlot); } catch (err) { return respond(400, { success: false, error: err.message }); }
+    if (r.status !== 'open' && r.status !== 'confirmed') return respond(409, { success: false, error: '班表' + ROSTER_LABEL[r.status] + '，無法認領' });
+    if (r.status === 'open' && today > r.claimDeadline) return respond(409, { success: false, error: '班表已過認領截止日（' + r.claimDeadline + '）' });
+    if (!b.date || b.date < r.startDate || b.date > r.endDate) return respond(400, { success: false, error: '日期不在班表期間（' + r.startDate + '～' + r.endDate + '）內' });
+    if (b.date <= today) return respond(400, { success: false, error: '最早只能認領明天的時段' });
+    var clash = rosterClaims(r).some(function (o) { return o.startDate === b.date && slotsOverlap(slot, slotOf(o)); });
+    if (clash) return respond(409, { success: false, error: b.date + ' ' + SLOTS[slot] + ' 已被認領，請改選其他時段' });
+    var plan = blank(b.plan) ? 'early_bird' : b.plan;
+    if (plan !== 'early_bird' && plan !== 'hourly_flex') return respond(400, { success: false, error: '共享班表只提供早鳥工時包或彈性計時' });
+    var crop = findIn('GET /crops', b.cropId);
+    if (!crop) return respond(400, { success: false, error: '查無作物代號：' + b.cropId });
+    if (!(+b.area > 0)) return respond(400, { success: false, error: '面積 (area) 必須大於 0' });
+    if (blank(b.farmerName)) return respond(400, { success: false, error: '農場主姓名為必填' });
+    var farm = null;
+    if (!blank(b.farmId)) {
+      var fk = farmKey();
+      farm = fk ? farmList(fk).filter(function (f) { return f.id === b.farmId; })[0] : null;
+      if (!farm) return respond(400, { success: false, error: '找不到選擇的農場，請重新選擇' });
+    }
+    var crewIds = (r.crew || []).map(function (c) { return c.workerId; });
+    var n = crewIds.length, hours = n * (slot === 'full_day' ? 8 : 4), rate = plan === 'early_bird' ? EARLY_BIRD_RATE : 310;
+    var total = hours * rate, deposit = plan === 'early_bird' ? Math.round(total * 0.2) : 0;
+    var now = new Date(), pad = function (x) { return (x < 10 ? '0' : '') + x; };
+    var e = get('GET /orders') || { s: 200, b: { success: true, data: [] } };
+    var list = listOf(e);
+    var order = {
+      id: nextId(list.filter(function (x) { return /^ORD-\d{4}-\d+$/.test(x.id); }), 'ORD-' + now.getFullYear() + '-'),
+      farmerId: me.refId, farmerName: String(b.farmerName).trim(), phone: b.phone || null, farmLocation: b.farmLocation || null,
+      farmId: farm ? farm.id : null, farmName: farm ? farm.farmName : null,
+      cropId: crop.id, cropName: crop.name, area: +b.area, plan: plan,
+      planName: plan === 'early_bird' ? '【共享班表】早鳥工時包 ($315/hr・20%定金)' : '【共享班表】彈性計時 ($310/hr・免定金)',
+      dispatchCategory: r.dispatchCategory, categoryName: r.categoryName, transportZone: 'core_35km', transportSurcharge: 0,
+      totalHours: hours, suggestedWorkers: n, requestedWorkers: n, unitRate: rate, standardAmount: total, finalAmount: total,
+      depositAmount: deposit, depositPaid: false, status: deposit > 0 ? 'pending' : 'confirmed',
+      assignedTeamId: r.teamId, crewWorkerIds: crewIds.join(','), sharedRosterId: r.id,
+      startDate: b.date, endDate: b.date, timeSlot: slot,
+      foremanName: blank(b.foremanName) ? String(b.farmerName).trim() + ' (本人帶隊)' : b.foremanName,
+      foremanPhone: blank(b.foremanPhone) ? (b.phone || null) : b.foremanPhone, foremanNotes: b.foremanNotes || null,
+      createdAt: now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds())
+    };
+    list.push(order);
+    put('GET /orders', e);
+    put('GET /orders/' + encodeURIComponent(order.id), { s: 200, b: { success: true, data: order } });
+    return respond(201, { success: true, data: order, message: '已認領時段，成立訂單' });
+  }
+  function rosterAction(id, action, b) {
+    if ((currentUser() || {}).role !== 'admin_tech') return respond(403, { success: false, error: 'FORBIDDEN' });
+    var r = rosterList().list.filter(function (x) { return x.id === id; })[0];
+    if (!r) return respond(404, { success: false, error: '找不到共享班表：' + id });
+    if (action === 'confirm') {
+      if (r.status !== 'open') return respond(409, { success: false, error: '班表' + ROSTER_LABEL[r.status] + '，無法開班' });
+      var p = rosterPercent(r);
+      if (p.pct < r.minClaimPercent) return respond(409, { success: false, error: '認領 ' + p.pct + '%，未達門檻 ' + r.minClaimPercent + '%，無法開班' });
+      r.status = 'confirmed';
+      saveRoster(r);
+      return respond(200, { success: true, data: rosterView(r), message: '班表已開班' });
+    }
+    if (r.status !== 'open' && r.status !== 'confirmed') return respond(409, { success: false, error: '班表' + ROSTER_LABEL[r.status] + '，無法取消' });
+    var claims = rosterClaims(r);
+    if (claims.some(function (o) { return o.status === 'in_progress'; })) return respond(409, { success: false, error: '班表已有施工中的訂單，請先處理施工中的時段再取消' });
+    var refunds = 0, cancelled = [];
+    claims.forEach(function (o) {
+      var ref = orderRef(o.id);
+      if (!ref) return;
+      if (ref.order.depositPaid) refunds++;
+      ref.order.status = 'cancelled';
+      saveOrder(ref);
+      cancelled.push(o.id);
+    });
+    r.status = 'cancelled';
+    r.cancelReason = blank(b && b.reason) ? '合作社取消' : String(b.reason).slice(0, 200);
+    saveRoster(r);
+    return respond(200, { success: true, data: { cancelledOrders: cancelled, refundsNeeded: refunds, roster: rosterView(r) }, message: '班表已取消' });
+  }
   function findIn(listKey, id) {
     var list = listOf(get(listKey)) || [];
     for (var i = 0; i < list.length; i++) if (String(list[i].id) === String(id)) return list[i];
@@ -424,6 +601,10 @@
     var o = ref.order;
     if (o.status === 'cancelled' || o.status === 'completed') return respond(409, { success: false, error: '已取消或已完工的訂單不可修改' });
     if (u.area != null && (u.area < 0 || isNaN(u.area))) return respond(400, { success: false, error: '面積必須大於 0' });
+    if (o.sharedRosterId && ['cropId', 'area', 'plan', 'transportZone', 'dispatchCategory', 'requestedWorkers', 'startDate', 'endDate', 'timeSlot', 'assignedTeamId']
+      .some(function (f) { return u[f] != null && String(u[f]) !== String(o[f] == null ? (f === 'timeSlot' ? 'full_day' : '') : o[f]); })) {
+      return respond(409, { success: false, error: '共享班表的時段訂單不可修改作物、面積、方案、人數、工期或時段；請取消後重新認領' });
+    }
     var priced = false;
     if (u.cropId != null && u.cropId !== o.cropId) { o.cropId = u.cropId; priced = true; }
     if (u.area > 0 && +u.area !== +o.area) { o.area = +u.area; priced = true; }
@@ -1094,6 +1275,12 @@
         roleDesc: (r.farmName || '自助註冊') + ' 農場主' } });
     }
 
+    var rs = /^\/rosters(?:\/([^/]+)(?:\/(claims|confirm|cancel))?)?$/.exec(sp.path);
+    if (rs && method === 'POST') {
+      if (!rs[1]) return rosterCreate(body || {});
+      if (rs[2] === 'claims') return rosterClaim(decodeURIComponent(rs[1]), body || {});
+      if (rs[2]) return rosterAction(decodeURIComponent(rs[1]), rs[2], body || {});
+    }
     var fm = /^\/farmers\/me\/farms(?:\/([^/]+))?$/.exec(sp.path);
     if (fm) return farmApi(method, fm[1] && decodeURIComponent(fm[1]), body);
 
@@ -1229,6 +1416,8 @@
       }
       if (sp.path === '/farmers/me/farms') return farmApi('GET');
       if (sp.path === '/farmers/me/past-workers') return pastWorkersApi(sp.query);
+      var rg = /^\/rosters(?:\/([^/]+))?$/.exec(sp.path);
+      if (rg) return rostersApi(rg[1] && decodeURIComponent(rg[1]));
       if (sp.path === '/line/config') {
         // 錄製時 LINE Bot 沒開；純前端示範的對話由頁面模擬，狀態顯示「模擬中」。金鑰等正式設定照實呈現。
         var lc = findGet(p) || { s: 200, b: { success: true } };

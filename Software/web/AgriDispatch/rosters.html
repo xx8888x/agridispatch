@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 AgriDispatch - 社區共享班表</title>
+  <script src="js/app-config.js"></script>
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AgriAuth) window.AgriAuth.requireRole(['farmer'], 'farmer-login.html');
+  </script>
+  <script>
+    if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode !== 'production') {
+      document.write('<script src="js/demo-accounts.js"><\/script>');
+    }
+  </script>
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
+  <script src="js/agri-theme.js"></script>
+  <script src="js/vendor/lucide.min.js"></script>
+  <script>
+    if (typeof lucide === 'undefined') {
+      document.write('<script src="https://unpkg.com/lucide@1.47.0"><\/script>');
+    }
+  </script>
+  <link rel="stylesheet" href="css/agri.css">
+  <style>
+    .rs-grid { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
+    .rs-grid th { text-align: left; font-weight: 500; color: var(--ad-text-2); font-size: 13px; padding: 0 6px; }
+    .rs-grid td { padding: 0 6px; vertical-align: middle; }
+    .rs-cell { width: 100%; min-height: 44px; border-radius: 10px; border: 1px solid var(--ad-border); background: var(--ad-surface);
+      color: var(--ad-text); font-size: 14px; padding: 6px 10px; text-align: left; display: flex; flex-direction: column; justify-content: center; }
+    .rs-cell--free { border-color: var(--ad-primary); color: var(--ad-primary-text); cursor: pointer; }
+    .rs-cell--free:hover { background: var(--ad-primary-soft); }
+    .rs-cell--picked { background: var(--ad-primary); color: #fff; border-color: var(--ad-primary); }
+    .rs-cell--taken, .rs-cell--closed { color: var(--ad-text-3, var(--ad-text-2)); background: var(--ad-surface-2, var(--ad-surface)); cursor: default; }
+    .rs-cell--mine { border-color: var(--ad-accent, #d97706); background: var(--ad-accent-soft); color: var(--ad-accent-text); }
+    .rs-bar { position: relative; height: 10px; border-radius: 999px; background: var(--ad-surface-2, #e5e7eb); overflow: hidden; }
+    .rs-bar__fill { position: absolute; inset: 0 auto 0 0; background: var(--ad-primary); border-radius: 999px; }
+    .rs-bar__mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ad-accent-text); }
+  </style>
+</head>
+<body class="ad-body ad-has-tabbar min-h-screen flex flex-col">
+
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner">
+      <a href="index.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">農場主</span>
+      </a>
+      <nav class="ad-nav" aria-label="農場主導覽">
+        <a class="ad-nav__link" href="farmer.html">預約派工</a>
+        <a class="ad-nav__link" href="farmer.html#orders">我的訂單</a>
+        <a class="ad-nav__link is-active" href="rosters.html">社區班表</a>
+        <a class="ad-nav__link" href="expenses.html">支出明細</a>
+      </nav>
+      <div class="ad-header__actions">
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i>示範導覽</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="ad-tabbar" aria-label="農場主導覽">
+    <a class="ad-tabbar__item" href="farmer.html"><i data-lucide="calendar-plus" class="ad-icon"></i>預約</a>
+    <a class="ad-tabbar__item" href="farmer.html#orders"><i data-lucide="clipboard-list" class="ad-icon"></i>訂單</a>
+    <a class="ad-tabbar__item is-active" href="rosters.html"><i data-lucide="users" class="ad-icon"></i>班表</a>
+    <a class="ad-tabbar__item" href="expenses.html"><i data-lucide="receipt" class="ad-icon"></i>支出</a>
+  </nav>
+
+  <main class="flex-1 ad-container w-full" style="padding-block: 24px 40px; display: flex; flex-direction: column; gap: 20px;">
+    <div>
+      <h1 class="ad-display">社區共享班表</h1>
+      <p class="ad-caption" style="margin-top: 6px; max-width: 760px;">合作社把一組工班整段期間派駐在你這一區，每天分上午 07–11、下午 13–17 兩格，小面積只要認領半天。整組工班一起到你的農場，價格照一般計時、不加價。認領截止時沒有達到門檻，整個班表會取消並退還定金。</p>
+    </div>
+
+    <div id="loadError" class="ad-notice ad-notice--danger" role="alert" hidden></div>
+    <div id="notice" class="ad-notice ad-notice--ok" role="status" hidden></div>
+    <div id="rosters" style="display: flex; flex-direction: column; gap: 20px;"></div>
+  </main>
+
+  <!-- 認領表單（點選空格後出現） -->
+  <div id="claimPanel" class="ad-card" hidden style="position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(560px, calc(100% - 32px)); z-index: 60; padding: 20px; box-shadow: 0 12px 40px rgba(0,0,0,.25); max-height: calc(100vh - 32px); overflow-y: auto;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+      <div>
+        <div class="ad-label">認領時段</div>
+        <div id="cWhen" class="ad-heading" style="margin-top: 2px;"></div>
+      </div>
+      <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" onclick="closeClaim()" aria-label="關閉"><i data-lucide="x" class="ad-icon ad-icon--sm"></i></button>
+    </div>
+    <form onsubmit="submitClaim(event)" style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
+      <div id="cSpanField" class="ad-field">
+        <span class="ad-label" id="cSpanLabel">要認領</span>
+        <div class="ad-seg" role="radiogroup" aria-labelledby="cSpanLabel" style="align-self: flex-start;">
+          <label class="ad-seg__btn is-active"><input type="radio" name="cSpan" value="half" checked onchange="renderClaimPrice()">只要這半天</label>
+          <label class="ad-seg__btn"><input type="radio" name="cSpan" value="full" onchange="renderClaimPrice()">這天整天</label>
+        </div>
+      </div>
+      <div class="ad-field">
+        <label class="ad-label ad-label--req" for="cFarm">農場</label>
+        <select id="cFarm" class="ad-select" required></select>
+        <span id="cFarmHint" class="ad-hint"></span>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 120px; gap: 12px;">
+        <div class="ad-field">
+          <label class="ad-label ad-label--req" for="cCrop">作物</label>
+          <select id="cCrop" class="ad-select" required></select>
+        </div>
+        <div class="ad-field">
+          <label class="ad-label ad-label--req" for="cArea">面積（分地）</label>
+          <input id="cArea" class="ad-input ad-num" type="number" inputmode="decimal" min="0.1" max="50" step="0.1" value="1" required>
+        </div>
+      </div>
+      <div class="ad-field">
+        <span class="ad-label" id="cPlanLabel">計價方式</span>
+        <div class="ad-seg" role="radiogroup" aria-labelledby="cPlanLabel" style="align-self: flex-start;">
+          <label class="ad-seg__btn is-active"><input type="radio" name="cPlan" value="early_bird" checked onchange="renderClaimPrice()">早鳥 315 元・預付 20%</label>
+          <label class="ad-seg__btn"><input type="radio" name="cPlan" value="hourly_flex" onchange="renderClaimPrice()">彈性 310 元・免定金</label>
+        </div>
+      </div>
+      <div class="ad-field">
+        <label class="ad-label" for="cNotes">現場交辦（選填）</label>
+        <input id="cNotes" class="ad-input" maxlength="255" placeholder="例如：從東側產業道路進來，工具在工寮">
+      </div>
+      <div class="ad-card ad-card--inset" style="padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+        <div class="ad-caption" id="cPriceNote"></div>
+        <div class="ad-heading ad-num" id="cPrice" style="color: var(--ad-accent-text);"></div>
+      </div>
+      <div id="cError" class="ad-caption" style="color: var(--ad-danger-text);" role="alert"></div>
+      <button type="submit" id="cSubmit" class="ad-btn ad-btn--primary">確認認領</button>
+    </form>
+  </div>
+
+  <script>
+    const base = () => (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const money = (n) => `NT$ ${Number(n || 0).toLocaleString()}`;
+    const WEEK = ['日', '一', '二', '三', '四', '五', '六'];
+    const md = (iso) => { const d = new Date(iso + 'T00:00:00'); return `${d.getMonth() + 1}/${d.getDate()}（${WEEK[d.getDay()]}）`; };
+    let rosters = [];
+    let farms = [];
+    let picked = null;   // { rosterId, date, slot }
+
+    async function api(path, options) {
+      const res = await fetch(`${base()}${path}`, options);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body.success === false) throw new Error(body.error || body.message || `HTTP ${res.status}`);
+      return body.data;
+    }
+    function show(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg || '';
+      el.hidden = !msg;
+    }
+
+    async function init() {
+      try {
+        const [list, farmList, crops] = await Promise.all([api('/rosters'), api('/farmers/me/farms').catch(() => []), api('/crops').catch(() => [])]);
+        rosters = list || [];
+        farms = farmList || [];
+        document.getElementById('cCrop').innerHTML = (crops || []).map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+        document.getElementById('cFarm').innerHTML = farms.length
+          ? farms.map(f => `<option value="${esc(f.id)}">${esc(f.farmName)}・${esc(f.address)}</option>`).join('')
+          : '<option value="">尚未登錄農場</option>';
+        document.getElementById('cFarmHint').innerHTML = farms.length ? '' : '請先到<a href="farmer.html" style="text-decoration: underline;">預約派工</a>登錄農場';
+        render();
+      } catch (e) {
+        show('loadError', `無法載入共享班表：${e.message}`);
+      }
+    }
+
+    function render() {
+      const box = document.getElementById('rosters');
+      if (!rosters.length) {
+        box.innerHTML = '<div class="ad-card ad-caption" style="padding: 24px; text-align: center;">目前沒有開放認領的共享班表。合作社開班後會在這裡公告，也會推播到 LINE。</div>';
+        return;
+      }
+      box.innerHTML = rosters.map(r => {
+        const pctColor = r.thresholdMet ? 'var(--ad-primary-text)' : 'var(--ad-accent-text)';
+        const pill = r.status === 'confirmed' ? '<span class="ad-pill ad-pill--ok">已開班</span>'
+          : (r.claimable ? '<span class="ad-pill ad-pill--warn">開放認領</span>' : '<span class="ad-pill">已截止，等待確認</span>');
+        const half = r.prices.halfDay, full = r.prices.fullDay;
+        const rows = r.days.map(d => `
+          <tr>
+            <td class="ad-num" style="white-space: nowrap; font-size: 14px;">${md(d.date)}</td>
+            <td>${cell(r, d, 'morning')}</td>
+            <td>${cell(r, d, 'afternoon')}</td>
+          </tr>`).join('');
+        return `
+        <section class="ad-card" style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px;">
+            <div style="min-width: 0;">
+              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;"><h2 class="ad-title">${esc(r.title)}</h2>${pill}</div>
+              <p class="ad-caption" style="margin-top: 4px;">${esc(r.region)}・${esc(r.categoryName)}</p>
+            </div>
+            <div class="ad-caption" style="text-align: right;">
+              <div>${esc(r.teamName || r.teamId)}・${r.crewSize} 人${r.leaderName ? `・領班 ${esc(r.leaderName)}` : ''}</div>
+              <div>${md(r.startDate)} ～ ${md(r.endDate)}</div>
+            </div>
+          </div>
+          ${r.description ? `<p class="ad-caption">${esc(r.description)}</p>` : ''}
+          <div>
+            <div style="display: flex; justify-content: space-between; gap: 8px;" class="ad-caption">
+              <span>已認領 <strong class="ad-num" style="color: ${pctColor};">${r.claimedSlots}/${r.totalSlots} 格（${r.claimPercent}%）</strong>・門檻 ${r.minClaimPercent}%</span>
+              <span>認領截止 ${md(r.claimDeadline)}</span>
+            </div>
+            <div class="rs-bar" style="margin-top: 6px;" role="img" aria-label="已認領 ${r.claimPercent}%，門檻 ${r.minClaimPercent}%">
+              <div class="rs-bar__fill" style="width: ${Math.min(100, r.claimPercent)}%;"></div>
+              <div class="rs-bar__mark" style="left: ${r.minClaimPercent}%;"></div>
+            </div>
+          </div>
+          <div class="ad-caption">每格價格（整組 ${r.crewSize} 人到場）：半天 早鳥 <strong class="ad-num">${money(half.early_bird.total)}</strong>（定金 ${money(half.early_bird.deposit)}）／彈性 <strong class="ad-num">${money(half.hourly_flex.total)}</strong>；整天 早鳥 <strong class="ad-num">${money(full.early_bird.total)}</strong>／彈性 <strong class="ad-num">${money(full.hourly_flex.total)}</strong></div>
+          <table class="rs-grid">
+            <thead><tr><th style="width: 92px;">日期</th><th>上午 07–11</th><th>下午 13–17</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </section>`;
+      }).join('');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function cell(r, d, slot) {
+      const c = d[slot];
+      const isPicked = picked && picked.rosterId === r.id && picked.date === d.date && picked.slot === slot;
+      if (c.state === 'free') {
+        return `<button type="button" class="rs-cell rs-cell--free${isPicked ? ' rs-cell--picked' : ''}" data-r="${esc(r.id)}" data-d="${esc(d.date)}" data-s="${slot}" onclick="pick(this.dataset.r, this.dataset.d, this.dataset.s)">${isPicked ? '已選取' : '可認領'}</button>`;
+      }
+      if (c.state === 'mine') {
+        const canLeave = c.orderStatus === 'pending' || c.orderStatus === 'confirmed';
+        return `<div class="rs-cell rs-cell--mine"><span>我的時段${c.fullDay ? '（整天）' : ''}</span>
+          <span class="ad-caption" style="display: flex; flex-wrap: wrap; gap: 4px 10px;"><a href="farmer.html#orders" class="ad-num" style="text-decoration: underline;">${esc(c.orderId)}</a>${canLeave ? `<button type="button" data-o="${esc(c.orderId)}" onclick="leave(this.dataset.o)" style="text-decoration: underline;">退出</button>` : ''}</span></div>`;
+      }
+      return `<div class="rs-cell rs-cell--${c.state}">${c.state === 'taken' ? '已被認領' : '—'}</div>`;
+    }
+
+    function pick(rosterId, date, slot) {
+      picked = { rosterId, date, slot };
+      const r = rosters.find(x => x.id === rosterId);
+      const d = r.days.find(x => x.date === date);
+      const other = d[slot === 'morning' ? 'afternoon' : 'morning'];
+      const fullOk = other.state === 'free';
+      document.getElementById('cSpanField').hidden = !fullOk;
+      document.querySelector('input[name="cSpan"][value="half"]').checked = true;
+      document.getElementById('cError').textContent = '';
+      render();
+      renderClaimPrice();
+      document.getElementById('claimPanel').hidden = false;
+    }
+
+    function closeClaim() {
+      picked = null;
+      document.getElementById('claimPanel').hidden = true;
+      render();
+    }
+
+    function claimInput() {
+      const full = !document.getElementById('cSpanField').hidden && document.querySelector('input[name="cSpan"]:checked').value === 'full';
+      return { full, plan: document.querySelector('input[name="cPlan"]:checked').value };
+    }
+
+    function renderClaimPrice() {
+      if (!picked) return;
+      const r = rosters.find(x => x.id === picked.rosterId);
+      const { full, plan } = claimInput();
+      document.querySelectorAll('#claimPanel .ad-seg__btn').forEach(lab => {
+        const i = lab.querySelector('input');
+        lab.classList.toggle('is-active', !!(i && i.checked));
+      });
+      const p = (full ? r.prices.fullDay : r.prices.halfDay)[plan];
+      const slotText = full ? '整天 07–11、13–17' : (picked.slot === 'morning' ? '上午 07–11' : '下午 13–17');
+      document.getElementById('cWhen').textContent = `${r.title}・${md(picked.date)} ${slotText}`;
+      document.getElementById('cPrice').textContent = money(p.total);
+      document.getElementById('cPriceNote').textContent = `${r.crewSize} 人 × ${full ? 8 : 4} 小時 = ${p.hours} 工時` + (p.deposit ? `・定金 ${money(p.deposit)}` : '・免定金');
+    }
+
+    async function submitClaim(e) {
+      e.preventDefault();
+      const btn = document.getElementById('cSubmit');
+      const farm = farms.find(f => f.id === document.getElementById('cFarm').value);
+      if (!farm) { document.getElementById('cError').textContent = '請先登錄農場再認領'; return; }
+      const { full, plan } = claimInput();
+      let user = {};
+      try { user = JSON.parse(sessionStorage.getItem('agri_user') || '{}'); } catch (err) {}
+      btn.disabled = true;
+      try {
+        const order = await api(`/rosters/${encodeURIComponent(picked.rosterId)}/claims`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date: picked.date, timeSlot: full ? 'full_day' : picked.slot,
+            farmId: farm.id, farmerName: user.name || farm.contactName, phone: farm.phone, farmLocation: farm.address,
+            foremanName: farm.contactName, foremanPhone: farm.phone,
+            cropId: document.getElementById('cCrop').value, area: parseFloat(document.getElementById('cArea').value) || 0,
+            plan, foremanNotes: document.getElementById('cNotes').value || null
+          })
+        });
+        closeClaim();
+        show('notice', `已認領，成立訂單 ${order.id}（${money(order.finalAmount)}${order.depositAmount ? `，請到「我的訂單」付定金 ${money(order.depositAmount)}` : '，免定金'}）`);
+        await reload();
+      } catch (err) {
+        document.getElementById('cError').textContent = err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function leave(orderId) {
+      if (!confirm(`確定退出這個時段？訂單 ${orderId} 會取消。`)) return;
+      try {
+        await api(`/orders/${encodeURIComponent(orderId)}`, { method: 'DELETE' });
+        show('notice', `已退出時段，訂單 ${orderId} 已取消`);
+        await reload();
+      } catch (err) {
+        show('loadError', `退出失敗：${err.message}`);
+      }
+    }
+
+    async function reload() {
+      rosters = await api('/rosters');
+      render();
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+
+  <script>
+    var demoNav = AgriTheme.demoNav();
+    if (window.lucide) lucide.createIcons();
+  </script>
+</body>
+</html>

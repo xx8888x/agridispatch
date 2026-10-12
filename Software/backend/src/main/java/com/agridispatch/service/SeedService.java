@@ -60,6 +60,8 @@ public class SeedService {
     private final PasswordHasher passwordHasher;
     private final AgriSettings settings;
     private final com.agridispatch.repository.FinancialLedgerRepository financialLedgerRepository;
+    private final com.agridispatch.repository.SharedRosterRepository sharedRosterRepository;
+    private final OrderService orderService;
 
     /** demo 密碼雜湊快取（310,000 次 PBKDF2 較耗時，demo 種子共用同一組雜湊） */
     private String demoPasswordHash;
@@ -80,7 +82,9 @@ public class SeedService {
                        LegalizeWorkerRepository legalizeWorkerRepository,
                        com.agridispatch.repository.FinancialLedgerRepository financialLedgerRepository,
                        PasswordHasher passwordHasher,
-                       AgriSettings settings) {
+                       AgriSettings settings,
+                       com.agridispatch.repository.SharedRosterRepository sharedRosterRepository,
+                       OrderService orderService) {
         this.userRepository = userRepository;
         this.cropRepository = cropRepository;
         this.teamRepository = teamRepository;
@@ -98,6 +102,8 @@ public class SeedService {
         this.financialLedgerRepository = financialLedgerRepository;
         this.passwordHasher = passwordHasher;
         this.settings = settings;
+        this.sharedRosterRepository = sharedRosterRepository;
+        this.orderService = orderService;
     }
 
     public void seedAll(boolean cleanFirst) {
@@ -111,6 +117,7 @@ public class SeedService {
             skillReviewRepository.deleteAll();
             paymentTransactionRepository.deleteAll();
             orderRepository.deleteAll();
+            sharedRosterRepository.deleteAll();   // 參照 dispatch_teams
             workerRepository.deleteAll();
             talentRepository.deleteAll();
             cropRepository.deleteAll();
@@ -138,6 +145,7 @@ public class SeedService {
         if (demoData) {
             seedWeatherStates();
             seedAttendance();
+            if (settings.isDemoEnabled()) seedRosters();
         } else {
             log.info("[種子] 未寫入示範資料（agri.seed.demo-data 未開啟）；只補齊管理員、作物費率與工時包 DM");
         }
@@ -971,6 +979,72 @@ public class SeedService {
     }
 
     /** ORD-2026-013（工班 B、枋山愛文芒果）9/25 起 4 天、6 人、每日 7 小時的出勤紀錄，供合法用工證明示範 */
+    /**
+     * 路演用的社區共享班表（只在 demo 模式）：工班 A 的本國工人在下下週一起 5 天派駐八德，
+     * 八德示範農戶（無登入帳號）已認領 3 格，陳建龍（F001）可現場示範認領。期間取相對日期，示範時永遠有一個開放中的班表
+     */
+    private void seedRosters() {
+        if (sharedRosterRepository.existsById("SR-DEMO-001")) return;
+        java.time.LocalDate start = java.time.LocalDate.now().plusDays(7)
+                .with(java.time.temporal.TemporalAdjusters.next(java.time.DayOfWeek.MONDAY));
+        com.agridispatch.entity.SharedRoster r = new com.agridispatch.entity.SharedRoster();
+        r.setId("SR-DEMO-001");
+        r.setTitle("八德有機蔬菜產銷班 共享班表");
+        r.setRegion("桃園市八德區興豐路一帶");
+        r.setDescription("同一組工班整週駐點八德，每天上午、下午各一格，小面積農戶可只認領半天；開工前 3 天認領達 60% 才開班。");
+        r.setTeamId("team_a");
+        r.setCrewWorkerIds("W030,W031,W032");
+        r.setDispatchCategory("harvest_grading");
+        r.setStartDate(start);
+        r.setEndDate(start.plusDays(4));
+        r.setMinClaimPercent(60);
+        r.setClaimDeadline(start.minusDays(3));
+        r.setStatus(com.agridispatch.entity.SharedRoster.OPEN);
+        r = sharedRosterRepository.save(r);
+        // 認領訂單直接組（OrderService.createRosterClaim 會暫停交易，看不到同一交易剛寫入的作物）；編號不佔 ORD-yyyy-NNN 序號
+        orderRepository.save(demoRosterClaim(r, "ORD-SR-DEMO-1", start, Order.MORNING));
+        orderRepository.save(demoRosterClaim(r, "ORD-SR-DEMO-2", start.plusDays(1), Order.FULL_DAY));
+        log.info("[種子] 示範共享班表 SR-DEMO-001（{}～{}）", start, start.plusDays(4));
+    }
+
+    private Order demoRosterClaim(com.agridispatch.entity.SharedRoster r, String id, java.time.LocalDate day, String slot) {
+        List<String> crew = r.crewList();
+        Map<String, Object> q = orderService.quoteRosterSlot(crew.size(), slot, "hourly_flex");
+        Order o = new Order();
+        o.setId(id);
+        o.setFarmerId("F-DEMO-RS");   // 不對應任何登入帳號：示範帳號的訂單清單不受影響
+        o.setFarmerName("黃阿土 (八德示範農戶)");
+        o.setPhone("0933-222-111");
+        o.setFarmLocation("桃園市八德區興豐路 88 號溫室");
+        o.setCropId("taoyuan_veg");
+        o.setCropName(cropRepository.findById("taoyuan_veg").map(Crop::getName).orElse("桃園溫室有機蔬菜"));
+        o.setArea(1.0);
+        o.setPlan("hourly_flex");
+        o.setPlanName((String) q.get("planName"));
+        o.setDispatchCategory(r.getDispatchCategory());
+        o.setCategoryName(orderService.categoryNameOf(r.getDispatchCategory()));
+        o.setTransportZone("core_35km");
+        o.setTotalHours((int) q.get("totalHours"));
+        o.setSuggestedWorkers(crew.size());
+        o.setRequestedWorkers(crew.size());
+        o.setUnitRate((int) q.get("unitRate"));
+        o.setStandardAmount((int) q.get("actualTotal"));
+        o.setFinalAmount((int) q.get("actualTotal"));
+        o.setDepositAmount(0);
+        o.setDepositPaid(false);
+        o.setStatus(OrderService.CONFIRMED);
+        o.setAssignedTeamId(r.getTeamId());
+        o.setCrewWorkerIds(String.join(",", crew));
+        o.setSharedRosterId(r.getId());
+        o.setStartDate(day);
+        o.setEndDate(day);
+        o.setTimeSlot(slot);
+        o.setForemanName("黃阿土 (本人帶隊)");
+        o.setForemanPhone("0933-222-111");
+        o.setCreatedAt(java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        return o;
+    }
+
     private void seedOrderAttendance() {
         String orderId = "ORD-2026-013";
         java.time.LocalDate start = java.time.LocalDate.of(2026, 9, 25);

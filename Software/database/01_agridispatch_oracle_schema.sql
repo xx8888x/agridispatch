@@ -82,6 +82,11 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END;
 /
 BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE shared_rosters CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
     EXECUTE IMMEDIATE 'DROP TABLE dispatch_teams CASCADE CONSTRAINTS';
 EXCEPTION WHEN OTHERS THEN NULL;
 END;
@@ -207,6 +212,36 @@ COMMENT ON COLUMN dispatch_teams.hedge_location IS '暴雨天候室內冷鏈避�
 COMMENT ON COLUMN dispatch_teams.status IS '出勤狀態 (active_field:田間出勤, hedged_indoor:冷鏈避險, standby:待命)';
 
 -- ====================================================================
+-- 社區共享班表 (SHARED_ROSTERS)：合作社開班、農戶認領上午／下午時段（每次認領 = 一張訂單）
+-- ====================================================================
+CREATE TABLE shared_rosters (
+    id                 VARCHAR2(32 CHAR)   NOT NULL,
+    title              VARCHAR2(100 CHAR)  NOT NULL,
+    region             VARCHAR2(100 CHAR)  NOT NULL,
+    description        VARCHAR2(500 CHAR),
+    team_id            VARCHAR2(32 CHAR)   NOT NULL,
+    crew_worker_ids    VARCHAR2(400 CHAR)  NOT NULL,
+    dispatch_category  VARCHAR2(50 CHAR)   NOT NULL,
+    start_date         DATE                NOT NULL,
+    end_date           DATE                NOT NULL,
+    min_claim_percent  NUMBER(3)           DEFAULT 60 NOT NULL,
+    claim_deadline     DATE                NOT NULL,
+    status             VARCHAR2(20 CHAR)   DEFAULT 'open' NOT NULL,
+    cancel_reason      VARCHAR2(200 CHAR),
+    created_at         TIMESTAMP           DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT pk_shared_rosters PRIMARY KEY (id),
+    CONSTRAINT fk_shared_rosters_team FOREIGN KEY (team_id) REFERENCES dispatch_teams(id),
+    CONSTRAINT chk_shared_rosters_period CHECK (end_date >= start_date AND claim_deadline < start_date),
+    CONSTRAINT chk_shared_rosters_pct CHECK (min_claim_percent BETWEEN 1 AND 100),
+    CONSTRAINT chk_shared_rosters_status CHECK (status IN ('open', 'confirmed', 'cancelled', 'completed'))
+);
+
+COMMENT ON TABLE shared_rosters IS '社區共享班表：一組工班在某期間派駐同一村／產銷班，每天上午、下午兩個時段由農戶認領';
+COMMENT ON COLUMN shared_rosters.crew_worker_ids IS '固定出工名單（工號逗號分隔）；認領訂單沿用，整段期間佔用名單';
+COMMENT ON COLUMN shared_rosters.min_claim_percent IS '認領門檻（%）：截止日時已認領時段比例未達就取消整個班表';
+COMMENT ON COLUMN shared_rosters.status IS 'open 開放認領 / confirmed 已開班 / cancelled 已取消 / completed 已結束';
+
+-- ====================================================================
 -- 4. 派工訂單表 (ORDERS)
 -- ====================================================================
 CREATE TABLE orders (
@@ -244,6 +279,7 @@ CREATE TABLE orders (
     preferred_worker_id   VARCHAR2(32 CHAR),            -- 農場主指名的工人（workers.id）；工人可刪除，故不設外鍵
     preferred_worker_name VARCHAR2(100 CHAR),           -- 指名工人姓名（快照）
     time_slot          VARCHAR2(16 CHAR),               -- 每日時段：full_day 整天／morning 上午 07–11／afternoon 下午 13–17；NULL 視同整天
+    shared_roster_id   VARCHAR2(32 CHAR),               -- 社區共享班表（shared_rosters.id）；有值表示是認領班表時段成立的訂單
     start_date         DATE,
     end_date           DATE,
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,

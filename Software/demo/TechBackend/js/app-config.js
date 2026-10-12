@@ -21,7 +21,8 @@ window.AGRI_CONFIG = {
   mock: !AGRI_APP_BACKEND,
   // 功能開關：false 時隱藏該功能的所有入口（路演暫時下架）；改回 true 即恢復
   // legalize：工班合法化（黑轉白）轉換中心、後台彙總、LINE 黑轉白卡片
-  features: { legalize: false },
+  // foreignWorkers：外籍移工（登入入口、外勞工作頁、LINE 綁定外籍身分、後台外勞示範帳號）；先以本國工人為主
+  features: { legalize: false, foreignWorkers: false },
   apiBase: AGRI_APP_BACKEND ? AGRI_APP_BACKEND.apiBase : window.location.origin.startsWith('http')
     ? `${window.location.origin}/api`
     : 'http://localhost:3000/api'

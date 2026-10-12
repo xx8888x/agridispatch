@@ -6,6 +6,12 @@
   <title>外籍外展農工專屬登入 - Cổng Đăng Nhập Lao Động Nước Ngoài - AgriDispatch</title>
   <!-- 執行模式設定（demo / production，每份副本各自一份） -->
   <script src="js/app-config.js"></script>
+  <script>
+    // 功能開關 features.foreignWorkers = false（外籍移工暫時下架，先以本國工人為主）時不開放此頁，轉回登入大廳
+    if (window.AGRI_CONFIG && window.AGRI_CONFIG.features && window.AGRI_CONFIG.features.foreignWorkers === false) {
+      window.location.replace('login.html');
+    }
+  </script>
   <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
   <script src="js/api-client.js"></script>
   <script>

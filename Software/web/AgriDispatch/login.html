@@ -68,7 +68,8 @@
   </header>
 
   <!-- 身分選擇：與 Android 原生身分選擇畫面同一套文案（06_Android雙端App規格書 4.1）。
-       第一層問「你是哪一位？」；本國工人再選一種工作。泰國、菲律賓未開放【待確認】，不顯示。 -->
+       第一層問「你是哪一位？」；本國工人再選一種工作。泰國、菲律賓未開放【待確認】，不顯示。
+       外籍（越南、印尼）卡片由 features.foreignWorkers 控制，目前下架，先以本國工人為主。 -->
   <main class="flex-1 ad-container w-full" style="padding-block: 32px 40px;">
     <div style="max-width: 560px; margin-inline: auto;">
 
@@ -91,7 +92,7 @@
           </span>
           <i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i>
         </a>
-        <a href="worker-foreign-login.html?lang=vi" class="ad-card ad-card--interactive" style="display: flex; align-items: center; gap: 12px; padding: 16px;">
+        <a href="worker-foreign-login.html?lang=vi" data-feature="foreignWorkers" class="ad-card ad-card--interactive" style="display: flex; align-items: center; gap: 12px; padding: 16px;">
           <span class="ad-icon-box"><span style="font-weight: 700; font-size: 14px; letter-spacing: 0.02em;">VI</span></span>
           <span style="flex: 1; min-width: 0;">
             <span class="ad-heading" style="display: block;" lang="vi">Tôi là lao động Việt Nam</span>
@@ -99,7 +100,7 @@
           </span>
           <i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i>
         </a>
-        <a href="worker-foreign-login.html?lang=id" class="ad-card ad-card--interactive" style="display: flex; align-items: center; gap: 12px; padding: 16px;">
+        <a href="worker-foreign-login.html?lang=id" data-feature="foreignWorkers" class="ad-card ad-card--interactive" style="display: flex; align-items: center; gap: 12px; padding: 16px;">
           <span class="ad-icon-box"><span style="font-weight: 700; font-size: 14px; letter-spacing: 0.02em;">ID</span></span>
           <span style="flex: 1; min-width: 0;">
             <span class="ad-heading" style="display: block;" lang="id">Saya pekerja Indonesia</span>
@@ -116,7 +117,7 @@
       <section id="stepLocal" aria-labelledby="stepLocalTitle" hidden>
         <a href="#" class="ad-btn ad-btn--ghost" style="margin-left: -12px; margin-bottom: 8px;"><i data-lucide="arrow-left" class="ad-icon ad-icon--sm"></i>上一步</a>
         <h1 id="stepLocalTitle" class="ad-display">我是本國工人</h1>
-        <p class="ad-caption" style="margin-top: 6px;">你主要做哪一種工作？</p>
+        <p class="ad-caption" style="margin-top: 6px;">你主要做哪一種工作？正職、兼職、中高齡、臨時打工、學生打工都可以。</p>
         <nav style="display: flex; flex-direction: column; gap: 8px; margin-top: 24px;" aria-label="工作類別">
         <a href="worker-local-login.html?role=labor" class="ad-card ad-card--interactive" style="display: flex; align-items: center; gap: 12px; padding: 16px;">
           <span class="ad-icon-box"><i data-lucide="wheat" class="ad-icon"></i></span>
@@ -130,7 +131,7 @@
           <span class="ad-icon-box"><i data-lucide="users" class="ad-icon"></i></span>
           <span style="flex: 1; min-width: 0;">
             <span class="ad-heading" style="display: block;">帶班師傅</span>
-            <span class="ad-caption" style="display: block;">帶領外籍工班</span>
+            <span class="ad-caption" style="display: block;">帶領工班</span>
           </span>
           <i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i>
         </a>

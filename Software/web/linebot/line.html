@@ -137,7 +137,7 @@
       </a>
       <nav class="ad-nav" aria-label="其他視角">
         <a class="ad-nav__link" href="../AgriDispatch/farmer.html">農場主工作台</a>
-        <a class="ad-nav__link" href="../AgriDispatch/worker-foreign.html">外籍工人</a>
+        <a class="ad-nav__link" href="../AgriDispatch/worker-foreign.html" data-feature="foreignWorkers">外籍工人</a>
         <a class="ad-nav__link" href="../AgriDispatch/worker-local.html">本國工人</a>
       </nav>
       <div class="ad-header__actions">
@@ -187,7 +187,7 @@
                       <li>查今天的出工與專車司機</li>
                       <li>暴雨時通報改到室內冷鏈作業</li>
                       <li>試算早鳥工時包（315 元／小時）</li>
-                      <li>工人端切換越南語、印尼語工單</li>
+                      <li data-feature="foreignWorkers">工人端切換越南語、印尼語工單</li>
                     </ul>
                   </div>
                   <span class="lc-time">08:00</span>
@@ -254,12 +254,12 @@
             <h2 class="ad-heading">用誰的身分看</h2>
             <span class="ad-caption">農場主與工人是兩個官方帳號</span>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div class="grid grid-cols-1 sm:grid-flow-col sm:auto-cols-fr gap-2"><!-- 依可見身分數平分欄寬（外籍下架時兩欄） -->
             <button type="button" id="persona-btn-farmer" class="persona-btn ad-card ad-card--interactive is-selected" aria-pressed="true" style="padding: 12px 14px;" onclick="selectPersona('farmer', 'U1001_FARMER', '陳建龍 (阿龍班長)')">
               <div class="ad-heading" style="font-size: 15px;">農場主</div>
               <div class="ad-caption">陳建龍・枋山芒果</div>
             </button>
-            <button type="button" id="persona-btn-worker_foreign" class="persona-btn ad-card ad-card--interactive" aria-pressed="false" style="padding: 12px 14px;" onclick="selectPersona('worker_foreign', 'U2001_WORKER_VN', 'Nguyễn Văn Hùng')">
+            <button type="button" id="persona-btn-worker_foreign" data-feature="foreignWorkers" class="persona-btn ad-card ad-card--interactive" aria-pressed="false" style="padding: 12px 14px;" onclick="selectPersona('worker_foreign', 'U2001_WORKER_VN', 'Nguyễn Văn Hùng')">
               <div class="ad-heading" style="font-size: 15px;">外籍工人</div>
               <div class="ad-caption">阮文雄・越南籍</div>
             </button>
@@ -406,6 +406,7 @@
     // 功能開關（js/app-config.js 的 features）；legalize = 工班黑轉白
     const featureOn = (name) => (window.AgriTheme && window.AgriTheme.feature) ? window.AgriTheme.feature(name) : true;
     const legalizeOn = () => featureOn('legalize');
+    // foreignWorkers = 外籍移工（外籍工人身分、越／印語工單）；關閉時只示範農場主與本國工人
 
     let currentUserId = 'U1001_FARMER';
     let currentRole = 'farmer';
@@ -948,6 +949,7 @@
 
     // 6. 觸發模擬推播
     async function triggerSimulatedPush(type, target) {
+      if (target === 'worker_foreign' && !featureOn('foreignWorkers')) target = 'worker_local';   // 外籍移工暫時下架：改推給本國工人
       appendSystemNotice(`透過 Messaging API 推播給 ${target}（${type}）`);
 
       try {
@@ -969,7 +971,7 @@
       if (type === 'weather_alert') {
         renderFlexCard(buildMockWeatherFlex());
       } else if (type === 'daily_task') {
-        renderFlexCard(buildForeignWorkerTaskFlex());
+        renderFlexCard(featureOn('foreignWorkers') ? buildForeignWorkerTaskFlex() : buildForemanContactFlex());
       } else if (type === 'early_bird') {
         renderFlexCard(buildFarmerEarlyBirdFlex());
       } else if (type === 'salary_bonus') {

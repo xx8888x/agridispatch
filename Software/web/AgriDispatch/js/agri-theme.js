@@ -60,6 +60,15 @@
     (document.head || root).appendChild(css);
   })();
 
+  // 2c. 本國工人工作型態（後端 WorkerService.EMPLOYMENT_TYPES 同一份代碼）
+  var EMPLOYMENT = { full_time: '正職', part_time: '兼職', senior: '中高齡', casual: '臨時打工', student: '學生打工' };
+  function employmentLabel(code) { return EMPLOYMENT[code] || ''; }
+  // features.foreignWorkers 關閉時，名冊、工班成員等清單不列外籍移工（tier1_foreign）；資料仍在後端
+  function visibleWorkers(list) {
+    if (feature('foreignWorkers') || !Array.isArray(list)) return list;
+    return list.filter(function (w) { return !w || w.tier !== 'tier1_foreign'; });
+  }
+
   // 3. 圖示初始化（lucide 可能晚於本檔載入，所以提供函式而非直接執行）
   function icons(scope) {
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -107,7 +116,7 @@
   var DEMO_PAGES = [
     { group: '角色工作台', items: [
       { root: 'main', href: 'farmer.html', title: '農場主', meta: '預約、訂單、工班' },
-      { root: 'main', href: 'worker-foreign.html', title: '外展移工', meta: '今日任務、打卡、薪資（越／印／泰／中）' },
+      { root: 'main', href: 'worker-foreign.html', title: '外展移工', meta: '今日任務、打卡、薪資（越／印／泰／中）', feature: 'foreignWorkers' },
       { root: 'main', href: 'worker-local.html', title: '帶隊領班／機耕師', meta: '帶隊、打卡、薪資' },
       { root: 'main', href: 'worker-local.html?role=labor', title: '合作社勞務員', meta: '出勤、打卡、薪資' },
       { root: 'tech', href: 'admin.html', title: '科技營運後台', meta: '天候戰情、派工調度、營收' },
@@ -127,7 +136,7 @@
       { root: 'main', href: 'coldchain.html', title: '冷鏈與物流', meta: '雨天改派與預冷場' },
       { root: 'main', href: 'legalize.html', title: '法規與合規', meta: '外展農務制度與雙軌架構', feature: 'legalize' },
       { root: 'line', href: 'line.html', title: 'LINE Bot', meta: '圖文選單與對話模擬' },
-      { root: 'main', href: 'login.html', title: '登入大廳', meta: '五種身分入口' }
+      { root: 'main', href: 'login.html', title: '登入大廳', meta: '農場主、本國工人入口' }
     ] }
   ];
 
@@ -220,7 +229,8 @@
     icons(btn);
   }
 
-  window.AgriTheme = { mode: mode, icons: icons, drawer: drawer, toast: toast, demoNav: demoNav, feature: feature };
+  window.AgriTheme = { mode: mode, icons: icons, drawer: drawer, toast: toast, demoNav: demoNav, feature: feature,
+    employment: EMPLOYMENT, employmentLabel: employmentLabel, visibleWorkers: visibleWorkers };
 
   document.addEventListener('DOMContentLoaded', function () { icons(); demoNavFab(); });
 })();

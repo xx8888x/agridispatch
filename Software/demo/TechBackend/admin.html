@@ -560,7 +560,8 @@
           <!-- 四個數字 -->
         <div class="ad-stat-grid">
           <div class="ad-stat"><div class="ad-stat__label">在籍人員</div><div class="ad-stat__value">{{ workers.length }}<small>人</small></div></div>
-          <div class="ad-stat ad-stat--primary"><div class="ad-stat__label">外展移工</div><div class="ad-stat__value">{{ workers.filter(w => w.tier === 'tier1_foreign').length }}<small>人</small></div></div>
+          <div v-if="foreignOn" class="ad-stat ad-stat--primary"><div class="ad-stat__label">外展移工</div><div class="ad-stat__value">{{ workers.filter(w => w.tier === 'tier1_foreign').length }}<small>人</small></div></div>
+          <div v-if="!foreignOn" class="ad-stat ad-stat--primary"><div class="ad-stat__label">中高齡・學生打工</div><div class="ad-stat__value">{{ workers.filter(w => w.employmentType === 'senior' || w.employmentType === 'student').length }}<small>人</small></div></div>
           <div class="ad-stat"><div class="ad-stat__label">本國領班與機耕</div><div class="ad-stat__value">{{ workers.filter(w => w.tier !== 'tier1_foreign').length }}<small>人</small></div></div>
           <div class="ad-stat"><div class="ad-stat__label">勞健保與職災</div><div class="ad-stat__value" style="font-size: 1rem;"><a href="insurance.html" style="color: var(--ad-primary-text); text-decoration: underline;">查看保險登錄</a></div></div>
         </div>
@@ -579,23 +580,28 @@
 
         <!-- 國籍篩選 -->
         <div class="flex items-center gap-1.5 flex-wrap">
-          <button type="button" @click="workerNationalityFilter = ''" :class="{ 'is-on': workerNationalityFilter === '' }" class="ad-chip">
+          <button type="button" @click="workerNationalityFilter = ''; workerEmploymentFilter = ''" :class="{ 'is-on': workerNationalityFilter === '' && workerEmploymentFilter === '' }" class="ad-chip">
             全部 ({{ workers.length }})
           </button>
-          <button type="button" @click="workerNationalityFilter = '越南'" :class="{ 'is-on': workerNationalityFilter === '越南' }" class="ad-chip">
+          <button v-if="foreignOn" type="button" @click="workerNationalityFilter = '越南'" :class="{ 'is-on': workerNationalityFilter === '越南' }" class="ad-chip">
             越南籍 ({{ workers.filter(w => w.nationality === '越南').length }})
           </button>
-          <button type="button" @click="workerNationalityFilter = '印尼'" :class="{ 'is-on': workerNationalityFilter === '印尼' }" class="ad-chip">
+          <button v-if="foreignOn" type="button" @click="workerNationalityFilter = '印尼'" :class="{ 'is-on': workerNationalityFilter === '印尼' }" class="ad-chip">
             印尼籍 ({{ workers.filter(w => w.nationality === '印尼').length }})
           </button>
-          <button type="button" @click="workerNationalityFilter = '泰國'" :class="{ 'is-on': workerNationalityFilter === '泰國' }" class="ad-chip">
+          <button v-if="foreignOn" type="button" @click="workerNationalityFilter = '泰國'" :class="{ 'is-on': workerNationalityFilter === '泰國' }" class="ad-chip">
             泰國籍 ({{ workers.filter(w => w.nationality === '泰國').length }})
           </button>
-          <button type="button" @click="workerNationalityFilter = '菲律賓'" :class="{ 'is-on': workerNationalityFilter === '菲律賓' }" class="ad-chip">
+          <button v-if="foreignOn" type="button" @click="workerNationalityFilter = '菲律賓'" :class="{ 'is-on': workerNationalityFilter === '菲律賓' }" class="ad-chip">
             菲律賓籍 ({{ workers.filter(w => w.nationality === '菲律賓').length }})
           </button>
-          <button type="button" @click="workerNationalityFilter = '本國'" :class="{ 'is-on': workerNationalityFilter === '本國' }" class="ad-chip">
+          <button v-if="foreignOn" type="button" @click="workerNationalityFilter = '本國'" :class="{ 'is-on': workerNationalityFilter === '本國' }" class="ad-chip">
             本國籍 ({{ workers.filter(w => w.nationality === '本國').length }})
+          </button>
+          <!-- 工作型態（本國工人；代碼見 AgriTheme.employment） -->
+          <span v-if="foreignOn" class="ad-caption" style="margin-left: 6px;">工作型態</span>
+          <button v-for="(label, code) in EMPLOYMENT" :key="code" type="button" @click="workerEmploymentFilter = workerEmploymentFilter === code ? '' : code" :class="{ 'is-on': workerEmploymentFilter === code }" class="ad-chip">
+            {{ label }} ({{ workers.filter(w => w.employmentType === code).length }})
           </button>
         </div>
 
@@ -619,7 +625,7 @@
             <label class="ad-label" for="workerTierFilter">等級</label>
             <select id="workerTierFilter" v-model="workerTierFilter" class="ad-select">
               <option value="">全部等級</option>
-              <option value="tier1_foreign">外籍外展農工</option>
+              <option v-if="foreignOn" value="tier1_foreign">外籍外展農工</option>
               <option value="tier2_local_flex">本國領班／彈性工</option>
               <option value="tier3_turnkey">本國機耕師／無人機手</option>
             </select>
@@ -696,6 +702,7 @@
                     <span :class="tierBadge(w.tier)" class="px-2 py-0.5 rounded-full text-[13px] font-semibold inline-block mt-1">
                       {{ tierName(w.tier) }}
                     </span>
+                    <span v-if="w.employmentType" class="ad-pill" style="margin-left: 4px; margin-top: 4px;">{{ EMPLOYMENT[w.employmentType] || w.employmentType }}</span>
                   </td>
 
                   <!-- Current Task & Dispatch Status -->
@@ -1343,11 +1350,11 @@
         <div class="grid grid-cols-2 gap-3 text-[13px] max-h-[70vh] overflow-y-auto custom-scrollbar pr-1">
           <div>
             <label class="text-slate-400 block mb-1">農工編號 (ID)</label>
-            <input v-model="workerModal.form.id" :disabled="workerModal.isEdit" placeholder="例如 W026" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white disabled:opacity-50">
+            <input v-model="workerModal.form.id" :disabled="workerModal.isEdit" placeholder="留空自動編號" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white disabled:opacity-50">
           </div>
           <div>
             <label class="text-slate-400 block mb-1">中文通稱</label>
-            <input v-model="workerModal.form.chineseName" placeholder="例如 阮文雄" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <input v-model="workerModal.form.chineseName" placeholder="例如 王秀英" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
           </div>
           <div>
             <label class="text-slate-400 block mb-1">原籍/外語姓名</label>
@@ -1356,10 +1363,10 @@
           <div>
             <label class="text-slate-400 block mb-1">國籍</label>
             <select v-model="workerModal.form.nationality" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
-              <option value="越南">越南 </option>
-              <option value="印尼">印尼 </option>
-              <option value="泰國">泰國 </option>
-              <option value="菲律賓">菲律賓 </option>
+              <option v-if="foreignOn || workerModal.form.nationality === '越南'" value="越南">越南 </option>
+              <option v-if="foreignOn || workerModal.form.nationality === '印尼'" value="印尼">印尼 </option>
+              <option v-if="foreignOn || workerModal.form.nationality === '泰國'" value="泰國">泰國 </option>
+              <option v-if="foreignOn || workerModal.form.nationality === '菲律賓'" value="菲律賓">菲律賓 </option>
               <option value="本國">本國 </option>
             </select>
           </div>
@@ -1391,9 +1398,16 @@
           <div>
             <label class="text-slate-400 block mb-1">三層等級</label>
             <select v-model="workerModal.form.tier" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
-              <option value="tier1_foreign">【Tier 1】外籍外展農工</option>
+              <option v-if="foreignOn || workerModal.form.tier === 'tier1_foreign'" value="tier1_foreign">【Tier 1】外籍外展農工</option>
               <option value="tier2_local_flex">【Tier 2】本國帶隊領班 / 彈性工</option>
               <option value="tier3_turnkey">【Tier 3】本國專業機耕師</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">工作型態</label>
+            <select v-model="workerModal.form.employmentType" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <option value="">未設定（外籍免填）</option>
+              <option v-for="(label, code) in EMPLOYMENT" :key="code" :value="code">{{ label }}</option>
             </select>
           </div>
           <div>
@@ -1869,6 +1883,10 @@
         const workerTeamFilter = ref('');
         const workerTierFilter = ref('');
         const workerNationalityFilter = ref('');
+        const workerEmploymentFilter = ref('');
+        // 功能開關 features.foreignWorkers：關閉時名冊不列外籍移工、新增農工預設本國
+        const foreignOn = AgriTheme.feature('foreignWorkers');
+        const EMPLOYMENT = AgriTheme.employment;
 
         // Toast Feedback
         const toast = reactive({ show: false, message: '', type: 'success' });
@@ -1916,7 +1934,7 @@
             const res = await fetch(`${API_BASE}/workers`);
             const json = plainDeep(await res.json());
             if (json.success && json.data && json.data.length > 0) {
-              workers.value = json.data;
+              workers.value = AgriTheme.visibleWorkers(json.data);   // features.foreignWorkers 關閉時不列外籍移工
             }
             backendOnline.value = true;
           } catch (e) {
@@ -2098,33 +2116,34 @@
             const matchTeam = !workerTeamFilter.value || w.teamId === workerTeamFilter.value;
             const matchTier = !workerTierFilter.value || w.tier === workerTierFilter.value;
             const matchNat = !workerNationalityFilter.value || w.nationality === workerNationalityFilter.value;
-            return matchKw && matchTeam && matchTier && matchNat;
+            const matchEmp = !workerEmploymentFilter.value || w.employmentType === workerEmploymentFilter.value;
+            return matchKw && matchTeam && matchTier && matchNat && matchEmp;
           });
         });
 
         const openWorkerModal = (worker = null) => {
           if (worker) {
             workerModal.isEdit = true;
-            workerModal.form = { ...worker };
+            workerModal.form = { ...worker, employmentType: worker.employmentType || '' };
           } else {
             workerModal.isEdit = false;
-            const nextSeq = workers.value.length + 1;
-            const nextId = nextSeq < 10 ? `W00${nextSeq}` : (nextSeq < 100 ? `W0${nextSeq}` : `W${nextSeq}`);
+            // 工號留空由後端依現有最大序號 +1（名冊可能隱藏外籍移工，前端算的序號會撞號）
             workerModal.form = {
-              id: nextId,
+              id: '',
               name: '',
               chineseName: '',
-              nationality: '越南',
+              nationality: foreignOn ? '越南' : '本國',
               passportNumber: '',
               arcNumber: '',
-              permitExpiry: '2027-12-31',
+              permitExpiry: foreignOn ? '2027-12-31' : '永久有效',
               teamId: 'team_a',
               leader: false,
-              tier: 'tier1_foreign',
+              tier: foreignOn ? 'tier1_foreign' : 'tier2_local_flex',
+              employmentType: foreignOn ? '' : 'part_time',
               baseSalary: 29500,
               agriBonus: 8800,
               transportAllowance: 1200,
-              insuranceStatus: '已納保 (勞/健/職災)',
+              insuranceStatus: foreignOn ? '已納保 (勞/健/職災)' : '已納保 (勞保/就保/職保/健保)',
               currentTask: '八德有機溫室葉菜採收與精細挑選',
               dispatchStatus: 'dispatched_field',
               phone: '0988-111-222'
@@ -2140,7 +2159,7 @@
             const res = await fetch(url, {
               method,
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(workerModal.form)
+              body: JSON.stringify({ ...workerModal.form, name: workerModal.form.name || workerModal.form.chineseName })   // 本國工人可只填中文姓名
             });
             const json = plainDeep(await res.json());
             if (json.success) {
@@ -2975,7 +2994,7 @@
             showToast('目前無農工資料可匯出', 'error');
             return;
           }
-          const headers = ['工號', '中文通稱', '外籍原名', '國籍', '護照號碼', '居留證號(ARC)', '聘僱許可效期', '所屬工班', '三層分類', '帶隊組長', '底薪', '就業獎勵', '交通津貼', '納保狀態', '目前任務', '派遣狀態', '聯絡電話'];
+          const headers = ['工號', '中文通稱', '外籍原名', '國籍', '護照號碼', '居留證號(ARC)', '聘僱許可效期', '所屬工班', '三層分類', '工作型態', '帶隊組長', '底薪', '就業獎勵', '交通津貼', '納保狀態', '目前任務', '派遣狀態', '聯絡電話'];
           const rows = workers.value.map(w => [
             w.id,
             w.chineseName || '',
@@ -2986,6 +3005,7 @@
             w.permitExpiry || '',
             teamName(w.teamId),
             tierName(w.tier),
+            EMPLOYMENT[w.employmentType] || '',
             w.leader ? '是' : '否',
             w.baseSalary || 0,
             w.agriBonus || 0,
@@ -3195,6 +3215,9 @@
           workerTeamFilter,
           workerTierFilter,
           workerNationalityFilter,
+          workerEmploymentFilter,
+          foreignOn,
+          EMPLOYMENT,
           filteredWorkers,
           exportWorkerCSV,
           toast,

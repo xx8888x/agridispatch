@@ -96,7 +96,62 @@
 
 
     <!-- TAB 1: 預約派工 -->
-    <div id="tabContentBooking" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <div id="tabContentBooking">
+
+    <!-- 兩步驟：先登錄農場（登錄過就跳過），再預約派工 -->
+    <div class="ad-stages" style="grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 24px;" aria-label="預約步驟">
+      <div id="stageFarm" class="ad-stage ad-stage--now"><div class="ad-stage__title">1 登錄農場</div><div id="stageFarmSub" class="ad-stage__sub">第一次預約時填寫</div></div>
+      <div id="stageBook" class="ad-stage"><div class="ad-stage__title">2 預約派工</div><div class="ad-stage__sub">作物、面積、開工日</div></div>
+    </div>
+
+    <p id="farmLoading" class="ad-caption">讀取農場資料中…</p>
+
+    <!-- 步驟 1：登錄農場（尚無農場資料，或按「修改農場資料」時顯示） -->
+    <div id="farmSetupCard" class="ad-card" style="padding: 24px; max-width: 720px;" hidden>
+      <div class="ad-card__head">
+        <h2 class="ad-title" id="farmSetupTitle">登錄農場</h2>
+        <span id="farmSetupPill" class="ad-pill ad-pill--warn">只需填一次</span>
+      </div>
+      <p class="ad-caption" style="margin: -4px 0 16px;">工班報到、合作社確認與發票都用這份資料。登錄後每次預約自動帶入，不用重填。</p>
+      <form id="farmSetupForm" onsubmit="saveFarmProfile(event)" style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="ad-form-grid ad-form-grid--2">
+          <div class="ad-field" style="grid-column: 1 / -1;">
+            <label class="ad-label ad-label--req" for="pfFarmName">農場名稱</label>
+            <input type="text" id="pfFarmName" class="ad-input" required maxlength="100" placeholder="例：枋山愛文芒果合作園">
+          </div>
+          <div class="ad-field">
+            <label class="ad-label ad-label--req" for="pfContactName">農場主／班長姓名</label>
+            <input type="text" id="pfContactName" class="ad-input" required maxlength="50" autocomplete="name">
+          </div>
+          <div class="ad-field">
+            <label class="ad-label ad-label--req" for="pfPhone">聯絡電話</label>
+            <input type="tel" id="pfPhone" class="ad-input" required inputmode="tel" autocomplete="tel" placeholder="09xx-xxx-xxx">
+          </div>
+          <div class="ad-field" style="grid-column: 1 / -1;">
+            <label class="ad-label ad-label--req" for="pfAddress">農場地址／地號</label>
+            <input type="text" id="pfAddress" class="ad-input" required maxlength="255" placeholder="例：屏東縣枋山鄉愛文芒果合作園區 2 號地">
+            <span class="ad-hint">工班依此地點報到；個別訂單的作業地點可在預約時另外改</span>
+          </div>
+          <div class="ad-field">
+            <label class="ad-label" for="pfFarmType">農場類型</label>
+            <select id="pfFarmType" class="ad-select">
+              <option value="個人農戶">個人農戶</option>
+              <option value="產銷班">產銷班</option>
+              <option value="合作社／農會">合作社／農會</option>
+              <option value="農企業">農企業</option>
+            </select>
+          </div>
+        </div>
+        <p id="farmSetupError" class="ad-error" hidden></p>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button type="submit" id="farmSaveBtn" class="ad-btn ad-btn--primary ad-btn--lg">登錄農場，下一步</button>
+          <button type="button" id="farmCancelBtn" class="ad-btn ad-btn--ghost ad-btn--lg" onclick="showBookingStep()" hidden>取消</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- 步驟 2：預約派工 -->
+    <div id="bookingMain" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start" hidden>
 
       <!-- 左：預約單 -->
       <div class="lg:col-span-7 ad-card" style="padding: 24px;">
@@ -180,20 +235,21 @@
 
             <!-- 步驟 3：怎麼聯絡你 -->
             <li style="display: flex; flex-direction: column; gap: 16px;">
-              <h3 class="ad-heading" style="line-height: 28px;">怎麼聯絡你</h3>
-              <div class="ad-form-grid ad-form-grid--2">
-                <div class="ad-field">
-                  <label class="ad-label ad-label--req" for="fFarmerName">農場主／班長姓名</label>
-                  <input type="text" id="fFarmerName" class="ad-input" required value="陳建龍 (阿龍班長)" autocomplete="name">
+              <h3 class="ad-heading" style="line-height: 28px;">在哪裡做、誰帶隊</h3>
+              <!-- 農場主姓名與電話取自登錄的農場資料 -->
+              <input type="hidden" id="fFarmerName">
+              <input type="hidden" id="fFarmerPhone">
+              <div class="ad-card ad-card--inset" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+                <div style="min-width: 0;">
+                  <div style="font-weight: 600;" id="fFarmSumName"></div>
+                  <div class="ad-caption" id="fFarmSumContact"></div>
                 </div>
-                <div class="ad-field">
-                  <label class="ad-label ad-label--req" for="fFarmerPhone">聯絡電話</label>
-                  <input type="tel" id="fFarmerPhone" class="ad-input" required value="0912-345-678" inputmode="tel" autocomplete="tel">
-                </div>
-                <div class="ad-field" style="grid-column: 1 / -1;">
-                  <label class="ad-label ad-label--req" for="fFarmLocation">作業地點／農園地號</label>
-                  <input type="text" id="fFarmLocation" class="ad-input" required value="屏東縣枋山鄉愛文芒果合作園區 2 號地">
-                </div>
+                <button type="button" onclick="editFarmProfile()" class="ad-btn ad-btn--ghost ad-btn--sm" style="flex-shrink: 0;">修改農場資料</button>
+              </div>
+              <div class="ad-field">
+                <label class="ad-label ad-label--req" for="fFarmLocation">作業地點／農園地號</label>
+                <input type="text" id="fFarmLocation" class="ad-input" required>
+                <span class="ad-hint">預設為農場地址，這次在別塊地作業可直接改</span>
               </div>
               <label class="ad-choice" style="align-items: flex-start;">
                 <input type="checkbox" id="fLeadSelf" checked onchange="toggleLeadSelf()" style="margin-top: 3px;">
@@ -308,6 +364,7 @@
 
       </div>
 
+    </div>
     </div>
 
     <!-- TAB 2: 我的訂單 -->
@@ -699,6 +756,134 @@
       document.getElementById('fForemanName').value = name ? `${name} (農場主本人)` : '農場主本人';
       document.getElementById('fForemanPhone').value = phone;
       document.getElementById('fForemanNotes').value = '農場主本人親自現場帶隊指揮調度';
+    }
+
+    // ===== 步驟 1：登錄農場 =====
+    // 農場資料以後端 GET/PUT /api/farmers/me 為準（自助註冊時已建立；種子帳號第一次預約前補登）。
+    // 登錄過就直接進步驟 2，姓名、電話、預設作業地點由農場資料帶入；只有連不上後端的 demo 離線展示才存本機。
+    let farmProfile = null;
+    const isDemoMode = () => !window.AGRI_CONFIG || window.AGRI_CONFIG.mode !== 'production';
+    const farmLocalKey = () => 'agri_farm_profile_' + (currentFarmerRef() || 'guest');
+    // demo 示範帳號（陳建龍）第一次登錄時預填，路演一鍵完成
+    const DEMO_FARM = { farmName: '屏東枋山愛文芒果合作園', contactName: '陳建龍 (阿龍班長)', phone: '0912-345-678', address: '屏東縣枋山鄉愛文芒果合作園區 2 號地', farmType: '產銷班' };
+
+    async function farmApi(method, data) {
+      const init = { method, headers: { 'Content-Type': 'application/json' } };
+      if (data) init.body = JSON.stringify(data);
+      try {
+        const res = await fetch(`${(window.AgriAuth && window.AgriAuth.API_BASE) || '/api'}/farmers/me`, init);
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) throw Object.assign(new Error(body.error || `HTTP ${res.status}`), { fromServer: true });
+        return body.data || null;
+      } catch (err) {
+        if (err.fromServer || !isDemoMode()) throw err;
+        // 連不上後端：demo 離線展示存本機
+        if (data) { try { localStorage.setItem(farmLocalKey(), JSON.stringify(data)); } catch (e) {} return data; }
+        try { return JSON.parse(localStorage.getItem(farmLocalKey()) || 'null'); } catch (e) { return null; }
+      }
+    }
+
+    function setStage(step) {
+      const farm = document.getElementById('stageFarm');
+      const book = document.getElementById('stageBook');
+      farm.classList.toggle('ad-stage--now', step === 1);
+      farm.classList.toggle('ad-stage--done', step === 2);
+      book.classList.toggle('ad-stage--now', step === 2);
+      document.getElementById('stageFarmSub').textContent = (step === 2 && farmProfile)
+        ? `已登錄：${farmProfile.farmName}` : '第一次預約時填寫';
+    }
+
+    // 把農場資料帶進預約單與頁首；作業地點只在空白或仍是舊農場地址時才換（工時包或使用者改過的保留）
+    function applyFarmProfile(p) {
+      const loc = document.getElementById('fFarmLocation');
+      const oldAddress = farmProfile && farmProfile.address;
+      if (!loc.value || loc.value === oldAddress) loc.value = p.address || '';
+      farmProfile = p;
+      document.getElementById('fFarmerName').value = p.contactName || '';
+      document.getElementById('fFarmerPhone').value = p.phone || '';
+      document.getElementById('fFarmSumName').textContent = p.farmName || '';
+      document.getElementById('fFarmSumContact').textContent = `${p.contactName || ''}・${p.phone || ''}・${p.address || ''}`;
+      document.getElementById('header-farm-name').textContent = p.farmName || '';
+      if (p.contactName) {
+        document.getElementById('header-user-name').textContent = p.contactName;
+        document.getElementById('header-avatar').textContent = String(p.contactName).trim().charAt(0) || '農';
+      }
+    }
+
+    function showFarmStep(editing) {
+      const p = farmProfile || (document.documentElement.classList.contains('is-demo') && isDemoMode() ? DEMO_FARM : {});
+      let sessionName = '';
+      try { sessionName = (JSON.parse(sessionStorage.getItem('agri_user') || 'null') || {}).name || ''; } catch (e) {}
+      document.getElementById('pfFarmName').value = p.farmName || '';
+      document.getElementById('pfContactName').value = p.contactName || sessionName;
+      document.getElementById('pfPhone').value = p.phone || '';
+      document.getElementById('pfAddress').value = p.address || '';
+      const type = document.getElementById('pfFarmType');
+      type.value = [...type.options].some(o => o.value === p.farmType) ? p.farmType : '個人農戶';
+      document.getElementById('farmSetupTitle').textContent = editing ? '修改農場資料' : '登錄農場';
+      document.getElementById('farmSetupPill').hidden = !!editing;
+      document.getElementById('farmCancelBtn').hidden = !editing;
+      document.getElementById('farmSaveBtn').textContent = editing ? '儲存，回到預約' : '登錄農場，下一步';
+      document.getElementById('farmSetupError').hidden = true;
+      document.getElementById('bookingMain').hidden = true;
+      document.getElementById('farmSetupCard').hidden = false;
+      setStage(1);
+    }
+
+    function editFarmProfile() {
+      showFarmStep(true);
+      document.getElementById('farmSetupCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function showBookingStep() {
+      document.getElementById('farmSetupCard').hidden = true;
+      document.getElementById('bookingMain').hidden = false;
+      setStage(2);
+    }
+
+    async function initFarmStep() {
+      const loading = document.getElementById('farmLoading');
+      try {
+        const p = await farmApi('GET');
+        loading.hidden = true;
+        if (p) { applyFarmProfile(p); showBookingStep(); } else { showFarmStep(false); }
+      } catch (err) {
+        loading.textContent = `農場資料暫時無法讀取（${err.message || '連線失敗'}），請重新整理頁面。`;
+      }
+    }
+
+    async function saveFarmProfile(e) {
+      e.preventDefault();
+      const btn = document.getElementById('farmSaveBtn');
+      const errEl = document.getElementById('farmSetupError');
+      const label = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '儲存中…';
+      errEl.hidden = true;
+      const data = {
+        farmName: document.getElementById('pfFarmName').value.trim(),
+        contactName: document.getElementById('pfContactName').value.trim(),
+        phone: document.getElementById('pfPhone').value.trim(),
+        address: document.getElementById('pfAddress').value.trim(),
+        farmType: document.getElementById('pfFarmType').value
+      };
+      try {
+        const saved = await farmApi('PUT', data);
+        applyFarmProfile(saved || data);
+        // 頁首與其他頁讀的登入者姓名跟著更新
+        try {
+          const u = JSON.parse(sessionStorage.getItem('agri_user') || 'null');
+          if (u) { u.name = farmProfile.contactName; u.farmName = farmProfile.farmName; sessionStorage.setItem('agri_user', JSON.stringify(u)); }
+        } catch (e2) {}
+        showBookingStep();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (err) {
+        errEl.textContent = err.fromServer ? err.message : '無法連線伺服器，請稍後再試。';
+        errEl.hidden = false;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = label;
+      }
     }
 
     // ===== 報價 =====
@@ -1186,6 +1371,7 @@
       if (!activePkg && qsCategory && [...categorySelect.options].some(o => o.value === qsCategory)) categorySelect.value = qsCategory;
       toggleLeadSelf();
       calcFarmerForm();
+      initFarmStep();   // 已登錄農場 → 直接顯示預約單；沒有 → 先登錄農場
       // 預設顯示「發起派工」（與分頁按鈕的初始樣式一致）；#orders 直接開啟訂單列表
       if (window.location.hash === '#orders') {
         switchFarmerTab('orders');

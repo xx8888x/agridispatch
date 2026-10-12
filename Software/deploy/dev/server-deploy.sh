@@ -28,11 +28,12 @@ if [ "$TABLES" = "0" ]; then
 else
   echo "  資料表已存在，略過建表"
 fi
-# schema 變更：migrations/*.sql 依檔名順序執行，每支都可重複執行（已套用就略過）
+# schema 變更：migrations/*.sql 依檔名逐位元組排序執行（LC_ALL=C：「_」排在小寫字母前，2026-10-12_x 先於 2026-10-12b_x；
+# 主機預設 locale 會忽略標點而打亂順序），每支都可重複執行（已套用就略過）
 if [ -f $UP/migrations.tar.gz ]; then
   rm -rf $UP/migrations && mkdir -p $UP/migrations
   tar -xzf $UP/migrations.tar.gz -C $UP/migrations
-  for m in $(ls $UP/migrations/*.sql 2>/dev/null | sort); do
+  for m in $(ls $UP/migrations/*.sql 2>/dev/null | LC_ALL=C sort); do
     out=$({ echo "set serveroutput on"; cat "$m"; } | sql_app) || { echo "  migration 失敗：$m"; echo "$out" | tail -20; exit 1; }
     echo "$out" | grep -i "^migration" | sed 's/^/  /' || true
   done

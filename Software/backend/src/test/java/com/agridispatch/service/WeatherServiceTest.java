@@ -113,6 +113,64 @@ class WeatherServiceTest {
         assertEquals("過量級", t.get("uvLevel"));
     }
 
+    /** 2026-10-12 實際打 O-A0001-001／O-A0002-001 裁切：陣風 -99 為缺測要略過；雨量三個累積值都讀得到 */
+    @Test
+    void parsesRealStationResponses() throws Exception {
+        ObjectMapper om = new ObjectMapper();
+        String a = new String(getClass().getResourceAsStream("/cwa-o-a0001-001-sample.json").readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        String r = new String(getClass().getResourceAsStream("/cwa-o-a0002-001-sample.json").readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        List<WeatherService.Station> gust = WeatherService.parseStations(om.readTree(a), "gust");
+        assertEquals(2, gust.size());                       // 宜蘭站 -99 被略過
+        assertEquals("綠水", gust.get(0).name());
+        assertEquals("花蓮縣", gust.get(0).county());
+        assertEquals(9.5, gust.get(0).v().get("gust"));
+        assertNotNull(gust.get(0).lat());
+        List<WeatherService.Station> rain = WeatherService.parseStations(om.readTree(r), "rain");
+        assertEquals(1, rain.size());
+        assertEquals("宜蘭市", rain.get(0).town());
+        assertEquals(0.0, rain.get(0).v().get("h24"));
+        assertEquals(0.0, rain.get(0).v().get("h1"));
+        assertEquals(0.0, rain.get(0).v().get("today"));
+    }
+
+    private static Map<String, Object> town(String county, String town, double lat, double lon) {
+        Map<String, Object> w = new java.util.LinkedHashMap<>();
+        w.put("county", county);
+        w.put("town", town);
+        w.put("lat", lat);
+        w.put("lon", lon);
+        return w;
+    }
+
+    private static WeatherService.Station st(String name, String county, String town, double lat, double lon, Map<String, Double> v) {
+        return new WeatherService.Station(name, county, town, lat, lon, "2026-10-12T14:00:00+08:00", v);
+    }
+
+    @Test
+    void mergesObservationsByTownThenNearestWithinRadius() {
+        Map<String, Object> own = town("宜蘭縣", "三星鄉", 24.66, 121.65);
+        Map<String, Object> near = town("宜蘭縣", "員山鄉", 24.74, 121.60);   // 鄉內無站，約 5 km 有站
+        Map<String, Object> far = town("台東縣", "蘭嶼鄉", 22.04, 121.55);    // 10 km 內沒有站
+        List<Map<String, Object>> list = List.of(own, near, far);
+        List<WeatherService.Station> rain = List.of(
+                st("三星A", "宜蘭縣", "三星鄉", 24.67, 121.66, Map.of("today", 12.0, "h1", 3.0, "h24", 30.0)),
+                st("三星B", "宜蘭縣", "三星鄉", 24.65, 121.62, Map.of("today", 20.0, "h1", 1.0, "h24", 25.0)),
+                st("大湖", "宜蘭縣", "宜蘭市", 24.75, 121.65, Map.of("today", 5.0, "h1", 0.5, "h24", 8.0)));
+        WeatherService.mergeRain(list, rain);
+        assertEquals(30.0, own.get("rainSum"));        // 鄉內各站 24 小時取最大
+        assertEquals(20.0, own.get("rainToday"));      // 本日、1 小時各自取最大
+        assertEquals(3.0, own.get("rain1h"));
+        assertEquals("三星A", own.get("rainStation"));
+        assertEquals(2, own.get("rainStations"));
+        assertEquals(8.0, near.get("rainSum"));        // 鄰近站
+        assertEquals("大湖", near.get("rainStation"));
+        assertNull(far.get("rainSum"));                // 太遠不採用
+
+        WeatherService.mergeGust(list, List.of(st("三星", "宜蘭縣", "三星鄉", 24.67, 121.66, Map.of("gust", 12.3))));
+        assertEquals(12.3, own.get("gust"));
+        assertNull(far.get("gust"));
+    }
+
     @Test
     void weekDatasetIsThreeDayPlusTwo() {
         assertEquals("F-D0047-003", WeatherService.weekDataset("F-D0047-001"));

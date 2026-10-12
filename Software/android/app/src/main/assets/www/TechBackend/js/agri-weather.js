@@ -11,13 +11,15 @@
  * 作業建議門檻（啟發式，非官方判定）：
  *   避險：風力 ≥ 17.2 m/s（蒲福 8 級）、日雨量 ≥ 80 mm（氣象署大雨標準）、15 分鐘雨量 ≥ 10 mm、雷雨、體感 ≥ 38°C、氣溫 ≤ 6°C
  *   注意：降雨機率 ≥ 60%、風力 ≥ 13.9 m/s（7 級）、體感 ≥ 35°C、氣溫 ≤ 10°C、正在下雨（紫外線只顯示不列入）
- *   風力用陣風；氣象署鄉鎮預報沒有陣風，改用今日預報最大平均風速（比陣風保守）。雨量缺資料時不判讀。
+ *   風力取陣風與平均風速（含今日預報最大）中較大者；氣象署陣風來自自動觀測站，只有少數鄉鎮有，沒有時只看風速。
+ *   雨量：氣象署為雨量站觀測（近 24 小時 ≥ 80 mm、近 1 小時 ≥ 40 mm 建議避險，近 1 小時 ≥ 1 mm 為降雨中）；
+ *   Open-Meteo 為今日預報雨量與 15 分鐘雨量。缺資料時不判讀。
  *   紫外線：氣象署取自一週預報（白天時段），當天 18 時後沒有今日值，只剩明日。
  */
 (function (global) {
   'use strict';
 
-  var CACHE_KEY = 'agri_wx_towns_v3';
+  var CACHE_KEY = 'agri_wx_towns_v4';
   var TTL_MS = 15 * 60 * 1000;
   var API = 'https://api.open-meteo.com/v1/forecast';
   var CURRENT = 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_gusts_10m';
@@ -59,6 +61,11 @@
     return i >= 11 ? '危險級' : i >= 8 ? '過量級' : i >= 6 ? '高量級' : i >= 3 ? '中量級' : '低量級';
   }
 
+  // 風力峰值（m/s）：陣風與平均風速（含今日預報最大）取大
+  function windPeak(w) {
+    return Math.max(w.gust || 0, w.gustMax || 0, w.wind || 0, w.windMax || 0);
+  }
+
   function round(v, d) {
     if (v == null || isNaN(v)) return null;
     var p = Math.pow(10, d || 0);
@@ -68,12 +75,14 @@
   // 依即時值與今日預報給作業建議：level = stop（建議避險）/ caution（注意）/ ok（適合作業）
   function assess(w) {
     var stop = [], caution = [];
-    var hasGust = w.gust != null || w.gustMax != null;
-    var gust = hasGust ? Math.max(w.gust || 0, w.gustMax || 0) : Math.max(w.wind || 0, w.windMax || 0);
-    var gustName = hasGust ? '陣風' : '風力';
+    var gustOnly = Math.max(w.gust || 0, w.gustMax || 0);
+    var gust = windPeak(w);
+    var gustName = gustOnly > 0 && gustOnly >= gust ? '陣風' : '風力';
     if (gust >= 17.2) stop.push(gustName + ' 8 級以上');
     else if (gust >= 13.9) caution.push(gustName + ' 7 級以上');
-    if (w.rainSum >= 80) stop.push('日雨量 ' + Math.round(w.rainSum) + ' mm');
+    if (w.rainSum >= 80) stop.push((w.rain1h !== undefined ? '24 小時雨量 ' : '日雨量 ') + Math.round(w.rainSum) + ' mm');
+    if (w.rain1h >= 40) stop.push('時雨量 ' + Math.round(w.rain1h) + ' mm');
+    else if (w.rain1h >= 1) caution.push('降雨中（近 1 小時 ' + w.rain1h + ' mm）');
     if (w.precip >= 10) stop.push('強降雨中');
     else if (w.precip > 0.2) caution.push('降雨中');
     if (w.code >= 95 || w.thunder) stop.push('雷雨');
@@ -243,6 +252,7 @@
     counties: counties,
     towns: towns,
     wmoText: wmoText,
+    windPeak: windPeak,
     assess: assess,
     matchLocation: matchLocation,
     TTL_MS: TTL_MS

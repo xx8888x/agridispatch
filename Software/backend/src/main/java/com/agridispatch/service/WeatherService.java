@@ -38,7 +38,10 @@ import java.util.concurrent.CompletableFuture;
  * - 輸出欄位與前端 js/agri-weather.js 一致：取「最接近現在」的預報時段當即時值，今日／明日彙整高低溫與最高降雨機率
  * - 紫外線：另抓一週預報（各縣市 3 天資料集代碼 +2，元素「紫外線指數」，每天白天一筆），併入今日／明日；
  *   一週預報失敗不影響主資料（紫外線留 null）
- *   氣象署鄉鎮預報沒有陣風、雨量，這兩項回 null
+ * - 陣風、雨量：自動觀測站（O-A0001-001 氣象站的 GustInfo、O-A0002-001 雨量站的本日／1 小時／24 小時累積）
+ *   每站標有縣市鄉鎮：取鄉鎮內各站最大值；鄉鎮內沒有站時取 OBS_RADIUS_KM 內最近一站，再遠就留 null。
+ *   陣風只有少數氣象站有觀測（2026-10 實測約 60／876 站），多數鄉鎮沒有陣風，前端改用預報最大風速判讀。
+ *   觀測失敗同樣不影響主資料。
  */
 @Service
 public class WeatherService {
@@ -49,6 +52,10 @@ public class WeatherService {
     private static final DateTimeFormatter Q_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
     private static final String ELEMENTS = "溫度,體感溫度,相對濕度,風速,3小時降雨機率,天氣現象";
     private static final String WEEK_ELEMENTS = "紫外線指數";
+    private static final String OBS_API = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/";
+    private static final String GEO = "&GeoInfo=Coordinates,CountyName,TownName";
+    /** 鄉鎮內沒有測站時，最近測站的採用距離上限（公里） */
+    static final double OBS_RADIUS_KM = 10.0;
 
     /** 縣市 → 鄉鎮未來 3 天預報資料集（依氣象署 API 文件 /v1/rest/datastore/F-D0047-0xx 摘要對照） */
     static final Map<String, String> COUNTY_DATASETS = new LinkedHashMap<>();
@@ -111,6 +118,8 @@ public class WeatherService {
         // 主資料與紫外線同時發出，各 5 批
         List<CompletableFuture<String>> calls = batches(key, ids, ELEMENTS, from, to);
         List<CompletableFuture<String>> uvCalls = batches(key, weekIds, WEEK_ELEMENTS, from, to);
+        CompletableFuture<String> gustCall = get(OBS_API + "O-A0001-001?Authorization=" + enc(key) + "&format=JSON&WeatherElement=GustInfo" + GEO);
+        CompletableFuture<String> rainCall = get(OBS_API + "O-A0002-001?Authorization=" + enc(key) + "&format=JSON&RainfallElement=Now,Past1hr,Past24hr" + GEO);
         List<Map<String, Object>> list = new ArrayList<>();
         for (CompletableFuture<String> c : calls) {
             list.addAll(parse(mapper.readTree(c.get()), now));
@@ -123,9 +132,19 @@ public class WeatherService {
         } catch (Exception e) {
             log.warn("中央氣象署一週預報（紫外線）抓取失敗，紫外線留空：{}", e.toString());
         }
+        try {
+            mergeGust(list, parseStations(mapper.readTree(gustCall.get()), "gust"));
+        } catch (Exception e) {
+            log.warn("中央氣象署氣象站（陣風）抓取失敗，陣風留空：{}", e.toString());
+        }
+        try {
+            mergeRain(list, parseStations(mapper.readTree(rainCall.get()), "rain"));
+        } catch (Exception e) {
+            log.warn("中央氣象署雨量站抓取失敗，雨量留空：{}", e.toString());
+        }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("provider", "cwa");
-        out.put("source", "中央氣象署 鄉鎮天氣預報（F-D0047-093）");
+        out.put("source", "中央氣象署 鄉鎮天氣預報＋自動觀測站");
         out.put("fetchedAt", now.withNano(0).toString());
         out.put("stale", false);
         out.put("list", list);
@@ -135,21 +154,24 @@ public class WeatherService {
     private List<CompletableFuture<String>> batches(String key, List<String> ids, String elements, String from, String to) {
         List<CompletableFuture<String>> calls = new ArrayList<>();
         for (int i = 0; i < ids.size(); i += 5) {
-            String url = API + "?Authorization=" + enc(key)
+            calls.add(get(API + "?Authorization=" + enc(key)
                     + "&format=JSON"
                     + "&locationId=" + String.join(",", ids.subList(i, Math.min(i + 5, ids.size())))
                     + "&ElementName=" + enc(elements)
-                    + "&timeFrom=" + from + "&timeTo=" + to;
-            HttpRequest req = HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(20)).GET().build();
-            calls.add(http.sendAsync(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).thenApply(res -> {
-                if (res.statusCode() != 200) {
-                    // 回應內容不記錄（可能含授權碼回顯）
-                    throw new IllegalStateException("CWA HTTP " + res.statusCode());
-                }
-                return res.body();
-            }));
+                    + "&timeFrom=" + from + "&timeTo=" + to));
         }
         return calls;
+    }
+
+    private CompletableFuture<String> get(String url) {
+        HttpRequest req = HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(20)).GET().build();
+        return http.sendAsync(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).thenApply(res -> {
+            if (res.statusCode() != 200) {
+                // 回應內容不記錄（可能含授權碼回顯）
+                throw new IllegalStateException("CWA HTTP " + res.statusCode());
+            }
+            return res.body();
+        });
     }
 
     /** 3 天資料集 → 同縣市一週資料集（F-D0047-001 → 003） */
@@ -214,6 +236,111 @@ public class WeatherService {
         }
     }
 
+    // ------------------------------------------------------------------
+    // 自動觀測站（陣風、雨量）
+    // ------------------------------------------------------------------
+
+    /** 一個測站：名稱、所屬縣市鄉鎮（已轉「台」）、WGS84 座標、觀測時間與數值（gust；或 today、h1、h24） */
+    record Station(String name, String county, String town, Double lat, Double lon, String obsTime, Map<String, Double> v) {}
+
+    static List<Station> parseStations(JsonNode root, String kind) {
+        List<Station> out = new ArrayList<>();
+        for (JsonNode st : iter(f(f(root, "records"), "Station"))) {
+            JsonNode geo = f(st, "GeoInfo");
+            Double lat = null, lon = null;
+            for (JsonNode c : iter(f(geo, "Coordinates"))) {
+                if ("WGS84".equalsIgnoreCase(text(f(c, "CoordinateName")))) {
+                    lat = dbl(f(c, "StationLatitude"));
+                    lon = dbl(f(c, "StationLongitude"));
+                }
+            }
+            Map<String, Double> v = new LinkedHashMap<>();
+            if ("gust".equals(kind)) {
+                putValid(v, "gust", f(f(f(st, "WeatherElement"), "GustInfo"), "PeakGustSpeed"));
+            } else {
+                JsonNode re = f(st, "RainfallElement");
+                putValid(v, "today", f(f(re, "Now"), "Precipitation"));
+                putValid(v, "h1", f(f(re, "Past1hr"), "Precipitation"));
+                putValid(v, "h24", f(f(re, "Past24hr"), "Precipitation"));
+            }
+            if (v.isEmpty()) continue;
+            String obs = text(f(f(st, "ObsTime"), "DateTime"));
+            out.add(new Station(text(f(st, "StationName")), normalize(text(f(geo, "CountyName"))),
+                    normalize(text(f(geo, "TownName"))), lat, lon, obs.isEmpty() ? null : obs, v));
+        }
+        return out;
+    }
+
+    private static String text(JsonNode n) { return n == null || n.isNull() ? "" : n.asText(""); }
+
+    /** 觀測值：負數（-99、-998 等）為缺測／儀器異常，略過 */
+    private static void putValid(Map<String, Double> v, String k, JsonNode n) {
+        Double d = toNum(text(n).trim());
+        if (d != null && d >= 0) v.put(k, d);
+    }
+
+    /** 鄉鎮內有該項觀測的站；沒有就取半徑內最近一站 */
+    static List<Station> stationsFor(Map<String, Object> w, List<Station> all, String field) {
+        List<Station> own = new ArrayList<>();
+        for (Station s : all) {
+            if (s.v().containsKey(field) && s.county().equals(w.get("county")) && s.town().equals(w.get("town"))) own.add(s);
+        }
+        if (!own.isEmpty()) return own;
+        Double lat = (Double) w.get("lat"), lon = (Double) w.get("lon");
+        if (lat == null || lon == null) return own;
+        Station best = null;
+        double bestKm = OBS_RADIUS_KM;
+        for (Station s : all) {
+            if (!s.v().containsKey(field) || s.lat() == null || s.lon() == null) continue;
+            double d = km(lat, lon, s.lat(), s.lon());
+            if (d <= bestKm) { bestKm = d; best = s; }
+        }
+        if (best != null) own.add(best);
+        return own;
+    }
+
+    static void mergeGust(List<Map<String, Object>> list, List<Station> stations) {
+        for (Map<String, Object> w : list) {
+            Station top = null;
+            for (Station s : stationsFor(w, stations, "gust")) {
+                if (top == null || s.v().get("gust") > top.v().get("gust")) top = s;
+            }
+            if (top == null) continue;
+            w.put("gust", top.v().get("gust"));
+            w.put("gustStation", top.name());
+            w.put("gustObsTime", top.obsTime());
+        }
+    }
+
+    static void mergeRain(List<Map<String, Object>> list, List<Station> stations) {
+        for (Map<String, Object> w : list) {
+            List<Station> ss = stationsFor(w, stations, "h24");
+            if (ss.isEmpty()) continue;
+            Station top = ss.get(0);
+            Double today = null, h1 = null;
+            for (Station s : ss) {
+                if (s.v().get("h24") > top.v().get("h24")) top = s;
+                today = maxOf(today, s.v().get("today"));
+                h1 = maxOf(h1, s.v().get("h1"));
+            }
+            w.put("rainSum", top.v().get("h24"));   // 近 24 小時（對應大雨標準 24 小時 80 mm）
+            w.put("rainToday", today);              // 本日 0 時起累積
+            w.put("rain1h", h1);                    // 近 1 小時（大雨標準時雨量 40 mm）
+            w.put("rainStation", top.name());
+            w.put("rainStations", ss.size());
+            w.put("rainObsTime", top.obsTime());
+        }
+    }
+
+    private static Double maxOf(Double a, Double b) { return a == null ? b : (b == null ? a : Math.max(a, b)); }
+
+    private static double km(double lat1, double lon1, double lat2, double lon2) {
+        double r = Math.PI / 180, dLat = (lat2 - lat1) * r, dLon = (lon2 - lon1) * r;
+        double x = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return 2 * 6371 * Math.asin(Math.sqrt(x));
+    }
+
     private static Double toNum(String s) {
         try { return Double.parseDouble(s); } catch (NumberFormatException e) { return null; }
     }
@@ -268,6 +395,8 @@ public class WeatherService {
         w.put("thunder", (text != null && text.contains("雷")) || any(el.get("天氣現象"), now, "雷"));
         w.put("precip", null);
         w.put("rainSum", null);
+        w.put("rainToday", null);
+        w.put("rain1h", null);
         w.put("gust", null);
         w.put("gustMax", null);
         w.put("uv", null);

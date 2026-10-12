@@ -55,7 +55,7 @@
 - **farmer**：只能查詢 / 付款自己的訂單（`order.farmerId == token.ref`；舊資料無 farmerId 時 demo 模式放行）。建立訂單時傳入的 `assignedTeamId` 一律忽略，工班由系統建議或 admin 指派。
 - **worker（2026-10-08 起）**：`GET /api/orders`、`GET /api/orders/{id}`（及沿用同一檢查的 `GET /api/ratings/orders/{id}`）只限自己工班承接（`order.assignedTeamId == 工人的 teamId`）或出工名單有自己的訂單，其餘 403；demo 模式維持全部可見（路演本勞工作台一頁呈現三種身分）。
 - **公開端點的資料範圍（2026-10-08 起）**：`GET /api/dispatch/overview` 未登入或非 admin 不回 `securedRevenue`，工班只回 id、名稱、人數、駐點與避險地點、狀態（不含領班、領班電話、車輛、司機）；`GET /api/brochures?all=true`（含未上架草稿）只對 admin 生效。
-- **天候戰情氣象（2026-10-12 起）**：`GET /api/weather/towns[?force=true]`（需登入，任一角色）由後端代理中央氣象署鄉鎮天氣預報（F-D0047-093，22 縣市分 5 批），授權碼只放環境變數 `CWA_API_KEY`、不回傳前端也不寫入日誌；未設定時回 503，上游失敗時沿用上一份快取並標 `stale`，完全沒有資料時回 502。快取 `AGRI_WEATHER_CACHE_MINUTES`（預設 30 分鐘），`force=true` 仍受 1 分鐘最短間隔限制以保護配額。前端 demo／純前端 Mock 在 503 或離線時改用 Open-Meteo（限非商業，production 模式不使用）。
+- **天候戰情氣象（2026-10-12 起）**：`GET /api/weather/towns[?force=true]`（需登入，任一角色）由後端代理中央氣象署開放資料：鄉鎮天氣預報（F-D0047-093，22 縣市分 5 批）、一週預報的紫外線指數、自動氣象站陣風（O-A0001-001）與雨量站雨量（O-A0002-001，依測站所屬鄉鎮取最大值，鄉鎮內無站取 10 公里內最近站），授權碼只放環境變數 `CWA_API_KEY`、不回傳前端也不寫入日誌；未設定時回 503，上游失敗時沿用上一份快取並標 `stale`，完全沒有資料時回 502。快取 `AGRI_WEATHER_CACHE_MINUTES`（預設 30 分鐘），`force=true` 仍受 1 分鐘最短間隔限制以保護配額。前端 demo／純前端 Mock 在 503 或離線時改用 Open-Meteo（限非商業，production 模式不使用）。
 - **其他登入端點**：`GET /api/notifications` 非 admin 只回全體公告與 `target` 為自己（`token.ref`）的通知，忽略 `target` 參數；`POST /api/line/simulate-push`（LINE 體驗頁）正式模式僅限 admin。
 - **金流通知防少付**：綠界通知除了比對該交易金額，還須等於訂單**目前**的定金、訂單未取消且尚未付款；否則交易記為已付（款項已入帳，回 `1|OK` 避免重送）但訂單不標已付定金，記 log 待人工退款或補收。mock 金流在交易金額與目前定金不同時回 409。
 - **輸入長度**：訂單農場主姓名／現場對口姓名 100 字、電話 30 字、農地位置／現場交辦 255 字，人才報名經歷 255 字、電話 30 字，超過回 400；其餘資料庫約束錯誤（`DataIntegrityViolationException`）統一回 400，不回 500。

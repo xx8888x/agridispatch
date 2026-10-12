@@ -1,0 +1,44 @@
+{
+ "success": "true",
+ "records": {
+  "Station": [
+   {
+    "StationName": "宜蘭",
+    "StationId": "467080",
+    "Maintainer": "中央氣象署",
+    "ObsTime": {
+     "DateTime": "2026-10-12T14:10:00+08:00"
+    },
+    "GeoInfo": {
+     "Coordinates": [
+      {
+       "CoordinateName": "TWD67",
+       "CoordinateFormat": "decimal degrees",
+       "StationLatitude": "24.765773",
+       "StationLongitude": "121.748322"
+      },
+      {
+       "CoordinateName": "WGS84",
+       "CoordinateFormat": "decimal degrees",
+       "StationLatitude": "24.763975",
+       "StationLongitude": "121.756528"
+      }
+     ],
+     "CountyName": "宜蘭縣",
+     "TownName": "宜蘭市"
+    },
+    "RainfallElement": {
+     "Now": {
+      "Precipitation": "0.0"
+     },
+     "Past1hr": {
+      "Precipitation": "0.0"
+     },
+     "Past24hr": {
+      "Precipitation": "0.0"
+     }
+    }
+   }
+  ]
+ }
+}

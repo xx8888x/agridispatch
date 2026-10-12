@@ -163,7 +163,7 @@ class MatchingApiTest extends ApiTestSupport {
         for (JsonNode t : rec.get("teams")) if ("team_b".equals(t.get("teamId").asText())) teamB = t;
         assertNotNull(teamB);
         assertTrue(teamB.get("reasons").toString().contains("同期間另有 1 張訂單"), teamB.get("reasons").toString());
-        assertEquals(6, teamB.get("eligibleMembers").asInt(), "9 人扣除撞期的 W009、W010，以及第 1 個測試退保的 W024");
+        assertEquals(12, teamB.get("eligibleMembers").asInt(), "15 人（含本國示範 W033～W038）扣除撞期的 W009、W010，以及第 1 個測試退保的 W024");
 
         JsonNode crew = json(call("GET", "/api/matching/orders/ORD-2026-005/crew?teamId=team_b", admin, null)).get("data");
         assertTrue(crew.get("periodChecked").asBoolean());

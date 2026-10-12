@@ -360,10 +360,12 @@ public class AuthService {
                 Map.of("label", "🇵🇭 瑪麗亞 (Maria Santos) - 工班B組", "id", "W023", "nationality", "菲律賓")
             ),
             "localWorkers", List.of(
-                Map.of("label", "🇹🇼 林小祥 (外展帶隊領班) - 帶領6人外勞小工頭", "id", "W026", "phone", "0918-668-999", "tier", "Tier 2 帶隊領班", "subRole", "foreman"),
+                Map.of("label", "🇹🇼 林小祥 (外展帶隊領班) - 帶領6人本國工班", "id", "W026", "phone", "0918-668-999", "tier", "Tier 2 帶隊領班", "subRole", "foreman"),
                 Map.of("label", "🇹🇼 陳建宏 (專業機耕/飛手) - 大疆T50巡檢代噴", "id", "W012", "phone", "0988-333-444", "tier", "Tier 3 專業代耕", "subRole", "machinery"),
                 Map.of("label", "🇹🇼 張天成 (資深機耕師) - 80馬力曳引機手", "id", "W025", "phone", "0933-555-666", "tier", "Tier 3 專業代耕", "subRole", "machinery"),
-                Map.of("label", "🇹🇼 張志明 (合作社農業勞務員)", "id", "W030", "phone", "0975-123-456", "tier", "Tier 2 農業勞務員", "subRole", "labor")
+                Map.of("label", "🇹🇼 張志明 (合作社農業勞務員)", "id", "W030", "phone", "0975-123-456", "tier", "Tier 2 農業勞務員", "subRole", "labor"),
+                Map.of("label", "🇹🇼 王秀英 (中高齡) - 八德葉菜採收", "id", "W031", "phone", "0921-310-031", "tier", "Tier 2 中高齡", "subRole", "labor"),
+                Map.of("label", "🇹🇼 蔡佩珊 (學生打工) - 枋山芒果暑期採收", "id", "W036", "phone", "0958-360-036", "tier", "Tier 2 學生打工", "subRole", "labor")
             )
         );
     }

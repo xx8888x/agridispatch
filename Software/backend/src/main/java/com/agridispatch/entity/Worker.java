@@ -22,6 +22,9 @@ public class Worker {
     @jakarta.persistence.Convert(converter = com.agridispatch.common.YesNoBooleanConverter.class)
     private boolean isLeader;
     private String tier; // tier1_foreign, tier2_local_flex, tier3_turnkey
+    /** 工作型態（本國工人）：full_time 正職 / part_time 兼職 / senior 中高齡 / casual 臨時打工 / student 學生打工；外籍為 null。代碼見 WorkerService.EMPLOYMENT_TYPES */
+    @jakarta.persistence.Column(name = "employment_type", length = 16)
+    private String employmentType;
     private int baseSalary;
     private int agriBonus;
     private int transportAllowance;
@@ -99,6 +102,9 @@ public class Worker {
 
     public String getTier() { return tier; }
     public void setTier(String tier) { this.tier = tier; }
+
+    public String getEmploymentType() { return employmentType; }
+    public void setEmploymentType(String employmentType) { this.employmentType = employmentType; }
 
     public int getBaseSalary() { return baseSalary; }
     public void setBaseSalary(int baseSalary) { this.baseSalary = baseSalary; }

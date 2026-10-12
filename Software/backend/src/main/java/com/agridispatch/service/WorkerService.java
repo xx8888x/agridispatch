@@ -21,6 +21,14 @@ public class WorkerService {
 
     public static final Set<String> TIERS = Set.of("tier1_foreign", "tier2_local_flex", "tier3_turnkey");
 
+    /** 本國工人工作型態代碼 → 顯示名稱（前端 agri-theme.js 的 AgriEmployment 同一份）；null 表示未設定 */
+    public static final Map<String, String> EMPLOYMENT_TYPES = Map.of(
+            "full_time", "正職",
+            "part_time", "兼職",
+            "senior", "中高齡",
+            "casual", "臨時打工",
+            "student", "學生打工");
+
     private final WorkerRepository workerRepository;
     private final AttendanceService attendanceService;
     private final ObjectMapper objectMapper;
@@ -65,6 +73,7 @@ public class WorkerService {
             throw ApiException.badRequest("tier 必須為 tier1_foreign / tier2_local_flex / tier3_turnkey");
         }
         validateMoney(worker);
+        worker.setEmploymentType(normalizeEmploymentType(worker.getEmploymentType()));
         if (Masking.isMasked(worker.getArcNumber()) || Masking.isMasked(worker.getPassportNumber())) {
             throw ApiException.badRequest("證件號碼不可為遮罩值");
         }
@@ -115,6 +124,7 @@ public class WorkerService {
             if (!u.getTier().equals(existing.getTier())) existing.bumpTokenVersion();
             existing.setTier(u.getTier());
         }
+        if (copy.containsKey("employmentType")) existing.setEmploymentType(normalizeEmploymentType(u.getEmploymentType()));
         if (copy.containsKey("baseSalary")) existing.setBaseSalary(u.getBaseSalary());
         if (copy.containsKey("agriBonus")) existing.setAgriBonus(u.getAgriBonus());
         if (copy.containsKey("transportAllowance")) existing.setTransportAllowance(u.getTransportAllowance());
@@ -134,6 +144,15 @@ public class WorkerService {
             throw ApiException.notFound("找不到該農工編號: " + id);
         }
         workerRepository.deleteById(id);
+    }
+
+    /** 空字串視為未設定；其餘須為 EMPLOYMENT_TYPES 的代碼 */
+    private static String normalizeEmploymentType(String type) {
+        String t = emptyToNull(type);
+        if (t != null && !EMPLOYMENT_TYPES.containsKey(t)) {
+            throw ApiException.badRequest("employmentType 必須為 " + String.join(" / ", new TreeSet<>(EMPLOYMENT_TYPES.keySet())));
+        }
+        return t;
     }
 
     private static String emptyToNull(String s) {

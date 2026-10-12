@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -457,8 +458,20 @@ public class SeedService {
                 {"W023", "Maria Santos", "瑪麗亞", "菲律賓", "team_b", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD55456781", "P4412301", "2028-01-15", "已納保 (勞/健/職災)", "枋山愛文芒果產區 外銷果品裝箱", "dispatched_field", "0988-222-339"},
                 {"W024", "Korn Somsak", "阿頌", "泰國", "team_b", "false", "tier1_foreign", "MIN", "BONUS", "1200", "AD66345672", "T5512302", "2028-01-15", "已納保 (勞/健/職災)", "宜蘭三星青蔥專區 清晨拔蔥出勤", "dispatched_field", "0988-222-340"},
                 {"W025", "張天成", "張天成", "本國", "team_c", "false", "tier3_turnkey", "43500", "BONUS", "3000", "", "312456793", "永久有效", "已納保 (勞保/職災/雇主責任險)", "水稻與雜糧專區 80馬力曳引機深耕整地", "dispatched_field", "0933-555-666"},
-                {"W026", "林小祥", "林小祥", "本國", "team_b", "true", "tier2_local_flex", "42000", "8000", "2800", "", "312456794", "永久有效", "已納保 (勞保/職災/雇主責任險)", "外展帶隊小工頭 帶領6名外勞於枋山芒果園作業與品質驗收", "dispatched_field", "0918-668-999"},
-                {"W030", "張志明", "張志明", "本國", "team_a", "false", "tier2_local_flex", "MIN", "BONUS", "2400", "", "312456795", "永久有效", "已納保 (勞保/健保/6%勞退)", "合作社在籍農業勞務員 八德有機蔬菜專區田間採收與出勤", "dispatched_field", "0975-123-456"}
+                {"W026", "林小祥", "林小祥", "本國", "team_b", "true", "tier2_local_flex", "42000", "8000", "2800", "", "312456794", "永久有效", "已納保 (勞保/職災/雇主責任險)", "外展帶隊小工頭 帶領6名本國工班組員於枋山芒果園作業與品質驗收", "dispatched_field", "0918-668-999"},
+                {"W030", "張志明", "張志明", "本國", "team_a", "false", "tier2_local_flex", "MIN", "BONUS", "2400", "", "312456795", "永久有效", "已納保 (勞保/健保/6%勞退)", "合作社在籍農業勞務員 八德有機蔬菜專區田間採收與出勤", "dispatched_field", "0975-123-456"},
+                // 本國工人各工作型態示範（2026-10 外籍移工入口暫時下架後，示範以本國工人為主）；型態見下方 EMPLOYMENT
+                // 學生、臨時打工的農業部就業獎勵金適用與否【待確認】，先填 0
+                {"W031", "王秀英", "王秀英", "本國", "team_a", "false", "tier2_local_flex", "MIN", "BONUS", "1800", "", "", "永久有效", "已納保 (勞保/就保/職保/健保)", "八德有機蔬菜專區 葉菜採收與整理", "dispatched_field", "0921-310-031"},
+                {"W032", "陳冠宇", "陳冠宇", "本國", "team_a", "false", "tier2_local_flex", "MIN", "0", "1200", "", "", "永久有效", "已納保 (勞保/就保/職保/健保)", "八德有機蔬菜專區 週末採收裝箱", "standby", "0932-320-032"},
+                {"W033", "李阿財", "李阿財", "本國", "team_b", "false", "tier2_local_flex", "MIN", "BONUS", "2400", "", "", "永久有效", "已納保 (勞保/就保/職保/健保)", "枋山愛文芒果園 套袋疏果", "dispatched_field", "0912-330-033"},
+                {"W034", "吳美玲", "吳美玲", "本國", "team_b", "false", "tier2_local_flex", "MIN", "BONUS", "2400", "", "", "永久有效", "已納保 (勞保/就保/職保/健保)", "枋山愛文芒果園 果品初選", "dispatched_field", "0928-340-034"},
+                {"W035", "劉家豪", "劉家豪", "本國", "team_b", "false", "tier2_local_flex", "MIN", "0", "2400", "", "", "永久有效", "已納保 (勞保/就保/職保/健保)", "枋山愛文芒果園 搬運裝車", "dispatched_field", "0937-350-035"},
+                {"W036", "蔡佩珊", "蔡佩珊", "本國", "team_b", "false", "tier2_local_flex", "MIN", "0", "2400", "", "", "永久有效", "已納保 (勞保/就保/職保/健保)", "枋山愛文芒果園 暑期採收裝箱", "dispatched_field", "0958-360-036"},
+                {"W037", "鄭國雄", "鄭國雄", "本國", "team_b", "false", "tier2_local_flex", "MIN", "BONUS", "2400", "", "", "永久有效", "已納保 (勞保/就保/職保/健保)", "宜蘭三星青蔥田 拔蔥與束捆", "dispatched_field", "0919-370-037"},
+                {"W038", "許志偉", "許志偉", "本國", "team_b", "false", "tier2_local_flex", "MIN", "0", "2400", "", "", "永久有效", "已納保 (勞保/就保/職保/健保)", "宜蘭三星青蔥田 水洗與裝簍", "dispatched_field", "0926-380-038"},
+                {"W039", "黃淑芬", "黃淑芬", "本國", "team_a", "false", "tier2_local_flex", "MIN", "BONUS", "1800", "", "", "永久有效", "已納保 (勞保/就保/職保/健保)", "大溪彩椒園 整枝摘果", "standby", "0935-390-039"},
+                {"W040", "林雅婷", "林雅婷", "本國", "team_a", "false", "tier2_local_flex", "MIN", "0", "1200", "", "", "永久有效", "已納保 (勞保/就保/職保/健保)", "八德有機蔬菜專區 寒暑假包裝貼標", "standby", "0963-400-040"}
             };
 
             for (String[] rw : raw) {
@@ -471,6 +484,21 @@ public class SeedService {
                 workerRepository.save(new Worker(rw[0], rw[1], rw[2], rw[3], rw[4], isLeader, rw[6],
                         baseSalary, agriBonus, transport, arc, rw[11], rw[12], rw[13], rw[14], rw[15], rw[16]));
             }
+
+            // 本國工人的工作型態（WorkerService.EMPLOYMENT_TYPES）；既有資料庫未設定者一併補上，不覆蓋已設定的值
+            Map<String, String> employment = Map.ofEntries(
+                    Map.entry("W012", "full_time"), Map.entry("W013", "full_time"), Map.entry("W025", "full_time"),
+                    Map.entry("W026", "full_time"), Map.entry("W030", "full_time"),
+                    Map.entry("W021", "part_time"), Map.entry("W034", "part_time"), Map.entry("W039", "part_time"),
+                    Map.entry("W022", "senior"), Map.entry("W031", "senior"), Map.entry("W033", "senior"), Map.entry("W037", "senior"),
+                    Map.entry("W035", "casual"), Map.entry("W038", "casual"),
+                    Map.entry("W032", "student"), Map.entry("W036", "student"), Map.entry("W040", "student"));
+            employment.forEach((id, type) -> workerRepository.findById(id).ifPresent(w -> {
+                if (w.getEmploymentType() == null) {
+                    w.setEmploymentType(type);
+                    workerRepository.save(w);
+                }
+            }));
         }
     }
 

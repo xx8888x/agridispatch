@@ -48,6 +48,6 @@ sudo bash /tmp/agri-deploy/enable-https.sh dev.<IP 以 - 連接>.sslip.io
 | 主機 | Oracle Cloud 大阪 `instance-20261008-1438`，Oracle Linux 9.8 **x86_64**（2 vCPU／11 GB；非 Always Free 的 Ampere，請留意計費） |
 | 資料庫 | Oracle 23ai Free（lite 映像檔）容器 `agri-oracle`，固定 IP 10.88.0.50，資料磁碟區 `agri-oradata` |
 | 帳號 | 11 個帳號已匯入（帳密清單在本機 `Software/database/local/`，勿外流）；`admin_tech` 密碼在主機 env 檔 |
-| App | 1.0.14 正式簽章，`-PagriApiBase=https://dev.141-147-147-14.sslip.io/api`（「我的訂單」讀後端本人訂單、含農場主自助註冊頁、LINE 體驗頁連 DEV LINE Bot） |
+| App | 1.0.15 正式簽章，`-PagriApiBase=https://dev.141-147-147-14.sslip.io/api`（「我的訂單」讀後端本人訂單、含農場主自助註冊頁、LINE 體驗頁連 DEV LINE Bot；1.0.15 起前端資料夾為 AgriDispatch／TechBackend，含農場主分兩步預約） |
 | LINE Bot | 模擬模式，`https://dev.141-147-147-14.sslip.io/linebot-api/health`；與後端共用內部金鑰已連通（backendLinked） |
 | 已知狀況 | 部分網路（例如家用路由器 DNS）查不到 sslip.io 網域；連不上時把電腦／手機 DNS 改為 8.8.8.8，或日後改用自有網域 |

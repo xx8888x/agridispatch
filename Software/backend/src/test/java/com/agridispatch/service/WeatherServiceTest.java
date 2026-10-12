@@ -74,6 +74,28 @@ class WeatherServiceTest {
         assertEquals(40.0, t.get("rainProb"));        // "-" 視為無資料
     }
 
+    /** 2026-10-12 實際打 F-D0047-093（宜蘭縣宜蘭市）的回應：溫度／濕度逐時、風速逐 3 小時，即時值要取當下那一小時 */
+    @Test
+    void parsesRealCwaResponseWithHourlySeries() throws Exception {
+        String real = new String(getClass().getResourceAsStream("/cwa-f-d0047-093-sample.json").readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        List<Map<String, Object>> list = WeatherService.parse(new ObjectMapper().readTree(real),
+                LocalDateTime.of(2026, 10, 12, 13, 30));
+        assertEquals(1, list.size());
+        Map<String, Object> w = list.get(0);
+        assertEquals("宜蘭縣", w.get("county"));
+        assertEquals("宜蘭市", w.get("town"));
+        assertEquals("2026-10-12T13:00", w.get("time"));
+        assertEquals(72.0, w.get("humidity"));       // 13:00 那一筆，不是 12:00 的 71
+        assertEquals(3.0, w.get("wind"));
+        assertNotNull(w.get("tMax"));
+        assertNotNull(w.get("rainProb"));
+        assertNotEquals("—", w.get("text"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> t = (Map<String, Object>) w.get("tomorrow");
+        assertNotNull(t.get("tMax"));
+        assertNotEquals("—", t.get("text"));
+    }
+
     @Test
     void acceptsLowercaseFieldNamesAndNormalizesTai() throws Exception {
         String lower = SAMPLE.replace("\"Locations\"", "\"locations\"").replace("\"LocationsName\":\"宜蘭縣\"", "\"locationsName\":\"臺東縣\"")

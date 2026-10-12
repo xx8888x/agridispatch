@@ -159,12 +159,21 @@ public class WeatherService {
         Map<String, List<Point>> el = new LinkedHashMap<>();
         for (JsonNode we : iter(f(loc, "WeatherElement"))) {
             String name = f(we, "ElementName").asText("");
-            List<Point> pts = new ArrayList<>();
+            List<Point> raw = new ArrayList<>();
             for (JsonNode t : iter(f(we, "Time"))) {
                 LocalDateTime start = time(f(t, "StartTime"), f(t, "DataTime"));
                 LocalDateTime end = time(f(t, "EndTime"), null);
                 JsonNode v = first(f(t, "ElementValue"));
-                if (start != null && v != null) pts.add(new Point(start, end == null ? start.plusHours(3) : end, v));
+                if (start != null && v != null) raw.add(new Point(start, end, v));
+            }
+            // 時間點資料（DataTime，無 EndTime）的有效區間到下一個時間點為止：溫度逐時、風速逐 3 小時，間隔不固定
+            raw.sort((a, b) -> a.start.compareTo(b.start));
+            List<Point> pts = new ArrayList<>();
+            for (int i = 0; i < raw.size(); i++) {
+                Point p = raw.get(i);
+                LocalDateTime end = p.end != null ? p.end
+                        : (i + 1 < raw.size() ? raw.get(i + 1).start : p.start.plusHours(3));
+                pts.add(new Point(p.start, end, p.v));
             }
             el.put(name, pts);
         }

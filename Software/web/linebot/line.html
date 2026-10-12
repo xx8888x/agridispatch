@@ -130,19 +130,19 @@
 
   <header class="ad-header">
     <div class="ad-container ad-header__inner">
-      <a href="../農業派遣主網站/index.html" class="ad-header__brand">
+      <a href="../AgriDispatch/index.html" class="ad-header__brand">
         <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
         智農派工
         <span class="ad-header__role">LINE 體驗</span>
       </a>
       <nav class="ad-nav" aria-label="其他視角">
-        <a class="ad-nav__link" href="../農業派遣主網站/farmer.html">農場主工作台</a>
-        <a class="ad-nav__link" href="../農業派遣主網站/worker-foreign.html">外籍工人</a>
-        <a class="ad-nav__link" href="../農業派遣主網站/worker-local.html">本國工人</a>
+        <a class="ad-nav__link" href="../AgriDispatch/farmer.html">農場主工作台</a>
+        <a class="ad-nav__link" href="../AgriDispatch/worker-foreign.html">外籍工人</a>
+        <a class="ad-nav__link" href="../AgriDispatch/worker-local.html">本國工人</a>
       </nav>
       <div class="ad-header__actions">
         <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()" aria-label="示範導覽"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span></button>
-        <a href="../農業派遣主網站/index.html" class="ad-btn ad-btn--secondary ad-btn--sm">首頁</a>
+        <a href="../AgriDispatch/index.html" class="ad-btn ad-btn--secondary ad-btn--sm">首頁</a>
       </div>
     </div>
   </header>
@@ -284,7 +284,7 @@
             </div>
             <div class="flex items-center gap-2 flex-wrap">
               <button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" onclick="simulateFollow()"><i data-lucide="user-plus" class="ad-icon ad-icon--sm"></i>模擬加好友</button>
-              <a id="open-bind-page" class="ad-btn ad-btn--line ad-btn--sm" href="../農業派遣主網站/line-bind.html" target="_blank" rel="noopener" hidden>開啟綁定頁</a>
+              <a id="open-bind-page" class="ad-btn ad-btn--line ad-btn--sm" href="../AgriDispatch/line-bind.html" target="_blank" rel="noopener" hidden>開啟綁定頁</a>
             </div>
           </div>
         </div>
@@ -384,7 +384,7 @@
 
   <script>
     // 示範導覽抽屜：頁面清單集中在 agri-theme.js，demo 模式才會注入
-    var demoNav = AgriTheme.demoNav({ main: '../農業派遣主網站/', tech: '../科技後台/', line: '' });
+    var demoNav = AgriTheme.demoNav({ main: '../AgriDispatch/', tech: '../TechBackend/', line: '' });
   </script>
 
   <!-- Interactive JavaScript -->
@@ -510,7 +510,7 @@
       link.hidden = !bound;
       if (bound) {
         const role = acc.channel === 'farmer' ? 'farmer' : currentRole;
-        link.href = `../農業派遣主網站/line-bind.html?channel=${acc.channel}&role=${role}&mockUid=${simulatedLineUserId(acc.channel)}`;
+        link.href = `../AgriDispatch/line-bind.html?channel=${acc.channel}&role=${role}&mockUid=${simulatedLineUserId(acc.channel)}`;
       }
     }
 
@@ -710,7 +710,7 @@
     });
 
     // 農場主「現有工班黑轉白」：優先由 Java LINE Bot (5000) 回覆 Flex 卡片，與實機 LINE 同一份邏輯；
-    // 後端未啟動時改用本地示範卡片（規則同 農業派遣主網站/legalize.html）
+    // 後端未啟動時改用本地示範卡片（規則同 AgriDispatch/legalize.html）
     async function runLegalize(text) {
       showTypingIndicator();
       const data = await askLineBot({ text: text }, 1500);
@@ -753,7 +753,7 @@
         <div style="font-weight: 700; color: #047857;">現有工班黑轉白</div>
         <div>請選擇這位工人目前的身分，我告訴您怎麼轉：</div>
         ${typeButtons}
-        <a href="../農業派遣主網站/legalize.html" class="lc-flex__btn lc-flex__btn--line">開啟轉換中心（整班盤點）</a>
+        <a href="../AgriDispatch/legalize.html" class="lc-flex__btn lc-flex__btn--line">開啟轉換中心（整班盤點）</a>
         <div style="color: #64748b;">離線示範（LINE Bot 後端未啟動）；法規細節標【待確認】處以律師或主管機關意見為準</div>
       `);
     }
@@ -762,7 +762,7 @@
       const t = LEGALIZE_TYPES[key];
       const action = t.path === 'replace'
         ? `<button type="button" onclick="handleQuickCmd('快速叫工')" class="lc-flex__btn lc-flex__btn--line">改派合法工班補位</button>`
-        : `<a href="../農業派遣主網站/legalize.html" class="lc-flex__btn lc-flex__btn--line">到轉換中心開始轉白</a>`;
+        : `<a href="../AgriDispatch/legalize.html" class="lc-flex__btn lc-flex__btn--line">到轉換中心開始轉白</a>`;
       appendBotHtml(`
         <div style="font-weight: 700;">${t.label}</div>
         <div>${LEGALIZE_BADGE[t.path]}</div>
@@ -1325,8 +1325,8 @@
           },
           footer: {
             contents: [
-              { action: { label: '預購產季早鳥保證工時包 (鎖定名額・優先排班)', uri: '../農業派遣主網站/farmer-login.html' }, color: '#D97706' },
-              { action: { label: '瀏覽 52 週完整產曆動態輪播', uri: '../農業派遣主網站/pitch.html#calendar' }, color: '#2563EB' }
+              { action: { label: '預購產季早鳥保證工時包 (鎖定名額・優先排班)', uri: '../AgriDispatch/farmer-login.html' }, color: '#D97706' },
+              { action: { label: '瀏覽 52 週完整產曆動態輪播', uri: '../AgriDispatch/pitch.html#calendar' }, color: '#2563EB' }
             ]
           }
         }
@@ -1387,7 +1387,7 @@
           },
           footer: {
             contents: [
-              { action: { label: '立即線上派工試算 (農場主專區)', uri: '../農業派遣主網站/farmer-login.html' }, color: '#D97706' }
+              { action: { label: '立即線上派工試算 (農場主專區)', uri: '../AgriDispatch/farmer-login.html' }, color: '#D97706' }
             ]
           }
         }
@@ -1451,7 +1451,7 @@
           },
           footer: {
             contents: [
-              { action: { label: '立即線上選購早鳥工時包 (定金20%)', uri: '../農業派遣主網站/farmer-login.html' }, color: '#D97706' },
+              { action: { label: '立即線上選購早鳥工時包 (定金20%)', uri: '../AgriDispatch/farmer-login.html' }, color: '#D97706' },
               { action: { label: '查詢各項農事標準費率', uri: 'javascript:handleQuickCmd("查費率")' }, color: '#2563EB' }
             ]
           }
@@ -1481,7 +1481,7 @@
           },
           footer: {
             contents: [
-              { action: { label: '立即預約機耕班次 (農場主專屬)', uri: '../農業派遣主網站/farmer-login.html' }, color: '#059669' },
+              { action: { label: '立即預約機耕班次 (農場主專屬)', uri: '../AgriDispatch/farmer-login.html' }, color: '#059669' },
               { action: { label: '檢視無人機飛行歷史航跡', uri: 'javascript:handleQuickCmd("機耕航跡")' }, color: '#2563EB' }
             ]
           }

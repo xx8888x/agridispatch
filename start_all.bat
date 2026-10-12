@@ -45,10 +45,10 @@ echo.
 echo ======================================================================
 echo   🎉 系統全服務已就緒！可直接透過瀏覽器訪問以下入口：
 echo.
-echo   🌐 智農派工 首頁入口:       http://localhost:3000/demo/農業派遣主網站/index.html
-echo   🌾 小農派工與金流收銀台:     http://localhost:3000/demo/農業派遣主網站/farmer.html
-echo   👥 角色分流登入門戶:         http://localhost:3000/demo/農業派遣主網站/login.html
-echo   💻 科技營運管理總台:         http://localhost:3000/demo/科技後台/admin.html
+echo   🌐 智農派工 首頁入口:       http://localhost:3000/demo/AgriDispatch/index.html
+echo   🌾 小農派工與金流收銀台:     http://localhost:3000/demo/AgriDispatch/farmer.html
+echo   👥 角色分流登入門戶:         http://localhost:3000/demo/AgriDispatch/login.html
+echo   💻 科技營運管理總台:         http://localhost:3000/demo/TechBackend/admin.html
 echo   📱 LINE Bot 實機體驗館:      http://localhost:3000/demo/linebot/line.html
 echo.
 echo   🔗 如需 LINE 官方實機 Webhook 穿透，請雙擊運行：start_line_tunnel.bat

@@ -4,7 +4,7 @@
    原則：一個主色、一個強調色、一個螢幕一顆實色按鈕、不發光、不漸層。
    用法：<link rel="stylesheet" href="css/agri.css">，在 style.css 之後載入。
    所有 class 皆以 ad- 為前綴，避免與 Tailwind 工具類衝突。
-   三個資料夾（農業派遣主網站／科技後台／linebot）各一份，內容必須相同。
+   三個資料夾（AgriDispatch／TechBackend／linebot）各一份，內容必須相同。
    ============================================================ */
 
 /* ---------- 1. Design tokens ---------- */

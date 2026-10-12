@@ -66,10 +66,10 @@
     if (file.startsWith('farmer')) return 'farmer-login.html';
     if (file.startsWith('worker-foreign')) return 'worker-foreign-login.html';
     if (file.startsWith('worker-local')) return 'worker-local-login.html';
-    // 登入大廳在「農業派遣主網站」資料夾；linebot 等其他資料夾的頁面需跨資料夾導向
+    // 登入大廳在「AgriDispatch」資料夾；linebot 等其他資料夾的頁面需跨資料夾導向
     let dirPath = global.location.pathname;
     try { dirPath = decodeURIComponent(dirPath); } catch (e) {}
-    return dirPath.includes('/農業派遣主網站/') ? 'login.html' : '../農業派遣主網站/login.html';
+    return dirPath.includes('/AgriDispatch/') ? 'login.html' : '../AgriDispatch/login.html';
   }
 
   // demo 模式：路演時常從示範導覽在不同角色頁之間跳轉（例如後台 → 農場主頁），

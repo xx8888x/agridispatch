@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>科技營運與調度管理後台登入 - 智農派工 AgriDispatch</title>
+  <!-- 執行模式設定（demo / production，每份副本各自一份） -->
+  <script src="js/app-config.js"></script>
+  <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode !== 'production') {
+      document.write('<script src="js/demo-accounts.js"><\/script>');
+    }
+  </script>
+  <!-- Tailwind CSS CDN -->
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
+  <!-- 設計系統：共用 tailwind.config、demo 模式標記、圖示 -->
+  <script src="js/agri-theme.js"></script>
+  <!-- Lucide 圖示：本機 vendor 優先，CDN 備援（只用在 Vue 區塊外） -->
+  <script src="js/vendor/lucide.min.js"></script>
+  <script>
+    if (typeof lucide === 'undefined') {
+      document.write('<script src="https://unpkg.com/lucide@1.47.0"><\/script>');
+    }
+  </script>
+  <!-- Vue 3: Local Vendor First with CDN Fallback -->
+  <script src="js/vendor/vue.global.prod.js"></script>
+  <script>
+    if (typeof Vue === 'undefined') {
+      document.write('<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"><\/script>');
+    }
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/agri.css">
+  <style>
+    [v-cloak] { display: none; }
+  </style>
+  <script>
+    // Failsafe: Remove v-cloak if Vue takes more than 1.5s to prevent blank screen
+    setTimeout(function() {
+      var appEl = document.getElementById('app');
+      if (appEl && appEl.hasAttribute('v-cloak')) {
+        console.warn('Vue mounting timed out or offline, removing v-cloak failsafe');
+        appEl.removeAttribute('v-cloak');
+      }
+    }, 1500);
+  </script>
+</head>
+<body class="ad-body min-h-screen flex flex-col">
+
+  <!-- 表頭：一條 56px。身分切換只在 demo 顯示。 -->
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner">
+      <a href="../AgriDispatch/index.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">營運管理</span>
+      </a>
+      <div class="ad-header__actions">
+        <a href="../AgriDispatch/login.html" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only><i data-lucide="arrow-left-right" class="ad-icon ad-icon--sm"></i>切換身分</a>
+      </div>
+    </div>
+  </header>
+
+  <div id="app" v-cloak class="flex-1 flex flex-col">
+    <main class="flex-1 ad-container w-full" style="padding-block: 32px 40px;">
+      <div style="max-width: 440px; margin-inline: auto;">
+        <h1 class="ad-display">管理人員登入</h1>
+        <p class="ad-caption" style="margin-top: 6px;">科技公司與合作社人員專用。</p>
+
+        <div class="ad-card" style="padding: 24px; margin-top: 24px;">
+          <!-- 示範模式提示（僅 demo 模式顯示） -->
+          <div v-if="isDemo && demoCfg" data-demo-only style="margin-bottom: 20px;">
+            <div class="ad-notice ad-notice--ok">
+              <span style="flex: 1;">示範模式，免密碼。</span>
+              <a href="admin.html" style="color: inherit; font-weight: 600; white-space: nowrap;">直接進入</a>
+            </div>
+          </div>
+
+          <form @submit.prevent="handleLogin" style="display: flex; flex-direction: column; gap: 16px;">
+            <div v-if="errorMsg" class="ad-notice ad-notice--danger" role="alert">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ad-icon ad-icon--sm"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg><span>{{ errorMsg }}</span>
+            </div>
+
+            <div class="ad-field">
+              <label class="ad-label" for="loginEmail">帳號或電子郵件</label>
+              <input id="loginEmail" v-model="form.email" type="text" autocomplete="username" placeholder="admin@agridispatch.tw" class="ad-input">
+            </div>
+
+            <div class="ad-field">
+              <label class="ad-label" for="loginPwd">密碼</label>
+              <input id="loginPwd" v-model="form.password" type="password" autocomplete="current-password" placeholder="密碼" class="ad-input">
+            </div>
+
+            <!-- 所屬組織只影響示範資料的顯示名稱，正式版由後端帳號決定。
+                 不放「記住我」與動態驗證碼：後端沒有長效 token 與 2FA，放了會是不實宣稱。 -->
+            <div data-demo-only>
+              <div class="ad-field">
+                <label class="ad-label" for="loginOrg">所屬組織</label>
+                <select id="loginOrg" v-model="form.org" class="ad-select">
+                  <option value="tech">智農科技代管公司</option>
+                  <option value="coop">外展農業合作社</option>
+                  <option value="moa">農業部法規稽核組</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit" :disabled="loading" class="ad-btn ad-btn--primary ad-btn--lg ad-btn--block">
+              {{ loading ? '驗證中…' : '登入' }}
+            </button>
+          </form>
+
+          <!-- 示範帳號（僅 demo 模式顯示，資料來自 js/demo-accounts.js） -->
+          <div v-if="isDemo && demoCfg" data-demo-only style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--ad-border);">
+            <p class="ad-label" style="margin-bottom: 8px;">示範帳號（點一下填入）</p>
+            <div class="ad-list">
+              <button v-for="p in demoCfg.profiles" :key="p.key" type="button" @click="fillAdmin(p.key)"
+                class="ad-row ad-card--interactive" style="width: 100%; text-align: left; font: inherit;">
+                <span class="ad-row__main">
+                  <span class="ad-row__title" style="display: block;">{{ p.label }}</span>
+                  <span class="ad-row__meta" style="display: block;">{{ p.email }}</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="ad-caption" style="padding: 20px 16px; text-align: center; border-top: 1px solid var(--ad-border);">
+      © 2026 智農派工 AgriDispatch
+    </footer>
+  </div>
+
+  <script>
+    const { createApp, ref } = Vue;
+    const isDemo = window.AgriAuth ? window.AgriAuth.MODE !== 'production' : true;
+    const demoCfg = (window.AGRI_DEMO_ACCOUNTS && window.AGRI_DEMO_ACCOUNTS.admin) || null;
+
+    createApp({
+      setup() {
+        const loading = ref(false);
+        const errorMsg = ref('');
+        const form = ref({
+          email: '',
+          password: '',
+          org: 'tech',
+          otp: '',
+          remember: true
+        });
+
+        const fillAdmin = (key) => {
+          if (!demoCfg) return;
+          const p = demoCfg.profiles.find(x => x.key === key);
+          if (!p) return;
+          form.value.email = p.email;
+          form.value.password = p.password;
+          form.value.org = p.org;
+          form.value.otp = p.otp;
+        };
+
+        const handleLogin = async () => {
+          errorMsg.value = '';
+          loading.value = true;
+
+          if (!isDemo) {
+            // production 模式：一律呼叫真實登入 API，失敗不導向、顯示錯誤
+            try {
+              const res = await fetch(`${window.AgriAuth.API_BASE}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier: form.value.email, password: form.value.password })
+              });
+              const data = await res.json().catch(() => null);
+              if (res.ok && data && data.success && data.user) {
+                window.AgriAuth.setSession(data.token, data.user);
+                window.location.href = 'admin.html';
+              } else {
+                errorMsg.value = (data && data.error) || '帳號或密碼錯誤';
+              }
+            } catch (e) {
+              errorMsg.value = '無法連線到伺服器，請稍後再試';
+            } finally {
+              loading.value = false;
+            }
+            return;
+          }
+
+          // demo 模式：維持既有快速展示體驗，後端在線則同步真實 token/user
+          const org = form.value.org || 'tech';
+          const email = form.value.email || (demoCfg && demoCfg.profiles[0].email) || 'admin@agridispatch.tw';
+          const matched = demoCfg && demoCfg.profiles.find(p => p.email === email);
+          let finalUser = {
+            username: email,
+            email: email,
+            org: org,
+            name: (matched && matched.name) || (org === 'tech' ? '林技術長 (Tech Lead)' : (org === 'coop' ? '陳理事長 (Coop Chair)' : '張稽核專員')),
+            role: 'admin_tech',
+            demo: true
+          };
+          let token = 'demo-admin-token-2026';
+
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000); // 後端 PBKDF2 驗證約 1~1.5 秒
+            const res = await fetch(`${window.AgriAuth.API_BASE}/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ identifier: email, password: form.value.password || (matched && matched.password) || '' }),
+              signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.success && data.user) {
+                finalUser = data.user;
+                token = data.token || token;
+              }
+            }
+          } catch (e) {
+            // Demo 離線容錯，沿用本地假資料
+          }
+
+          sessionStorage.setItem('agri_admin_user', JSON.stringify(finalUser));
+          window.AgriAuth.setSession(token, finalUser);
+          setTimeout(() => { window.location.href = 'admin.html'; }, 300);
+        };
+
+        return {
+          form,
+          loading,
+          errorMsg,
+          isDemo,
+          demoCfg,
+          fillAdmin,
+          handleLogin
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

@@ -7,10 +7,8 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.util.UriUtils;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -41,7 +39,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
         for (String site : new String[]{"demo", "web"}) {
-            String target = "redirect:/" + site + "/" + UriUtils.encodePath("農業派遣主網站", StandardCharsets.UTF_8) + "/index.html";
+            String target = "redirect:/" + site + "/AgriDispatch/index.html";
             registry.addViewController("/" + site).setViewName(target);
             registry.addViewController("/" + site + "/").setViewName(target);
         }

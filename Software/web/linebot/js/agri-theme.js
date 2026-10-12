@@ -7,7 +7,7 @@
  *    讓 [data-demo-only] 元素（示範導覽抽屜、免密提示）只在 demo 出現。
  * 3. 提供 AgriTheme.icons()：頁面載入 lucide 後呼叫，把 <i data-lucide> 換成 SVG。
  *
- * 三個資料夾（農業派遣主網站／科技後台／linebot）各一份，內容必須相同。
+ * 三個資料夾（AgriDispatch／TechBackend／linebot）各一份，內容必須相同。
  * 規範：07_系統分析及文件/04_UI設計系統規範.md
  */
 (function () {
@@ -102,7 +102,7 @@
   }
 
   // 6. 示範導覽抽屜：全站共用一份頁面清單，由各頁呼叫 AgriTheme.demoNav() 注入。
-  //    paths 依呼叫頁所在資料夾給相對前綴；預設為「農業派遣主網站/」內的頁面。
+  //    paths 依呼叫頁所在資料夾給相對前綴；預設為「AgriDispatch/」內的頁面。
   //    production 模式不注入任何 DOM。
   var DEMO_PAGES = [
     { group: '角色工作台', items: [
@@ -141,9 +141,9 @@
   function defaultPaths() {
     var dir = window.location.pathname;
     try { dir = decodeURIComponent(dir); } catch (e) {}
-    if (dir.indexOf('/科技後台/') >= 0) return { main: '../農業派遣主網站/', tech: '', line: '../linebot/' };
-    if (dir.indexOf('/linebot/') >= 0) return { main: '../農業派遣主網站/', tech: '../科技後台/', line: '' };
-    return { main: '', tech: '../科技後台/', line: '../linebot/' };
+    if (dir.indexOf('/TechBackend/') >= 0) return { main: '../AgriDispatch/', tech: '', line: '../linebot/' };
+    if (dir.indexOf('/linebot/') >= 0) return { main: '../AgriDispatch/', tech: '../TechBackend/', line: '' };
+    return { main: '', tech: '../TechBackend/', line: '../linebot/' };
   }
 
   function demoNav(paths) {

@@ -1,0 +1,903 @@
+/* ============================================================
+   智農派工 AgriDispatch — 設計系統 (agri.css)
+   規範：07_系統分析及文件/04_UI設計系統規範.md
+   原則：一個主色、一個強調色、一個螢幕一顆實色按鈕、不發光、不漸層。
+   用法：<link rel="stylesheet" href="css/agri.css">，在 style.css 之後載入。
+   所有 class 皆以 ad- 為前綴，避免與 Tailwind 工具類衝突。
+   三個資料夾（AgriDispatch／TechBackend／linebot）各一份，內容必須相同。
+   ============================================================ */
+
+/* ---------- 1. Design tokens ---------- */
+:root {
+  /* 主色：Emerald，全站唯一品牌色 */
+  --ad-primary: #059669;
+  --ad-primary-hover: #047857;
+  --ad-primary-soft: rgba(16, 185, 129, 0.12);
+  --ad-primary-text: #34d399;
+
+  /* 強調色：Amber，只用於金額、定金、倒數、需要立即注意的提示 */
+  --ad-accent: #f59e0b;
+  --ad-accent-hover: #d97706;
+  --ad-accent-soft: rgba(245, 158, 11, 0.14);
+  --ad-accent-text: #fbbf24;
+
+  /* 語意色：只在真正發生錯誤／危險時使用 */
+  --ad-danger: #dc2626;
+  --ad-danger-soft: rgba(220, 38, 38, 0.14);
+  --ad-danger-text: #f87171;
+
+  /* 外部品牌：LINE 官方綠，只准用在 LINE 相關按鈕 */
+  --ad-line: #06c755;
+  --ad-line-hover: #05b34c;
+
+  /* 中性層次（深色預設） */
+  --ad-bg: #020617;          /* 頁面底 */
+  --ad-surface: #0f172a;     /* 卡片、表頭 */
+  --ad-surface-2: #1e293b;   /* 輸入框、hover 底 */
+  --ad-border: #1e293b;
+  --ad-border-strong: #334155;
+
+  --ad-text: #f1f5f9;
+  --ad-text-2: #94a3b8;
+  --ad-text-3: #64748b;
+  --ad-on-primary: #ffffff;
+  --ad-on-accent: #0f172a;
+
+  /* 字級：全站只有 5 階 */
+  --ad-fs-display: 2rem;     /* 32 h1  (手機 28) */
+  --ad-fs-title: 1.25rem;    /* 20 h2 */
+  --ad-fs-heading: 1rem;     /* 16 h3 / 卡片標題 */
+  --ad-fs-body: 0.9375rem;   /* 15 內文 */
+  --ad-fs-caption: 0.8125rem;/* 13 說明、標籤 */
+
+  --ad-font: 'Noto Sans TC', 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* 幾何 */
+  --ad-radius: 12px;
+  --ad-radius-sm: 8px;
+  --ad-radius-pill: 9999px;
+  --ad-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);   /* 全站唯一陰影，給浮層用 */
+  --ad-ring: 0 0 0 3px rgba(16, 185, 129, 0.35);
+
+  /* 間距基準 4px */
+  --ad-sp-1: 4px;
+  --ad-sp-2: 8px;
+  --ad-sp-3: 12px;
+  --ad-sp-4: 16px;
+  --ad-sp-5: 20px;
+  --ad-sp-6: 24px;
+  --ad-sp-8: 32px;
+
+  --ad-header-h: 56px;
+  --ad-container: 1200px;
+  --ad-tap: 44px;            /* 最小可點擊尺寸，田間手機操作 */
+}
+
+/* 亮色主題：日後只要在 <html data-theme="light"> 即可整站切換 */
+:root[data-theme="light"] {
+  --ad-primary-soft: rgba(5, 150, 105, 0.10);
+  --ad-primary-text: #047857;
+  --ad-accent-soft: rgba(217, 119, 6, 0.12);
+  --ad-accent-text: #b45309;
+  --ad-danger-soft: rgba(220, 38, 38, 0.10);
+  --ad-danger-text: #b91c1c;
+
+  --ad-bg: #f8fafc;
+  --ad-surface: #ffffff;
+  --ad-surface-2: #f1f5f9;
+  --ad-border: #e2e8f0;
+  --ad-border-strong: #cbd5e1;
+
+  --ad-text: #0f172a;
+  --ad-text-2: #475569;
+  --ad-text-3: #64748b;
+  --ad-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+@media (max-width: 640px) {
+  :root { --ad-fs-display: 1.75rem; }
+}
+
+/* ---------- 2. Base ---------- */
+.ad-body {
+  background: var(--ad-bg);
+  color: var(--ad-text);
+  font-family: var(--ad-font);
+  font-size: var(--ad-fs-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 不依賴 Tailwind preflight 也能正確計算寬度（verify.html 等不載入 Tailwind 的頁面） */
+.ad-body *, .ad-body *::before, .ad-body *::after { box-sizing: border-box; }
+
+.ad-container {
+  width: 100%;
+  max-width: var(--ad-container);
+  margin-inline: auto;
+  padding-inline: var(--ad-sp-4);
+}
+@media (min-width: 1024px) {
+  .ad-container { padding-inline: var(--ad-sp-6); }
+}
+
+/* 數字對齊：金額、工時、統計一律加上 */
+.ad-num { font-variant-numeric: tabular-nums; }
+
+.ad-visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0);
+  white-space: nowrap; border: 0;
+}
+
+/* ---------- 3. Typography ---------- */
+.ad-display {
+  font-size: var(--ad-fs-display);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--ad-text);
+}
+.ad-title {
+  font-size: var(--ad-fs-title);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ad-text);
+}
+.ad-heading {
+  font-size: var(--ad-fs-heading);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ad-text);
+}
+.ad-text-2 { color: var(--ad-text-2); }
+.ad-text-3 { color: var(--ad-text-3); }
+.ad-caption {
+  font-size: var(--ad-fs-caption);
+  color: var(--ad-text-2);
+  line-height: 1.5;
+}
+
+/* 區塊：標題 + 副標 + 內容的固定節奏 */
+.ad-section { padding-block: var(--ad-sp-8); }
+.ad-section__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ad-sp-4);
+  margin-bottom: var(--ad-sp-5);
+}
+.ad-section__sub {
+  margin-top: var(--ad-sp-1);
+  font-size: var(--ad-fs-caption);
+  color: var(--ad-text-2);
+}
+
+/* ---------- 4. Icons (lucide) ---------- */
+.ad-icon {
+  width: 20px; height: 20px;
+  stroke-width: 2;
+  flex-shrink: 0;
+}
+.ad-icon--sm { width: 16px; height: 16px; }
+.ad-icon--lg { width: 24px; height: 24px; }
+/* 圖示底座：取代彩色漸層 emoji 方塊 */
+.ad-icon-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px; height: 40px;
+  border-radius: var(--ad-radius-sm);
+  background: var(--ad-primary-soft);
+  color: var(--ad-primary-text);
+  flex-shrink: 0;
+}
+.ad-icon-box--accent { background: var(--ad-accent-soft); color: var(--ad-accent-text); }
+.ad-icon-box--neutral { background: var(--ad-surface-2); color: var(--ad-text-2); }
+
+/* ---------- 5. Buttons ----------
+   規則：一個螢幕只有一顆 --primary。買／付款用 --accent。其餘一律 --secondary 或 --ghost。
+   文案：動詞開頭，不超過 6 個字，不加括號。 */
+.ad-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ad-sp-2);
+  min-height: var(--ad-tap);
+  padding: 0 var(--ad-sp-5);
+  border-radius: var(--ad-radius);
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: var(--ad-fs-body);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.ad-btn:focus-visible { outline: none; box-shadow: var(--ad-ring); }
+.ad-btn:disabled, .ad-btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+
+.ad-btn--primary { background: var(--ad-primary); color: var(--ad-on-primary); }
+.ad-btn--primary:hover { background: var(--ad-primary-hover); }
+
+.ad-btn--accent { background: var(--ad-accent); color: var(--ad-on-accent); }
+.ad-btn--accent:hover { background: var(--ad-accent-hover); }
+
+.ad-btn--secondary {
+  background: var(--ad-surface);
+  color: var(--ad-text);
+  border-color: var(--ad-border-strong);
+}
+.ad-btn--secondary:hover { background: var(--ad-surface-2); }
+
+.ad-btn--ghost { background: transparent; color: var(--ad-text-2); }
+.ad-btn--ghost:hover { background: var(--ad-surface-2); color: var(--ad-text); }
+
+.ad-btn--danger { background: transparent; color: var(--ad-danger-text); border-color: var(--ad-danger); }
+.ad-btn--danger:hover { background: var(--ad-danger-soft); }
+
+.ad-btn--line { background: var(--ad-line); color: #fff; }
+.ad-btn--line:hover { background: var(--ad-line-hover); }
+
+/* 打卡等「大按鈕＋小字」：上下排列 */
+.ad-btn--stack {
+  flex-direction: column;
+  gap: 2px;
+  min-height: 76px;
+  padding: var(--ad-sp-3) var(--ad-sp-2);
+  line-height: 1.3;
+}
+.ad-btn--stack .ad-caption { color: inherit; opacity: .85; font-weight: 500; }
+/* 已完成的步驟按鈕：維持清楚可讀，不用變淡 */
+.ad-btn.is-done,
+.ad-btn:disabled.is-done {
+  opacity: 1;
+  background: var(--ad-primary-soft);
+  color: var(--ad-primary-text);
+  border-color: transparent;
+  cursor: default;
+}
+.ad-avatar--lg { width: 48px; height: 48px; font-size: 18px; }
+
+.ad-btn--sm { min-height: 36px; padding: 0 var(--ad-sp-3); font-size: var(--ad-fs-caption); border-radius: var(--ad-radius-sm); }
+.ad-btn--lg { min-height: 52px; padding: 0 var(--ad-sp-8); font-size: 1.0625rem; }
+.ad-btn--block { width: 100%; }
+.ad-btn--icon { padding: 0; width: var(--ad-tap); }
+.ad-btn--icon.ad-btn--sm { width: 36px; }
+
+/* ---------- 6. Cards ---------- */
+.ad-card {
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius);
+  padding: var(--ad-sp-5);
+}
+.ad-card--interactive {
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.ad-card--interactive:hover { border-color: var(--ad-primary); }
+.ad-card--interactive:focus-visible { outline: none; box-shadow: var(--ad-ring); }
+.ad-card--interactive.is-selected { border-color: var(--ad-primary); background: var(--ad-primary-soft); }
+button.ad-card--interactive { font: inherit; color: inherit; text-align: left; width: 100%; }
+.ad-card--flat { background: transparent; }
+.ad-card--accent { border-color: var(--ad-accent); }
+.ad-card__head {
+  display: flex;
+  flex-wrap: wrap; /* 手機上標題與狀態標籤擠不下時，標籤換到下一行 */
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ad-sp-2) var(--ad-sp-3);
+  margin-bottom: var(--ad-sp-4);
+}
+.ad-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ad-sp-2);
+  margin-top: var(--ad-sp-5);
+  padding-top: var(--ad-sp-4);
+  border-top: 1px solid var(--ad-border);
+}
+
+/* ---------- 7. Stat（統計數字） ---------- */
+.ad-stat {
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius);
+  padding: var(--ad-sp-4) var(--ad-sp-5);
+  min-width: 0;
+}
+.ad-stat__label {
+  font-size: var(--ad-fs-caption);
+  color: var(--ad-text-2);
+  margin-bottom: var(--ad-sp-1);
+}
+.ad-stat__value {
+  font-size: clamp(1.125rem, 4.5vw, 1.5rem); /* 手機兩欄時 NT$ 40,320 不換行 */
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ad-text);
+  font-variant-numeric: tabular-nums;
+}
+.ad-stat__value small {
+  font-size: var(--ad-fs-caption);
+  font-weight: 500;
+  color: var(--ad-text-2);
+  margin-left: var(--ad-sp-1);
+}
+.ad-stat--accent .ad-stat__value { color: var(--ad-accent-text); }
+.ad-stat--primary .ad-stat__value { color: var(--ad-primary-text); }
+.ad-stat--danger .ad-stat__value { color: var(--ad-danger-text); }
+.ad-stat-grid {
+  display: grid;
+  gap: var(--ad-sp-3);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 768px) {
+  .ad-stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* ---------- 8. Pills（狀態標籤） ----------
+   只表達「狀態」，不拿來當裝飾或口號。 */
+.ad-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--ad-radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  background: var(--ad-surface-2);
+  color: var(--ad-text-2);
+}
+.ad-pill--ok { background: var(--ad-primary-soft); color: var(--ad-primary-text); }
+.ad-pill--warn { background: var(--ad-accent-soft); color: var(--ad-accent-text); }
+.ad-pill--danger { background: var(--ad-danger-soft); color: var(--ad-danger-text); }
+.ad-pill__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* ---------- 9. Forms ---------- */
+.ad-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ad-label {
+  font-size: var(--ad-fs-caption);
+  font-weight: 600;
+  color: var(--ad-text-2);
+}
+.ad-label--req::after { content: ' *'; color: var(--ad-accent-text); }
+.ad-hint { font-size: 12px; color: var(--ad-text-3); }
+.ad-error { font-size: 12px; color: var(--ad-danger-text); }
+
+.ad-input,
+.ad-select,
+.ad-textarea {
+  width: 100%;
+  min-height: var(--ad-tap);
+  padding: 0 var(--ad-sp-3);
+  background: var(--ad-surface-2);
+  color: var(--ad-text);
+  border: 1px solid var(--ad-border-strong);
+  border-radius: var(--ad-radius-sm);
+  font: inherit;
+  font-size: 16px; /* 不小於 16px，避免 iOS 自動縮放 */
+  line-height: 1.4;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.ad-textarea { min-height: 96px; padding-block: var(--ad-sp-3); resize: vertical; }
+.ad-select {
+  appearance: none;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+.ad-input::placeholder, .ad-textarea::placeholder { color: var(--ad-text-3); }
+.ad-input:focus, .ad-select:focus, .ad-textarea:focus {
+  outline: none;
+  border-color: var(--ad-primary);
+  box-shadow: var(--ad-ring);
+}
+.ad-input[aria-invalid="true"], .ad-select[aria-invalid="true"] { border-color: var(--ad-danger); }
+.ad-form-grid {
+  display: grid;
+  gap: var(--ad-sp-4);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .ad-form-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ad-form-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* 選項卡（取代一排彩色方案按鈕） */
+.ad-choice {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-sp-3);
+  min-height: var(--ad-tap);
+  padding: var(--ad-sp-3) var(--ad-sp-4);
+  border: 1px solid var(--ad-border-strong);
+  border-radius: var(--ad-radius-sm);
+  background: var(--ad-surface);
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.ad-choice:hover { border-color: var(--ad-primary); }
+.ad-choice.is-selected, .ad-choice:has(input:checked) {
+  border-color: var(--ad-primary);
+  background: var(--ad-primary-soft);
+}
+.ad-choice input { accent-color: var(--ad-primary); width: 18px; height: 18px; margin: 0; }
+
+/* ---------- 10. Tabs ---------- */
+.ad-tabs {
+  display: flex;
+  gap: var(--ad-sp-1);
+  border-bottom: 1px solid var(--ad-border);
+  overflow-x: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.ad-tabs::-webkit-scrollbar { display: none; }
+.ad-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ad-sp-2);
+  min-height: var(--ad-tap);
+  padding: 0 var(--ad-sp-4);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+  color: var(--ad-text-2);
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+}
+.ad-tab:hover { color: var(--ad-text); }
+.ad-tab.is-active { color: var(--ad-primary-text); border-bottom-color: var(--ad-primary); }
+.ad-tab__count {
+  min-width: 20px; height: 20px;
+  padding: 0 6px;
+  border-radius: var(--ad-radius-pill);
+  background: var(--ad-surface-2);
+  color: var(--ad-text-2);
+  font-size: 12px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+/* ---------- 11. Header（一條，56px） ----------
+   取代「導覽列 + 頁標題帶 + LINE 橫幅 + 頁籤列」四層堆疊。 */
+.ad-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: var(--ad-header-h);
+  background: var(--ad-surface);
+  border-bottom: 1px solid var(--ad-border);
+}
+.ad-header__inner {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ad-sp-4);
+}
+.ad-header__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ad-text);
+  font-weight: 700;
+  font-size: var(--ad-fs-heading);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ad-header__logo {
+  width: 32px; height: 32px;
+  border-radius: var(--ad-radius-sm);
+  background: var(--ad-primary);
+  color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.ad-header__role {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ad-text-2);
+  padding-left: 10px;
+  border-left: 1px solid var(--ad-border-strong);
+}
+.ad-header__actions { display: flex; align-items: center; gap: var(--ad-sp-2); flex-shrink: 0; }
+/* 375px 手機：角色文字與狀態 pill 讓位給右側操作，避免表頭溢出 */
+@media (max-width: 480px) {
+  .ad-header__brand { min-width: 0; flex-shrink: 1; }
+  .ad-header__role { display: none; }
+  .ad-header__actions .ad-pill { display: none; }
+}
+
+/* 角色導覽：每個角色只看到自己的 3～5 個項目 */
+.ad-nav { display: none; align-items: center; gap: var(--ad-sp-1); }
+@media (min-width: 768px) { .ad-nav { display: flex; } }
+.ad-nav__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 var(--ad-sp-3);
+  border-radius: var(--ad-radius-sm);
+  color: var(--ad-text-2);
+  font-size: var(--ad-fs-body);
+  font-weight: 500;
+  text-decoration: none;
+}
+button.ad-nav__link, button.ad-tabbar__item { border: 0; background: none; font: inherit; cursor: pointer; }
+a.ad-pill { text-decoration: none; }
+.ad-nav__link:hover { background: var(--ad-surface-2); color: var(--ad-text); }
+.ad-nav__link.is-active { background: var(--ad-primary-soft); color: var(--ad-primary-text); font-weight: 600; }
+
+/* 手機底部導覽（角色頁用） */
+.ad-tabbar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 40;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  background: var(--ad-surface);
+  border-top: 1px solid var(--ad-border);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@media (min-width: 768px) { .ad-tabbar { display: none; } }
+.ad-tabbar__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;
+  color: var(--ad-text-2);
+  font-size: 11px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.ad-tabbar__item.is-active { color: var(--ad-primary-text); }
+.ad-has-tabbar { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+@media (min-width: 768px) { .ad-has-tabbar { padding-bottom: 0; } }
+
+/* 語言／模式切換（segmented control）：外展移工頁的 中／VI／ID */
+.ad-seg {
+  display: inline-flex;
+  padding: 2px;
+  background: var(--ad-surface-2);
+  border: 1px solid var(--ad-border-strong);
+  border-radius: var(--ad-radius-sm);
+}
+.ad-seg__btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ad-text-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ad-seg__btn:hover { color: var(--ad-text); }
+.ad-seg__btn.is-active { background: var(--ad-primary); color: var(--ad-on-primary); }
+.ad-seg__btn--danger.is-active { background: var(--ad-danger); color: #fff; }
+.ad-seg__btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* 分段控制也能當單選：<label class="ad-seg__btn"><input type="radio">…</label>，選中由 JS 切 is-active */
+label.ad-seg__btn { position: relative; display: inline-flex; align-items: center; }
+.ad-seg__btn input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+.ad-seg__btn:focus-within { box-shadow: var(--ad-ring); }
+@media (max-width: 480px) {
+  .ad-hide-sm { display: none !important; }
+  .ad-header__brand { gap: 8px; }
+  .ad-header__actions { gap: 6px; }
+}
+
+/* 使用者選單（右上角頭像） */
+.ad-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--ad-primary-soft);
+  color: var(--ad-primary-text);
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ---------- 12. 列表與表格 ---------- */
+.ad-list { display: flex; flex-direction: column; gap: var(--ad-sp-2); }
+.ad-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-sp-3);
+  min-height: var(--ad-tap);
+  padding: var(--ad-sp-3) var(--ad-sp-4);
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-sm);
+}
+.ad-row__main { flex: 1; min-width: 0; }
+.ad-row__title { font-weight: 600; color: var(--ad-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ad-row__meta { font-size: var(--ad-fs-caption); color: var(--ad-text-2); }
+.ad-row__aside { text-align: right; flex-shrink: 0; }
+
+/* 可點擊的列（按鈕或連結形式的 .ad-row） */
+a.ad-row, button.ad-row { text-decoration: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+button.ad-row { width: 100%; }
+a.ad-row:hover, button.ad-row:hover { border-color: var(--ad-primary); }
+a.ad-row:focus-visible, button.ad-row:focus-visible { outline: none; box-shadow: var(--ad-ring); }
+
+/* 登入頁：置中的單張卡片 */
+.ad-auth { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px var(--ad-sp-4); }
+.ad-auth__card { width: 100%; max-width: 440px; padding: 28px; }
+.ad-auth__card--wide { max-width: 960px; }
+
+.ad-table { width: 100%; border-collapse: collapse; font-size: var(--ad-fs-body); }
+.ad-table th {
+  text-align: left;
+  font-size: var(--ad-fs-caption);
+  font-weight: 600;
+  color: var(--ad-text-2);
+  padding: var(--ad-sp-2) var(--ad-sp-3);
+  border-bottom: 1px solid var(--ad-border-strong);
+}
+.ad-table td { padding: var(--ad-sp-3); border-bottom: 1px solid var(--ad-border); vertical-align: middle; }
+.ad-table tr:last-child td { border-bottom: 0; }
+.ad-table .ad-td-num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---------- 13. 回饋 ---------- */
+.ad-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ad-sp-3);
+  padding: var(--ad-sp-3) var(--ad-sp-4);
+  border-radius: var(--ad-radius-sm);
+  border: 1px solid var(--ad-border);
+  background: var(--ad-surface);
+  font-size: var(--ad-fs-caption);
+  color: var(--ad-text-2);
+}
+.ad-notice--ok { border-color: var(--ad-primary); color: var(--ad-primary-text); background: var(--ad-primary-soft); }
+.ad-notice--warn { border-color: var(--ad-accent); color: var(--ad-accent-text); background: var(--ad-accent-soft); }
+.ad-notice--danger { border-color: var(--ad-danger); color: var(--ad-danger-text); background: var(--ad-danger-soft); }
+
+.ad-empty {
+  padding: var(--ad-sp-8) var(--ad-sp-4);
+  text-align: center;
+  color: var(--ad-text-2);
+  border: 1px dashed var(--ad-border-strong);
+  border-radius: var(--ad-radius);
+}
+.ad-empty__title { font-weight: 600; color: var(--ad-text); margin-bottom: var(--ad-sp-1); }
+
+.ad-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--ad-sp-6) + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: min(92vw, 420px);
+  padding: var(--ad-sp-3) var(--ad-sp-4);
+  background: var(--ad-surface-2);
+  color: var(--ad-text);
+  border: 1px solid var(--ad-border-strong);
+  border-radius: var(--ad-radius);
+  box-shadow: var(--ad-shadow);
+  font-size: var(--ad-fs-caption);
+}
+
+/* [hidden] 一律隱藏（不被元件的 display 規則蓋掉） */
+[hidden] { display: none !important; }
+
+/* 對話框：<div class="ad-modal"><div class="ad-modal__panel">… */
+.ad-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ad-sp-4);
+  background: rgba(2, 6, 23, 0.72);
+}
+.ad-modal__panel {
+  width: 100%;
+  max-width: 480px;
+  max-height: 92vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-sp-4);
+  padding: var(--ad-sp-6);
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-border-strong);
+  border-radius: var(--ad-radius);
+  box-shadow: var(--ad-shadow);
+}
+.ad-modal__panel .ad-card__head { margin-bottom: 0; }
+
+/* 右上角通知（AgriDocs.notify）：靜止、不閃、不跳 */
+.ad-toast-stack {
+  position: fixed;
+  top: var(--ad-sp-4);
+  right: var(--ad-sp-4);
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-sp-2);
+  width: min(92vw, 360px);
+  pointer-events: none;
+}
+.ad-toast-item {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ad-sp-3);
+  padding: var(--ad-sp-3) var(--ad-sp-4);
+  background: var(--ad-surface-2);
+  color: var(--ad-text);
+  border: 1px solid var(--ad-border-strong);
+  border-left-width: 3px;
+  border-left-color: var(--ad-primary);
+  border-radius: var(--ad-radius-sm);
+  box-shadow: var(--ad-shadow);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity .2s ease, transform .2s ease;
+}
+.ad-toast-item.is-in { opacity: 1; transform: none; }
+.ad-toast-item.is-out { opacity: 0; transform: translateX(12px); }
+.ad-toast-item--alert { border-color: var(--ad-danger); border-left-color: var(--ad-danger); }
+.ad-toast-item--alert .ad-toast-item__title { color: var(--ad-danger-text); }
+.ad-toast-item__body { flex: 1; min-width: 0; }
+.ad-toast-item__title { font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--ad-text); }
+.ad-toast-item__msg { margin-top: 2px; font-size: 13px; line-height: 1.5; color: var(--ad-text-2); overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) { .ad-toast-item { transition: none; } }
+
+/* 卡片內的凹陷區塊（資訊格、小表單群組） */
+.ad-card--inset {
+  background: var(--ad-surface-2);
+  border-color: transparent;
+  padding: var(--ad-sp-4);
+}
+
+/* 編號步驟清單：<ol class="ad-steps"><li>… */
+.ad-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-sp-4);
+  counter-reset: ad-step;
+}
+.ad-steps > li { position: relative; padding-left: 40px; counter-increment: ad-step; }
+.ad-steps > li::before {
+  content: counter(ad-step);
+  position: absolute;
+  left: 0; top: 0;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--ad-primary-soft);
+  color: var(--ad-primary-text);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* 履約階段：已完成／進行中／未開始 */
+.ad-stages {
+  display: grid;
+  gap: var(--ad-sp-3);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 640px) { .ad-stages { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.ad-stage {
+  padding: var(--ad-sp-3);
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-sm);
+  background: var(--ad-surface);
+  text-align: center;
+}
+.ad-stage__title { font-size: 14px; font-weight: 600; color: var(--ad-text-2); }
+.ad-stage__sub { font-size: 12px; color: var(--ad-text-3); margin-top: 2px; }
+.ad-stage--done { border-color: var(--ad-primary); }
+.ad-stage--done .ad-stage__title { color: var(--ad-primary-text); }
+.ad-stage--now { border-color: var(--ad-primary); background: var(--ad-primary-soft); }
+.ad-stage--now .ad-stage__title { color: var(--ad-text); }
+
+/* 進度條（不用漸層） */
+.ad-progress { height: 8px; border-radius: var(--ad-radius-pill); background: var(--ad-surface-2); overflow: hidden; }
+.ad-progress__bar { height: 100%; border-radius: var(--ad-radius-pill); background: var(--ad-primary); }
+.ad-progress__bar--danger { background: var(--ad-danger); }
+
+/* 可切換的標籤（評價標籤等多選） */
+.ad-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 var(--ad-sp-3);
+  border: 1px solid var(--ad-border-strong);
+  border-radius: var(--ad-radius-pill);
+  background: var(--ad-surface);
+  color: var(--ad-text-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ad-chip:hover { color: var(--ad-text); }
+.ad-chip.is-on { border-color: var(--ad-primary); background: var(--ad-primary-soft); color: var(--ad-primary-text); }
+
+/* 分隔線 */
+.ad-divider { height: 1px; background: var(--ad-border); border: 0; margin-block: var(--ad-sp-5); }
+
+/* ---------- 14. 金額 ---------- */
+.ad-price { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ad-text); }
+.ad-price--lg { font-size: 1.75rem; line-height: 1.1; }
+.ad-price--accent { color: var(--ad-accent-text); }
+.ad-price__unit { font-size: var(--ad-fs-caption); font-weight: 500; color: var(--ad-text-2); margin-left: 4px; }
+
+/* ---------- 15. Demo 專用元素 ----------
+   agri-theme.js 會在 demo 模式於 <html> 加上 is-demo。
+   production 看不到任何 [data-demo-only]。 */
+[data-demo-only] { display: none !important; }
+html.is-demo [data-demo-only] { display: revert !important; }
+html.is-demo [data-demo-only].ad-btn,
+html.is-demo [data-demo-only].ad-pill { display: inline-flex !important; }
+
+/* Demo 導覽抽屜 */
+.ad-drawer {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  z-index: 70;
+  width: min(92vw, 360px);
+  background: var(--ad-surface);
+  border-left: 1px solid var(--ad-border);
+  transform: translateX(100%);
+  transition: transform .2s ease;
+  overflow-y: auto;
+  padding: var(--ad-sp-5);
+}
+.ad-drawer.is-open { transform: translateX(0); }
+.ad-drawer__backdrop {
+  position: fixed; inset: 0; z-index: 69;
+  background: rgba(2, 6, 23, 0.6);
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s ease;
+}
+.ad-drawer__backdrop.is-open { opacity: 1; pointer-events: auto; }
+
+/* ---------- 16. 動態 ---------- */
+/* 只有「即時連線中」這一種狀態可以閃；其餘靜止。 */
+@keyframes ad-blink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.ad-live { animation: ad-blink 1.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ad-live { animation: none; }
+  .ad-btn, .ad-card--interactive, .ad-choice, .ad-drawer, .ad-drawer__backdrop { transition: none; }
+}
+
+/* 手機有底部導覽列時，toast 不要蓋住它 */
+@media (max-width: 767px) {
+  .ad-has-tabbar .ad-toast { bottom: calc(72px + env(safe-area-inset-bottom)); }
+}

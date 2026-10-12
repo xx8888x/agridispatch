@@ -15,23 +15,23 @@ public class UserProfileTest {
     public void serverOpensAdminLogin() {
         UserProfile p = UserProfile.admin();
         assertEquals(AppSide.SERVER, p.side);
-        assertEquals("科技後台/admin-login.html", p.entryPage());
+        assertEquals("TechBackend/admin-login.html", p.entryPage());
         assertEquals("zh", p.language());
     }
 
     @Test
     public void farmerOpensFarmerLogin() {
-        assertEquals("農業派遣主網站/farmer-login.html", UserProfile.farmer().entryPage());
+        assertEquals("AgriDispatch/farmer-login.html", UserProfile.farmer().entryPage());
         assertEquals("farmer", ClientRole.FARMER.platformRole);
     }
 
     @Test
     public void localTracksMapToFrontendRoleParam() {
-        assertEquals("農業派遣主網站/worker-local-login.html?role=labor",
+        assertEquals("AgriDispatch/worker-local-login.html?role=labor",
                 UserProfile.localWorker(LocalTrack.LABOR).entryPage());
-        assertEquals("農業派遣主網站/worker-local-login.html?role=foreman",
+        assertEquals("AgriDispatch/worker-local-login.html?role=foreman",
                 UserProfile.localWorker(LocalTrack.FOREMAN).entryPage());
-        assertEquals("農業派遣主網站/worker-local-login.html?role=machinery",
+        assertEquals("AgriDispatch/worker-local-login.html?role=machinery",
                 UserProfile.localWorker(LocalTrack.MACHINERY).entryPage());
         assertEquals("zh", UserProfile.localWorker(LocalTrack.LABOR).language());
     }
@@ -48,7 +48,7 @@ public class UserProfileTest {
 
     @Test
     public void foreignWorkerLanguageFollowsNationality() {
-        assertEquals("農業派遣主網站/worker-foreign-login.html",
+        assertEquals("AgriDispatch/worker-foreign-login.html",
                 UserProfile.foreignWorker(Nationality.VN).entryPage());
         assertEquals("vi", UserProfile.foreignWorker(Nationality.VN).language());
         assertEquals("id", UserProfile.foreignWorker(Nationality.ID).language());

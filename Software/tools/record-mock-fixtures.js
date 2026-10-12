@@ -66,7 +66,7 @@ const enc = encodeURIComponent;
   for (const role of ['admin_tech', 'farmer', 'worker_local', 'worker_foreign']) tokens[role] = await login(role);
 
   // 示範帳號：各工人／農場主的 demo-login 與帳密登入
-  const accountsFile = path.resolve(__dirname, '..', 'demo', '農業派遣主網站', 'js', 'demo-accounts.js');
+  const accountsFile = path.resolve(__dirname, '..', 'demo', 'AgriDispatch', 'js', 'demo-accounts.js');
   const sandbox = {};
   new Function('window', fs.readFileSync(accountsFile, 'utf8'))(sandbox);
   const A = sandbox.AGRI_DEMO_ACCOUNTS;

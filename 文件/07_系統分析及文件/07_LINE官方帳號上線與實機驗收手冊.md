@@ -34,7 +34,7 @@
 
 ### 1.3 LINE Login channel
 
-- LIFF 的 Endpoint URL 必須是 https，並且就是前端正式站的 `農業派遣主網站/line-bind.html`。
+- LIFF 的 Endpoint URL 必須是 https，並且就是前端正式站的 `AgriDispatch/line-bind.html`。
 - channel 在「開發中」狀態時只有 channel 管理員與測試人員能用；實機驗收時把驗收用的 LINE 帳號加為測試人員，正式上線前改為公開。
 
 ---
@@ -71,7 +71,7 @@
 
 ### 2.3 前端正式版
 
-- `Software/web/農業派遣主網站/js/app-config.js` 的 `liffBindId` 填 LIFF ID（與 LINE Bot 的 `LIFF_BIND_ID` 相同）。此檔不受同步腳本覆蓋，要直接改這一份。
+- `Software/web/AgriDispatch/js/app-config.js` 的 `liffBindId` 填 LIFF ID（與 LINE Bot 的 `LIFF_BIND_ID` 相同）。此檔不受同步腳本覆蓋，要直接改這一份。
 - 綁定頁呼叫同網域的 `/api`，前端正式站與後端要在同一網域（或另設反向代理）。
 
 ### 2.4 網路
@@ -84,7 +84,7 @@
 ## 參、 部署與上傳圖文選單
 
 1. 啟動後端（production）與 LINE Bot，確認 LINE Bot 啟動 log：兩個帳號都是 `【PRODUCTION】`、身分來源為「後端」。
-2. 開科技後台 `科技後台/admin-line.html`：兩個帳號應顯示「正式運作」、「加好友按鈕已設定」，「機器人與後台的共用金鑰」與「綁定頁的 LINE 登入」皆為「正常」。
+2. 開科技後台 `TechBackend/admin-line.html`：兩個帳號應顯示「正式運作」、「加好友按鈕已設定」，「機器人與後台的共用金鑰」與「綁定頁的 LINE 登入」皆為「正常」。
 3. 在兩個帳號的後台按 Webhook 的 Verify，應顯示成功。
 4. 上傳圖文選單（於 `Software/Line Bot`）：
    ```

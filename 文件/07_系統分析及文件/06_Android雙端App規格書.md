@@ -16,7 +16,7 @@
 
 | # | 問題 | 影響 |
 |---|---|---|
-| 1 | 後台頁面（`科技後台/`）跟著公開 App 一起發佈 | 任何下載 App 的人都拿得到後台頁面與登入入口 |
+| 1 | 後台頁面（`TechBackend/`）跟著公開 App 一起發佈 | 任何下載 App 的人都拿得到後台頁面與登入入口 |
 | 2 | App 不知道使用者是誰 | 外勞每次都要自己切語言；本勞進不到自己的軌別（勞務／帶班／機耕） |
 | 3 | 國別只存在前端示範資料 | 原生通知、語言判斷無法依國別處理 |
 
@@ -53,8 +53,8 @@ Gradle `flavorDimensions = ['side']`，同一份程式碼產出兩支 APK：
 | versionName | `1.0.0-admin` | `1.0.0` |
 | `BuildConfig.APP_SIDE` | `"server"` | `"client"` |
 | 啟動 Activity | `MainActivity` | `RoleSelectActivity` |
-| 啟動頁 | `www/科技後台/admin-login.html` | 依身分（見參、肆） |
-| 打包的前端 | `assets/www/` 全部 | 排除 `assets/www/科技後台/`（`ignoreAssetsPatterns`） |
+| 啟動頁 | `www/TechBackend/admin-login.html` | 依身分（見參、肆） |
+| 打包的前端 | `assets/www/` 全部 | 排除 `assets/www/TechBackend/`（`ignoreAssetsPatterns`） |
 | 發佈 | Play 內部測試軌 | Play 正式版公開上架 |
 
 兩支 App 的 applicationId 不同，可以裝在同一支手機上（例如代管人員同時測試客戶端）。
@@ -83,12 +83,12 @@ Gradle `flavorDimensions = ['side']`，同一份程式碼產出兩支 APK：
 
 ### 3.1 表一：客戶端身分（`ClientRole`）
 
-| 代碼 | 後端 `users.role` | 身分 | 登入頁（`www/農業派遣主網站/`） | 下一層 |
+| 代碼 | 後端 `users.role` | 身分 | 登入頁（`www/AgriDispatch/`） | 下一層 |
 |---|---|---|---|---|
 | `FARMER` | `farmer` | 農場主 | `farmer-login.html` | — |
 | `WORKER_LOCAL` | `worker_local` | 本地工人（本勞） | `worker-local-login.html?role=<軌別>` | 表二 |
 | `WORKER_FOREIGN` | `worker_foreign` | 外籍移工（外勞，外展移工） | `worker-foreign-login.html` | 表三 |
-| （Server 端） | `admin_tech` | 科技公司代管人員 | `www/科技後台/admin-login.html` | — |
+| （Server 端） | `admin_tech` | 科技公司代管人員 | `www/TechBackend/admin-login.html` | — |
 
 ### 3.2 表二：本地工人類型（`LocalWorkerType`）與 App 軌別（`LocalTrack`）
 
@@ -160,15 +160,15 @@ flowchart TD
 | 情境 | 行為 |
 |---|---|
 | 再次開啟 App | 直接載入對應登入頁，不再詢問 |
-| 網頁點到 `農業派遣主網站/login.html`（各頁的「切換角色」） | 攔截並回到原生身分選擇畫面 |
+| 網頁點到 `AgriDispatch/login.html`（各頁的「切換角色」） | 攔截並回到原生身分選擇畫面 |
 | 網頁呼叫 `AgriNativeBridge.switchRole()` | 同上 |
-| 網頁點到 `科技後台/…` 連結 | 攔截，提示「科技後台請使用『智農派工後台』App」，不開啟 |
+| 網頁點到 `TechBackend/…` 連結 | 攔截，提示「科技後台請使用『智農派工後台』App」，不開啟 |
 | 儲存的國別後來被停用（`offered=false`） | 視同未選，下次開啟要求重選 |
 | 由 1.0.6 以前升級、存的是本勞細分類型 | 自動轉成對應軌別（例如中高齡 → 一般農務），不需重選 |
 
 ### 4.3 Server 端
 
-不顯示身分選擇，固定以 `admin_tech` 身分開啟 `科技後台/admin-login.html`；後台內連到前台頁面（農場主、工人頁預覽）照常可開。
+不顯示身分選擇，固定以 `admin_tech` 身分開啟 `TechBackend/admin-login.html`；後台內連到前台頁面（農場主、工人頁預覽）照常可開。
 
 ---
 
@@ -218,7 +218,7 @@ flowchart TD
 
 | 項目 | 設計 |
 |---|---|
-| 後台頁面外流 | 客戶端 APK 不含 `科技後台/` 的 27 個檔案（建置後以 APK 內容比對確認）；後台 App 不公開上架 |
+| 後台頁面外流 | 客戶端 APK 不含 `TechBackend/` 的 27 個檔案（建置後以 APK 內容比對確認）；後台 App 不公開上架 |
 | 身分竄改 | 身分存在獨立的 SharedPreferences `AgriDispatchProfile`，與網頁可寫入的 `AgriDispatchCache`（`saveOfflineData`）分開，網頁無法改寫 |
 | 身分不等於授權 | App 端的身分只決定啟動頁與語言，**不是授權依據**；API 權限仍以後端登入 token 與 `users.role` 判斷（見 03 認證規格） |
 | 內建網頁來源（2026-10-08） | 內建 `assets/www/` 改以 `WebViewAssetLoader` 由 `https://appassets.androidplatform.net/www/` 提供（取代 `file:///android_asset/www/`），並關閉 `file://` 存取。網頁來源從 `null` 變成固定的 https 來源，後端 CORS 白名單加入此來源後即可呼叫 `/api`（見 03 認證規格第 8 節）。PathHandler 須補回 `www/` 前綴，否則會開到 `assets/` 根目錄而回空回應（ERR_INVALID_RESPONSE） |
@@ -246,7 +246,7 @@ flowchart TD
 |---|---|
 | 兩支 debug、release APK 建置 | ✅ 成功（client debug 約 8.0 MB、server debug 約 8.8 MB） |
 | 套件名稱、啟動 Activity、App 名稱 | ✅ 以 `aapt dump badging` 確認 |
-| 客戶端排除科技後台 | ✅ client 的 `assets/www` 64 個檔案、server 91 個，差額正好是 `科技後台/` 的 27 個檔案 |
+| 客戶端排除科技後台 | ✅ client 的 `assets/www` 64 個檔案、server 91 個，差額正好是 `TechBackend/` 的 27 個檔案 |
 | 單元測試 `UserProfileTest` | ✅ client、server 各 5/5 通過 |
 | Release lintVital | ✅ 兩個 flavor 通過 |
 | 安裝腳本 | ✅ 兩個 flavor 都能找到對應 APK（本機無裝置，未實際安裝） |
@@ -261,11 +261,11 @@ flowchart TD
 | 2 | 外籍移工 → 國別：越南、印尼可點；泰國、菲律賓停用，點了沒有反應 | ✅（1.0.7 起改為第一頁直接列越南、印尼，泰國、菲律賓不顯示） |
 | 3 | 選印尼 → `worker-foreign-login.html` 以印尼語顯示；`AGRI_APP_PROFILE`、`getAppProfile()` 皆為 `ID`／`id`，`getSystemLanguage()` 回 `id` | ✅ |
 | 4 | 關閉後從桌面重開 → 直接進登入頁、不再詢問 | ✅（實測發現原本每次都詢問，已修正） |
-| 5 | 頁面導向 `../科技後台/admin.html` → 攔截、顯示「科技後台請使用『智農派工後台』App」、留在原頁 | ✅ |
+| 5 | 頁面導向 `../TechBackend/admin.html` → 攔截、顯示「科技後台請使用『智農派工後台』App」、留在原頁 | ✅ |
 | 6 | 頁面導向 `login.html`／呼叫 `switchRole()` → 回到原生選擇畫面 | ✅ |
 | 7 | 本地工人 → 帶班師傅 → `worker-local-login.html?role=foreman`，頁面自動選「帶隊領班」軌 | ✅ |
 | 8 | 農場主 → `farmer-login.html`，`platformRole` = `farmer` | ✅ |
-| 9 | 後台 App → 直接開 `科技後台/admin-login.html`，`platformRole` = `admin_tech` | ✅ |
+| 9 | 後台 App → 直接開 `TechBackend/admin-login.html`，`platformRole` = `admin_tech` | ✅ |
 | 10 | 狀態列、手勢列不遮擋網頁與選擇畫面 | ✅（實測發現 targetSdk 35 強制滿版造成遮擋，已以 `SystemBarInsets` 修正） |
 | 11 | WebView 主控台錯誤 | ✅ 無（僅 Tailwind CDN 的既有提示） |
 
@@ -279,7 +279,7 @@ flowchart TD
 | 2 | 頁面內 GET `/api/crops`、POST `/api/auth/demo-login`（JSON，需預檢）、帶 token GET `/api/orders` | ✅ 皆 200 |
 | 3 | 頁面內 POST `/api/talents/register` 寫入，主機端以管理員查詢看得到該筆 | ✅ 201，確認請求真的到達後端 |
 | 4 | 對照組：後端改回舊白名單（不含此來源）再送同樣請求 | ✅ 被 CORS 擋下 |
-| 5 | 直接進入示範登入 → 預約頁；導向 `../科技後台/admin.html` 被攔截留在原頁；導向 `login.html` 回到原生身分選擇畫面 | ✅ |
+| 5 | 直接進入示範登入 → 預約頁；導向 `../TechBackend/admin.html` 被攔截留在原頁；導向 `login.html` 回到原生身分選擇畫面 | ✅ |
 
 ### 7.5 App 連後端的切換機制（2026-10-08）
 

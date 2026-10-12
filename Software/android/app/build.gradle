@@ -118,11 +118,11 @@ android {
     }
 }
 
-// 客戶端 APK 不打包科技後台頁面 (assets/www/科技後台/)；Server 端打包全部前端頁面
+// 客戶端 APK 不打包科技後台頁面 (assets/www/TechBackend/)；Server 端打包全部前端頁面
 androidComponents {
     onVariants(selector().all()) { variant ->
         if (variant.flavorName == 'client') {
-            variant.androidResources.ignoreAssetsPatterns.add('<dir>科技後台')
+            variant.androidResources.ignoreAssetsPatterns.add('<dir>TechBackend')
         }
     }
 }

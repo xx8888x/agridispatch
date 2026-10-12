@@ -24,7 +24,7 @@ public class Config {
     public static String BACKEND_API_BASE = "http://localhost:3000/api";
 
     /**
-     * Flex 卡片按鈕連結的前端網站根網址 (其下為 農業派遣主網站/、linebot/ 等子站)。
+     * Flex 卡片按鈕連結的前端網站根網址 (其下為 AgriDispatch/、linebot/ 等子站)。
      * 實機 LINE 必須改成手機連得到的公開 https 網址。
      * 來源：環境變數 WEB_BASE_URL，或 config.properties 的 web.base.url。
      */

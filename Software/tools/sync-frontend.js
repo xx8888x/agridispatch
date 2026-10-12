@@ -35,9 +35,9 @@ const TARGETS = [
     name: 'web',
     dir: path.join(ROOT, 'web'),
     exclude: new Set([
-      '科技後台/js/app-config.js', '科技後台/js/demo-accounts.js',
+      'TechBackend/js/app-config.js', 'TechBackend/js/demo-accounts.js',
       'linebot/js/app-config.js', 'linebot/js/demo-accounts.js',
-      '農業派遣主網站/js/app-config.js', '農業派遣主網站/js/demo-accounts.js',
+      'AgriDispatch/js/app-config.js', 'AgriDispatch/js/demo-accounts.js',
       // 純前端 Mock（demo 專用，正式版一律連真實後端）
       'mock/demo-mock.js', 'mock/demo-fixtures.js'
     ])
@@ -46,9 +46,9 @@ const TARGETS = [
 
 // 目標資料夾中即使 demo/ 沒有也永遠不刪除的檔案（每份副本各自一份的設定檔）
 const NEVER_DELETE = new Set([
-  '科技後台/js/app-config.js',
+  'TechBackend/js/app-config.js',
   'linebot/js/app-config.js',
-  '農業派遣主網站/js/app-config.js'
+  'AgriDispatch/js/app-config.js'
 ]);
 
 const isCheck = process.argv.includes('--check');

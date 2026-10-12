@@ -41,7 +41,7 @@ public final class UserProfile {
     /** 相對於 assets/www/ 的啟動頁 (含查詢參數) */
     public String entryPage() {
         if (side == AppSide.SERVER) {
-            return "科技後台/admin-login.html";
+            return "TechBackend/admin-login.html";
         }
         if (role == ClientRole.WORKER_LOCAL && localTrack != null) {
             return role.entryPage + "?role=" + localTrack.code;

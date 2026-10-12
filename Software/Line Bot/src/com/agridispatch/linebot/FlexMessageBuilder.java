@@ -1,8 +1,6 @@
 package com.agridispatch.linebot;
 
 import java.io.File;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -299,7 +297,7 @@ public class FlexMessageBuilder {
     }
 
     /**
-     * 9. 現有工班「黑轉白」身分分流（規則與前端 農業派遣主網站/legalize.html 一致）
+     * 9. 現有工班「黑轉白」身分分流（規則與前端 AgriDispatch/legalize.html 一致）
      * 欄位：指令關鍵字, （保留欄位，原為 emoji 圖示，已不顯示）, 身分, 轉換路徑, 路徑色, 是否改派補位, 說明
      */
     private static final String[][] LEGALIZE_TYPES = {
@@ -316,8 +314,7 @@ public class FlexMessageBuilder {
     };
 
     static String webPageUrl(String page) {
-        String site = URLEncoder.encode("農業派遣主網站", StandardCharsets.UTF_8);
-        return Config.WEB_BASE_URL + "/" + site + "/" + page;
+        return Config.WEB_BASE_URL + "/AgriDispatch/" + page;
     }
 
     private static String messageButton(String label, String text) {

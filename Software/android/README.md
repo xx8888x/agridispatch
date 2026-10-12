@@ -10,8 +10,8 @@
 
 | flavor | App 名稱 | applicationId | 啟動 | 前端資料夾 | 發佈 |
 |---|---|---|---|---|---|
-| `client` | 智農派工 | `com.agridispatch.app` | `RoleSelectActivity`：農場主 / 本勞（類型）/ 外勞（國別）→ 對應登入頁 | 排除 `科技後台/` | Google Play 公開上架 |
-| `server` | 智農派工後台 | `com.agridispatch.app.admin` | `MainActivity` → `科技後台/admin-login.html` | 全部 | 僅 Play 內部測試軌，不公開上架 |
+| `client` | 智農派工 | `com.agridispatch.app` | `RoleSelectActivity`：農場主 / 本勞（類型）/ 外勞（國別）→ 對應登入頁 | 排除 `TechBackend/` | Google Play 公開上架 |
+| `server` | 智農派工後台 | `com.agridispatch.app.admin` | `MainActivity` → `TechBackend/admin-login.html` | 全部 | 僅 Play 內部測試軌，不公開上架 |
 
 建置指令：`assembleClientDebug`、`assembleServerDebug`（或 `assembleDebug` 一次建兩支）；輸出在 `app/build/outputs/apk/<flavor>/debug/app-<flavor>-debug.apk`。
 安裝：`install_apk.bat`（客戶端，預設）或 `install_apk.bat -Flavor server`。

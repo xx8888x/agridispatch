@@ -240,11 +240,11 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
         String page = path.substring(ASSET_WWW_PATH.length());
-        if (page.startsWith("科技後台/")) {
+        if (page.startsWith("TechBackend/")) {
             Toast.makeText(this, R.string.admin_only_in_server_app, Toast.LENGTH_LONG).show();
             return true;
         }
-        if (page.equals("農業派遣主網站/login.html")) {
+        if (page.equals("AgriDispatch/login.html")) {
             openRoleSelect();
             return true;
         }

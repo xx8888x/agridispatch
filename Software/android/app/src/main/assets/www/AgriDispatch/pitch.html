@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 AgriDispatch - 產品介紹與調度模式</title>
+  <!-- 執行模式設定（demo / production，每份副本各自一份） -->
+  <script src="js/app-config.js"></script>
+  <!-- API Client：自動帶 token、demo 自動登入、production 401 導向 -->
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode !== 'production') {
+      document.write('<script src="js/demo-accounts.js"><\/script>');
+    }
+  </script>
+  <!-- Tailwind CSS CDN -->
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
+  <!-- 設計系統：共用 tailwind.config、demo 模式標記、抽屜 -->
+  <script src="js/agri-theme.js"></script>
+  <script src="js/vendor/lucide.min.js"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/agri.css">
+</head>
+<body class="ad-body">
+
+  <!-- 表頭：簡報頁（公開） -->
+  <header class="ad-header" style="position: sticky; top: 0;">
+    <div class="ad-container ad-header__inner" style="max-width: 1280px;">
+      <a href="index.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">產品介紹</span>
+      </a>
+      <nav class="ad-nav" aria-label="簡報章節">
+        <a class="ad-nav__link" href="#solutions">痛點與解法</a>
+        <a class="ad-nav__link" href="#dual-track">雙軌模式</a>
+        <a class="ad-nav__link" href="#calendar">全台產曆</a>
+        <a class="ad-nav__link" href="#enterprise">契作大戶</a>
+      </nav>
+      <div class="ad-header__actions">
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()" aria-label="示範導覽"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span></button>
+        <a href="farmer.html" class="ad-btn ad-btn--primary ad-btn--sm">預約派工</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="relative overflow-hidden pt-16 pb-24 lg:pt-28 lg:pb-36 border-b border-slate-900">
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
+      
+      <!-- Top Badge -->
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 live-pulse"></span>
+        打破藍領移工派遣禁令・依外展農務制度申請中之合規路徑
+      </div>
+
+      <!-- Main Headline -->
+      <h1 class="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight leading-tight">
+        告別農村缺工搶工<br/>
+        <span class="text-emerald-400">
+          合法外展移工 ╳ 智慧農事調度大腦
+        </span>
+      </h1>
+
+      <p class="max-w-3xl mx-auto text-base sm:text-lg text-slate-400 leading-relaxed">
+        透過「外展農業合作社」擔任移工法定雇主，結合「農事科技公司」演算法調度，提供小農產季早鳥預購、突發天候冷鏈避險，以及本國專業機耕隊統包。
+      </p>
+
+      <!-- CTA Buttons -->
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+        <a href="farmer.html" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-lg transition transform hover:-translate-y-1 flex items-center justify-center gap-2">
+          線上派工預約
+        </a>
+        <a href="login.html" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-black text-lg transition transform hover:-translate-y-1 flex items-center justify-center gap-2">
+          四大身分登入門戶
+        </a>
+        <a href="../TechBackend/admin.html" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-black text-lg transition transform hover:-translate-y-1 flex items-center justify-center gap-2">
+          科技營運後台
+        </a>
+      </div>
+
+      <!-- 四大工時包 DM 旋轉木馬（原首頁 Demo 導覽卡片已移至 index.html 的示範導覽抽屜） -->
+      <div class="space-y-4 max-w-7xl mx-auto pt-6 text-left">
+
+        <!-- Featured Product Brochures DM Carousel (4大專案DM旋轉木馬展示館) -->
+        <div id="dmCarouselSection" class="mt-6 p-6 sm:p-7 rounded-3xl bg-slate-900/95 border border-amber-500/40 shadow-2xl space-y-4">
+          <!-- Carousel Top Header with Nav Controls -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-base sm:text-lg font-extrabold text-white">熱門產品文宣 DM 精選（全台 4 大主力農務保證工時包）</h3>
+                <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span> 旋轉木馬即時選購
+                </span>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5">合法外展工班 ╳ 產季保證出工 ╳ 梅雨冷鏈避險 ╳ 點擊任一 DM 卡片即可直接預購結帳或自訂派工</p>
+            </div>
+
+            <!-- Controls: Prev, Dots, Next, Full DM Link -->
+            <div class="flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
+              <div class="flex items-center gap-1.5 bg-slate-800/90 p-1 rounded-2xl border border-slate-700/80">
+                <button type="button" onclick="prevDmSlide()" aria-label="上一項 DM" class="w-8 h-8 rounded-xl bg-slate-700/70 hover:bg-amber-500 hover:text-slate-950 text-slate-300 transition flex items-center justify-center font-bold text-xs shadow cursor-pointer">
+                  ❮
+                </button>
+                <div id="dmCarouselDots" class="flex items-center gap-1.5 px-2"></div>
+                <button type="button" onclick="nextDmSlide()" aria-label="下一項 DM" class="w-8 h-8 rounded-xl bg-slate-700/70 hover:bg-amber-500 hover:text-slate-950 text-slate-300 transition flex items-center justify-center font-bold text-xs shadow cursor-pointer">
+                  ❯
+                </button>
+              </div>
+              <a href="brochure.html" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition flex items-center gap-1">
+                完整館 ➔
+              </a>
+            </div>
+          </div>
+
+          <!-- Carousel Track Container -->
+          <div class="relative overflow-hidden rounded-2xl" id="dmCarouselWrapper" onmouseenter="stopDmCarouselAutoplay()" onmouseleave="startDmCarouselAutoplay()">
+            <div id="dmCarouselTrack" class="flex transition-transform duration-500 ease-out will-change-transform">
+              
+              <!-- Slide 1: 芒果 -->
+              <div class="w-full md:w-1/2 xl:w-1/3 shrink-0 p-2">
+                <div onclick="openDmPurchase('dm-mango-2026')" class="h-full p-4 sm:p-5 rounded-2xl bg-slate-800/85 hover:bg-slate-800 border border-emerald-500/40 hover:border-emerald-400 hover:shadow-xl hover:shadow-emerald-500/15 transition-all duration-300 flex flex-col justify-between space-y-3 group cursor-pointer relative overflow-hidden">
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">採收早鳥・315/hr</span>
+                      </div>
+                      <span class="text-[10px] text-slate-400 font-mono">屏東枋山/玉井</span>
+                    </div>
+                    <h4 class="font-extrabold text-white text-base group-hover:text-emerald-300 transition">枋山愛文芒果 60 工時早鳥包</h4>
+                    <p class="text-xs text-slate-300 leading-relaxed">4位熟練農工出勤2天・外銷日韓留蒂 0.5cm・遇暴雨自動轉接屏南冷鏈預冷場。</p>
+                    <div class="grid grid-cols-2 gap-1 pt-1.5 text-[11px] text-slate-300">
+                      <span class="flex items-center gap-1"><span class="text-emerald-400">✔</span> 保證出工違約雙賠</span>
+                      <span class="flex items-center gap-1"><span class="text-emerald-400">✔</span> 日韓外銷標準手路</span>
+                      <span class="flex items-center gap-1"><span class="text-emerald-400">✔</span> 雨天轉冷鏈零損失</span>
+                      <span class="flex items-center gap-1"><span class="text-emerald-400">✔</span> 合法發票100%抵稅</span>
+                    </div>
+                  </div>
+                  <div class="pt-3 border-t border-slate-700/70">
+                    <div class="flex items-end justify-between mb-2.5">
+                      <div>
+                        <span class="text-[10px] text-slate-400 block">60 工時 × NT$ 315</span>
+                        <span class="text-amber-400 font-black font-mono text-base sm:text-lg">NT$ 18,900</span>
+                      </div>
+                      <div class="text-right">
+                        <span class="text-[10px] text-slate-400 block">今日鎖單預付 20%</span>
+                        <span class="text-xs font-bold text-emerald-400 font-mono">定金 NT$ 3,780</span>
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2" onclick="event.stopPropagation()">
+                      <button type="button" onclick="openDmPurchase('dm-mango-2026')" class="w-full py-2 px-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-1 cursor-pointer">
+                        點擊購買
+                      </button>
+                      <a href="brochure.html?id=dm-mango-2026" class="w-full py-2 px-2 rounded-xl bg-slate-700/70 hover:bg-slate-700 text-slate-200 border border-slate-600/80 font-bold text-xs transition flex items-center justify-center gap-1">
+                        看完整 DM
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Slide 2: 溫室 -->
+              <div class="w-full md:w-1/2 xl:w-1/3 shrink-0 p-2">
+                <div onclick="openDmPurchase('dm-greenhouse-2026')" class="h-full p-4 sm:p-5 rounded-2xl bg-slate-800/85 hover:bg-slate-800 border border-lime-500/40 hover:border-lime-400 hover:shadow-xl hover:shadow-lime-500/15 transition-all duration-300 flex flex-col justify-between space-y-3 group cursor-pointer relative overflow-hidden">
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-lime-500/20 text-lime-300 border border-lime-500/40 font-bold">設施溫室・315/hr</span>
+                      </div>
+                      <span class="text-[10px] text-slate-400 font-mono">桃園八德/雲林西螺</span>
+                    </div>
+                    <h4 class="font-extrabold text-white text-base group-hover:text-lime-300 transition">八德設施有機溫室 120 工時包</h4>
+                    <p class="text-xs text-slate-300 leading-relaxed">6位常駐工班出勤4天・365天穩定班底・定植採收分級・供全聯學校午餐零脫班。</p>
+                    <div class="grid grid-cols-2 gap-1 pt-1.5 text-[11px] text-slate-300">
+                      <span class="flex items-center gap-1"><span class="text-lime-400">✔</span> 固定班底免天天培訓</span>
+                      <span class="flex items-center gap-1"><span class="text-lime-400">✔</span> 符合有機衛生防護</span>
+                      <span class="flex items-center gap-1"><span class="text-lime-400">✔</span> 15°C採後預冷截切</span>
+                      <span class="flex items-center gap-1"><span class="text-lime-400">✔</span> 月結發票完整抵稅</span>
+                    </div>
+                  </div>
+                  <div class="pt-3 border-t border-slate-700/70">
+                    <div class="flex items-end justify-between mb-2.5">
+                      <div>
+                        <span class="text-[10px] text-slate-400 block">120 工時 × NT$ 315</span>
+                        <span class="text-amber-400 font-black font-mono text-base sm:text-lg">NT$ 37,800</span>
+                      </div>
+                      <div class="text-right">
+                        <span class="text-[10px] text-slate-400 block">今日鎖單預付 20%</span>
+                        <span class="text-xs font-bold text-lime-400 font-mono">定金 NT$ 7,560</span>
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2" onclick="event.stopPropagation()">
+                      <button type="button" onclick="openDmPurchase('dm-greenhouse-2026')" class="w-full py-2 px-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-1 cursor-pointer">
+                        點擊購買
+                      </button>
+                      <a href="brochure.html?id=dm-greenhouse-2026" class="w-full py-2 px-2 rounded-xl bg-slate-700/70 hover:bg-slate-700 text-slate-200 border border-slate-600/80 font-bold text-xs transition flex items-center justify-center gap-1">
+                        看完整 DM
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Slide 3: 機耕 -->
+              <div class="w-full md:w-1/2 xl:w-1/3 shrink-0 p-2">
+                <div onclick="openDmPurchase('dm-drone-2026')" class="h-full p-4 sm:p-5 rounded-2xl bg-slate-800/85 hover:bg-slate-800 border border-indigo-500/40 hover:border-indigo-400 hover:shadow-xl hover:shadow-indigo-500/15 transition-all duration-300 flex flex-col justify-between space-y-3 group cursor-pointer relative overflow-hidden">
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold">智慧機耕 88 折</span>
+                      </div>
+                      <span class="text-[10px] text-slate-400 font-mono">嘉南平原/雲嘉南</span>
+                    </div>
+                    <h4 class="font-extrabold text-white text-base group-hover:text-indigo-300 transition">T50 無人機與機耕深耕包</h4>
+                    <p class="text-xs text-slate-300 leading-relaxed">大疆T50植保無人機 ╳ 久保田80hp曳引機・雙飛手專業證照・附飛行航跡圖資。</p>
+                    <div class="grid grid-cols-2 gap-1 pt-1.5 text-[11px] text-slate-300">
+                      <span class="flex items-center gap-1"><span class="text-indigo-400">✔</span> RTK公分級精準避障</span>
+                      <span class="flex items-center gap-1"><span class="text-indigo-400">✔</span> 雙超音波大噴量</span>
+                      <span class="flex items-center gap-1"><span class="text-indigo-400">✔</span> 附民航局完整航跡</span>
+                      <span class="flex items-center gap-1"><span class="text-indigo-400">✔</span> 代噴良率達標保證</span>
+                    </div>
+                  </div>
+                  <div class="pt-3 border-t border-slate-700/70">
+                    <div class="flex items-end justify-between mb-2.5">
+                      <div>
+                        <span class="text-[10px] text-slate-400 block line-through">原價 NT$ 28,800</span>
+                        <span class="text-amber-400 font-black font-mono text-base sm:text-lg">NT$ 25,200</span>
+                      </div>
+                      <div class="text-right">
+                        <span class="text-[10px] text-slate-400 block">今日鎖單預付 20%</span>
+                        <span class="text-xs font-bold text-indigo-400 font-mono">定金 NT$ 5,040</span>
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2" onclick="event.stopPropagation()">
+                      <button type="button" onclick="openDmPurchase('dm-drone-2026')" class="w-full py-2 px-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-1 cursor-pointer">
+                        點擊購買
+                      </button>
+                      <a href="brochure.html?id=dm-drone-2026" class="w-full py-2 px-2 rounded-xl bg-slate-700/70 hover:bg-slate-700 text-slate-200 border border-slate-600/80 font-bold text-xs transition flex items-center justify-center gap-1">
+                        看完整 DM
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Slide 4: 冷鏈 -->
+              <div class="w-full md:w-1/2 xl:w-1/3 shrink-0 p-2">
+                <div onclick="openDmPurchase('dm-coldchain-2026')" class="h-full p-4 sm:p-5 rounded-2xl bg-slate-800/85 hover:bg-slate-800 border border-cyan-500/40 hover:border-cyan-400 hover:shadow-xl hover:shadow-cyan-500/15 transition-all duration-300 flex flex-col justify-between space-y-3 group cursor-pointer relative overflow-hidden">
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold">冷鏈防汛・315/hr</span>
+                      </div>
+                      <span class="text-[10px] text-slate-400 font-mono">高雄旗山/屏東高樹</span>
+                    </div>
+                    <h4 class="font-extrabold text-white text-base group-hover:text-cyan-300 transition">旗山高樹採後冷鏈 80 工時包</h4>
+                    <p class="text-xs text-slate-300 leading-relaxed">4位冷鏈技術工・鳳梨香蕉防颱搶收 24H 快速馳援・差壓預冷急速降溫出口不爛果。</p>
+                    <div class="grid grid-cols-2 gap-1 pt-1.5 text-[11px] text-slate-300">
+                      <span class="flex items-center gap-1"><span class="text-cyan-400">✔</span> 防颱防汛24H馳援</span>
+                      <span class="flex items-center gap-1"><span class="text-cyan-400">✔</span> 差壓預冷急速降溫</span>
+                      <span class="flex items-center gap-1"><span class="text-cyan-400">✔</span> 日韓外銷標準包裝</span>
+                      <span class="flex items-center gap-1"><span class="text-cyan-400">✔</span> 保證出工無懼風雨</span>
+                    </div>
+                  </div>
+                  <div class="pt-3 border-t border-slate-700/70">
+                    <div class="flex items-end justify-between mb-2.5">
+                      <div>
+                        <span class="text-[10px] text-slate-400 block">80 工時 × NT$ 315</span>
+                        <span class="text-amber-400 font-black font-mono text-base sm:text-lg">NT$ 25,200</span>
+                      </div>
+                      <div class="text-right">
+                        <span class="text-[10px] text-slate-400 block">今日鎖單預付 20%</span>
+                        <span class="text-xs font-bold text-cyan-400 font-mono">定金 NT$ 5,040</span>
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2" onclick="event.stopPropagation()">
+                      <button type="button" onclick="openDmPurchase('dm-coldchain-2026')" class="w-full py-2 px-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-1 cursor-pointer">
+                        點擊購買
+                      </button>
+                      <a href="brochure.html?id=dm-coldchain-2026" class="w-full py-2 px-2 rounded-xl bg-slate-700/70 hover:bg-slate-700 text-slate-200 border border-slate-600/80 font-bold text-xs transition flex items-center justify-center gap-1">
+                        看完整 DM
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Bottom Assurance Bar -->
+          <div class="flex flex-wrap items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/80 gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-emerald-400 font-bold flex items-center gap-1">點擊任一卡片或「購買」鈕立即開啟快速下單結帳</span>
+              <span class="text-slate-600 hidden sm:inline">•</span>
+              <span class="text-slate-400 hidden sm:inline">可直接自動轉入下方派工表單預填</span>
+            </div>
+            <div class="text-[11px] text-slate-500">
+              全台外展依法調度 ╳ 預付 20% 定金 ╳ 違約加倍賠償承諾
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <!-- Key Trust Metrics -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto pt-12 text-left">
+        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+          <span class="text-xs text-slate-400 block">私聘黑工違法風險</span>
+          <span class="text-xl font-extrabold text-red-400">0 罰款</span>
+          <p class="text-[11px] text-slate-500 mt-1">合作社依法投保</p>
+        </div>
+        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+          <span class="text-xs text-slate-400 block">產季早鳥工時包</span>
+          <span class="text-xl font-extrabold text-amber-400">鎖定名額</span>
+          <p class="text-[11px] text-slate-500 mt-1">315 元/hr 不打折・20% 定金優先排班</p>
+        </div>
+        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+          <span class="text-xs text-slate-400 block">天候突發暴雨避險</span>
+          <span class="text-xl font-extrabold text-emerald-400">100% 出勤</span>
+          <p class="text-[11px] text-slate-500 mt-1">自動改派室內蔬果冷鏈包裝線</p>
+        </div>
+        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+          <span class="text-xs text-slate-400 block">政府中央就業獎勵</span>
+          <span class="text-xl font-extrabold text-blue-400">+ 8,800/月</span>
+          <p class="text-[11px] text-slate-500 mt-1">農業人力團補貼大幅引流招募</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Section 1: Three Core Pain Points & Solutions -->
+  <section id="solutions" class="py-20 border-b border-slate-900 bg-slate-900/40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+      <div class="text-center max-w-2xl mx-auto space-y-3">
+        <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">打破產業沉痾</span>
+        <h2 class="text-3xl sm:text-4xl font-black text-white">台灣農業派工的三大痛點與解法</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Card 1 -->
+        <div class="p-8 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4 hover:border-emerald-500/50 transition">
+          <div class="w-12 h-12 rounded-2xl bg-slate-800 text-slate-300 flex items-center justify-center text-xl font-bold">1</div>
+          <h3 class="text-xl font-bold text-white">痛點一：私僱黑工面臨 75 萬重罰</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            農忙找不到工，不少農民冒險任用地下販仔或逃逸移工，遭勞工局查獲每案重罰 15～75 萬元，甚至面臨刑事起訴。
+          </p>
+          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-emerald-400 font-semibold space-y-1">
+            <strong>智農解法：</strong>
+            <p class="text-slate-300 font-normal">成立「外展農業合作社」依法申請外展移工配額，勞健退全保，農友要派安心無憂。</p>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="p-8 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4 hover:border-emerald-500/50 transition">
+          <div class="w-12 h-12 rounded-2xl bg-slate-800 text-slate-300 flex items-center justify-center text-xl font-bold">2</div>
+          <h3 class="text-xl font-bold text-white">痛點二：梅雨降雨移工閒置底薪赤字</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            傳統雇主僱用外展移工需支付按月基本工資，遇到雨季連日無法下田，造成嚴重空轉赤字。
+          </p>
+          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-emerald-400 font-semibold space-y-1">
+            <strong>智農解法：</strong>
+            <p class="text-slate-300 font-normal">雨天啟動演算法天候避險，即時轉派室內蔬果冷鏈預冷包裝線，維持 100% 出勤率。</p>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="p-8 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4 hover:border-emerald-500/50 transition">
+          <div class="w-12 h-12 rounded-2xl bg-slate-800 text-slate-300 flex items-center justify-center text-xl font-bold">3</div>
+          <h3 class="text-xl font-bold text-white">痛點三：旺季搶工撞期・被加價截工</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            產季集中時工頭常被鄰近農場加價放鳥，造成熟果過熟腐爛，損失慘重。
+          </p>
+          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-emerald-400 font-semibold space-y-1">
+            <strong>智農解法：</strong>
+            <p class="text-slate-300 font-normal">產季前推出「早鳥保證工時包」，每小時 315 元不打折，20% 定金鎖定產季名額、優先排班，遲到免單、放鳥雙倍賠。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 2: Dual-Track Architecture -->
+  <section id="dual-track" class="py-20 border-b border-slate-900">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      <div class="text-center max-w-3xl mx-auto space-y-3">
+        <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">合規商業護城河</span>
+        <h2 class="text-3xl sm:text-4xl font-black text-white">民營科技公司 ╳ 外展農業合作社「雙軌架構」</h2>
+        <p class="text-slate-400 text-sm">兼顧法規外展要求與創業者實質商業控制權，打造不可撼動的法律與運營護城河</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        <div class="p-8 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-6">
+          <div class="flex items-center gap-3">
+            <div>
+              <h3 class="text-xl font-bold text-white">有限責任智農農業勞務生產合作社</h3>
+              <span class="text-xs text-emerald-400 font-medium">外展法人主體・合法外展機構</span>
+            </div>
+          </div>
+          <ul class="space-y-3 text-sm text-slate-300">
+            <li class="flex items-start gap-2.5">
+              <span class="text-emerald-400 mt-1">✓</span>
+              <span>依據農業部《外展農務試辦計畫》具備法定雇主身分，合法申請藍領移工配額。</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="text-emerald-400 mt-1">✓</span>
+              <span>負責為移工依法投保勞工保險、全民健康保險與職災保險，開立合法扣抵發票。</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="text-emerald-400 mt-1">✓</span>
+              <span>申領中央農業人力團每人每月最高 NT$ 8,800 就業獎勵金。</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="p-8 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-6">
+          <div class="flex items-center gap-3">
+            <div>
+              <h3 class="text-xl font-bold text-white">智農科技有限公司</h3>
+              <span class="text-xs text-brand-400 font-medium">創業者 100% 控股・核心技術代管</span>
+            </div>
+          </div>
+          <ul class="space-y-3 text-sm text-slate-300">
+            <li class="flex items-start gap-2.5">
+              <span class="text-brand-400 mt-1">✓</span>
+              <span>擁有自研派工演算法、跨縣市調度大腦、三語人機介面與私域合規人才庫之 100% 智慧財產權。</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="text-brand-400 mt-1">✓</span>
+              <span>與合作社簽訂 5 年排他獨家《營運委託暨技術代管協議》，收取合理系統授權費與調度服務費。</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="text-brand-400 mt-1">✓</span>
+              <span>掌控核心客源與大數據，確保創業者控制權與高毛利留存。</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 2.5: 6 Standard Dispatch Categories & Custom Field Sub-Foreman -->
+  <section id="categories" class="py-20 border-b border-slate-900 bg-slate-900/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      <div class="text-center max-w-3xl mx-auto space-y-3">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+          農場主多元派工服務 ╳ 現場帶隊精準對接
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-black text-white">六大標準農事派工類別 ╳ 自訂現場派工小工頭</h2>
+        <p class="text-slate-400 text-sm leading-relaxed">
+          針對台灣現代精緻農業、機耕代耕、無人機植保與天候緊急搶收，提供 6 大標準化派工服務。農場主可自由指派現場小工頭或班長，外展移工進場立即無縫帶工！
+        </p>
+      </div>
+
+      <!-- 6 Categories Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Cat 1 -->
+        <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 transition space-y-4 shadow-xl">
+          <div class="flex items-center justify-between">
+            <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">工班 A/B 熟手採收</span>
+          </div>
+          <h3 class="text-lg font-extrabold text-white">【採收分級】田間採收與外銷分級</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            專門針對有機溫室葉菜、洋香瓜、高接梨與青蔥。熟手採摘、修剪老葉、精細分級、外銷規格貼標裝箱。
+          </p>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
+            <span class="text-slate-400">計費牌價：</span>
+            <span class="text-emerald-400 font-bold font-mono">早鳥 $315/hr (鎖定名額・優先排班)</span>
+          </div>
+        </div>
+
+        <!-- Cat 2 -->
+        <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 transition space-y-4 shadow-xl">
+          <div class="flex items-center justify-between">
+            <span class="text-xs px-2.5 py-1 rounded-full bg-lime-500/20 text-lime-300 font-semibold border border-lime-500/30">工班 C 組 (機耕隊)</span>
+          </div>
+          <h3 class="text-lg font-extrabold text-white">【整地種植】曳引機深耕與定植</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            配置 80 馬力大型曳引機翻耕、作畦、雷射整平、乘坐式插秧機、蔬菜穴盤苗機械定植與鋪設滴灌管路。
+          </p>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
+            <span class="text-slate-400">計費牌價：</span>
+            <span class="text-lime-400 font-bold font-mono">專業機耕牌價 ($310/hr)</span>
+          </div>
+        </div>
+
+        <!-- Cat 3 -->
+        <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 transition space-y-4 shadow-xl">
+          <div class="flex items-center justify-between">
+            <span class="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30">工班 B 組 (跨區專線)</span>
+          </div>
+          <h3 class="text-lg font-extrabold text-white">【田間管理】修枝疏果與引蔓套袋</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            果樹疏花疏果、夏季強剪、立架引蔓綁枝、防菌防蟲果實套袋、落果清除與雜草割除管理。
+          </p>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
+            <span class="text-slate-400">計費牌價：</span>
+            <span class="text-amber-400 font-bold font-mono">熟手技術工時牌價</span>
+          </div>
+        </div>
+
+        <!-- Cat 4 -->
+        <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 transition space-y-4 shadow-xl">
+          <div class="flex items-center justify-between">
+            <span class="text-xs px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-300 font-semibold border border-purple-500/30">工班 C 組 (大疆 T50)</span>
+          </div>
+          <h3 class="text-lg font-extrabold text-white">【科技植保】無人機精準噴藥施肥</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            民航局持證飛手操作大疆 T50 植保機，全區 RTK/GPS 航線規劃，精準代噴病蟲害防治藥劑與微量液態葉面肥。
+          </p>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
+            <span class="text-slate-400">計費牌價：</span>
+            <span class="text-purple-400 font-bold font-mono">專案代噴 ($800/公頃)</span>
+          </div>
+        </div>
+
+        <!-- Cat 5 -->
+        <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 transition space-y-4 shadow-xl">
+          <div class="flex items-center justify-between">
+            <span class="text-xs px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/30">工班 D 組 (冷鏈常態)</span>
+          </div>
+          <h3 class="text-lg font-extrabold text-white">【冷鏈包裝】室內預冷與生鮮截切</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            蔬果採後真空預冷降溫、室內截切清洗、光波選果機精密秤重、氣調保鮮外銷封箱裝櫃，天候不佳零停工。
+          </p>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
+            <span class="text-slate-400">計費牌價：</span>
+            <span class="text-cyan-400 font-bold font-mono">天候避險常態專案</span>
+          </div>
+        </div>
+
+        <!-- Cat 6 -->
+        <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 transition space-y-4 shadow-xl">
+          <div class="flex items-center justify-between">
+            <span class="text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-300 font-semibold border border-rose-500/30 animate-pulse">全工班跨區馳援</span>
+          </div>
+          <h3 class="text-lg font-extrabold text-white">【緊急救火】防颱搶收 24H 馳援</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            氣象局發布海上陸上颱風警報時，24 小時快速集結跨區馳援搶收，搭設防風網與排水防澇搶救農產。
+          </p>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
+            <span class="text-slate-400">計費牌價：</span>
+            <span class="text-rose-400 font-bold font-mono">緊急搶收加乘 ($360/hr)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Field Sub-Foreman Showcase Banner -->
+      <div class="p-8 rounded-3xl bg-slate-900 border border-amber-500/40 shadow-2xl space-y-6">
+        <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+          <div class="space-y-3 max-w-2xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold">
+              農事現場無縫銜接關鍵
+            </div>
+            <h3 class="text-2xl font-black text-white">農場主可自訂「現場派工小工頭」</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              解決傳統派遣「工人到了現場不知道找誰、田間指示不清」的痛點。農場主於下單時可自訂指派現場領班、溫室組長或家族成員，並留下直接電話與交辦事項；若本人親自帶工，一鍵即可同步「同農場主本人帶隊」。
+            </p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+            <a href="farmer-login.html" class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition flex items-center justify-center gap-2">
+              農場主立即下單
+            </a>
+            <a href="../TechBackend/admin.html" class="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs transition flex items-center justify-center gap-2">
+              派工總台管理訂單
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- Section 3: Nationwide 52-Week Crop Calendar & Dynamic Dispatch Brain -->
+  <section id="calendar" class="py-20 border-b border-slate-900 bg-slate-900/60">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      <!-- Section Header -->
+      <div class="text-center max-w-3xl mx-auto space-y-3">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+          全台 52 週動態農產曆 ╳ 跨產區平滑化輪轉大腦
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-black text-white">掌握全台 64 處產區時序・達成移工與在地勞工 95% 全年在工率</h2>
+        <p class="text-slate-400 text-sm leading-relaxed">
+          徹底打破傳統外展「產季結束移工在宿舍吃老本」的虧損困境。依據台灣緯度與海拔氣候梯隊，從冬春蜜棗草莓、初夏芒果玉荷包、盛夏梨桃文旦，到秋冬冬茶柿餅，打造無縫接力的派遣調度大腦。
+        </p>
+      </div>
+
+      <!-- Quarter Metrics Banner -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Q1 -->
+        <div onclick="selectQuarter('Q1')" id="qcard-Q1" class="cursor-pointer p-5 rounded-2xl bg-slate-900/90 border border-emerald-500/40 shadow-lg hover:border-emerald-400 transition space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Q1 (1~3月)</span>
+            <span class="font-mono text-xs text-emerald-400 font-extrabold">出工率 92.0%</span>
+          </div>
+          <h4 class="font-black text-white text-base">冬春高價蔬果與春節檔</h4>
+          <p class="text-xs text-slate-400">燕巢蜜棗、大湖草莓、枋寮蓮霧、車城洋蔥、關廟鳳梨。南部旱季氣候宜人。</p>
+          <div class="text-[11px] text-emerald-400/80 font-medium">投入：工班 B 組 (跨區專線) + A 組</div>
+        </div>
+
+        <!-- Q2 -->
+        <div onclick="selectQuarter('Q2')" id="qcard-Q2" class="cursor-pointer p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-emerald-400 transition space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">Q2 (4~6月)</span>
+            <span class="font-mono text-xs text-amber-400 font-extrabold">出工率 98.5%</span>
+          </div>
+          <h4 class="font-black text-white text-base">春茶、玉荷包與芒果爆發</h4>
+          <p class="text-xs text-slate-400">高山春茶搶收、枋山愛文芒果日韓外銷、大樹玉荷包荔枝 3 週黃金搶收。</p>
+          <div class="text-[11px] text-amber-400/80 font-medium">投入：全體工班 100% 滿載 + C 組代噴</div>
+        </div>
+
+        <!-- Q3 -->
+        <div onclick="selectQuarter('Q3')" id="qcard-Q3" class="cursor-pointer p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-emerald-400 transition space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">Q3 (7~9月)</span>
+            <span class="font-mono text-xs text-blue-400 font-extrabold">出工率 94.0%</span>
+          </div>
+          <h4 class="font-black text-white text-base">盛夏梨桃與文旦柚中秋搶收</h4>
+          <p class="text-xs text-slate-400">東勢高接梨、拉拉山水蜜桃、麻豆老欉文旦白露前搶收、花東金針花海。</p>
+          <div class="text-[11px] text-blue-400/80 font-medium">投入：工班 B 組 + D 組冷鏈避險線</div>
+        </div>
+
+        <!-- Q4 -->
+        <div onclick="selectQuarter('Q4')" id="qcard-Q4" class="cursor-pointer p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-emerald-400 transition space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-300">Q4 (10~12月)</span>
+            <span class="font-mono text-xs text-purple-400 font-extrabold">出工率 95.0%</span>
+          </div>
+          <h4 class="font-black text-white text-base">高山冬茶、柿餅與草莓開幕</h4>
+          <p class="text-xs text-slate-400">新埔九降風曬柿餅、高山冬茶、美濃白玉蘿蔔、洋桔梗外銷、大湖草莓開幕。</p>
+          <div class="text-[11px] text-purple-400/80 font-medium">投入：工班 C 組農機 + A/D 組分級包裝</div>
+        </div>
+      </div>
+
+      <!-- Interactive Year & 12-Month Selector & Auto-Cycle Control -->
+      <div class="bg-slate-900/90 p-6 rounded-3xl border border-slate-800 shadow-2xl space-y-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                全台農事產曆動態雷達
+              </h3>
+              <!-- Real-Time Indicator Badge -->
+              <div id="real-time-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-mono font-bold">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>現實時間：</span><span id="real-time-display">2026年9月23日</span>
+              </div>
+              <!-- Year Selector -->
+              <div class="flex items-center bg-slate-800/90 rounded-xl px-2 py-1 border border-slate-700 text-xs font-mono">
+                <button onclick="changeYear(-1)" class="px-1.5 py-0.5 text-slate-400 hover:text-white transition">◀</button>
+                <span id="current-year-label" class="px-2 text-emerald-400 font-extrabold">2026 年</span>
+                <button onclick="changeYear(1)" class="px-1.5 py-0.5 text-slate-400 hover:text-white transition">▶</button>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">產曆已自動對應目前現實時間，即時推算當季主力作物、調度工班與收穫日倒數</p>
+          </div>
+          
+          <div class="flex items-center gap-2 flex-wrap">
+            <!-- Reset to Current Real Time Button -->
+            <button onclick="resetToRealTime()" class="px-3 py-2 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1.5 shadow">
+              回到目前現實時間
+            </button>
+            <!-- Auto-Cycle Toggle -->
+            <button id="auto-cycle-btn" onclick="toggleAutoCycle()" class="px-3 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 text-xs font-bold transition flex items-center gap-1.5">
+              <span id="auto-cycle-icon" class="inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg></span>
+              <span id="auto-cycle-text">啟動自動輪播</span>
+            </button>
+            <a href="farmers_map.html" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold transition flex items-center gap-1.5">
+              64 處農會地圖
+            </a>
+            <a href="../TechBackend/admin.html" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1.5">
+              進入完整管理後台
+            </a>
+          </div>
+        </div>
+
+        <!-- Month Pill Buttons -->
+        <div class="flex flex-wrap items-center gap-1.5 text-xs">
+          <button onclick="selectMonth(1)" id="mbtn-1" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">1月</button>
+          <button onclick="selectMonth(2)" id="mbtn-2" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">2月</button>
+          <button onclick="selectMonth(3)" id="mbtn-3" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">3月</button>
+          <button onclick="selectMonth(4)" id="mbtn-4" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">4月</button>
+          <button onclick="selectMonth(5)" id="mbtn-5" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">5月</button>
+          <button onclick="selectMonth(6)" id="mbtn-6" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">6月</button>
+          <button onclick="selectMonth(7)" id="mbtn-7" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">7月</button>
+          <button onclick="selectMonth(8)" id="mbtn-8" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">8月</button>
+          <button onclick="selectMonth(9)" id="mbtn-9" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">9月 <span class="text-[10px] text-emerald-400 font-bold">●本月</span></button>
+          <button onclick="selectMonth(10)" id="mbtn-10" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">10月</button>
+          <button onclick="selectMonth(11)" id="mbtn-11" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">11月</button>
+          <button onclick="selectMonth(12)" id="mbtn-12" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">12月</button>
+        </div>
+
+        <!-- Month Detail Display Card -->
+        <div id="month-detail" class="bg-slate-950/70 p-6 rounded-2xl border border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+          <div class="space-y-2 md:border-r border-slate-800 pr-4">
+            <span id="md-quarter" class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold text-[10px]">Q2 產季高峰</span>
+            <h4 id="md-title" class="text-base font-extrabold text-white mt-1">玉荷包荔枝 3 週黃金搶收・芒果外銷日韓高峰</h4>
+            <p id="md-regions" class="text-slate-400">高雄大樹、屏東枋山、台南玉井、雲林二崙、彰化大村</p>
+          </div>
+          <div class="space-y-2 md:border-r border-slate-800 pr-4">
+            <span class="text-slate-400 font-semibold block">52 週主力盛產作物：</span>
+            <p id="md-crops" class="text-slate-200 text-sm font-bold">大樹玉荷包荔枝、枋山愛文芒果、二崙西瓜、大村葡萄</p>
+            <div id="md-sop" class="text-[11px] text-slate-400 mt-2">
+              SOP：熟度 8 分採摘、低溫預冷防褐變、保濕包裝、日韓檢疫外銷裝箱。
+            </div>
+          </div>
+          <div class="space-y-3 flex flex-col justify-between">
+            <div>
+              <span class="text-slate-400 font-semibold block">系統推薦調度派遣工班：</span>
+              <p id="md-team" class="text-emerald-400 text-sm font-bold">工班 B 組 (跨區專線) + 工班 A 組</p>
+            </div>
+            <div class="flex gap-2">
+              <a href="../TechBackend/admin.html" class="w-full text-center py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition flex items-center justify-center gap-1.5">
+                依此產曆直接派工下單
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- UPCOMING HARVESTS SECTION (要到來的收穫日) -->
+        <div class="pt-6 border-t border-slate-800 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h4 class="text-base font-extrabold text-white flex items-center gap-2">
+                要到來的收穫日・全台搶工倒數雷達
+                <span id="harvest-calendar-badge" class="text-[10px] px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-mono font-bold">依 2026年 5月 時序即時計算</span>
+              </h4>
+              <p class="text-xs text-slate-400 mt-0.5">系統依據選定月份，自動推算全台關鍵高價值作物即將到來的收穫期、倒數天數與緊急度！</p>
+            </div>
+            <span class="text-xs text-slate-400 font-mono">共 12 處關鍵收穫檔期</span>
+          </div>
+
+          <!-- Harvest Cards Grid -->
+          <div id="harvest-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Dynamically populated by JS -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Dynamic Calendar & Harvest Radar Script -->
+  <script>
+    // 取得當前現實時間
+    const realNow = new Date();
+    const realYear = realNow.getFullYear();
+    const realMonth = realNow.getMonth() + 1; // 1 ~ 12
+    const realDay = realNow.getDate();
+
+    let currentYear = realYear;
+    let currentMonth = realMonth;
+    let isAutoCycling = false;
+    let autoCycleTimer = null;
+
+    const calendarData = [
+      { month: 1, quarter: "Q1", title: "蜜棗蓮霧春節搶收・草莓一期花盛開", regions: "高雄燕巢、屏東枋寮/高樹、苗栗大湖、台北陽明山", crops: "燕巢蜜棗、枋寮蓮霧、大湖草莓、陽明山山藥、田尾切花", team: "工班 B 組 (跨區專線) + 工班 A 組", sop: "精緻禮盒裝箱、果粉保護採摘、防曬防撞海綿排板。" },
+      { month: 2, quarter: "Q1", title: "洋蔥拔蔥風乾・草莓盛產極期・地瓜採收", regions: "屏東枋山/車城、苗栗大湖、雲林水林、南投信義", crops: "車城洋蔥、大湖草莓二期花、水林台農57號甘藷、新社枇杷", team: "工班 B 組 (跨區專線)", sop: "洋蔥剪根剪葉、田間裝袋(每袋20kg)、搬運上埂、落山風風乾。" },
+      { month: 3, quarter: "Q1", title: "春茶嫩芽開採・關廟金鑽鳳梨・信義青梅", regions: "台南關廟、新北三峽、南投信義、屏東高樹、金門", crops: "關廟金鑽鳳梨、三峽碧螺春春茶、信義青梅、高樹鳳梨", team: "工班 A 組 (桃園溫室) + 工班 B 組", sop: "一心二葉精緻手採、防日曬萎凋、關廟鳳梨果目熟度檢定。" },
+      { month: 4, quarter: "Q2", title: "文山包種/阿里山春茶大搶收・枋山芒果早熟果", regions: "新北坪林、南投鹿谷、嘉義阿里山、屏東枋山", crops: "坪林包種春茶、阿里山春茶、枋山愛文芒果、信義黃梅", team: "工班 C 組 (機耕無人機隊) + 工班 B 組", sop: "茶園清晨大採收、茶菁即時送廠烘焙、愛文早熟果防曬套袋。" },
+      { month: 5, quarter: "Q2", title: "玉荷包荔枝 3 週黃金搶收・芒果外銷日韓高峰", regions: "高雄大樹、屏東枋山、台南玉井、雲林二崙、彰化大村", crops: "大樹玉荷包荔枝、枋山愛文芒果、二崙西瓜、大村葡萄", team: "工班 B 組 (跨區專線) + 工班 A 組", sop: "熟度8分採摘、低溫預冷防褐變、保濕包裝、日韓檢疫外銷裝箱。" },
+      { month: 6, quarter: "Q2", title: "清晨破曉掘綠竹筍・東方美人茶・一期水稻收割", regions: "基隆/士林/大溪、新竹北埔、桃園拉拉山、花東池上", crops: "大溪綠竹筍、北埔東方美人茶、拉拉山水蜜桃、池上米一期", team: "工班 A 組 (桃園溫室) + 工班 C 組", sop: "清晨 04:00 摸黑掘筍防出青、冰水預冷鎖甜、大型收割機隨車接穀。" },
+      { month: 7, quarter: "Q3", title: "高接梨寄接梨・玉井芒果高峰・拉拉山水蜜桃", regions: "苗栗卓蘭、台中東勢、台南玉井、桃園復興、公館", crops: "卓蘭高接梨、東勢寄接梨、玉井愛文芒果、公館紅棗", team: "工班 B 組 (跨區專線)", sop: "套袋果摘除、冷藏預冷保鮮、自動重量選果機分級裝箱。" },
+      { month: 8, quarter: "Q3", title: "麻豆文旦白露前搶收・花東金針花海手採", regions: "台南麻豆、新北八里、花蓮富里、台東太麻里、桃園大溪", crops: "麻豆老欉文旦柚、六十石山金針花、太麻里金針花、大溪韭菜花", team: "工班 B 組 (跨區專線) + 工班 D 組 (冷鏈)", sop: "白露前搶收消水、外觀修整、中秋禮盒排裝、颱風防搶撤夜趕工。" },
+      { month: 9, quarter: "Q3", title: "水田採茭白筍・九降風起曬柿餅・百香果盛產", regions: "新北三芝、新竹新埔、南投埔里、嘉義竹崎、金門", crops: "三芝茭白筍、新埔柿餅、埔里百香果、金門高粱", team: "工班 A 組 (桃園溫室) + 工班 D 組", sop: "人工削皮、圓盤日曬、九降風天然風乾、手工捏壓成形。" },
+      { month: 10, quarter: "Q4", title: "高山冬茶大採收・新埔柿餅滿開・洛神花捅心", regions: "新北坪林、南投鹿谷、嘉義梅山、新竹新埔、台東太麻里", crops: "坪林/阿里山冬茶、新埔柿餅、太麻里洛神花、基隆山藥", team: "工班 C 組 (機耕無人機隊)", sop: "冬茶黃金嫩芽期手採、洛神花手工捅心去籽、日光溫室乾燥。" },
+      { month: 11, quarter: "Q4", title: "美濃白玉蘿蔔・善化胡麻割株・洋桔梗外銷日本", regions: "高雄美濃、台南善化/白河、嘉義新港、全台稻作平原", crops: "美濃白玉蘿蔔、善化胡麻、新港洋桔梗、二期稻作", team: "工班 C 組 (機耕無人機隊) + 工班 D 組", sop: "田間人工拔取、整修泥根、生鮮分級裝箱、胡麻倒立捆紮日曬。" },
+      { month: 12, quarter: "Q4", title: "草莓季盛大開幕・黑珍珠蓮霧・蜜棗登場・冬筍", regions: "苗栗大湖、屏東枋寮、高雄燕巢、南投鹿谷、雲林水林", crops: "大湖草莓第一期花、枋寮蓮霧、燕巢蜜棗、鹿谷冬筍", team: "工班 A 組 (桃園溫室) + 工班 B 組", sop: "高架草莓紅熟採收、防碰傷盒裝、低溫冷鏈預冷、直配都會超市。" }
+    ];
+
+    const rawHarvests = [
+      { id: "H01", cropName: "大樹玉荷包荔枝", icon: "", region: "高雄市大樹區", month: 5, day: 20, window: "5月20日 ~ 6月05日", task: "3週黃金搶收期！延誤即落果變質！集中搶收、剪葉分級、低溫冷藏", team: "工班 B 組 (跨區專線)", workers: 15, cropId: "mango" },
+      { id: "H02", cropName: "枋山愛文芒果 (日韓外銷)", icon: "", region: "屏東縣枋山鄉", month: 5, day: 10, window: "5月10日 ~ 6月25日", task: "早鳥預約外銷高峰！留蒂 0.5cm 護果粉、重量光波選果、外銷裝箱", team: "工班 B 組 (跨區專線)", workers: 20, cropId: "mango" },
+      { id: "H03", cropName: "拉拉山水蜜桃", icon: "", region: "桃園市復興區", month: 6, day: 25, window: "6月20日 ~ 7月25日", task: "高山搶收大尖峰！高海拔手採防碰傷、海綿網套防撞、清晨低溫採摘", team: "工班 A 組 (桃園溫室)", workers: 10, cropId: "taoyuan_veg" },
+      { id: "H04", cropName: "東勢寄接梨 / 卓蘭高接梨", icon: "", region: "台中東勢 / 苗栗卓蘭", month: 7, day: 15, window: "7月10日 ~ 8月20日", task: "產季早鳥搶工期！套袋果摘除、冷藏預冷保鮮、自動重量分級", team: "工班 B 組 (跨區專線)", workers: 12, cropId: "taoyuan_veg" },
+      { id: "H05", cropName: "麻豆老欉文旦柚 (中秋禮盒)", icon: "", region: "台南市麻豆區", month: 8, day: 28, window: "8月20日 ~ 9月10日", task: "白露前10天徹夜搶收！搶收消水、外觀修整、中秋禮盒排裝、颱風防搶", team: "工班 B 組 (跨區專線)", workers: 25, cropId: "taoyuan_veg" },
+      { id: "H06", cropName: "新埔九降風牛心柿餅", icon: "", region: "新竹縣新埔鎮", month: 9, day: 25, window: "9月20日 ~ 11月15日", task: "穩定加工出勤期！人工削皮、圓盤日曬、九降風天然風乾、手工捏壓成形", team: "工班 A 組 (桃園溫室)", workers: 8, cropId: "xinpu_citrus" },
+      { id: "H07", cropName: "坪林包種 / 阿里山高山冬茶", icon: "", region: "新北坪林 / 嘉義梅山", month: 10, day: 20, window: "10月15日 ~ 11月10日", task: "冬茶黃金嫩芽期！一心二葉精緻手採、防日曬萎凋、茶菁即時送廠", team: "工班 C 組 (機耕無人機)", workers: 18, cropId: "hsinchu_tea" },
+      { id: "H08", cropName: "美濃白玉蘿蔔", icon: "", region: "高雄美濃區", month: 11, day: 15, window: "11月10日 ~ 12月20日", task: "在地觀光與契作搶收！田間人工拔取、整修泥根、生鮮分級裝箱裝車", team: "工班 C 組 (機耕無人機)", workers: 8, cropId: "taoyuan_veg" },
+      { id: "H09", cropName: "大湖香水草莓第一期花", icon: "", region: "苗栗縣大湖鄉", month: 12, day: 5, window: "12月01日 ~ 1月15日", task: "冬季草莓季盛大開幕！高架草莓紅熟採收、防碰傷盒裝、冷鏈預冷直配", team: "工班 A 組 (桃園溫室)", workers: 15, cropId: "strawberry" },
+      { id: "H10", cropName: "車城黃金洋蔥 / 恆春洋蔥", icon: "", region: "屏東車城 / 恆春鎮", month: 2, day: 20, window: "2月10日 ~ 3月31日", task: "落山風拔蔥採收期！拔蔥、剪根剪葉、田間裝袋(每袋20kg)、搬運上埂", team: "工班 B 組 (跨區專線)", workers: 16, cropId: "onion" },
+      { id: "H11", cropName: "關廟金鑽鳳梨", icon: "", region: "台南市關廟區", month: 3, day: 20, window: "3月15日 ~ 5月10日", task: "早春外銷大採收！防曬套袋摘除、果目熟度檢定、去冠芽或帶冠裝箱", team: "工班 B 組 (跨區專線)", workers: 14, cropId: "mango" },
+      { id: "H12", cropName: "基隆/士林/大溪綠竹筍", icon: "", region: "北部丘陵產區", month: 6, day: 10, window: "5月25日 ~ 7月10日", task: "清晨破曉掘筍！清晨 04:00 摸黑掘筍防出青、冰水預冷鎖甜、生鮮冷藏", team: "工班 A 組 (桃園溫室)", workers: 10, cropId: "taoyuan_veg" }
+    ];
+
+    function calculateHarvests(year, month) {
+      // 基準檢視日期：如果檢視的是當前現實年月份，以今天 (realDay) 為精確基準日！
+      const isCurrentRealMonth = (year === realYear && month === realMonth);
+      const baseDay = isCurrentRealMonth ? realDay : 15;
+      const viewDate = new Date(year, month - 1, baseDay);
+
+      const calculated = rawHarvests.map(h => {
+        let harvestYear = year;
+        let harvestDate = new Date(harvestYear, h.month - 1, h.day);
+
+        // 若收穫日期已過目前檢視日期，則歸入下一年度週期
+        if (harvestDate < viewDate) {
+          harvestYear = year + 1;
+          harvestDate = new Date(harvestYear, h.month - 1, h.day);
+        }
+
+        const diffTime = harvestDate.getTime() - viewDate.getTime();
+        const countdownDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+
+        let statusLabel = "生長監測中";
+        let statusBadgeClass = "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+        if (countdownDays === 0) {
+          statusLabel = "今日盛產採收日";
+          statusBadgeClass = "bg-red-500/30 text-red-200 border-red-500/50 animate-bounce";
+        } else if (countdownDays <= 15) {
+          statusLabel = "採收倒數中";
+          statusBadgeClass = "bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse";
+        } else if (countdownDays <= 45) {
+          statusLabel = "⏳ 預約搶工中";
+          statusBadgeClass = "bg-amber-500/20 text-amber-300 border-amber-500/40";
+        }
+
+        return {
+          ...h,
+          harvestYear,
+          countdownDays,
+          statusLabel,
+          statusBadgeClass
+        };
+      });
+
+      // 依倒數天數升冪排序 (距離今天最近的排最前面)
+      calculated.sort((a, b) => a.countdownDays - b.countdownDays);
+      return calculated;
+    }
+
+    function renderHarvests() {
+      const list = calculateHarvests(currentYear, currentMonth);
+      const grid = document.getElementById('harvest-grid');
+      const badge = document.getElementById('harvest-calendar-badge');
+      const isCurrentRealMonth = (currentYear === realYear && currentMonth === realMonth);
+
+      if (badge) {
+        if (isCurrentRealMonth) {
+          badge.className = "text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-bold";
+          badge.innerText = `對應目前現實時間 (${realYear}年${realMonth}月${realDay}日) 即時推算`;
+        } else {
+          badge.className = "text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold";
+          badge.innerText = `依 ${currentYear}年 ${currentMonth}月 時序模擬推算`;
+        }
+      }
+
+      if (!grid) return;
+      grid.innerHTML = list.map(item => `
+        <div class="bg-slate-950/80 p-4 rounded-2xl border ${item.countdownDays <= 15 ? 'border-rose-500/50' : 'border-slate-800'} space-y-3 flex flex-col justify-between hover:border-emerald-500/50 transition">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between gap-1">
+              <span class="text-[11px] px-2 py-0.5 rounded-full border font-bold font-mono ${item.statusBadgeClass}">
+                ${item.statusLabel} (${item.countdownDays} 天)
+              </span>
+              <span class="text-[10px] text-slate-400 font-mono">${item.harvestYear}年${item.month}月${item.day}日</span>
+            </div>
+
+            <h5 class="text-sm font-extrabold text-white flex items-center gap-1.5">
+              ${item.cropName}
+            </h5>
+
+            <div class="text-[11px] space-y-1 text-slate-300 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
+              <div class="flex items-center justify-between text-slate-400">
+                <span>${item.region}</span>
+                <span class="font-mono text-emerald-400 font-bold">${item.window}</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1">${item.task}</div>
+            </div>
+          </div>
+
+          <div class="space-y-2 pt-2 border-t border-slate-800">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-slate-400 font-medium">建議工班：</span>
+              <span class="text-emerald-300 font-semibold">${item.team} (需 ${item.workers} 人)</span>
+            </div>
+            <button onclick="onHarvestClick('${item.cropName}', ${item.countdownDays}, '${item.cropId}')" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs transition flex items-center justify-center gap-1">
+              預約此產季搶工 (早鳥鎖定名額)
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function selectMonth(m) {
+      currentMonth = m;
+
+      // 更新月份按鈕樣式
+      document.querySelectorAll('.month-btn').forEach(btn => {
+        btn.classList.remove('bg-emerald-600', 'text-white', 'font-bold', 'ring-2', 'ring-emerald-400');
+        btn.classList.add('bg-slate-800', 'text-slate-300');
+      });
+      const targetBtn = document.getElementById('mbtn-' + m);
+      if (targetBtn) {
+        targetBtn.classList.remove('bg-slate-800', 'text-slate-300');
+        targetBtn.classList.add('bg-emerald-600', 'text-white', 'font-bold');
+      }
+
+      // 若為現實本月，加上特別高亮外框
+      const realMonthBtn = document.getElementById('mbtn-' + realMonth);
+      if (realMonthBtn && currentYear === realYear) {
+        realMonthBtn.classList.add('ring-2', 'ring-emerald-400');
+      }
+
+      const item = calendarData.find(x => x.month === m);
+      if (item) {
+        document.getElementById('md-quarter').innerText = item.quarter + ' 檔期';
+        document.getElementById('md-title').innerText = item.title;
+        document.getElementById('md-regions').innerText = item.regions;
+        document.getElementById('md-crops').innerText = item.crops;
+        document.getElementById('md-team').innerText = item.team;
+        if (document.getElementById('md-sop')) {
+          document.getElementById('md-sop').innerText = 'SOP：' + item.sop;
+        }
+
+        // 同步高亮季度卡片
+        ['Q1', 'Q2', 'Q3', 'Q4'].forEach(k => {
+          const card = document.getElementById('qcard-' + k);
+          if (card) {
+            if (k === item.quarter) {
+              card.classList.remove('border-slate-800', 'bg-slate-900/70');
+              card.classList.add('border-emerald-500/40', 'bg-slate-900/95', 'ring-1', 'ring-emerald-400/30');
+            } else {
+              card.classList.remove('border-emerald-500/40', 'bg-slate-900/95', 'ring-1', 'ring-emerald-400/30');
+              card.classList.add('border-slate-800', 'bg-slate-900/70');
+            }
+          }
+        });
+      }
+
+      // 同步更新收穫日
+      renderHarvests();
+    }
+
+    function resetToRealTime() {
+      stopAutoCycle();
+      isAutoCycling = false;
+      const icon = document.getElementById('auto-cycle-icon');
+      const text = document.getElementById('auto-cycle-text');
+      const btn = document.getElementById('auto-cycle-btn');
+      if (icon) icon.classList.remove('animate-spin');
+      if (text) text.innerText = '啟動自動輪播';
+      if (btn) {
+        btn.classList.remove('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/40');
+        btn.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700');
+      }
+
+      currentYear = realYear;
+      const label = document.getElementById('current-year-label');
+      if (label) label.innerText = currentYear + ' 年';
+      selectMonth(realMonth);
+
+      if (window.AgriNativeBridge && typeof window.AgriNativeBridge.showToast === 'function') {
+        window.AgriNativeBridge.showToast(`已回到目前現實時間：${realYear}年${realMonth}月${realDay}日`);
+      }
+    }
+
+    function changeYear(delta) {
+      currentYear += delta;
+      if (currentYear < 2024) currentYear = 2024;
+      if (currentYear > 2030) currentYear = 2030;
+      const label = document.getElementById('current-year-label');
+      if (label) label.innerText = currentYear + ' 年';
+      renderHarvests();
+    }
+
+    function toggleAutoCycle() {
+      isAutoCycling = !isAutoCycling;
+      const icon = document.getElementById('auto-cycle-icon');
+      const text = document.getElementById('auto-cycle-text');
+      const btn = document.getElementById('auto-cycle-btn');
+
+      if (isAutoCycling) {
+        if (icon) icon.classList.add('animate-spin');
+        if (text) text.innerText = '自動輪播中 (4秒)';
+        if (btn) {
+          btn.classList.remove('bg-slate-800', 'text-slate-300', 'border-slate-700');
+          btn.classList.add('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/40');
+        }
+        startAutoCycle();
+      } else {
+        if (icon) icon.classList.remove('animate-spin');
+        if (text) text.innerText = '啟動自動輪播';
+        if (btn) {
+          btn.classList.remove('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/40');
+          btn.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700');
+        }
+        stopAutoCycle();
+      }
+    }
+
+    function startAutoCycle() {
+      stopAutoCycle();
+      autoCycleTimer = setInterval(() => {
+        let nextM = currentMonth + 1;
+        if (nextM > 12) nextM = 1;
+        selectMonth(nextM);
+      }, 4000);
+    }
+
+    function stopAutoCycle() {
+      if (autoCycleTimer) {
+        clearInterval(autoCycleTimer);
+        autoCycleTimer = null;
+      }
+    }
+
+    function onHarvestClick(cropName, days, cropId) {
+      // 呼叫 Android 原生橋接介面 (震動與快顯提示)
+      if (window.AgriNativeBridge) {
+        if (typeof window.AgriNativeBridge.alertHarvest === 'function') {
+          window.AgriNativeBridge.alertHarvest(cropName, days);
+        } else if (typeof window.AgriNativeBridge.showToast === 'function') {
+          window.AgriNativeBridge.showToast(`【${cropName}】距離採收尚有 ${days} 天，請儘速安排工班！`);
+        }
+        if (typeof window.AgriNativeBridge.vibrate === 'function') {
+          window.AgriNativeBridge.vibrate(200);
+        }
+      }
+      // 導流至派工系統下單試算
+      window.location.href = `../TechBackend/vue-crud.html?crop=${cropId}&ref=harvest`;
+    }
+
+    function selectQuarter(q) {
+      const qMap = { Q1: 1, Q2: 4, Q3: 7, Q4: 10 };
+      if (qMap[q]) selectMonth(qMap[q]);
+      ['Q1', 'Q2', 'Q3', 'Q4'].forEach(k => {
+        const card = document.getElementById('qcard-' + k);
+        if (card) {
+          if (k === q) {
+            card.classList.remove('border-slate-800', 'bg-slate-900/70');
+            card.classList.add('border-emerald-500/40', 'bg-slate-900/95', 'ring-1', 'ring-emerald-400/30');
+          } else {
+            card.classList.remove('border-emerald-500/40', 'bg-slate-900/95', 'ring-1', 'ring-emerald-400/30');
+            card.classList.add('border-slate-800', 'bg-slate-900/70');
+          }
+        }
+      });
+    }
+
+    // ==========================================
+    // DM Carousel & Direct Purchase System
+    // ==========================================
+    const dmPackagesData = {
+      'dm-mango-2026': {
+        id: 'dm-mango-2026',
+        title: '枋山愛文芒果 60 工時早鳥包',
+        icon: '',
+        category: '採收早鳥・315/hr',
+        region: '屏東枋山 / 台南玉井',
+        badge: '產銷班長指名款',
+        originalPrice: 18900,
+        discountPrice: 18900,
+        deposit: 3780,
+        balance: 12960,
+        specs: '4位熟練農工出勤2天・外銷日韓留蒂 0.5cm・遇雨自動轉接屏南冷鏈預冷場',
+        crop: 'mango',
+        cropName: '愛文芒果',
+        catVal: 'harvest_grading',
+        catName: '採收搬運與套袋',
+        acreage: 3.5,
+        defaultLocation: '屏東縣枋山鄉愛文芒果合作園區 2 號地'
+      },
+      'dm-greenhouse-2026': {
+        id: 'dm-greenhouse-2026',
+        title: '八德設施有機溫室 120 工時包',
+        icon: '',
+        category: '設施溫室・315/hr',
+        region: '桃園八德 / 雲林西螺',
+        badge: '常態合作滿意度 99.8%',
+        originalPrice: 37800,
+        discountPrice: 37800,
+        deposit: 7560,
+        balance: 24192,
+        specs: '6位常駐工班出勤4天・365天穩定班底・定植採收分級・供全聯學校午餐零脫班',
+        crop: 'vegetable',
+        cropName: '設施有機蔬菜',
+        catVal: 'tillage_planting',
+        catName: '設施溫室精緻管理',
+        acreage: 3.0,
+        defaultLocation: '桃園市八德區興豐路有機水耕農場 1 號棚'
+      },
+      'dm-drone-2026': {
+        id: 'dm-drone-2026',
+        title: 'T50 無人機與機耕深耕包',
+        icon: '',
+        category: '智慧機耕 88 折',
+        region: '嘉南平原 / 雲嘉南',
+        badge: '科技代噴良率達標保證',
+        originalPrice: 28800,
+        discountPrice: 25200,
+        deposit: 5040,
+        balance: 20160,
+        specs: '大疆T50植保無人機 ╳ 久保田80hp曳引機・雙飛手專業證照・附飛行航跡圖資',
+        crop: 'rice',
+        cropName: '水稻/雜糧輪作',
+        catVal: 'drone_pest_control',
+        catName: '大型無人機精準植保',
+        acreage: 5.0,
+        defaultLocation: '嘉義縣太保市有機米契作產銷示範田'
+      },
+      'dm-coldchain-2026': {
+        id: 'dm-coldchain-2026',
+        title: '旗山高樹採後冷鏈 80 工時包',
+        icon: '',
+        category: '冷鏈防汛・315/hr',
+        region: '高雄旗山 / 屏東高樹',
+        badge: '防汛搶收 24H 馳援',
+        originalPrice: 25200,
+        discountPrice: 25200,
+        deposit: 5040,
+        balance: 15840,
+        specs: '4位冷鏈技術工・鳳梨香蕉防颱搶收 24H 快速馳援・差壓預冷急速降溫出口不爛果',
+        crop: 'pineapple',
+        cropName: '金鑽鳳梨/香蕉',
+        catVal: 'cold_chain_pack',
+        catName: '蔬果清洗分級包裝',
+        acreage: 4.0,
+        defaultLocation: '高雄市旗山區高樹冷鏈集貨預冷中心'
+      }
+    };
+
+    let currentDmIndex = 0;
+    let dmCarouselTimer = null;
+
+    function getCardsPerView() {
+      if (window.innerWidth >= 1280) return 3;
+      if (window.innerWidth >= 768) return 2;
+      return 1;
+    }
+
+    function getMaxDmIndex() {
+      const perView = getCardsPerView();
+      return Math.max(0, 4 - perView);
+    }
+
+    function updateDmCarousel() {
+      const track = document.getElementById('dmCarouselTrack');
+      if (!track) return;
+      const perView = getCardsPerView();
+      const maxIdx = getMaxDmIndex();
+      if (currentDmIndex > maxIdx) currentDmIndex = 0;
+      if (currentDmIndex < 0) currentDmIndex = maxIdx;
+
+      const cardWidthPercent = 100 / perView;
+      const offset = currentDmIndex * cardWidthPercent;
+      track.style.transform = `translateX(-${offset}%)`;
+
+      // Update dots
+      const dotsContainer = document.getElementById('dmCarouselDots');
+      if (dotsContainer) {
+        let dotsHtml = '';
+        for (let i = 0; i <= maxIdx; i++) {
+          const active = i === currentDmIndex;
+          dotsHtml += `<button type="button" onclick="goToDmSlide(${i})" class="h-2 rounded-full transition-all duration-300 cursor-pointer ${active ? 'bg-amber-400 w-5 sm:w-6' : 'bg-slate-700 hover:bg-slate-500 w-2'}" aria-label="切換至第 ${i+1} 頁"></button>`;
+        }
+        dotsContainer.innerHTML = dotsHtml;
+      }
+    }
+
+    function nextDmSlide() {
+      const maxIdx = getMaxDmIndex();
+      currentDmIndex = (currentDmIndex >= maxIdx) ? 0 : currentDmIndex + 1;
+      updateDmCarousel();
+    }
+
+    function prevDmSlide() {
+      const maxIdx = getMaxDmIndex();
+      currentDmIndex = (currentDmIndex <= 0) ? maxIdx : currentDmIndex - 1;
+      updateDmCarousel();
+    }
+
+    function goToDmSlide(idx) {
+      currentDmIndex = idx;
+      updateDmCarousel();
+    }
+
+    function startDmCarouselAutoplay() {
+      stopDmCarouselAutoplay();
+      dmCarouselTimer = setInterval(nextDmSlide, 4500);
+    }
+
+    function stopDmCarouselAutoplay() {
+      if (dmCarouselTimer) {
+        clearInterval(dmCarouselTimer);
+        dmCarouselTimer = null;
+      }
+    }
+
+    // Modal Control Functions
+    function openDmPurchase(dmId) {
+      const pkg = dmPackagesData[dmId] || dmPackagesData['dm-mango-2026'];
+      document.getElementById('dmModalPkgId').value = pkg.id;
+      document.getElementById('dmModalBadge').innerText = pkg.badge || pkg.category;
+      document.getElementById('dmModalRegion').innerText = pkg.region;
+      document.getElementById('dmModalTitle').innerText = pkg.title;
+      document.getElementById('dmModalSpecs').innerText = pkg.specs;
+      document.getElementById('dmModalDiscPrice').innerText = `NT$ ${pkg.discountPrice.toLocaleString()}`;
+      const origPriceEl = document.getElementById('dmModalOrigPrice');
+      const hasDiscount = pkg.originalPrice > pkg.discountPrice;
+      origPriceEl.innerText = hasDiscount ? `原價 NT$ ${pkg.originalPrice.toLocaleString()}` : '315 元/hr・不打折';
+      origPriceEl.classList.toggle('line-through', hasDiscount);
+      document.getElementById('dmModalDeposit').innerText = `NT$ ${pkg.deposit.toLocaleString()}`;
+      
+      const locInput = document.getElementById('dmCustomerLocation');
+      if (locInput) {
+        locInput.value = pkg.defaultLocation;
+      }
+
+      // Default date to tomorrow
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const dateInput = document.getElementById('dmCustomerDate');
+      if (dateInput) {
+        dateInput.value = tomorrow.toISOString().split('T')[0];
+      }
+
+      // Reset state views
+      document.getElementById('dmPurchaseFormContainer').classList.remove('hidden');
+      document.getElementById('dmPurchaseSuccessView').classList.add('hidden');
+      
+      const modal = document.getElementById('dmPurchaseModal');
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      stopDmCarouselAutoplay();
+    }
+
+    function closeDmPurchase() {
+      const modal = document.getElementById('dmPurchaseModal');
+      if (modal) modal.classList.add('hidden');
+      document.body.style.overflow = '';
+      startDmCarouselAutoplay();
+    }
+
+    function handleDmModalBackdrop(event) {
+      if (event.target.id === 'dmPurchaseModal') {
+        closeDmPurchase();
+      }
+    }
+
+    async function submitDmPurchase(event) {
+      event.preventDefault();
+      const pkgId = document.getElementById('dmModalPkgId').value;
+      const pkg = dmPackagesData[pkgId] || dmPackagesData['dm-mango-2026'];
+      const customerName = document.getElementById('dmCustomerName').value.trim();
+      const customerPhone = document.getElementById('dmCustomerPhone').value.trim();
+      const customerLocation = document.getElementById('dmCustomerLocation').value.trim();
+      const customerDate = document.getElementById('dmCustomerDate').value;
+      const paymentMethodRadio = document.querySelector('input[name="dmPaymentMethod"]:checked');
+      const paymentMethod = paymentMethodRadio ? paymentMethodRadio.value : '農會專用帳號轉帳';
+
+      const orderId = `ORD-DM-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      const orderData = {
+        id: orderId,
+        farmerName: customerName,
+        farmerPhone: customerPhone,
+        farmLocation: customerLocation,
+        cropName: pkg.cropName,
+        categoryName: `${pkg.catName} (${pkg.title})`,
+        startDate: customerDate,
+        acreage: pkg.acreage,
+        finalAmount: pkg.discountPrice,
+        depositAmount: pkg.deposit,
+        foremanName: '智慧派遣調度總台 (專屬小工頭)',
+        status: 'confirmed',
+        paymentMethod: paymentMethod,
+        source: '產品文宣 DM 專案購買',
+        createdAt: new Date().toISOString().replace('T', ' ').substring(0, 16)
+      };
+
+      // 1. 本地儲存
+      try {
+        let orders = JSON.parse(localStorage.getItem('agri_orders') || '[]');
+        orders.unshift(orderData);
+        localStorage.setItem('agri_orders', JSON.stringify(orders));
+      } catch (e) {
+        console.warn('LocalStorage save failed', e);
+      }
+
+      // 2. 後端 API
+      try {
+        await fetch(`${(window.AgriAuth && window.AgriAuth.API_BASE) || '/api'}/orders`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderData)
+        });
+      } catch (e) {
+        console.warn('Backend API unreachable', e);
+      }
+
+      // 3. 切換至成功畫面
+      document.getElementById('dmSuccessOrderId').innerText = orderId;
+      document.getElementById('dmSuccessPkgTitle').innerText = pkg.title;
+      document.getElementById('dmSuccessDeposit').innerText = `NT$ ${pkg.deposit.toLocaleString()}`;
+
+      document.getElementById('dmPurchaseFormContainer').classList.add('hidden');
+      document.getElementById('dmPurchaseSuccessView').classList.remove('hidden');
+
+    }
+
+    // 購買後「轉入預約表單」：預約表單已統一放在 farmer.html，這裡只做導向
+    function prefillAndScrollToBooking(pkgId) {
+      const id = pkgId || (document.getElementById('dmModalPkgId') || {}).value || '';
+      closeDmPurchase();
+      window.location.href = 'farmer.html' + (id ? '?pkg=' + encodeURIComponent(id) : '');
+    }
+
+    function viewOrdersFromDm() {
+      closeDmPurchase();
+      window.location.href = 'farmer.html';
+    }
+
+    // 初始化啟動
+    document.addEventListener('DOMContentLoaded', () => {
+      selectMonth(5);
+      startAutoCycle();
+      
+
+      // 初始化 DM 旋轉木馬
+      updateDmCarousel();
+      startDmCarouselAutoplay();
+      window.addEventListener('resize', updateDmCarousel);
+
+      // 觸控滑動支援 (Swipe support)
+      const carouselWrap = document.getElementById('dmCarouselWrapper');
+      if (carouselWrap) {
+        let touchStartX = 0;
+        let touchEndX = 0;
+        carouselWrap.addEventListener('touchstart', (e) => {
+          touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+        carouselWrap.addEventListener('touchend', (e) => {
+          touchEndX = e.changedTouches[0].screenX;
+          if (touchStartX - touchEndX > 50) {
+            nextDmSlide();
+          } else if (touchEndX - touchStartX > 50) {
+            prevDmSlide();
+          }
+        }, { passive: true });
+      }
+    });
+  </script>
+
+  <!-- DM Quick Purchase Checkout Modal (工時包直接購買結帳彈窗) -->
+  <div id="dmPurchaseModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 transition-all duration-300 hidden" onclick="handleDmModalBackdrop(event)">
+    <div class="bg-slate-900 border border-amber-500/50 rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden relative flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-slate-800 bg-slate-900/95 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          
+          <div>
+            <div class="flex items-center gap-1.5">
+              <h3 class="text-base sm:text-lg font-black text-white">工時包專案線上預約購買</h3>
+              <span id="dmModalBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">早鳥鎖定名額</span>
+            </div>
+            <p class="text-xs text-slate-400">農業部外展農業合作社合規出工・預付 20% 定金優先鎖單</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeDmPurchase()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm transition cursor-pointer">
+          ✕
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1 custom-scrollbar text-xs">
+        
+        <!-- Section 1: Order Item Card Summary -->
+        <div class="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-3">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <span id="dmModalRegion" class="text-[10px] text-emerald-400 font-semibold block">屏東枋山 / 台南玉井</span>
+              <h4 id="dmModalTitle" class="text-sm sm:text-base font-extrabold text-white mt-0.5">枋山愛文芒果 60 工時早鳥包</h4>
+              <p id="dmModalSpecs" class="text-slate-400 text-[11px] mt-1">4位熟練農工出勤2天・外銷日韓留蒂 0.5cm・遇雨自動轉接屏南冷鏈預冷場。</p>
+            </div>
+          </div>
+
+          <!-- Price Calculation Box -->
+          <div class="pt-2.5 border-t border-slate-700/70 grid grid-cols-2 gap-2">
+            <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50">
+              <span class="text-[10px] text-slate-400 block">專案優惠總價 (含發票稅)</span>
+              <span id="dmModalDiscPrice" class="text-amber-400 font-black font-mono text-sm sm:text-base">NT$ 18,900</span>
+              <span id="dmModalOrigPrice" class="text-[10px] text-slate-500 block">315 元/hr・不打折</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40">
+              <span class="text-[10px] text-emerald-300 block font-bold">今日應繳定金 (20%)</span>
+              <span id="dmModalDeposit" class="text-emerald-400 font-black font-mono text-sm sm:text-base">NT$ 3,780</span>
+              <span class="text-[10px] text-slate-400 block">尾款驗收後農會轉帳</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Form Container -->
+        <div id="dmPurchaseFormContainer">
+          <form id="dmDirectPurchaseForm" onsubmit="submitDmPurchase(event)" class="space-y-4">
+            <input type="hidden" id="dmModalPkgId" value="">
+
+            <div class="space-y-3">
+              <div class="flex items-center gap-1.5 font-bold text-white text-xs">
+                預約農場主資訊
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-300 mb-1">農場主 / 班長姓名 <span class="text-red-400">*</span></label>
+                  <input type="text" id="dmCustomerName" required value="陳建龍" placeholder="例：陳建龍" class="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-300 mb-1">聯絡手機 / LINE <span class="text-red-400">*</span></label>
+                  <input type="tel" id="dmCustomerPhone" required value="0912-345-678" placeholder="例：0912-345-678" class="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-[11px] font-semibold text-slate-300 mb-1">農園地號 / 作業地點 <span class="text-red-400">*</span></label>
+                  <input type="text" id="dmCustomerLocation" required value="屏東縣枋山鄉愛文芒果合作園區 2 號地" placeholder="作業農場詳細地點" class="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+              </div>
+            </div>
+
+            <!-- Date Selection -->
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">預計出工日期 <span class="text-red-400">*</span></label>
+              <input type="date" id="dmCustomerDate" required class="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              <p class="text-[10px] text-slate-400 mt-1">（下單後調度總台專員將於 2 小時內去電與您確認田間動線與工班接送細節）</p>
+            </div>
+
+            <!-- Payment Method -->
+            <div class="space-y-1.5">
+              <label class="block text-[11px] font-semibold text-slate-300">定金支付方式 (20%)</label>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="flex items-center gap-2 p-2.5 rounded-xl border border-emerald-500/60 bg-emerald-950/20 cursor-pointer">
+                  <input type="radio" name="dmPaymentMethod" value="農會虛擬帳號轉帳" checked class="accent-emerald-500">
+                  <span class="text-[11px] text-white font-medium">農會專用帳號轉帳</span>
+                </label>
+                <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-700 bg-slate-850 cursor-pointer hover:border-slate-600">
+                  <input type="radio" name="dmPaymentMethod" value="信用卡 / LINE Pay" class="accent-emerald-500">
+                  <span class="text-[11px] text-white font-medium">信用卡 / LINE Pay</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Submit CTA -->
+            <div class="pt-2 space-y-2">
+              <button type="submit" id="dmSubmitBtn" class="w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer">
+                確認購買並送出訂單（即刻鎖單）
+              </button>
+              
+              <button type="button" onclick="prefillAndScrollToBooking()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
+                或前往完整客製化派工表單自訂細節 ➔
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Success Result View (Hidden by default) -->
+        <div id="dmPurchaseSuccessView" class="hidden space-y-4 text-center py-2">
+          <div class="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center text-3xl mx-auto shadow-inner">
+            ✓
+          </div>
+          <div>
+            <h4 class="text-base sm:text-lg font-black text-white">恭喜！工時包專案預約購買成功</h4>
+            <p class="text-xs text-slate-400 mt-1">訂單已即時同步至總台調度庫與專屬帶班小工頭！</p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-800/90 border border-emerald-500/30 text-left space-y-2 text-xs">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+              <span class="text-slate-400">訂單編號：</span>
+              <span id="dmSuccessOrderId" class="font-mono font-bold text-amber-400">ORD-DM-2026-8888</span>
+            </div>
+            <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+              <span class="text-slate-400">預約項目：</span>
+              <span id="dmSuccessPkgTitle" class="font-bold text-white">枋山愛文芒果 60 工時早鳥包</span>
+            </div>
+            <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+              <span class="text-slate-400">今日應繳定金 (20%)：</span>
+              <span id="dmSuccessDeposit" class="font-mono font-bold text-emerald-400 text-sm">NT$ 3,780</span>
+            </div>
+            <div class="pt-1 text-[11px] text-slate-300 space-y-1">
+              <p class="font-semibold text-amber-300">農會專屬繳費虛擬帳號：</p>
+              <div class="p-2.5 rounded-xl bg-slate-900 font-mono text-emerald-400 text-xs tracking-wider flex items-center justify-between">
+                <span>95102-000-88234567</span>
+                <span class="text-[10px] text-slate-400">(枋山地區農會 951)</span>
+              </div>
+              <p class="text-[10px] text-slate-400">轉帳完成後系統將自動發送簡訊通知並鎖定出工班底。</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 pt-2">
+            <button type="button" onclick="closeDmPurchase()" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition cursor-pointer">
+              完成關閉
+            </button>
+            <button type="button" onclick="viewOrdersFromDm()" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition cursor-pointer">
+              查看我的訂單
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 bg-slate-950 py-8 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 space-y-2">
+      <p>© 2026 智農派工 AgriDispatch. All rights reserved. 雙軌合規農事外展平台</p>
+      <p>技術代管：智農科技有限公司 ╳ 外展主體：有限責任智農農業勞務生產合作社</p>
+    </div>
+  </footer>
+
+  <script>
+    var demoNav = AgriTheme.demoNav();
+    if (window.lucide) lucide.createIcons();
+  </script>
+</body>
+</html>

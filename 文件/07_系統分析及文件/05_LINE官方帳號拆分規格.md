@@ -232,7 +232,7 @@ sequenceDiagram
 3. 一個 LINE userId 在同一帳號只能綁一個平台帳號；一個平台帳號在同一帳號只能綁一個 LINE userId。重複綁定回 409，須先解除。
 4. 綁定頁沿用既有登入頁的錯誤訊息規則（不提示預設密碼）。綁定頁網址不得帶個資參數。
 5. 工作者帳號的綁定頁依 3.2 語言顯示；外籍移工綁定前須顯示個資告知與同意（越語、印尼語版本）【待確認：告知文字與同意方式】。
-- 綁定頁：`Software/demo/農業派遣主網站/line-bind.html`（中、越、印尼語；網址參數 `channel`、`role`、`lang`）。LIFF ID 設在前端 `js/app-config.js` 的 `liffBindId`（demo、web、android 三份各自一份），LIFF endpoint 指向此頁；未設定時 demo 模式改用模擬 LINE 帳號，production 顯示「請從 LINE 開啟」。只有該帳號為 Mock 模式時，Line Bot 的綁定卡網址才附模擬用 `mockUid`（模擬器綁定後接得上同一個聊天使用者），正式模式網址不帶任何使用者識別。
+- 綁定頁：`Software/demo/AgriDispatch/line-bind.html`（中、越、印尼語；網址參數 `channel`、`role`、`lang`）。LIFF ID 設在前端 `js/app-config.js` 的 `liffBindId`（demo、web、android 三份各自一份），LIFF endpoint 指向此頁；未設定時 demo 模式改用模擬 LINE 帳號，production 顯示「請從 LINE 開啟」。只有該帳號為 Mock 模式時，Line Bot 的綁定卡網址才附模擬用 `mockUid`（模擬器綁定後接得上同一個聊天使用者），正式模式網址不帶任何使用者識別。
 6. 「同一個平台帳號」以「同身分且同 `ref_id`」判斷：同一位工人以工號（W001）或 users 帳號（worker_foreign → W001）登入視為同一人。
 7. 未設定 `LINE_LOGIN_CHANNEL_ID` 時：production 回 503；demo 模式接受 `mock:U+32位十六進位` 假 token（路演與自動測試用），正式環境不得以此綁定。
 
@@ -352,7 +352,7 @@ flowchart LR
 - **分工**：後端 `LineNotifyService` 決定「推給誰」（已綁定、未封鎖、出工名單或訂單農場主），LINE Bot `/internal/notify` 決定「怎麼說」：`{channel, type, params, recipients:[{lineUserId, lang}]}`，依語言分組各產生一次訊息後 multicast（每批 500 人、失敗重試 1 次）。訊息範本在 `Software/Line Bot/.../NotifyMessages.java`，工作者帳號三語文字在 `i18n/worker_*.properties`。`/internal/push` 另收原始訊息，`broadcast` 只允許農場主帳號。
 - **觸發點**：訂單狀態 `OrderService.changeStatus`（只在狀態真的改變時）；定金 `OrderService.markDepositPaid`；天候 `DispatchController`（切換到 `warning`／`danger` 等級且情境改變時才通知；今天在工期內的已排定／施工中訂單，加上沒填工期的施工中訂單；工人依所屬工班是否改到室內分兩批）；明日出工 `@Scheduled`（`agri.line.notify.tomorrow-cron`，預設每天 18:00，同一天只自動發一次），隔天在工期內的已排定／施工中訂單。出工名單沒有時以分派工班成員代替（與派工前加保檢查相同）。
 - **時段**：`agri.line.notify.worker-hours`（預設 `07:00-20:00`，環境變數 `AGRI_LINE_WORKER_HOURS`）只限制工作者帳號，時段外略過、不補發，結果回報 `skippedQuietHours`；demo profile 設 `00:00-24:00` 方便路演。
-- **後台**：`GET /api/line/notify/status`、`POST /api/line/notify/tomorrow`、`POST /api/line/notify/farmer-broadcast`（皆僅 admin），操作介面在 `科技後台/admin-line.html`。
+- **後台**：`GET /api/line/notify/status`、`POST /api/line/notify/tomorrow`、`POST /api/line/notify/farmer-broadcast`（皆僅 admin），操作介面在 `TechBackend/admin-line.html`。
 - **未做**：薪資入帳通知——系統目前沒有「發薪作業完成」事件，待發薪功能建立後掛上；推播紀錄不存表（`line_messages` 仍未啟用，見第拾肆章第 11 項）。
 - 推播一律在背景執行，LINE Bot 離線或失敗不影響訂單、付款、天候操作本身。
 
@@ -465,8 +465,8 @@ LINE 官方帳號依「每月主動推播則數」計費，**回覆訊息（Repl
 | 後端 | `LineUser.java`、`LineUserRepository.java` | 依 6.5 修改；新增 `LineBindingService` |
 | 後端 | `AuthInterceptor` 等授權設定 | 內部端點改以內部金鑰驗證，綁定端點需登入 |
 | 前端 | `Software/demo/linebot/line.html` | 模擬器上方切換「農場主帳號／工作者帳號」；工作者帳號可選身分與語言（P4 完成：手機頂部顯示目前帳號、細分身分、「示範身分／實際綁定」切換、真正的圖文選單、一次顯示全部回覆） |
-| 前端 | `Software/demo/農業派遣主網站/` 新增綁定頁 | LIFF 綁定頁（中、越、印尼語） |
-| 前端 | `Software/demo/科技後台/admin.html` | LINE 設定頁顯示兩帳號狀態；綁定清單與解除（P4 實作為獨立頁 `admin-line.html`，admin.html 表頭加入口；資料來自 `GET /api/line/config`（含 Line Bot `/health` 的模式、選單上傳、加好友按鈕、共用金鑰狀態）與 `/api/line/bindings`） |
+| 前端 | `Software/demo/AgriDispatch/` 新增綁定頁 | LIFF 綁定頁（中、越、印尼語） |
+| 前端 | `Software/demo/TechBackend/admin.html` | LINE 設定頁顯示兩帳號狀態；綁定清單與解除（P4 實作為獨立頁 `admin-line.html`，admin.html 表頭加入口；資料來自 `GET /api/line/config`（含 Line Bot `/health` 的模式、選單上傳、加好友按鈕、共用金鑰狀態）與 `/api/line/bindings`） |
 | 資料庫 | `Software/database/01_agridispatch_oracle_schema.sql` | `line_users` 依 6.5 修改 |
 | 文件 | 01、02、03 規格、`Line Bot/README.md` | 實作完成後同步 |
 

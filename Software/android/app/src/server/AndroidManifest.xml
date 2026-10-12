@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Server 端 (科技後台)：直接以 MainActivity 開啟 科技後台/admin-login.html -->
+<!-- Server 端 (科技後台)：直接以 MainActivity 開啟 TechBackend/admin-login.html -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 

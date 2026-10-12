@@ -40,7 +40,7 @@ server.port=5000
 # 智農派工 Java 後台 API 基礎路徑
 backend.api.base=http://localhost:3000/api
 
-# Flex 卡片按鈕連結的前端網站根網址（其下為 農業派遣主網站/、linebot/ 子站）
+# Flex 卡片按鈕連結的前端網站根網址（其下為 AgriDispatch/、linebot/ 子站）
 # 實機 LINE 須改為手機連得到的公開 https 網址（例如 Netlify 部署網址），結尾不加斜線
 web.base.url=http://localhost:3000/demo
 

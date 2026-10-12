@@ -26,7 +26,17 @@ if [ "$TABLES" = "0" ]; then
   sql_app < $UP/schema-ddl.sql > $UP/schema.log 2>&1 || { tail -20 $UP/schema.log; exit 1; }
   grep -c "Table created" $UP/schema.log | xargs echo "  建立資料表數："
 else
-  echo "  資料表已存在，略過（schema 變更請另以 migration 處理）"
+  echo "  資料表已存在，略過建表"
+fi
+# schema 變更：migrations/*.sql 依檔名順序執行，每支都可重複執行（已套用就略過）
+if [ -f $UP/migrations.tar.gz ]; then
+  rm -rf $UP/migrations && mkdir -p $UP/migrations
+  tar -xzf $UP/migrations.tar.gz -C $UP/migrations
+  for m in $(ls $UP/migrations/*.sql 2>/dev/null | sort); do
+    out=$({ echo "set serveroutput on"; cat "$m"; } | sql_app) || { echo "  migration 失敗：$m"; echo "$out" | tail -20; exit 1; }
+    echo "$out" | grep -i "^migration" | sed 's/^/  /' || true
+  done
+  rm -rf $UP/migrations $UP/migrations.tar.gz
 fi
 
 echo "[deploy] 2/4 程式與網頁"

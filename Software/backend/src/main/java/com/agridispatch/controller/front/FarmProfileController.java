@@ -2,19 +2,21 @@ package com.agridispatch.controller.front;
 
 import com.agridispatch.security.AuthContext;
 import com.agridispatch.service.FarmProfileService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 我的農場（預約派工第一步，僅 farmer）
- * - GET /api/farmers/me：已登錄回農場資料，尚未登錄 data = null
- * - PUT /api/farmers/me：新增或修改農場資料
+ * 我的農場（預約派工第一步，僅 farmer）：可登錄多個，預約時選一個
+ * - GET    /api/farmers/me/farms：本人的農場清單（依登錄先後）
+ * - POST   /api/farmers/me/farms：新增
+ * - PUT    /api/farmers/me/farms/{id}：修改
+ * - DELETE /api/farmers/me/farms/{id}：刪除
  */
 @RestController
-@RequestMapping("/api/farmers/me")
+@RequestMapping("/api/farmers/me/farms")
 public class FarmProfileController {
 
     private final FarmProfileService farmProfileService;
@@ -24,16 +26,25 @@ public class FarmProfileController {
     }
 
     @GetMapping
-    public ResponseEntity<?> get() {
-        Map<String, Object> body = new HashMap<>();
-        body.put("success", true);
-        body.put("data", farmProfileService.get(AuthContext.require()));   // Map.of 不接受 null
-        return ResponseEntity.ok(body);
+    public ResponseEntity<?> list() {
+        return ResponseEntity.ok(Map.of("success", true, "data", farmProfileService.list(AuthContext.require())));
     }
 
-    @PutMapping
-    public ResponseEntity<?> save(@RequestBody Map<String, Object> req) {
-        return ResponseEntity.ok(Map.of("success", true, "data", farmProfileService.save(AuthContext.require(), req),
-                "message", "農場資料已儲存"));
+    @PostMapping
+    public ResponseEntity<?> create(@RequestBody Map<String, Object> req) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("success", true,
+                "data", farmProfileService.create(AuthContext.require(), req), "message", "農場已登錄"));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> update(@PathVariable String id, @RequestBody Map<String, Object> req) {
+        return ResponseEntity.ok(Map.of("success", true,
+                "data", farmProfileService.update(AuthContext.require(), id, req), "message", "農場資料已儲存"));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable String id) {
+        farmProfileService.delete(AuthContext.require(), id);
+        return ResponseEntity.ok(Map.of("success", true, "message", "農場已刪除"));
     }
 }

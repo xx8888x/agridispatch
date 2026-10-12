@@ -190,31 +190,42 @@
   };
   function blank(v) { return v == null || String(v).trim() === ''; }
 
-  // 我的農場（GET/PUT /farmers/me）：依登入者 refId 存在 state，檢查與後端 FarmProfileService 相同
+  // 我的農場（/farmers/me/farms，可多個）：依登入者 refId 存在 state，檢查與後端 FarmProfileService 相同
   function farmKey() {
     var me = currentUser();
-    return me && me.role === 'farmer' && me.refId ? 'GET /farmers/me#' + me.refId : null;
+    return me && me.role === 'farmer' && me.refId ? 'GET /farmers/me/farms#' + me.refId : null;
   }
-  function farmGet() {
-    var k = farmKey();
-    if (!k) return respond(403, { success: false, error: 'FORBIDDEN' });
+  function farmList(k) {
     var e = get(k);
-    return respond(200, { success: true, data: e && e.b ? e.b.data : null });
+    return (e && e.b && e.b.data) || [];
   }
-  function farmPut(r) {
+  function farmApi(method, id, r) {
     var k = farmKey();
     if (!k) return respond(403, { success: false, error: 'FORBIDDEN' });
+    var list = farmList(k);
+    if (method === 'GET') return respond(200, { success: true, data: list });
+    var idx = -1;
+    list.forEach(function (f, i) { if (f.id === id) idx = i; });
+    if ((method === 'PUT' || method === 'DELETE') && idx < 0) return respond(404, { success: false, error: '找不到這個農場' });
+    if (method === 'DELETE') {
+      list.splice(idx, 1);
+      put(k, { s: 200, b: { success: true, data: list } });
+      return respond(200, { success: true, message: '農場已刪除' });
+    }
+    r = r || {};
     var tel = String(r.phone || '').replace(/[\s-]/g, '');
     if (blank(r.farmName) || String(r.farmName).trim().length > 100) return respond(400, { success: false, error: '請填寫農場名稱（100 字以內）' });
     if (blank(r.contactName) || String(r.contactName).trim().length > 50) return respond(400, { success: false, error: '請填寫聯絡人姓名（50 字以內）' });
     if (!/^0\d{8,9}$/.test(tel)) return respond(400, { success: false, error: '請填寫正確的聯絡電話（手機 09 開頭 10 碼，市話含區碼）' });
     if (blank(r.address) || String(r.address).trim().length > 255) return respond(400, { success: false, error: '請填寫農場地址或地號（255 字以內）' });
+    if (method === 'POST' && list.length >= 20) return respond(409, { success: false, error: '每個帳號最多登錄 20 個農場' });
     var data = {
-      farmerId: currentUser().refId, farmName: String(r.farmName).trim(), contactName: String(r.contactName).trim(),
+      id: method === 'POST' ? nextId(list, 'FM') : id, farmName: String(r.farmName).trim(), contactName: String(r.contactName).trim(),
       phone: tel, address: String(r.address).trim(), farmType: blank(r.farmType) ? '個人農戶' : String(r.farmType).trim()
     };
-    put(k, { s: 200, b: { success: true, data: data } });
-    return respond(200, { success: true, data: data, message: '農場資料已儲存' });
+    if (method === 'POST') list.push(data); else list[idx] = data;
+    put(k, { s: 200, b: { success: true, data: list } });
+    return respond(method === 'POST' ? 201 : 200, { success: true, data: data, message: method === 'POST' ? '農場已登錄' : '農場資料已儲存' });
   }
   function findIn(listKey, id) {
     var list = listOf(get(listKey)) || [];
@@ -900,7 +911,8 @@
         roleDesc: (r.farmName || '自助註冊') + ' 農場主' } });
     }
 
-    if (method === 'PUT' && sp.path === '/farmers/me') return farmPut(body || {});
+    var fm = /^\/farmers\/me\/farms(?:\/([^/]+))?$/.exec(sp.path);
+    if (fm) return farmApi(method, fm[1] && decodeURIComponent(fm[1]), body);
 
     // 有業務邏輯、會影響後續查詢的動作
     if (method === 'POST' && sp.path === '/orders/calculate') {
@@ -1031,7 +1043,7 @@
         var u = currentUser();
         return u ? respond(200, { success: true, user: u, data: u }) : respond(401, { success: false, error: '未登入' });
       }
-      if (sp.path === '/farmers/me') return farmGet();
+      if (sp.path === '/farmers/me/farms') return farmApi('GET');
       if (sp.path === '/line/config') {
         // 錄製時 LINE Bot 沒開；純前端示範的對話由頁面模擬，狀態顯示「模擬中」。金鑰等正式設定照實呈現。
         var lc = findGet(p) || { s: 200, b: { success: true } };

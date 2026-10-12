@@ -155,6 +155,27 @@ COMMENT ON COLUMN farmers.address IS '農場/溫室田區地址';
 COMMENT ON COLUMN farmers.tax_id IS '統一編號 (供合作社開立合規發票扣抵營業稅)';
 COMMENT ON COLUMN farmers.farm_type IS '農場型態 (個人農戶 / 產銷班 / 農企業 / 農會／合作社)';
 
+-- 農場主登錄的農場（一個農場主可多個，預約派工時選一個）；farmer_id 為 users.ref_id，
+-- 種子帳號沒有 farmers 列，故不設外鍵。既有資料庫以 migrations/2026-10-12_farms.sql 補建
+CREATE TABLE farms (
+    id                 VARCHAR2(32 CHAR)   NOT NULL,
+    farmer_id          VARCHAR2(32 CHAR)   NOT NULL,
+    name               VARCHAR2(100 CHAR)  NOT NULL,
+    contact_name       VARCHAR2(50 CHAR)   NOT NULL,
+    phone              VARCHAR2(30 CHAR)   NOT NULL,
+    address            VARCHAR2(255 CHAR)  NOT NULL,
+    farm_type          VARCHAR2(50 CHAR)   DEFAULT '個人農戶' NOT NULL,
+    created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT pk_farms PRIMARY KEY (id)
+);
+CREATE INDEX idx_farms_farmer ON farms (farmer_id, created_at);
+
+COMMENT ON TABLE farms IS '農場主登錄的農場：預約派工時選擇';
+COMMENT ON COLUMN farms.id IS '農場編號 (如 FM0001)';
+COMMENT ON COLUMN farms.farmer_id IS '農場主編號 (users.ref_id，如 F001)';
+COMMENT ON COLUMN farms.contact_name IS '現場聯絡人';
+COMMENT ON COLUMN farms.address IS '農場地址／地號（預約時的預設作業地點）';
+
 -- ====================================================================
 -- 3. 調度工班與專車表 (DISPATCH_TEAMS)
 -- ====================================================================

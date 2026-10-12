@@ -49,6 +49,16 @@ foreach ($f in "server-setup.sh", "server-deploy.sh", "enable-https.sh") {
     [IO.File]::WriteAllText((Join-Path $stage $f), $t, (New-Object Text.UTF8Encoding $false))
 }
 if ($Accounts) { Copy-Item $Accounts (Join-Path $stage "accounts.sql") -Force }
+# 既有資料庫的 schema 變更（可重複執行），主機端依檔名順序執行
+$migStage = Join-Path $stage "migrations"
+if (Test-Path $migStage) { Remove-Item $migStage -Recurse -Force }
+New-Item -ItemType Directory -Force $migStage | Out-Null
+Get-ChildItem (Join-Path $software "database\migrations\*.sql") -ErrorAction SilentlyContinue | ForEach-Object {
+    $t = (Get-Content $_.FullName -Raw -Encoding UTF8) -replace "`r`n", "`n"
+    [IO.File]::WriteAllText((Join-Path $migStage $_.Name), $t, (New-Object Text.UTF8Encoding $false))
+}
+tar -czf (Join-Path $stage "migrations.tar.gz") -C $migStage .
+Check "打包 migrations"
 
 Write-Host "[deploy] 2b 編譯 LINE Bot（--release 17：主機是 Java 17）"
 $bot = Join-Path $software "Line Bot"
@@ -66,7 +76,7 @@ Check "打包 LINE Bot"
 Write-Host "[deploy] 3/4 上傳"
 & ssh @sshOpts $target "mkdir -p /tmp/agri-deploy"
 Check "SSH 連線"
-$files = @("app.jar", "web.tar.gz", "linebot.tar.gz", "schema-ddl.sql", "server-setup.sh", "server-deploy.sh", "enable-https.sh")
+$files = @("app.jar", "web.tar.gz", "linebot.tar.gz", "migrations.tar.gz", "schema-ddl.sql", "server-setup.sh", "server-deploy.sh", "enable-https.sh")
 if ($Accounts) { $files += "accounts.sql" }
 & scp @sshOpts ($files | ForEach-Object { Join-Path $stage $_ }) "${target}:/tmp/agri-deploy/"
 if ($LASTEXITCODE -ne 0) { throw "上傳失敗" }

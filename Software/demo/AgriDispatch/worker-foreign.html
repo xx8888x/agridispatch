@@ -726,7 +726,7 @@
     const money = (n) => `NT$ ${Number(n).toLocaleString()}`;
 
     // ------------------------------------------------------------------
-    // 今日任務卡、近期打卡列、本週班表：讀工人所屬工班的訂單與工班資料（與 LINE、後台同一份）。
+    // 今日任務卡、近期打卡列、本週班表：讀本人排班 GET /workers/{id}/schedule（只含排給本人的工作，不含金額與農場主電話）。
     // 選單規則同 LINE：履約中優先，其次已排定、待付定金；讀不到資料時沿用下方三語示範文字。
     // 資料欄位（地點、作業內容）只有中文，切換越南文／印尼文時標籤會翻譯、資料維持中文。
     // ------------------------------------------------------------------
@@ -744,13 +744,15 @@
         return (await res.json()).data;
       };
       try {
-        const worker = await get(`/workers/${encodeURIComponent(workerId)}`);
-        if (!worker || !worker.teamId) return;
-        const [orders, team] = await Promise.all([get('/orders'), get(`/dispatch/teams/${encodeURIComponent(worker.teamId)}`)]);
-        const mine = (orders || []).filter((o) => o.assignedTeamId === worker.teamId && o.status !== 'cancelled');
+        const data = await get(`/workers/${encodeURIComponent(workerId)}/schedule`);
+        if (!data || !data.team) return;
+        const mine = (data.items || []).map((i) => Object.assign({}, i, { id: i.orderId }));
         const order = mine.filter((o) => TASK_RANK[o.status] != null)
           .sort((a, b) => TASK_RANK[a.status] - TASK_RANK[b.status] || String(b.id).localeCompare(String(a.id)))[0];
-        if (!order || !team) return;
+        if (!order) return;
+        // 出工名單可能是別工班的訂單：接送車與遇雨改派以訂單所屬工班為準
+        const team = Object.assign({}, data.team, order.vehicle ? {
+          vehicle: order.vehicle, driver: order.driver, hedgeLocation: order.hedgeLocation, hedgeTask: order.hedgeTask } : {});
         TASK = {
           order, team, mine,
           location: order.farmLocation || team.normalLocation || '',

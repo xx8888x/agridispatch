@@ -924,27 +924,36 @@
       return (t && (t.order.farmLocation || t.team.normalLocation)) || fallback;
     }
 
+    // 任務一律讀本人排班 GET /workers/{id}/schedule（只含排給本人的工作，不含金額與農場主電話）。
+    // 真正登入的本國工人，目前身分查本人；其餘身分查示範帳號（正式版會 403，該身分沿用示範文字）。
+    function taskWorkerId(track) {
+      const u = (window.AgriAuth && window.AgriAuth.getUser && window.AgriAuth.getUser()) || null;
+      if (u && u.role === 'worker_local' && u.refId && !u.demo && track === currentTrack) return u.refId;
+      return DEMO_WORKER[track];
+    }
+
     async function loadLocalTasks() {
       const get = async (path) => {
         const res = await fetch(`${API_BASE}${path}`);
         if (!res.ok) throw new Error(path);
-        return (await res.json()).data || [];
+        return (await res.json()).data;
       };
-      try {
-        const [orders, teams, workers] = await Promise.all([get('/orders'), get('/dispatch/teams'), get('/workers')]);
-        Object.keys(DEMO_WORKER).forEach((track) => {
-          const w = workers.find((x) => x.id === DEMO_WORKER[track]);
-          const team = w && teams.find((t) => t.id === w.teamId);
-          if (!team) return;
-          const mine = orders.filter((o) => o.assignedTeamId === team.id && o.status !== 'cancelled');
-          const order = mine.filter((o) => TASK_RANK[o.status] != null)
-            .sort((a, b) => TASK_RANK[a.status] - TASK_RANK[b.status] || String(b.id).localeCompare(String(a.id)))[0];
-          if (!order) return;
-          const members = workers.filter((x) => x.teamId === team.id && x.id !== DEMO_WORKER[track]);
-          LOCAL_TASKS[track] = { order, team, mine, members };
-        });
-        applyLocalTasks();
-      } catch (e) { /* 離線：沿用示範文字 */ }
+      // 組員名冊要讀完整名冊（正式版僅 admin），讀不到時任務卡照常顯示、名冊沿用示範文字
+      const workers = await get('/workers').catch(() => null);
+      await Promise.all(Object.keys(DEMO_WORKER).map(async (track) => {
+        const id = taskWorkerId(track);
+        const data = await get(`/workers/${encodeURIComponent(id)}/schedule`).catch(() => null);
+        if (!data || !data.team) return;
+        const mine = (data.items || []).map((i) => Object.assign({}, i, { id: i.orderId }));
+        const order = mine.filter((o) => TASK_RANK[o.status] != null)
+          .sort((a, b) => TASK_RANK[a.status] - TASK_RANK[b.status] || String(b.id).localeCompare(String(a.id)))[0];
+        if (!order) return;
+        // 出工名單可能是別工班的訂單：接送車以訂單所屬工班為準
+        const team = Object.assign({}, data.team, order.vehicle ? { vehicle: order.vehicle, driver: order.driver } : {});
+        const members = Array.isArray(workers) ? workers.filter((x) => x.teamId === data.team.id && x.id !== id) : null;
+        LOCAL_TASKS[track] = { order, team, mine, members };
+      }));
+      applyLocalTasks();
     }
 
     function applyLocalTasks() {
@@ -980,12 +989,12 @@
       if (fm) {
         set('fm-task-date', `${fm.order.id}・${today}`);
         set('fm-task-loc', `${loc(fm)}（${fm.order.area} 分地）`);
-        set('fm-task-farmer', `農場主：${fm.order.farmerName}${fm.order.phone ? `（${fm.order.phone}）` : ''}`);
+        set('fm-task-farmer', `農場主：${fm.order.farmerName}`);
         set('fm-task-van', `${fm.team.vehicle}（司機：${fm.team.driver}）`);
         set('fm-task-notes', `${short(fm.order.cropName)}：${notes(fm)}`);
-        set('fm-roster-title', `${short(fm.team.name)}組員簽核名冊（${fm.members.length} 名）`);
+        if (fm.members) set('fm-roster-title', `${short(fm.team.name)}組員簽核名冊（${fm.members.length} 名）`);
         const roster = document.getElementById('fm-roster');
-        if (roster) {
+        if (roster && fm.members) {
           roster.innerHTML = fm.members.map((m, i) => {
             const t = 6 * 60 + 45 + i * 2;   // 06:45 起每人間隔約 2 分鐘打卡（示範）
             const hm = `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
@@ -1021,7 +1030,7 @@
         set('lb-task-phone', `電話 ${lb.order.foremanPhone || lb.team.leaderPhone || ''}`);
       }
       // 頁首職責、身分說明：工班人數與目前工作跟著資料
-      if (fm) {
+      if (fm && fm.members) {
         const team = short(fm.team.name), n = fm.members.length;
         TRACK_META.foreman.badge = `${team}帶隊領班 (帶隊 ${n} 人)`;
         TRACK_META.foreman.summary = `林小祥（資深小工頭 ╳ 帶領 ${n} 名組員）`;

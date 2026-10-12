@@ -398,25 +398,10 @@
     <div id="tabContentOrders" class="hidden space-y-5">
 
       <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
-        <p class="ad-caption" style="margin: 0;">掌握工班動態、現場小工頭紀錄與合法發票。</p>
+        <p class="ad-caption" style="margin: 0;">每張訂單的履約進度、工班與費用；待付定金的訂單可修改預約。</p>
         <div style="display: flex; gap: 8px;">
           <button type="button" onclick="renderOrdersList()" class="ad-btn ad-btn--ghost ad-btn--sm">重新整理</button>
           <button type="button" onclick="switchFarmerTab('booking')" class="ad-btn ad-btn--secondary ad-btn--sm">新增預約</button>
-        </div>
-      </div>
-
-      <!-- 履約五階段 -->
-      <div class="ad-card">
-        <div class="ad-card__head">
-          <h2 class="ad-heading">履約流程</h2>
-          <span class="ad-pill ad-pill--ok">SLA 99.5% 準時出工</span>
-        </div>
-        <div class="ad-stages">
-          <div class="ad-stage ad-stage--done"><div class="ad-stage__title">1 預約送出</div><div class="ad-stage__sub">線上需求鎖約</div></div>
-          <div class="ad-stage ad-stage--done"><div class="ad-stage__title">2 支付定金</div><div class="ad-stage__sub">20% 鎖定名額</div></div>
-          <div class="ad-stage ad-stage--done"><div class="ad-stage__title">3 專車派發</div><div class="ad-stage__sub">清晨 07:00 抵達</div></div>
-          <div class="ad-stage ad-stage--now"><div class="ad-stage__title">4 田間作業</div><div class="ad-stage__sub">外銷留蒂 0.5cm</div></div>
-          <div class="ad-stage"><div class="ad-stage__title">5 驗收與發票</div><div class="ad-stage__sub">100% 開立營業稅</div></div>
         </div>
       </div>
 
@@ -519,6 +504,65 @@
       <div class="ad-card__foot" style="margin-top: 0;">
         <button type="button" onclick="closeCancelModal()" class="ad-btn ad-btn--ghost">保留訂單</button>
         <button type="button" id="cancelSubmit" onclick="confirmCancelOrder()" class="ad-btn ad-btn--danger">確定取消</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="editModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background: rgba(2, 6, 23, 0.7);">
+    <div class="ad-card w-full" style="max-width: 520px; max-height: calc(100vh - 32px); overflow-y: auto; display: flex; flex-direction: column; gap: 16px;" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+      <div class="ad-card__head" style="margin: 0;">
+        <div>
+          <h3 id="editTitle" class="ad-title">修改預約</h3>
+          <p id="editSubtitle" class="ad-caption"></p>
+        </div>
+        <button type="button" onclick="closeEditModal()" class="ad-btn ad-btn--ghost ad-btn--icon ad-btn--sm" aria-label="關閉"><i data-lucide="x" class="ad-icon"></i></button>
+      </div>
+      <p id="editLockNote" class="hidden ad-notice ad-notice--warn" style="margin: 0;"></p>
+      <div id="editSpec" class="ad-form-grid ad-form-grid--2" style="gap: 12px;">
+        <div class="ad-field">
+          <label class="ad-label" for="eArea">面積（分地）</label>
+          <input id="eArea" class="ad-input ad-num" type="number" inputmode="decimal" min="0.5" max="50" step="0.5" oninput="refreshEditQuote()">
+        </div>
+        <div class="ad-field">
+          <label class="ad-label" for="eSlot">每天的時段</label>
+          <select id="eSlot" class="ad-select" onchange="refreshEditQuote()">
+            <option value="full_day">整天</option>
+            <option value="morning">上午 07–11</option>
+            <option value="afternoon">下午 13–17</option>
+          </select>
+        </div>
+        <div class="ad-field">
+          <label class="ad-label" for="eWorkers">每日工人數（選填）</label>
+          <input id="eWorkers" class="ad-input ad-num" type="number" inputmode="numeric" min="1" max="30" placeholder="不填由系統估" oninput="refreshEditQuote()">
+        </div>
+        <div class="ad-field">
+          <label class="ad-label" for="eStartDate">起工日期</label>
+          <input id="eStartDate" class="ad-input" type="date" oninput="refreshEditQuote()">
+        </div>
+        <p id="editQuote" class="ad-caption" style="margin: 0; grid-column: 1 / -1;" role="status"></p>
+      </div>
+      <div class="ad-field">
+        <label class="ad-label ad-label--req" for="eLocation">作業地點</label>
+        <input id="eLocation" class="ad-input" type="text" maxlength="255">
+      </div>
+      <div class="ad-form-grid ad-form-grid--2" style="gap: 12px;">
+        <div class="ad-field">
+          <label class="ad-label" for="eForemanName">現場聯絡人</label>
+          <input id="eForemanName" class="ad-input" type="text" maxlength="100">
+        </div>
+        <div class="ad-field">
+          <label class="ad-label" for="eForemanPhone">聯絡電話</label>
+          <input id="eForemanPhone" class="ad-input" type="tel" inputmode="tel" maxlength="30">
+        </div>
+      </div>
+      <div class="ad-field">
+        <label class="ad-label" for="eForemanNotes">給工班的指示</label>
+        <textarea id="eForemanNotes" class="ad-textarea" rows="2" maxlength="255"></textarea>
+      </div>
+      <p id="editError" class="hidden ad-error"></p>
+      <div class="ad-card__foot" style="margin-top: 0;">
+        <button type="button" onclick="closeEditModal()" class="ad-btn ad-btn--ghost">取消</button>
+        <button type="button" id="editSubmit" onclick="saveOrderEdit()" class="ad-btn ad-btn--primary">儲存變更</button>
       </div>
     </div>
   </div>
@@ -772,6 +816,145 @@
       } catch (e) {
         err.textContent = `取消未完成：${e.message}`;
         err.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // 修改預約：PUT /api/orders/{id}。規則以後端為準（規格 03）：待付定金時可改面積、時段、人數、工期；
+    // 已排定（或已付定金）只能改作業地點與現場聯絡資訊；工時包的面積與時段固定。改規格前先用 /orders/calculate 試算新金額
+    let editOrder = null;
+    let editQuote = null;
+    let editQuoteSeq = 0;
+    const editEl = (id) => document.getElementById(id);
+    const editSpecOpen = (o) => o.status === 'pending' && !o.depositPaid;
+    const editSpecDirty = (o) => editSpecOpen(o) && (
+      (!o.packageId && (parseFloat(editEl('eArea').value) !== Number(o.area) || editEl('eSlot').value !== (o.timeSlot || 'full_day')))
+      || (parseInt(editEl('eWorkers').value, 10) || null) !== (o.requestedWorkers || null)
+      || editEl('eStartDate').value !== (o.startDate || ''));
+
+    function openEditModal(orderId) {
+      const o = shownOrders.find((x) => String(x.id) === String(orderId));
+      if (!o) return;
+      editOrder = o;
+      editQuote = null;
+      const specOpen = editSpecOpen(o);
+      editEl('editTitle').textContent = specOpen ? '修改預約' : '修改現場資訊';
+      editEl('editSubtitle').textContent = `訂單 ${o.id}・${o.cropName || ''}`;
+      editEl('eArea').value = o.area || '';
+      editEl('eSlot').value = o.timeSlot || 'full_day';
+      editEl('eWorkers').value = o.requestedWorkers || '';
+      editEl('eStartDate').value = o.startDate || '';
+      editEl('eStartDate').min = endDateFor(new Date().toLocaleDateString('sv-SE'), 1);   // 今天（本地時區 yyyy-MM-dd）
+      editEl('eArea').disabled = editEl('eSlot').disabled = !!o.packageId;
+      editEl('eLocation').value = o.farmLocation || '';
+      editEl('eForemanName').value = o.foremanName || '';
+      editEl('eForemanPhone').value = o.foremanPhone || '';
+      editEl('eForemanNotes').value = o.foremanNotes || '';
+      editEl('editSpec').classList.toggle('hidden', !specOpen);
+      const lock = !specOpen
+        ? '訂單已排定，工期、人數與時段調整請聯絡合作社（可能影響已安排的出工名單）；這裡可更新作業地點與現場聯絡資訊。'
+        : (o.packageId ? '工時包的面積與時段為固定規格；如需變更請取消後重新預約。' : '');
+      editEl('editLockNote').textContent = lock;
+      editEl('editLockNote').classList.toggle('hidden', !lock);
+      editEl('editError').classList.add('hidden');
+      editEl('editQuote').textContent = '';
+      const m = editEl('editModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+      if (specOpen) refreshEditQuote();
+    }
+
+    function closeEditModal() {
+      const m = editEl('editModal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    // 依目前輸入試算（工時包用 packageId，其餘依作物、面積、方案、時段）；結果用來顯示新金額並推算完工日
+    async function refreshEditQuote() {
+      const o = editOrder;
+      if (!o || !editSpecOpen(o)) return;
+      const seq = ++editQuoteSeq;
+      const workers = parseInt(editEl('eWorkers').value, 10) || null;
+      const area = parseFloat(editEl('eArea').value);
+      const slot = editEl('eSlot').value;
+      const out = editEl('editQuote');
+      editQuote = null;
+      if (!o.packageId && !(area >= 0.5 && area <= 50)) { out.textContent = '面積請填 0.5～50 分地。'; return; }
+      if (workers != null && (workers < 1 || workers > 30)) { out.textContent = '每日工人數請填 1～30 人，或留空由系統估算。'; return; }
+      const body = o.packageId
+        ? { packageId: o.packageId, workers, zone: o.transportZone }
+        : { cropId: o.cropId, area, plan: o.plan, dispatchCategory: o.dispatchCategory, zone: o.transportZone, workers, timeSlot: slot };
+      out.textContent = '試算中…';
+      try {
+        const res = await fetch(`${(window.AgriAuth && window.AgriAuth.API_BASE) || '/api'}/orders/calculate`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.success === false) throw new Error(data.error || `HTTP ${res.status}`);
+        if (seq !== editQuoteSeq) return;
+        const q = data.data || {};
+        editQuote = q;
+        const start = editEl('eStartDate').value;
+        const half = !o.packageId && slot !== 'full_day';
+        const n = Math.max(1, Math.ceil(q.estDays || 1));
+        const total = Number(q.actualTotal) || 0;
+        const changed = total !== Number(o.finalAmount);
+        const end = editSpecDirty(o) || !o.endDate ? endDateFor(start, q.estDays) : o.endDate;   // 沒改規格就顯示目前排定的工期
+        out.innerHTML = `${start ? `${editSpecDirty(o) ? '預估工期' : '目前工期'} <strong class="ad-num">${escHtml(start)} ～ ${escHtml(end)}</strong>${editSpecDirty(o) ? `（${n} ${half ? '個半天' : '天'}）` : ''}・` : ''}`
+          + `總額 <strong class="ad-num">NT$ ${total.toLocaleString()}</strong>${changed ? `（原 NT$ ${Number(o.finalAmount || 0).toLocaleString()}）` : ''}`
+          + `・${Number(q.deposit) > 0 ? `定金 NT$ ${Number(q.deposit).toLocaleString()}` : '免定金'}`;
+      } catch (e) {
+        if (seq === editQuoteSeq) out.textContent = `無法試算新金額：${e.message}`;
+      }
+    }
+
+    async function saveOrderEdit() {
+      const o = editOrder;
+      if (!o) return;
+      const err = editEl('editError');
+      const showErr = (msg) => { err.textContent = msg; err.classList.remove('hidden'); };
+      err.classList.add('hidden');
+      const location = editEl('eLocation').value.trim();
+      if (!location) { showErr('請填寫作業地點'); return; }
+      const payload = {
+        farmLocation: location,
+        foremanName: editEl('eForemanName').value.trim(),
+        foremanPhone: editEl('eForemanPhone').value.trim(),
+        foremanNotes: editEl('eForemanNotes').value.trim()
+      };
+      // 規格或起工日有改才送工期與規格欄位（只改聯絡資訊時不重算完工日，避免動到合作社排好的工期）
+      if (editSpecDirty(o)) {
+        const start = editEl('eStartDate').value;
+        if (!start) { showErr('請選擇起工日期'); return; }
+        if (!editQuote) { showErr('新規格尚未試算完成，請確認面積與人數後再儲存'); return; }
+        if (!o.packageId) {
+          payload.area = parseFloat(editEl('eArea').value);
+          payload.timeSlot = editEl('eSlot').value;
+        }
+        const workers = parseInt(editEl('eWorkers').value, 10) || null;
+        if (workers !== (o.requestedWorkers || null)) payload.requestedWorkers = workers || 0;   // 0 = 改回由系統估算
+        payload.startDate = start;
+        payload.endDate = endDateFor(start, editQuote.estDays);
+      }
+      const btn = editEl('editSubmit');
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${(window.AgriAuth && window.AgriAuth.API_BASE) || '/api'}/orders/${encodeURIComponent(o.id)}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) throw new Error(body.error || body.message || `HTTP ${res.status}`);
+        const saved = body.data || {};
+        updateLocalOrder(o.id, Object.assign({}, payload, saved));
+        closeEditModal();
+        const amountNote = saved.finalAmount != null && Number(saved.finalAmount) !== Number(o.finalAmount)
+          ? `新總額 NT$ ${Number(saved.finalAmount).toLocaleString()}${Number(saved.depositAmount) > 0 ? `，定金 NT$ ${Number(saved.depositAmount).toLocaleString()}` : ''}。` : '';
+        farmerDemoNotice('預約已更新', `訂單 ${o.id} 已儲存。${amountNote}`);
+        renderOrdersList();
+      } catch (e) {
+        showErr(`修改未完成：${e.message}`);
       } finally {
         btn.disabled = false;
       }
@@ -1433,6 +1616,7 @@
     let teamNames = null;
     let teamNamesLoading = null;   // 同時有多次重畫時共用同一個請求，避免後到者拿到空的名稱表
     let ordersRenderSeq = 0;
+    let shownOrders = [];   // 目前列表上的訂單（修改預約對話框依此帶入原值）
 
     function currentFarmerRef() {
       try { const u = JSON.parse(sessionStorage.getItem('agri_user') || 'null'); return u && u.refId; } catch (e) { return null; }
@@ -1515,6 +1699,25 @@
       setTimeout(() => { card.style.borderColor = ''; card.style.boxShadow = ''; }, 2400);
     }
 
+    // 每張訂單的履約進度（依訂單實際狀態）：預約送出 → 定金 → 排班派工 → 田間作業 → 完工
+    function orderStagesHtml(ord, c) {
+      const st = ord.status;
+      if (st === 'cancelled') return '<p class="ad-caption" style="margin: 0 0 12px;">此訂單已取消，不會再排班出工。</p>';
+      const worked = st === 'in_progress' || st === 'completed';
+      const depositOk = !c.needDeposit || c.paid;
+      const stage = (state, title, sub) => `<div class="ad-stage${state ? ' ad-stage--' + state : ''}"><div class="ad-stage__title">${title}</div><div class="ad-stage__sub">${escHtml(sub)}</div></div>`;
+      const list = [
+        stage('done', '預約送出', ord.createdAt ? String(ord.createdAt).slice(0, 10) : ''),
+        !c.needDeposit ? stage('done', '免付定金', '依排班確認')
+          : stage(c.paid ? 'done' : 'now', c.paid ? '定金已付' : '待付定金', `NT$ ${c.money(ord.depositAmount)}`),
+        stage(worked ? 'done' : (depositOk ? 'now' : ''), '排班派工', c.teamName || '工班待分派'),
+        stage(st === 'completed' ? 'done' : (st === 'in_progress' ? 'now' : ''), '田間作業',
+          c.day ? `第 ${c.day}／${c.days} 天` : (ord.startDate ? `${ord.startDate} 起` : '待排定')),
+        stage(st === 'completed' ? 'done' : '', '完工', st === 'completed' ? (ord.endDate || '已完工') : '')
+      ];
+      return `<div class="ad-stages ad-stages--compact" aria-label="履約進度">${list.join('')}</div>`;
+    }
+
     function orderSortKey(o) {
       const rank = { in_progress: 0, confirmed: 1, pending: 2, completed: 3, cancelled: 4 }[o.status];
       return [rank == null ? 2 : rank, String(o.startDate || o.createdAt || '')];
@@ -1528,6 +1731,7 @@
       const orders = await fetchMyOrders();
       if (seq !== ordersRenderSeq) return;   // 已有較新的重新整理
       orders.sort((x, y) => { const a = orderSortKey(x), b = orderSortKey(y); return a[0] - b[0] || b[1].localeCompare(a[1]); });
+      shownOrders = orders;
 
       if (countBadge) countBadge.innerText = String(orders.filter((o) => o.status !== 'cancelled').length);
       if (orders.length === 0) {
@@ -1550,13 +1754,14 @@
         const created = ord.createdAt ? new Date(String(ord.createdAt).replace(' ', 'T')) : null;
         const isNew = created && !isNaN(created) && (Date.now() - created.getTime()) < 30 * 60 * 1000;
         const needDeposit = Number(ord.depositAmount) > 0;
+        const depositPct = Number(ord.finalAmount) > 0 ? Math.round(Number(ord.depositAmount) / Number(ord.finalAmount) * 100) : 20;
         const paid = !!ord.depositPaid;
         const st = ord.status;
         const statusPill = st === 'cancelled' ? '<span class="ad-pill">已取消</span>'
           : st === 'completed' ? '<span class="ad-pill ad-pill--ok">已完工</span>'
           : st === 'in_progress' ? '<span class="ad-pill ad-pill--ok"><span class="ad-pill__dot"></span>施工中</span>'
           : (paid ? '<span class="ad-pill ad-pill--ok">已排定・定金已付</span>'
-            : (needDeposit ? '<span class="ad-pill ad-pill--warn">已預約・待付 20% 定金</span>'
+            : (needDeposit ? `<span class="ad-pill ad-pill--warn">已預約・待付 ${depositPct}% 定金</span>`
               : (st === 'confirmed' ? '<span class="ad-pill ad-pill--ok">已排定・免定金</span>' : '<span class="ad-pill">待合作社確認</span>')));
         const teamId = ord.assignedTeamId || '';
         const teamName = teamId ? ((teamNames && teamNames[teamId]) || teamId) : '';
@@ -1565,9 +1770,11 @@
         const skill = SKILL_OF_CATEGORY[ord.dispatchCategory];
         const pay = escHtml(JSON.stringify({ orderId: ord.id, deposit: ord.depositAmount, crop: ord.cropName, location: ord.farmLocation, amount: ord.finalAmount, plan: ord.planName || '' }));
 
+        const day = st === 'in_progress' && ord.startDate && days
+          ? Math.min(days, Math.max(1, Math.floor((today - new Date(ord.startDate + 'T00:00:00')) / 86400000) + 1)) : 0;
+        const stages = orderStagesHtml(ord, { needDeposit, paid, teamName, day, days, money });
         let progress = '';
-        if (st === 'in_progress' && ord.startDate && days) {
-          const day = Math.min(days, Math.max(1, Math.floor((today - new Date(ord.startDate + 'T00:00:00')) / 86400000) + 1));
+        if (day) {
           const pct = Math.round(day / days * 100);
           progress = `
           <div style="margin-top: 16px;">
@@ -1578,12 +1785,12 @@
 
         const depositLine = !needDeposit
           ? '<p class="ad-caption">此方案免付定金，派工依排班確認</p>'
-          : `<p class="ad-caption">${paid ? '已付定金' : '待付定金'}（20%）：<span class="ad-num" style="color: ${paid ? 'var(--ad-primary-text)' : 'var(--ad-accent-text)'}; font-weight: 700;">NT$ ${money(ord.depositAmount)}</span></p>`;
+          : `<p class="ad-caption">${paid ? '已付定金' : '待付定金'}（${depositPct}%）：<span class="ad-num" style="color: ${paid ? 'var(--ad-primary-text)' : 'var(--ad-accent-text)'}; font-weight: 700;">NT$ ${money(ord.depositAmount)}</span></p>`;
         const actions = [];
         if (st !== 'cancelled' && needDeposit && !paid && !ord.offline) actions.push(`<button type="button" class="ad-btn ad-btn--accent ad-btn--sm" data-pay="${pay}" onclick="payDeposit(this)">付定金 NT$ ${money(ord.depositAmount)}</button>`);
         if (paid) actions.push(`<button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" data-pay="${pay}" onclick="downloadPaidInvoice(this)">下載發票</button>`);
         if (ord.foremanPhone && st !== 'cancelled') actions.push(`<a href="tel:${escHtml(String(ord.foremanPhone).replace(/[^0-9+]/g, ''))}" class="ad-btn ad-btn--secondary ad-btn--sm">致電小工頭</a>`);
-        if (st === 'pending') actions.push(`<button type="button" onclick="switchFarmerTab('booking')" class="ad-btn ad-btn--secondary ad-btn--sm">修改預約</button>`);
+        if ((st === 'pending' || st === 'confirmed') && !ord.offline) actions.push(`<button type="button" data-order="${id}" onclick="openEditModal(this.dataset.order)" class="ad-btn ad-btn--secondary ad-btn--sm">${st === 'pending' && !paid ? '修改預約' : '修改現場資訊'}</button>`);
         if ((st === 'pending' || st === 'confirmed') && !ord.offline) actions.push(`<button type="button" class="ad-btn ad-btn--danger ad-btn--sm" data-order="${id}" data-deposit="${paid ? escHtml(ord.depositAmount) : ''}" onclick="openCancelModal(this.dataset.order, this.dataset.deposit)">取消訂單</button>`);
         if (st === 'in_progress' || st === 'completed') actions.push(`<button type="button" data-prefer="${escHtml(ord.preferredWorkerId || '')}" onclick="rebookWorker(this.dataset.prefer)" class="ad-btn ad-btn--secondary ad-btn--sm">${ord.preferredWorkerName ? '再約' + escHtml(ord.preferredWorkerName) : '再約合作過的工人'}</button>`);
 
@@ -1607,6 +1814,7 @@
             </div>
             <div class="ad-caption">${worked ? '工期' : '預計起工'} <strong class="ad-num" style="color: var(--ad-text);">${escHtml(when)}</strong>（${days ? `共 ${days} 天・` : ''}${escHtml(ord.totalHours)} 工時）</div>
           </div>
+          ${stages}
 
           <div class="ad-form-grid ad-form-grid--3">
             <div class="ad-card--inset ad-card">

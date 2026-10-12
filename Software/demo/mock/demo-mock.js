@@ -622,7 +622,7 @@
     }
     if (priced && o.depositPaid) return respond(409, { success: false, error: '已付定金的訂單不可變更作物、面積、方案或時段，請聯繫調度中心' });
     if (priced && o.packageId) o.packageId = null;
-    if (u.requestedWorkers != null) o.requestedWorkers = u.requestedWorkers;
+    if (u.requestedWorkers != null) o.requestedWorkers = +u.requestedWorkers === 0 ? null : u.requestedWorkers;   // 0 = 改回由系統估算（同後端）
     if (!blank(u.farmerName)) o.farmerName = u.farmerName;
     ['phone', 'farmLocation', 'foremanName', 'foremanPhone', 'foremanNotes', 'assignedTeamId'].forEach(function (f) {
       if (u[f] != null) o[f] = u[f];

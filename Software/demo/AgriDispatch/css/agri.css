@@ -824,6 +824,18 @@ a.ad-row:focus-visible, button.ad-row:focus-visible { outline: none; box-shadow:
 .ad-stage--done .ad-stage__title { color: var(--ad-primary-text); }
 .ad-stage--now { border-color: var(--ad-primary); background: var(--ad-primary-soft); }
 .ad-stage--now .ad-stage__title { color: var(--ad-text); }
+/* 精簡版（放在卡片內，例如每張訂單）：手機也維持一列五格，只顯示進行中那格的說明 */
+.ad-stages--compact { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--ad-sp-1); margin-bottom: var(--ad-sp-4); }
+.ad-stages--compact .ad-stage { padding: var(--ad-sp-2) var(--ad-sp-1); }
+.ad-stages--compact .ad-stage__title { font-size: 12px; }
+.ad-stages--compact .ad-stage__sub { font-size: 11px; overflow-wrap: anywhere; }
+@media (max-width: 639px) {
+  .ad-stages--compact { gap: 2px; }
+  .ad-stages--compact .ad-stage { padding: 6px 2px; }
+  .ad-stages--compact .ad-stage__title { font-size: 11px; letter-spacing: 0; white-space: nowrap; }
+  .ad-stages--compact .ad-stage__sub { font-size: 10px; }
+  .ad-stages--compact .ad-stage:not(.ad-stage--now) .ad-stage__sub { display: none; }
+}
 
 /* 進度條（不用漸層） */
 .ad-progress { height: 8px; border-radius: var(--ad-radius-pill); background: var(--ad-surface-2); overflow: hidden; }

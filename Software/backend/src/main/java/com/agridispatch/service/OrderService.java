@@ -9,6 +9,7 @@ import com.agridispatch.repository.CropRepository;
 import com.agridispatch.repository.OrderRepository;
 import com.agridispatch.repository.WorkerRepository;
 import com.agridispatch.security.AuthContext;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,13 @@ public class OrderService {
     public static final Set<String> PLANS = Set.of("early_bird", "hourly_flex", "turnkey");
     public static final Set<String> CATEGORIES = Set.of("harvest_grading", "tillage_planting", "pruning_bagging",
             "drone_pest_control", "cold_chain_pack", "typhoon_emergency");
+    /**
+     * 各派工類別的慣用工班（示範資料的 team_a～team_d）：只在媒合排序最後一關當同分時的偏好，
+     * 建議工班一律取自實際存在的工班（MatchingService.suggestTeamId），這些代號不存在也不影響。
+     */
+    public static final Map<String, String> CATEGORY_DEFAULT_TEAM = Map.of(
+            "harvest_grading", "team_a", "tillage_planting", "team_c", "pruning_bagging", "team_b",
+            "drone_pest_control", "team_c", "cold_chain_pack", "team_d", "typhoon_emergency", "team_b");
     /** 單筆訂單面積上限（分地），防止誤植或惡意輸入造成金額溢位 */
     public static final double MAX_AREA = 10_000;
     /** 產季早鳥工時包單價（元/hr）：不打折，全案統一 315，高於 F2 v2.3 方案 C2 損益兩平價約 306 */
@@ -40,6 +48,7 @@ public class OrderService {
     private final WorkerRepository workerRepository;
     private final com.agridispatch.repository.DispatchTeamRepository teamRepository;
     private final com.agridispatch.repository.FarmRepository farmRepository;
+    private final ObjectProvider<MatchingService> matchingProvider;
 
     /**
      * 工時包（文宣 DM）對應的作物與派工類別、預設面積：{cropId, dispatchCategory, area}。
@@ -57,8 +66,10 @@ public class OrderService {
                         com.agridispatch.repository.BrochureRepository brochureRepository,
                         WorkerRepository workerRepository,
                         com.agridispatch.repository.DispatchTeamRepository teamRepository,
-                        com.agridispatch.repository.FarmRepository farmRepository) {
+                        com.agridispatch.repository.FarmRepository farmRepository,
+                        ObjectProvider<MatchingService> matchingProvider) {
         this.farmRepository = farmRepository;
+        this.matchingProvider = matchingProvider;
         this.orderRepository = orderRepository;
         this.teamRepository = teamRepository;
         this.workerRepository = workerRepository;
@@ -84,8 +95,6 @@ public class OrderService {
                 "name", "【採收分級】田間採收與外銷分級",
                 "icon", "🥬",
                 "description", "蔬菜採收、果實留蒂剪摘、田間初級篩選去老葉、標準規格分級裝箱。",
-                "suggestedTeam", "team_a",
-                "suggestedTeamName", "工班 A 組 (桃園溫室蔬菜組)",
                 "rateNote", "早鳥工時包 $315/hr (鎖定名額・優先排班)"
             ),
             Map.of(
@@ -93,8 +102,6 @@ public class OrderService {
                 "name", "【整地種植】曳引機深耕與定植",
                 "icon", "🌱",
                 "description", "大型曳引機深耕碎土、起壟作畦、鋪設抑草蓆、菜苗定植、水稻插秧。",
-                "suggestedTeam", "team_c",
-                "suggestedTeamName", "工班 C 組 (機耕無人機隊)",
                 "rateNote", "專業機耕或時薪 $310"
             ),
             Map.of(
@@ -102,8 +109,6 @@ public class OrderService {
                 "name", "【田間管理】修枝疏果與引蔓套袋",
                 "icon", "✂️",
                 "description", "果樹修枝剪梢、疏花疏果、立棚架引蔓、芒果/水梨/葡萄防蟲套袋。",
-                "suggestedTeam", "team_b",
-                "suggestedTeamName", "工班 B 組 (跨區專線組)",
                 "rateNote", "精細人工工時"
             ),
             Map.of(
@@ -111,8 +116,6 @@ public class OrderService {
                 "name", "【科技植保】無人機精準噴藥施肥",
                 "icon", "🛸",
                 "description", "專業植保機低空定點噴藥、粒肥精準拋撒、土壤改良劑代噴，附 GPS 航跡報告。",
-                "suggestedTeam", "team_c",
-                "suggestedTeamName", "工班 C 組 (機耕無人機隊)",
                 "rateNote", "成果代耕 ($800/分地)"
             ),
             Map.of(
@@ -120,8 +123,6 @@ public class OrderService {
                 "name", "【冷鏈包裝】室內預冷與生鮮截切",
                 "icon", "❄️",
                 "description", "蔬果預冷入庫、自動光波秤重、生鮮超市小包裝、外銷標準貼標封箱。",
-                "suggestedTeam", "team_d",
-                "suggestedTeamName", "工班 D 組 (冷鏈常態組)",
                 "rateNote", "雨天避險替代作業"
             ),
             Map.of(
@@ -129,8 +130,6 @@ public class OrderService {
                 "name", "【緊急救火】防颱搶收 24H 馳援",
                 "icon", "🚨",
                 "description", "颱風豪雨前夕 24H 徹夜搶收、防寒防霜覆蓋、農田清溝排水，緊急跨區馳援。",
-                "suggestedTeam", "team_b",
-                "suggestedTeamName", "全工班跨區緊急馳援",
                 "rateNote", "緊急救火工時 ($360/hr)"
             )
         );
@@ -237,36 +236,24 @@ public class OrderService {
         int workersPerFen = (crop != null) ? crop.getWorkersPerFen() : 3;
         int unitRate = (crop != null) ? crop.getRate() : 290;
 
-        // 依據派工類別調整費率與工班
+        // 依據派工類別調整費率（建議工班由實際工班排序決定，見下方）
         String categoryName = "【採收分級】田間採收與外銷分級";
-        String suggestedTeam = "team_a";
-        String suggestedTeamName = "工班 A 組 (桃園溫室蔬菜組)";
 
         switch (dispatchCategory) {
             case "tillage_planting":
                 categoryName = "【整地種植】曳引機深耕與定植";
-                suggestedTeam = "team_c";
-                suggestedTeamName = "工班 C 組 (機耕無人機隊)";
                 break;
             case "pruning_bagging":
                 categoryName = "【田間管理】修枝疏果與引蔓套袋";
-                suggestedTeam = "team_b";
-                suggestedTeamName = "工班 B 組 (跨區專線組)";
                 break;
             case "drone_pest_control":
                 categoryName = "【科技植保】無人機精準噴藥施肥";
-                suggestedTeam = "team_c";
-                suggestedTeamName = "工班 C 組 (機耕無人機隊)";
                 break;
             case "cold_chain_pack":
                 categoryName = "【冷鏈包裝】室內預冷與生鮮截切";
-                suggestedTeam = "team_d";
-                suggestedTeamName = "工班 D 組 (冷鏈常態組)";
                 break;
             case "typhoon_emergency":
                 categoryName = "【緊急救火】防颱搶收 24H 馳援";
-                suggestedTeam = "team_b";
-                suggestedTeamName = "全工班跨區緊急馳援";
                 unitRate = Math.max(unitRate, 360); // 緊急救火工時費率
                 break;
             default:
@@ -286,6 +273,16 @@ public class OrderService {
             totalHours = suggestedWorkers * days * 4;   // 計費工時（最低計費：每人每天 4 小時）
             estDays = days;
         }
+
+        // 建議工班：與媒合頁同一套排序，從實際存在的工班挑第一名；沒有任何工班時為待分派
+        Order draft = new Order();
+        draft.setDispatchCategory(dispatchCategory);
+        draft.setCategoryName(categoryName);
+        draft.setSuggestedWorkers(suggestedWorkers);
+        draft.setTimeSlot(slot);
+        String suggestedTeam = matchingProvider.getObject().suggestTeamId(draft);
+        String suggestedTeamName = suggestedTeam == null ? "待分派（尚未建立工班）"
+                : teamRepository.findById(suggestedTeam).map(com.agridispatch.entity.DispatchTeam::getName).orElse(suggestedTeam);
 
         double discount = 1.0;
         String planName = "【Tier 1】產季早鳥工時包 (鎖定名額・優先排班)";
@@ -500,9 +497,8 @@ public class OrderService {
             }
         }
         if (order.getAssignedTeamId() == null || order.getAssignedTeamId().isBlank()) {
-            // 類別的建議工班是固定代碼（team_a…）；正式環境工班尚未建立時不指派（null＝待分派），避免違反工班外鍵
-            String suggested = (String) calc.get("suggestedTeam");
-            order.setAssignedTeamId(suggested != null && teamRepository.existsById(suggested) ? suggested : null);
+            // 未指定工班：以這張訂單本身（類別、人數、工期、指名工人）跑媒合排序取第一名；沒有工班時為 null（待分派）
+            order.setAssignedTeamId(matchingProvider.getObject().suggestTeamId(order));
         } else {
             requireTeam(order.getAssignedTeamId());
         }

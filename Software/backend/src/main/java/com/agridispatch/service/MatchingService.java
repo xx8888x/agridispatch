@@ -75,6 +75,15 @@ public class MatchingService {
         return m;
     }
 
+    /**
+     * 新訂單的建議工班：與媒合頁同一套排序取第一名（合格工班優先；都不合格時仍取排序第一，由調度在媒合頁調整）。
+     * 草稿訂單可不含 id、工期與指名工人；沒有任何工班時回 null（待分派）。
+     */
+    public String suggestTeamId(Order draft) {
+        List<Map<String, Object>> ranked = rankTeams(draft, SkillService.CATEGORY_SKILL.get(draft.getDispatchCategory()));
+        return ranked.isEmpty() ? null : (String) ranked.get(0).get("teamId");
+    }
+
     public Map<String, Object> crewFor(String orderId, String teamId) {
         Order order = orderService.requireOrder(orderId);
         if (!teamRepository.existsById(teamId)) throw ApiException.notFound("找不到工班：" + teamId);
@@ -363,12 +372,8 @@ public class MatchingService {
         return null;
     }
 
-    @SuppressWarnings("unchecked")
-    private String defaultTeamFor(String category) {
-        for (Map<String, Object> c : orderService.getDispatchCategories()) {
-            if (Objects.equals(c.get("id"), category)) return (String) c.get("suggestedTeam");
-        }
-        return null;
+    private static String defaultTeamFor(String category) {
+        return OrderService.CATEGORY_DEFAULT_TEAM.get(category);
     }
 
     private Map<String, Object> orderView(Order o, String skill) {

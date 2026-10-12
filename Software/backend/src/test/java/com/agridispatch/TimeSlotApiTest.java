@@ -140,7 +140,10 @@ class TimeSlotApiTest extends ApiTestSupport {
                 .getResponse().getStatus());
         MvcResult pmAssign = call("PUT", "/api/matching/orders/" + pmId, admin, Map.of("teamId", "team_b", "crew", List.of("W026")));
         assertEquals(200, pmAssign.getResponse().getStatus(), body(pmAssign));
-        MvcResult other = call("POST", "/api/orders", admin, order("full_day", day, null));
+        // 指定另一個工班：未指定時會依媒合排序自動分配（可能也是 team_b），行事曆筆數就不只兩張半日單
+        Map<String, Object> otherBody = order("full_day", day, null);
+        otherBody.put("assignedTeamId", "team_a");
+        MvcResult other = call("POST", "/api/orders", admin, otherBody);
         assertEquals(201, other.getResponse().getStatus(), body(other));
         String otherId = json(other).get("data").get("id").asText();
         MvcResult clash = call("PUT", "/api/matching/orders/" + otherId, admin, Map.of("teamId", "team_b", "crew", List.of("W026")));

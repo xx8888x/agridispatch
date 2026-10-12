@@ -4,6 +4,7 @@ import com.agridispatch.entity.Attendance;
 import com.agridispatch.entity.Worker;
 import com.agridispatch.security.AuthContext;
 import com.agridispatch.service.AttendanceService;
+import com.agridispatch.service.WorkerScheduleService;
 import com.agridispatch.service.WorkerService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,11 +28,14 @@ public class WorkerController {
 
     private final WorkerService workerService;
     private final AttendanceService attendanceService;
+    private final WorkerScheduleService scheduleService;
     private final ObjectMapper objectMapper;
 
-    public WorkerController(WorkerService workerService, AttendanceService attendanceService, ObjectMapper objectMapper) {
+    public WorkerController(WorkerService workerService, AttendanceService attendanceService,
+                            WorkerScheduleService scheduleService, ObjectMapper objectMapper) {
         this.workerService = workerService;
         this.attendanceService = attendanceService;
+        this.scheduleService = scheduleService;
         this.objectMapper = objectMapper;
     }
 
@@ -180,6 +184,18 @@ public class WorkerController {
     @GetMapping("/{id}/payroll")
     public ResponseEntity<?> getPayroll(@PathVariable String id) {
         return ResponseEntity.ok(Map.of("success", true, "data", workerService.calculatePayroll(id)));
+    }
+
+    /**
+     * 本人排班（工人行事曆）：後台排給這位工人的訂單，依工期；可帶 from / to（YYYY-MM-DD）只取重疊區間的工作。
+     * 只回現場需要的欄位，不含金額與農場主電話；規則見 WorkerScheduleService。
+     */
+    @GetMapping("/{id}/schedule")
+    public ResponseEntity<?> getSchedule(
+            @PathVariable String id,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to) {
+        return ResponseEntity.ok(Map.of("success", true, "data", scheduleService.scheduleOf(id, from, to)));
     }
 }
 

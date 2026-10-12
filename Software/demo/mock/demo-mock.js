@@ -666,10 +666,56 @@
     rec.order.crew = b.crew.slice();
     if (ce && ce.b && ce.b.data) rec.crew = clone(ce.b.data);
     put(mk, me);
-    patchList('GET /orders', orderId, { assignedTeamId: b.teamId });
+    var crewIds = b.crew.join(',');
+    patchList('GET /orders', orderId, { assignedTeamId: b.teamId, crewWorkerIds: crewIds });
     var od = get('GET /orders/' + enc);
-    if (od && od.b && od.b.data) { od.b.data.assignedTeamId = b.teamId; put('GET /orders/' + enc, od); }
+    if (od && od.b && od.b.data) { od.b.data.assignedTeamId = b.teamId; od.b.data.crewWorkerIds = crewIds; put('GET /orders/' + enc, od); }
     return respond(200, { success: true, data: rec });
+  }
+
+  // ---------------- 工人本人排班（移植 WorkerScheduleService.scheduleOf） ----------------
+  // 由目前的訂單（含示範時新下的單、媒合結果）即時算出，不另外錄製
+  function workerSchedule(workerId, query) {
+    var w = findIn('GET /workers', workerId);
+    if (!w) return respond(404, { success: false, error: '找不到該農工編號：' + workerId });
+    var q = function (k) { var m = new RegExp('[?&]' + k + '=([^&]*)').exec(query || ''); return m ? decodeURIComponent(m[1]) : ''; };
+    var from = q('from'), to = q('to');
+    var bad = function (v) {
+      if (!v) return false;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return true;
+      var d = new Date(v + 'T00:00:00');
+      return isNaN(d) || d.getMonth() + 1 !== Number(v.slice(5, 7)) || d.getDate() !== Number(v.slice(8));
+    };
+    if (bad(from) || bad(to)) return respond(400, { success: false, error: 'from / to 須為 YYYY-MM-DD 日期' });
+    if (from && to && to < from) return respond(400, { success: false, error: 'to 不可早於 from' });
+    var teams = listOf(get('GET /dispatch/teams')) || [];
+    var teamOf = function (id) { return teams.filter(function (t) { return t.id === id; })[0] || null; };
+    var items = [];
+    (listOf(get('GET /orders')) || []).forEach(function (o) {
+      if (o.status === 'cancelled' || !o.startDate) return;
+      var crew = String(o.crewWorkerIds || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+      var via = crew.length ? (crew.indexOf(workerId) >= 0 ? 'crew' : null) : (w.teamId && o.assignedTeamId === w.teamId ? 'team' : null);
+      if (!via) return;
+      var end = o.endDate || o.startDate;
+      if ((from && end < from) || (to && o.startDate > to)) return;
+      var t = teamOf(o.assignedTeamId) || {};
+      items.push({
+        orderId: o.id, status: o.status, statusLabel: STATUS_LABEL[o.status] || o.status,
+        startDate: o.startDate, endDate: end, assignedVia: via, teamId: o.assignedTeamId,
+        cropName: o.cropName, area: o.area, categoryName: o.categoryName, farmLocation: o.farmLocation,
+        farmerName: o.farmerName, foremanName: o.foremanName || t.leader || null,
+        foremanPhone: o.foremanPhone || t.leaderPhone || null, foremanNotes: o.foremanNotes || null,
+        vehicle: t.vehicle || null, driver: t.driver || null, hedgeLocation: t.hedgeLocation || null, hedgeTask: t.hedgeTask || null
+      });
+    });
+    items.sort(function (a, b) { return a.startDate < b.startDate ? -1 : a.startDate > b.startDate ? 1 : String(a.orderId).localeCompare(String(b.orderId)); });
+    var mt = teamOf(w.teamId);
+    return respond(200, { success: true, data: {
+      workerId: w.id, teamId: w.teamId || null,
+      team: mt ? { id: mt.id, name: mt.name, leader: mt.leader, leaderPhone: mt.leaderPhone, vehicle: mt.vehicle, driver: mt.driver,
+        normalLocation: mt.normalLocation, normalTask: mt.normalTask, hedgeLocation: mt.hedgeLocation, hedgeTask: mt.hedgeTask } : null,
+      from: from || null, to: to || null, items: items
+    } });
   }
   // 新訂單（示範時剛下的單）沒有錄製的媒合建議：拿同派工類別的既有訂單當範本（技能需求、工班排序相同），
   // 換上新訂單的資料；出工名單依新訂單人數重新挑選建議人選
@@ -1124,6 +1170,8 @@
         });
         return respond(200, { success: true, data: vr });
       }
+      var ws = /^\/workers\/([^/]+)\/schedule$/.exec(sp.path);
+      if (ws) return workerSchedule(decodeURIComponent(ws[1]), sp.query);
       var mm = /^\/matching\/orders\/([^/]+)(\/crew)?$/.exec(sp.path);
       if (mm && !get('GET ' + p) && !(mm[2] ? null : get('GET ' + sp.path))) {
         var tq = (/[?&]teamId=([^&]+)/.exec(sp.query) || [])[1];

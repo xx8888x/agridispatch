@@ -1,0 +1,140 @@
+package com.agridispatch.service;
+
+import com.agridispatch.common.ApiException;
+import com.agridispatch.entity.DispatchTeam;
+import com.agridispatch.entity.Order;
+import com.agridispatch.entity.Worker;
+import com.agridispatch.repository.DispatchTeamRepository;
+import com.agridispatch.repository.OrderRepository;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.*;
+
+/**
+ * 工人本人的排班（GET /api/workers/{id}/schedule，工人行事曆用）
+ *
+ * 哪些訂單算「排給這位工人」：
+ * - 訂單有出工名單（crewWorkerIds，由派工媒合設定）→ 名單內有本人才算，不論訂單掛在哪個工班；
+ * - 沒有出工名單 → 訂單指派給本人所屬工班（assignedTeamId）就算。
+ * 已取消、尚未排定工期（無 startDate）的訂單不列入。
+ *
+ * 只回現場需要的欄位：不含金額、定金、方案等計價資料，也不含農場主電話（現場聯絡一律找帶隊對口）。
+ */
+@Service
+public class WorkerScheduleService {
+    /** 查詢區間上限，避免一次撈整年以上 */
+    public static final int MAX_RANGE_DAYS = 366;
+
+    private final WorkerService workerService;
+    private final OrderRepository orderRepository;
+    private final DispatchTeamRepository teamRepository;
+
+    public WorkerScheduleService(WorkerService workerService, OrderRepository orderRepository,
+                                 DispatchTeamRepository teamRepository) {
+        this.workerService = workerService;
+        this.orderRepository = orderRepository;
+        this.teamRepository = teamRepository;
+    }
+
+    /**
+     * @param from 區間起日（含），null 表示不限
+     * @param to   區間迄日（含），null 表示不限；與 from 同時給時須不早於 from 且不超過 MAX_RANGE_DAYS
+     */
+    public Map<String, Object> scheduleOf(String workerId, String from, String to) {
+        Worker worker = workerService.requireWorker(workerId);
+        LocalDate fromDate = parseDate(from, "from");
+        LocalDate toDate = parseDate(to, "to");
+        if (fromDate != null && toDate != null) {
+            if (toDate.isBefore(fromDate)) throw ApiException.badRequest("to 不可早於 from");
+            if (fromDate.plusDays(MAX_RANGE_DAYS).isBefore(toDate)) throw ApiException.badRequest("查詢區間不可超過 " + MAX_RANGE_DAYS + " 天");
+        }
+
+        String teamId = worker.getTeamId();
+        List<Map<String, Object>> items = new ArrayList<>();
+        Map<String, DispatchTeam> teams = new HashMap<>();
+        for (Order o : orderRepository.findAll()) {
+            if (OrderService.CANCELLED.equals(o.getStatus()) || o.getStartDate() == null) continue;
+            String via = assignedVia(o, workerId, teamId);
+            if (via == null) continue;
+            LocalDate start = o.getStartDate();
+            LocalDate end = o.getEndDate() != null ? o.getEndDate() : start;
+            if (fromDate != null && end.isBefore(fromDate)) continue;
+            if (toDate != null && start.isAfter(toDate)) continue;
+            DispatchTeam team = o.getAssignedTeamId() == null ? null
+                    : teams.computeIfAbsent(o.getAssignedTeamId(), id -> teamRepository.findById(id).orElse(null));
+            items.add(item(o, start, end, via, team));
+        }
+        items.sort(Comparator.comparing((Map<String, Object> m) -> m.get("startDate").toString())
+                .thenComparing(m -> m.get("orderId").toString()));
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("workerId", worker.getId());
+        data.put("teamId", teamId);
+        DispatchTeam myTeam = teamId == null ? null : teamRepository.findById(teamId).orElse(null);
+        data.put("team", myTeam == null ? null : teamInfo(myTeam));
+        data.put("from", fromDate == null ? null : fromDate.toString());
+        data.put("to", toDate == null ? null : toDate.toString());
+        data.put("items", items);
+        return data;
+    }
+
+    /** 回傳 "crew"（出工名單有本人）、"team"（指派給本人工班且無出工名單），都不是回 null */
+    static String assignedVia(Order o, String workerId, String teamId) {
+        String crew = o.getCrewWorkerIds();
+        if (crew != null && !crew.isBlank()) {
+            for (String id : crew.split(",")) if (id.trim().equals(workerId)) return "crew";
+            return null;
+        }
+        return teamId != null && teamId.equals(o.getAssignedTeamId()) ? "team" : null;
+    }
+
+    private static Map<String, Object> item(Order o, LocalDate start, LocalDate end, String via, DispatchTeam team) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("orderId", o.getId());
+        m.put("status", o.getStatus());
+        m.put("statusLabel", OrderService.statusLabel(o.getStatus()));
+        m.put("startDate", start.toString());
+        m.put("endDate", end.toString());
+        m.put("assignedVia", via);
+        m.put("teamId", o.getAssignedTeamId());
+        m.put("cropName", o.getCropName());
+        m.put("area", o.getArea());
+        m.put("categoryName", o.getCategoryName());
+        m.put("farmLocation", o.getFarmLocation());
+        m.put("farmerName", o.getFarmerName());
+        m.put("foremanName", o.getForemanName() != null ? o.getForemanName() : (team != null ? team.getLeader() : null));
+        m.put("foremanPhone", o.getForemanPhone() != null ? o.getForemanPhone() : (team != null ? team.getLeaderPhone() : null));
+        m.put("foremanNotes", o.getForemanNotes());
+        m.put("vehicle", team != null ? team.getVehicle() : null);
+        m.put("driver", team != null ? team.getDriver() : null);
+        m.put("hedgeLocation", team != null ? team.getHedgeLocation() : null);
+        m.put("hedgeTask", team != null ? team.getHedgeTask() : null);
+        return m;
+    }
+
+    private static Map<String, Object> teamInfo(DispatchTeam t) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", t.getId());
+        m.put("name", t.getName());
+        m.put("leader", t.getLeader());
+        m.put("leaderPhone", t.getLeaderPhone());
+        m.put("vehicle", t.getVehicle());
+        m.put("driver", t.getDriver());
+        m.put("normalLocation", t.getNormalLocation());
+        m.put("normalTask", t.getNormalTask());
+        m.put("hedgeLocation", t.getHedgeLocation());
+        m.put("hedgeTask", t.getHedgeTask());
+        return m;
+    }
+
+    private static LocalDate parseDate(String v, String name) {
+        if (v == null || v.isBlank()) return null;
+        try {
+            return LocalDate.parse(v.trim());
+        } catch (DateTimeParseException e) {
+            throw ApiException.badRequest(name + " 須為 YYYY-MM-DD 日期");
+        }
+    }
+}

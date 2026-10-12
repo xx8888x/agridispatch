@@ -1,8 +1,8 @@
 /* ============================================================
    工人行事曆（worker-local.html、worker-foreign.html 共用）
-   資料來源與「今日任務」相同：工人所屬工班（/workers/{id}.teamId）被後台指派的訂單
-   （/orders 的 assignedTeamId），依訂單工期 startDate～endDate 排在月曆上；
-   工班的車輛、對口、天候避險地點取自 /dispatch/teams/{teamId}。
+   資料來源：GET /workers/{id}/schedule（本人或 admin），後端只回排給這位工人的訂單——
+   有出工名單看名單、沒有名單看所屬工班——且不含金額與農場主電話；規則見後端 WorkerScheduleService。
+   依訂單工期 startDate～endDate 排在月曆上；車輛、對口、遇雨改派地點隨每筆排班回傳。
    用法：WorkerCalendar.mount(容器元素, { workerId, lang })；換語言 WorkerCalendar.setLang('vi')。
    標籤有中／越／印三語，訂單資料（地點、作物）只有中文。
    ============================================================ */
@@ -155,18 +155,16 @@
       return (await res.json()).data;
     };
     try {
-      var worker = await get('/workers/' + encodeURIComponent(state.workerId));
+      var data = await get('/workers/' + encodeURIComponent(state.workerId) + '/schedule');
       if (seq !== state.seq) return;
-      if (!worker || !worker.teamId) {
-        state.orders = []; state.team = null; state.noTeam = true;
-      } else {
-        var both = await Promise.all([get('/orders'), get('/dispatch/teams/' + encodeURIComponent(worker.teamId))]);
-        if (seq !== state.seq) return;
-        state.team = both[1] || null;
-        state.orders = (both[0] || []).filter(function (o) {
-          return o.assignedTeamId === worker.teamId && o.status !== 'cancelled' && o.startDate;
-        }).sort(function (a, b) { return String(a.startDate).localeCompare(String(b.startDate)); });
-      }
+      state.team = (data && data.team) || null;
+      // 後端已依開工日排序、排除取消與未排工期的訂單
+      state.orders = ((data && data.items) || []).map(function (i) {
+        var o = Object.assign({}, i);
+        o.id = i.orderId;
+        return o;
+      });
+      state.noTeam = !(data && data.teamId) && !state.orders.length;
     } catch (e) {
       if (seq !== state.seq) return;
       state.orders = []; state.team = null; state.error = true;
@@ -181,7 +179,8 @@
     var content = [o.categoryName, o.foremanNotes].filter(Boolean).join('：') || team.normalTask || '';
     var contact = o.foremanName || team.leader || '';
     var phone = o.foremanPhone || team.leaderPhone || '';
-    var van = team.vehicle ? short(team.vehicle) + '・' + tx.depart : '';
+    var vehicle = o.vehicle || team.vehicle;
+    var van = vehicle ? short(vehicle) + '・' + tx.depart : '';
     var rows = [];
     if (withPeriod) rows.push([tx.period, period]);
     rows.push([tx.location, short(o.farmLocation) || short(team.normalLocation)]);
@@ -261,9 +260,9 @@
     var dayHtml = '<div class="wc-section"><h4 class="ad-num">' + esc(tx.dayTitle(sel.getMonth() + 1, sel.getDate(), tx.weekdays[sel.getDay()])) + '</h4>' +
       (selList.length
         ? '<div class="ad-list">' + selList.map(function (o) { return orderCard(o, true); }).join('') + '</div>' +
-          (state.team && state.team.hedgeLocation
-            ? '<div class="ad-notice ad-notice--warn" style="margin-top:8px;">' + esc(tx.hedge(state.team.hedgeLocation)) + (state.team.hedgeTask ? '（' + esc(state.team.hedgeTask) + '）' : '') + '</div>'
-            : '')
+          selList.filter(function (o) { return o.hedgeLocation; }).slice(0, 1).map(function (o) {
+            return '<div class="ad-notice ad-notice--warn" style="margin-top:8px;">' + esc(tx.hedge(o.hedgeLocation)) + (o.hedgeTask ? '（' + esc(o.hedgeTask) + '）' : '') + '</div>';
+          }).join('')
         : '<p class="ad-caption">' + esc(tx.dayEmpty) + '</p>') +
       '</div>';
 

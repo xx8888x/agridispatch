@@ -2471,6 +2471,19 @@
           return orders.value.filter(o => !orderCategoryFilter.value || o.dispatchCategory === orderCategoryFilter.value);
         });
 
+        // 離線試算的建議工班：從實際工班清單挑——類別慣用工班（示範資料 team_a～d，代替後端的技能排序）存在就優先，其次進行中訂單少者，最後依代號
+        // （連得上後端時一律用後端試算的 suggestedTeam）
+        const CATEGORY_TEAM_HINT = { harvest_grading: 'team_a', tillage_planting: 'team_c', pruning_bagging: 'team_b',
+          drone_pest_control: 'team_c', cold_chain_pack: 'team_d', typhoon_emergency: 'team_b' };
+        const pickLocalTeam = (category) => {
+          const active = ['pending', 'confirmed', 'in_progress'];
+          const load = (id) => orders.value.filter(o => o.assignedTeamId === id && active.includes(o.status)).length;
+          const hint = CATEGORY_TEAM_HINT[category];
+          return [...dispatch.teams].sort((a, b) => (b.id === hint) - (a.id === hint)
+            || load(a.id) - load(b.id)
+            || String(a.id).localeCompare(String(b.id)))[0] || null;
+        };
+
         const calculateOrderLive = async () => {
           try {
             const res = await fetch(`${API_BASE}/orders/calculate`, {
@@ -2499,6 +2512,7 @@
           const depositAmount = calcForm.plan === 'hourly_flex' ? 0 : Math.round(finalAmount * 0.20);
           const techFee = Math.round(finalAmount * 0.18);
           const coopFee = finalAmount - techFee;
+          const localTeam = pickLocalTeam(calcForm.dispatchCategory);
 
           calcResult.value = {
             cropId: calcForm.cropId,
@@ -2516,7 +2530,8 @@
             transportSurcharge: surcharge,
             dispatchCategory: calcForm.dispatchCategory,
             categoryName: cat.name,
-            suggestedTeam: (calcForm.dispatchCategory === 'cold_chain_pack') ? 'team_d' : ((calcForm.dispatchCategory === 'drone_pest_control' || calcForm.dispatchCategory === 'tillage_planting') ? 'team_c' : ((calcForm.zone === 'cross_region') ? 'team_b' : 'team_a')),
+            suggestedTeam: localTeam ? localTeam.id : '',
+            suggestedTeamName: localTeam ? localTeam.name : '待分派（尚未建立工班）',
             techShare: techFee,
             coopShare: coopFee
           };
@@ -2538,7 +2553,7 @@
             transportZone: calcForm.zone,
             dispatchCategory: calcForm.dispatchCategory || 'harvest_grading',
             categoryName: calcResult.value ? calcResult.value.categoryName : '【採收分級】田間採收與外銷分級',
-            assignedTeamId: calcResult.value ? calcResult.value.suggestedTeam : 'team_a',
+            assignedTeamId: (calcResult.value && calcResult.value.suggestedTeam) || '',   // 空白 = 由後端依實際工班決定
             totalHours: calcResult.value ? calcResult.value.totalHours : 100,
             suggestedWorkers: calcResult.value ? calcResult.value.suggestedWorkers : 3,
             unitRate: calcResult.value ? calcResult.value.unitRate : 290,

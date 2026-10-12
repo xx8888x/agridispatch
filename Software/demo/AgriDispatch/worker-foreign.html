@@ -41,7 +41,7 @@
   </script>
   <!-- AgriDocs: Document & Payslip Downloader -->
   <script src="js/agri-docs.js"></script>
-  <script src="js/worker-calendar.js"></script>
+  <script src="js/schedule-calendar.js"></script>
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/agri.css">
@@ -262,7 +262,7 @@
       </div>
     </div>
 
-    <!-- TAB: 行事曆（後台排給所屬工班的工作，依工期排在月曆上；由 js/worker-calendar.js 繪製） -->
+    <!-- TAB: 行事曆（後台排給所屬工班的工作，依工期排在月曆上；由 js/schedule-calendar.js 繪製） -->
     <div id="tabContentCalendar" class="hidden">
       <div class="ad-card" style="padding: 24px;">
         <div id="workerCalendar"></div>
@@ -572,7 +572,7 @@
       updateTitle();
       renderPunchUI();
       applyTaskCard();
-      if (window.WorkerCalendar) WorkerCalendar.setLang(currentLang);
+      if (window.ScheduleCalendar) ScheduleCalendar.setLang(currentLang);
     }
 
     // 標題隨頁籤切換：任務頁籤顯示「今日任務」，薪資頁籤顯示「薪資」（並隱藏今日出勤狀態）
@@ -597,8 +597,8 @@
         el.classList.toggle('is-active', el.dataset.tab === currentTab);
       });
       // 行事曆：後台排給本人所屬工班的工作
-      if (currentTab === 'calendar' && window.WorkerCalendar) {
-        WorkerCalendar.mount(document.getElementById('workerCalendar'), { workerId: currentWorkerId(), lang: currentLang });
+      if (currentTab === 'calendar' && window.ScheduleCalendar) {
+        ScheduleCalendar.mount(document.getElementById('workerCalendar'), { workerId: currentWorkerId(), lang: currentLang });
       }
       if (window.scrollY > 200) window.scrollTo({ top: 0, behavior: 'smooth' });
     }

@@ -1,10 +1,12 @@
 /* ============================================================
-   工人行事曆（worker-local.html、worker-foreign.html 共用）
-   資料來源：GET /workers/{id}/schedule（本人或 admin），後端只回排給這位工人的訂單——
-   有出工名單看名單、沒有名單看所屬工班——且不含金額與農場主電話；規則見後端 WorkerScheduleService。
-   依訂單工期 startDate～endDate 排在月曆上；車輛、對口、遇雨改派地點隨每筆排班回傳。
-   用法：WorkerCalendar.mount(容器元素, { workerId, lang })；換語言 WorkerCalendar.setLang('vi')。
-   標籤有中／越／印三語，訂單資料（地點、作物）只有中文。
+   派工行事曆（工人頁 worker-local／worker-foreign、農場主頁 farmer 共用）
+   依訂單工期 startDate～endDate 排在月曆上，點日期看當天明細，下方列出接下來的工作。
+   - 工人：ScheduleCalendar.mount(容器, { workerId, lang })，讀 GET /workers/{id}/schedule（本人或 admin），
+     後端只回排給這位工人的訂單——有出工名單看名單、沒有名單看所屬工班——且不含金額與農場主電話
+     （規則見後端 WorkerScheduleService）；車輛、對口、遇雨改派隨每筆排班回傳。標籤有中／越／印三語。
+   - 農場主：ScheduleCalendar.mount(容器, { variant: 'farmer', load })，load 為頁面提供的 async 函式，
+     回傳 { items: [訂單…] }（farmer.html 用 GET /orders 的本人訂單，另補 teamName）；只有中文。
+   換語言 ScheduleCalendar.setLang('vi')。訂單資料（地點、作物）只有中文。
    ============================================================ */
 (function () {
   'use strict';
@@ -70,6 +72,19 @@
     }
   };
 
+  // 農場主版：同一份月曆，用詞改為「派工」角度（待付定金、工班到場），只有中文
+  var FARMER_ZH = {
+    summary: function (n, d) { return '本月 ' + n + ' 張訂單施工・工班到場 ' + d + ' 天'; },
+    status: { in_progress: '施工中', confirmed: '已排定', pending: '待付定金', completed: '已完工' },
+    dayEmpty: '這天沒有排工。',
+    upcoming: '接下來的派工',
+    upcomingEmpty: '目前沒有已排定的後續派工，可到「預約派工」新增。',
+    team: '工班', crewSize: '出工人數', teamPending: '工班安排中',
+    loading: '讀取派工排程中…',
+    error: '目前讀不到訂單資料，請稍後再試。',
+    pendingNote: '尚未付定金：付款後才鎖定工班與工期。'
+  };
+
   var PILL = { in_progress: 'ad-pill ad-pill--ok', confirmed: 'ad-pill ad-pill--ok', pending: 'ad-pill ad-pill--warn', completed: 'ad-pill' };
 
   var STYLE = [
@@ -124,11 +139,15 @@
   var state = {
     el: null, lang: 'zh', workerId: null, seq: 0,
     loading: false, error: null, noTeam: false,
+    variant: 'worker', loader: null,
     orders: [], team: null,
     view: null, selected: null
   };
 
-  function t() { return TEXT[state.lang] || TEXT.zh; }
+  function t() {
+    if (state.variant === 'farmer') return Object.assign({}, TEXT.zh, FARMER_ZH);
+    return TEXT[state.lang] || TEXT.zh;
+  }
 
   function injectStyle() {
     if (document.getElementById('wc-style')) return;
@@ -155,16 +174,18 @@
       return (await res.json()).data;
     };
     try {
-      var data = await get('/workers/' + encodeURIComponent(state.workerId) + '/schedule');
+      var data = state.loader ? await state.loader() : await get('/workers/' + encodeURIComponent(state.workerId) + '/schedule');
       if (seq !== state.seq) return;
       state.team = (data && data.team) || null;
       // 後端已依開工日排序、排除取消與未排工期的訂單
-      state.orders = ((data && data.items) || []).map(function (i) {
+      state.orders = ((data && data.items) || []).filter(function (i) {
+        return i.startDate && i.status !== 'cancelled';
+      }).map(function (i) {
         var o = Object.assign({}, i);
-        o.id = i.orderId;
+        o.id = i.orderId || i.id;
         return o;
-      });
-      state.noTeam = !(data && data.teamId) && !state.orders.length;
+      }).sort(function (a, b) { return String(a.startDate).localeCompare(String(b.startDate)) || String(a.id).localeCompare(String(b.id)); });
+      state.noTeam = state.variant === 'worker' && !(data && data.teamId) && !state.orders.length;
     } catch (e) {
       if (seq !== state.seq) return;
       state.orders = []; state.team = null; state.error = true;
@@ -183,11 +204,18 @@
     var van = vehicle ? short(vehicle) + '・' + tx.depart : '';
     var rows = [];
     if (withPeriod) rows.push([tx.period, period]);
-    rows.push([tx.location, short(o.farmLocation) || short(team.normalLocation)]);
+    rows.push([tx.location, short(o.farmName ? o.farmName + '・' + (o.farmLocation || '') : o.farmLocation) || short(team.normalLocation)]);
     if (content) rows.push([tx.content, content]);
-    if (contact) rows.push([tx.contact, phone ? contact + '（' + phone + '）' : contact]);
-    if (van) rows.push([tx.van, van]);
-    if (o.farmerName) rows.push([tx.farmer, o.farmerName]);
+    if (state.variant === 'farmer') {
+      var size = o.requestedWorkers || o.suggestedWorkers;
+      rows.push([tx.team, o.teamName || tx.teamPending]);   // 查不到工班名稱（未指派或舊資料的「待分派」）一律顯示安排中
+      if (o.assignedTeamId && o.foremanName) rows.push([tx.contact, o.foremanPhone ? o.foremanName + '（' + o.foremanPhone + '）' : o.foremanName]);
+      if (size) rows.push([tx.crewSize, size + ' 人／日']);
+    } else {
+      if (contact) rows.push([tx.contact, phone ? contact + '（' + phone + '）' : contact]);
+      if (van) rows.push([tx.van, van]);
+      if (o.farmerName) rows.push([tx.farmer, o.farmerName]);
+    }
     return '<div class="ad-row" style="align-items:flex-start;' + (o.status === 'in_progress' ? 'border-color:var(--ad-primary);' : '') + '">' +
       '<div class="ad-row__main">' +
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">' +
@@ -297,8 +325,8 @@
     render();
   }
 
-  window.WorkerCalendar = {
-    // 掛到容器上並讀取該工人的排班；同一容器換工人（例如切換示範身分）時再呼叫一次即可
+  window.ScheduleCalendar = {
+    // 掛到容器上並讀取排班；工人頁換工人（例如切換示範身分）、農場主頁切回頁籤時再呼叫一次即可
     mount: function (el, opts) {
       if (!el) return;
       opts = opts || {};
@@ -312,7 +340,12 @@
       var now = new Date();
       if (!state.view) state.view = new Date(now.getFullYear(), now.getMonth(), 1);
       if (!state.selected) state.selected = ymd(now);
-      if (opts.workerId && opts.workerId !== state.workerId) {
+      if (typeof opts.load === 'function') {
+        // 頁面提供資料（農場主）：每次掛載都重讀，訂單剛下單或付款後切過來就是最新的
+        state.variant = opts.variant || 'farmer';
+        state.loader = opts.load;
+        load();
+      } else if (opts.workerId && opts.workerId !== state.workerId) {
         state.workerId = opts.workerId;
         load();
       } else {

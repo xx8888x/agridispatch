@@ -42,6 +42,7 @@
   </script>
   <!-- AgriDocs: Payment & Document Downloader -->
   <script src="js/agri-docs.js"></script>
+  <script src="js/schedule-calendar.js"></script>
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/agri.css">
@@ -59,6 +60,7 @@
       <nav class="ad-nav" aria-label="農場主導覽">
         <button type="button" id="tabBtnBooking" class="ad-nav__link is-active" data-tab="booking" onclick="switchFarmerTab('booking')">預約派工</button>
         <button type="button" id="tabBtnOrders" class="ad-nav__link" data-tab="orders" onclick="switchFarmerTab('orders')">我的訂單 <span id="orderBadgeCount" class="ad-tab__count">2</span></button>
+        <button type="button" id="tabBtnCalendar" class="ad-nav__link" data-tab="calendar" onclick="switchFarmerTab('calendar')">派工行事曆</button>
         <a class="ad-nav__link" href="legalize.html" data-feature="legalize">工班合法化</a>
         <a class="ad-nav__link" href="expenses.html">支出明細</a>
       </nav>
@@ -74,6 +76,7 @@
   <nav class="ad-tabbar" aria-label="農場主導覽">
     <button type="button" class="ad-tabbar__item is-active" data-tab="booking" onclick="switchFarmerTab('booking')"><i data-lucide="calendar-plus" class="ad-icon"></i>預約</button>
     <button type="button" class="ad-tabbar__item" data-tab="orders" onclick="switchFarmerTab('orders')"><i data-lucide="clipboard-list" class="ad-icon"></i>訂單</button>
+    <button type="button" class="ad-tabbar__item" data-tab="calendar" onclick="switchFarmerTab('calendar')"><i data-lucide="calendar-days" class="ad-icon"></i>行事曆</button>
     <a class="ad-tabbar__item" href="legalize.html" data-feature="legalize"><i data-lucide="user-check" class="ad-icon"></i>合法化</a>
     <a class="ad-tabbar__item" href="expenses.html"><i data-lucide="receipt" class="ad-icon"></i>支出</a>
   </nav>
@@ -406,6 +409,13 @@
         <div id="dynamicOrdersBox" style="display: flex; flex-direction: column; gap: 16px;"><p class="ad-caption">訂單載入中…</p></div>
       </div>
 
+    </div>
+
+    <!-- TAB 3: 派工行事曆（本人訂單依工期排在月曆上；由 js/schedule-calendar.js 繪製，資料同「我的訂單」） -->
+    <div id="tabContentCalendar" class="hidden">
+      <div class="ad-card" style="padding: 24px;">
+        <div id="farmerCalendar"></div>
+      </div>
     </div>
 
     <!-- 四個承諾 -->
@@ -1219,18 +1229,19 @@
 
     // 頁籤切換：桌機導覽列與手機 tabbar 上所有 [data-tab] 一起更新，標題跟著換
     function switchFarmerTab(tab) {
-      const isBooking = (tab === 'progress_steps' || tab === 'booking');
-      const key = isBooking ? 'booking' : 'orders';
-      const panelBooking = document.getElementById('tabContentBooking');
-      const panelOrders = document.getElementById('tabContentOrders');
-      if (panelBooking) panelBooking.classList.toggle('hidden', !isBooking);
-      if (panelOrders) panelOrders.classList.toggle('hidden', isBooking);
+      const panels = { booking: 'tabContentBooking', orders: 'tabContentOrders', calendar: 'tabContentCalendar' };
+      const key = tab === 'progress_steps' ? 'booking' : (panels[tab] ? tab : 'orders');
+      Object.keys(panels).forEach((k) => {
+        const el = document.getElementById(panels[k]);
+        if (el) el.classList.toggle('hidden', k !== key);
+      });
       document.querySelectorAll('[data-tab]').forEach((el) => {
         el.classList.toggle('is-active', el.dataset.tab === key);
       });
       const title = document.getElementById('pageTitle');
-      if (title) title.textContent = isBooking ? '預約派工' : '我的訂單';
-      if (!isBooking) renderOrdersList();
+      if (title) title.textContent = { booking: '預約派工', orders: '我的訂單', calendar: '派工行事曆' }[key];
+      if (key === 'orders') renderOrdersList();
+      if (key === 'calendar') mountFarmerCalendar();
       if (window.scrollY > 200) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -1277,6 +1288,18 @@
       } catch (e) {
         return local;   // 離線：沿用本機紀錄
       }
+    }
+
+    // 派工行事曆：與「我的訂單」同一份資料（本人訂單＋離線訂單），補上工班名稱
+    function mountFarmerCalendar() {
+      if (!window.ScheduleCalendar) return;
+      ScheduleCalendar.mount(document.getElementById('farmerCalendar'), {
+        variant: 'farmer',
+        load: async () => {
+          const list = await fetchMyOrders();
+          return { items: list.map((o) => Object.assign({}, o, { teamName: (teamNames && teamNames[o.assignedTeamId]) || '' })) };
+        }
+      });
     }
 
     function orderSortKey(o) {
@@ -1442,9 +1465,11 @@
       toggleLeadSelf();
       calcFarmerForm();
       initFarmStep();   // 已登錄農場 → 直接顯示預約單；沒有 → 先登錄農場
-      // 預設顯示「發起派工」（與分頁按鈕的初始樣式一致）；#orders 直接開啟訂單列表
+      // 預設顯示「發起派工」（與分頁按鈕的初始樣式一致）；#orders 直接開啟訂單列表、#calendar 開啟派工行事曆
       if (window.location.hash === '#orders') {
         switchFarmerTab('orders');
+      } else if (window.location.hash === '#calendar') {
+        switchFarmerTab('calendar');
       } else {
         switchFarmerTab('booking');
       }

@@ -1298,8 +1298,39 @@
         load: async () => {
           const list = await fetchMyOrders();
           return { items: list.map((o) => Object.assign({}, o, { teamName: (teamNames && teamNames[o.assignedTeamId]) || '' })) };
+        },
+        // 明細卡按鈕：待付定金（同訂單卡的付定金條件）→ 前往付款；每張 → 看訂單
+        actions: (o) => {
+          const list = [];
+          if (o.status !== 'cancelled' && Number(o.depositAmount) > 0 && !o.depositPaid && !o.offline) {
+            list.push({ label: `前往付款 NT$ ${Number(o.depositAmount).toLocaleString()}`, primary: true, run: () => payFromCalendar(o) });
+          }
+          list.push({ label: '看訂單', run: () => showOrderCard(o.id) });
+          return list;
         }
       });
+    }
+
+    // 行事曆付定金：同訂單卡的收銀台，付完重讀行事曆與訂單列表
+    function payFromCalendar(o) {
+      AgriDocs.openPaymentCashier(o.id, o.depositAmount, o.cropName, o.farmLocation, (data) => {
+        updateLocalOrder(o.id, { depositPaid: true, status: 'confirmed', invoiceNo: (data && data.invoiceNo) || '' });
+        renderOrdersList();
+        mountFarmerCalendar();
+      });
+    }
+
+    // 切到「我的訂單」並捲到該張訂單，短暫標示外框
+    async function showOrderCard(orderId) {
+      switchFarmerTab('orders');
+      await renderOrdersList();   // 等這次重畫完成（較早的重畫會被序號擋掉）
+      const card = [...document.querySelectorAll('[data-order-card]')].find((el) => el.dataset.orderCard === String(orderId));
+      if (!card) return;
+      card.style.scrollMarginTop = '72px';   // 留出固定表頭的高度
+      card.scrollIntoView({ behavior: 'auto', block: 'start' });   // 直接定位：平滑捲動會跟切頁籤時的回頂端互搶
+      card.style.borderColor = 'var(--ad-primary)';
+      card.style.boxShadow = 'var(--ad-ring)';
+      setTimeout(() => { card.style.borderColor = ''; card.style.boxShadow = ''; }, 2400);
     }
 
     function orderSortKey(o) {
@@ -1379,7 +1410,7 @@
           : `<a href="expenses.html" class="ad-btn ad-btn--ghost ad-btn--sm">勞務費明細</a><span class="ad-caption">出工後提供合法用工證明與工班評價</span>`;
 
         return `
-        <div class="ad-card" style="padding: 24px;">
+        <div class="ad-card" style="padding: 24px;" data-order-card="${id}">
           <div class="ad-card__head" style="flex-wrap: wrap;">
             <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;">
               <span class="ad-heading ad-num">${id}</span>

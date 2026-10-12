@@ -6,6 +6,7 @@
      （規則見後端 WorkerScheduleService）；車輛、對口、遇雨改派隨每筆排班回傳。標籤有中／越／印三語。
    - 農場主：ScheduleCalendar.mount(容器, { variant: 'farmer', load })，load 為頁面提供的 async 函式，
      回傳 { items: [訂單…] }（farmer.html 用 GET /orders 的本人訂單，另補 teamName）；只有中文。
+     可再給 actions(訂單) 回傳 [{ label, primary, run }]，明細卡底下會出現對應按鈕（例如前往付款、看訂單）。
    換語言 ScheduleCalendar.setLang('vi')。訂單資料（地點、作物）只有中文。
    ============================================================ */
 (function () {
@@ -139,7 +140,7 @@
   var state = {
     el: null, lang: 'zh', workerId: null, seq: 0,
     loading: false, error: null, noTeam: false,
-    variant: 'worker', loader: null,
+    variant: 'worker', loader: null, actions: null, actionMap: {},
     orders: [], team: null,
     view: null, selected: null
   };
@@ -225,13 +226,28 @@
       '<div class="ad-row__meta ad-num">' + esc(o.id) + (withPeriod ? '' : '・' + esc(tx.period) + ' ' + esc(period)) + '</div>' +
       '<dl class="wc-detail">' + rows.map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('') + '</dl>' +
       (o.status === 'pending' ? '<div class="ad-caption" style="margin-top:6px;color:var(--ad-accent-text);">' + esc(tx.pendingNote) + '</div>' : '') +
+      actionButtons(o) +
       '</div>' +
       '</div>';
   }
 
+  // 頁面提供的明細卡按鈕；處理函式存在 actionMap，點擊時依 data-wc-action 找回
+  function actionButtons(o) {
+    if (!state.actions) return '';
+    var list = state.actions(o) || [];
+    if (!list.length) return '';
+    return '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">' + list.map(function (a) {
+      var key = 'a' + (++actionSeq);
+      state.actionMap[key] = a.run;
+      return '<button type="button" class="ad-btn ad-btn--sm ' + (a.primary ? 'ad-btn--accent' : 'ad-btn--secondary') + '" data-wc-action="' + key + '">' + esc(a.label) + '</button>';
+    }).join('') + '</div>';
+  }
+  var actionSeq = 0;
+
   function render() {
     var el = state.el;
     if (!el) return;
+    state.actionMap = {};
     var tx = t();
     var today = ymd(new Date());
     var y = state.view.getFullYear(), m = state.view.getMonth();
@@ -306,6 +322,12 @@
   }
 
   function onClick(e) {
+    var act = e.target.closest('[data-wc-action]');
+    if (act && state.el.contains(act)) {
+      var run = state.actionMap[act.dataset.wcAction];
+      if (typeof run === 'function') run();
+      return;
+    }
     var btn = e.target.closest('[data-wc],[data-wc-day]');
     if (!btn || !state.el.contains(btn)) return;
     var v = state.view;
@@ -344,6 +366,7 @@
         // 頁面提供資料（農場主）：每次掛載都重讀，訂單剛下單或付款後切過來就是最新的
         state.variant = opts.variant || 'farmer';
         state.loader = opts.load;
+        state.actions = typeof opts.actions === 'function' ? opts.actions : null;
         load();
       } else if (opts.workerId && opts.workerId !== state.workerId) {
         state.workerId = opts.workerId;

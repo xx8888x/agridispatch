@@ -124,7 +124,9 @@ def start_backend(tag):
     env = dict(os.environ, SERVER_PORT=str(BE_PORT),
                SPRING_DATASOURCE_URL="jdbc:h2:file:" + os.path.join(TMP, "acc_db").replace("\\", "/") + ";DB_CLOSE_DELAY=-1",
                AGRI_LINEBOT_INTERNAL_KEY=KEY, AGRI_LINEBOT_BASE_URL="http://localhost:%d" % LB_PORT,
-               AGRI_LINE_WORKER_HOURS="00:00-24:00")
+               AGRI_LINE_WORKER_HOURS="00:00-24:00",
+               # 下方等種子資料時每秒試登入一次，種子未建好前都是失敗：放寬隔離後端的登入失敗鎖定，避免自己把 admin_tech 鎖住
+               AGRI_SECURITY_LOGINMAXFAILURES="10000", AGRI_SECURITY_LOGINIPMAXFAILURES="10000")
     log = open(os.path.join(TMP, "backend_%s.log" % tag), "wb")
     p = subprocess.Popen(maven_cmd() + ["-o", "-q", "spring-boot:run", "-Dspring-boot.run.profiles=demo"],
                          cwd=BACKEND, env=env, stdout=log, stderr=subprocess.STDOUT)

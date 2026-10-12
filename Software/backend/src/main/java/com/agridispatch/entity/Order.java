@@ -49,6 +49,14 @@ public class Order {
     @jakarta.persistence.Column(name = "package_id", length = 40)
     private String packageId;
 
+    /** 下單時選的農場（farms.id）；舊訂單或未選農場時為 null。只在建立訂單時設定，須為下單農場主自己的農場 */
+    @jakarta.persistence.Column(name = "farm_id", length = 32)
+    private String farmId;
+
+    /** 下單當時的農場名稱（快照）：農場之後改名或刪除，訂單仍顯示當時的名稱；由後端依 farmId 帶入，不接受前端傳入 */
+    @jakarta.persistence.Column(name = "farm_name", length = 100)
+    private String farmName;
+
     /** 農場主指定的每日工人數；null 表示由系統依面積估算（suggestedWorkers）。不影響金額，只決定編制人數與預估天數 */
     @jakarta.persistence.Column(name = "requested_workers")
     private Integer requestedWorkers;
@@ -65,6 +73,12 @@ public class Order {
 
     public String getPackageId() { return packageId; }
     public void setPackageId(String packageId) { this.packageId = packageId; }
+
+    public String getFarmId() { return farmId; }
+    public void setFarmId(String farmId) { this.farmId = farmId; }
+
+    public String getFarmName() { return farmName; }
+    public void setFarmName(String farmName) { this.farmName = farmName; }
     public Integer getRequestedWorkers() { return requestedWorkers; }
     public void setRequestedWorkers(Integer requestedWorkers) { this.requestedWorkers = requestedWorkers; }
     public java.time.LocalDate getStartDate() { return startDate; }

@@ -319,6 +319,15 @@
       createdAt: now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + ' ' +
         pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds())
     });
+    // 選的農場：須為登入農場主自己的農場，名稱存快照（同後端 OrderService.createOrder）
+    var farm = null;
+    if (!blank(o.farmId)) {
+      var fk = farmKey();
+      farm = fk ? farmList(fk).filter(function (f) { return f.id === o.farmId; })[0] : null;
+      if (!farm) throw new Error('找不到選擇的農場，請重新選擇');
+    }
+    order.farmId = farm ? farm.id : null;
+    order.farmName = farm ? farm.farmName : null;
     var e = get('GET /orders') || { s: 200, b: { success: true, data: [] } };
     var list = listOf(e);
     order.id = nextId(list.filter(function (x) { return /^ORD-\d{4}-\d+$/.test(x.id); }), 'ORD-' + now.getFullYear() + '-');

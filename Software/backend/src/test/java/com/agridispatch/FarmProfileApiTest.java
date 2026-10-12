@@ -126,6 +126,58 @@ class FarmProfileApiTest extends ApiTestSupport {
         assertEquals(1, farms(t2).size());   // 只看到自己的
     }
 
+    private Map<String, Object> order(String farmId) {
+        Map<String, Object> o = new HashMap<>();
+        o.put("farmerName", "王小明");
+        o.put("phone", "0911000777");
+        o.put("farmLocation", "桃園市八德區興豐路 100 號 1 號棚");
+        o.put("cropId", "mango");
+        o.put("area", 3);
+        o.put("plan", "early_bird");
+        o.put("farmId", farmId);
+        o.put("farmName", "前端亂填的名稱");   // 不採用，由後端依 farmId 帶入
+        return o;
+    }
+
+    @Test
+    void orderRecordsChosenFarm() throws Exception {
+        String token = register("0911000777").get("token").asText();
+        String other = register("0911000888").get("token").asText();
+        MvcResult b = call("POST", FARMS, token, farm("大溪二場", "0922333444"));
+        String farmId = json(b).get("data").get("id").asText();
+
+        MvcResult created = call("POST", "/api/orders", token, order(farmId));
+        assertEquals(201, created.getResponse().getStatus());
+        JsonNode o = json(created).get("data");
+        assertEquals(farmId, o.get("farmId").asText());
+        assertEquals("大溪二場", o.get("farmName").asText());
+        String orderId = o.get("id").asText();
+
+        // 農場改名後，訂單保留下單當時的名稱
+        call("PUT", FARMS + "/" + farmId, token, farm("大溪三場", "0922333444"));
+        JsonNode again = json(call("GET", "/api/orders/" + orderId, token, null)).get("data");
+        assertEquals(farmId, again.get("farmId").asText());
+        assertEquals("大溪二場", again.get("farmName").asText());
+
+        // 修改訂單不能換成別的農場
+        Map<String, Object> patch = new HashMap<>();
+        patch.put("farmId", "FM9999");
+        patch.put("farmName", "改掉");
+        call("PUT", "/api/orders/" + orderId, token, patch);
+        assertEquals("大溪二場", json(call("GET", "/api/orders/" + orderId, token, null)).get("data").get("farmName").asText());
+
+        // 用別人的農場或不存在的農場下單 → 400
+        assertEquals(400, call("POST", "/api/orders", other, order(farmId)).getResponse().getStatus());
+        assertEquals(400, call("POST", "/api/orders", token, order("FM9999")).getResponse().getStatus());
+
+        // 不帶農場仍可下單（舊版前端、LINE 等）
+        Map<String, Object> noFarm = order(null);
+        noFarm.remove("farmId");
+        MvcResult legacy = call("POST", "/api/orders", token, noFarm);
+        assertEquals(201, legacy.getResponse().getStatus());
+        assertTrue(json(legacy).get("data").get("farmName").isNull());
+    }
+
     @Test
     void validation() throws Exception {
         String token = register("0911000555").get("token").asText();

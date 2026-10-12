@@ -497,6 +497,7 @@
                   <td class="font-mono font-bold text-emerald-400">{{ o.id }}</td>
                   <td>
                     <div class="font-bold text-white">{{ o.farmerName }}</div>
+                    <div v-if="o.farmName" class="text-[13px] text-emerald-300 truncate max-w-xs">{{ o.farmName }}</div>
                     <div class="text-[13px] text-slate-400 truncate max-w-xs">{{ o.farmLocation }}</div>
                     <div class="text-[13px] text-slate-500">{{ o.phone }}</div>
                     <div v-if="o.foremanName" class="mt-1 flex items-center gap-1 flex-wrap">

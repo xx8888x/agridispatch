@@ -39,6 +39,7 @@ public class OrderService {
     private final com.agridispatch.repository.BrochureRepository brochureRepository;
     private final WorkerRepository workerRepository;
     private final com.agridispatch.repository.DispatchTeamRepository teamRepository;
+    private final com.agridispatch.repository.FarmRepository farmRepository;
 
     /**
      * 工時包（文宣 DM）對應的作物與派工類別、預設面積：{cropId, dispatchCategory, area}。
@@ -55,7 +56,9 @@ public class OrderService {
                         InsuranceService insuranceService, LineNotifyService lineNotifyService,
                         com.agridispatch.repository.BrochureRepository brochureRepository,
                         WorkerRepository workerRepository,
-                        com.agridispatch.repository.DispatchTeamRepository teamRepository) {
+                        com.agridispatch.repository.DispatchTeamRepository teamRepository,
+                        com.agridispatch.repository.FarmRepository farmRepository) {
+        this.farmRepository = farmRepository;
         this.orderRepository = orderRepository;
         this.teamRepository = teamRepository;
         this.workerRepository = workerRepository;
@@ -409,6 +412,15 @@ public class OrderService {
         validateTextLengths(input);
         Order order = new Order();
         order.setFarmerId(farmerId);
+        // 選的農場：須為下單農場主自己的農場（admin 代建且未指定農場主時，以農場的主人為準）；名稱存快照
+        if (input.getFarmId() != null && !input.getFarmId().isBlank()) {
+            com.agridispatch.entity.Farm farm = farmRepository.findById(input.getFarmId().trim())
+                    .filter(f -> farmerId == null || farmerId.equals(f.getFarmerId()))
+                    .orElseThrow(() -> ApiException.badRequest("找不到選擇的農場，請重新選擇"));
+            if (farmerId == null) order.setFarmerId(farm.getFarmerId());
+            order.setFarmId(farm.getId());
+            order.setFarmName(farm.getName());
+        }
         order.setFarmerName(input.getFarmerName().trim());
         order.setPhone(input.getPhone());
         order.setFarmLocation(input.getFarmLocation());

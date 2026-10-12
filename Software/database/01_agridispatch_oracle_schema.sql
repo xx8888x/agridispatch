@@ -239,6 +239,8 @@ CREATE TABLE orders (
     crew_worker_ids    VARCHAR2(400 CHAR),
     requested_workers  NUMBER(4),
     package_id         VARCHAR2(40 CHAR),
+    farm_id            VARCHAR2(32 CHAR),               -- 下單時選的農場（farms.id）；農場可刪除，故不設外鍵
+    farm_name          VARCHAR2(100 CHAR),              -- 下單當時的農場名稱（快照）
     start_date         DATE,
     end_date           DATE,
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,

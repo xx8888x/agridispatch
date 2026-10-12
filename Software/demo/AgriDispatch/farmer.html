@@ -1131,6 +1131,8 @@
         farmerName: document.getElementById('fFarmerName').value,
         phone: document.getElementById('fFarmerPhone').value,
         farmLocation: document.getElementById('fFarmLocation').value,
+        farmId: currentFarm ? currentFarm.id : null,   // 後端驗證是自己的農場並記下當時的農場名稱
+        farmName: currentFarm ? currentFarm.farmName : null,   // 只供離線展示；後端以 farmId 帶入的名稱為準
         cropId: cropSelect.value,
         cropName: cropSelect.options[cropSelect.selectedIndex].text.split(' ')[0] || cropSelect.value,
         area: input.area,
@@ -1370,7 +1372,7 @@
             <div class="ad-card--inset ad-card">
               <div class="ad-label">作物與面積</div>
               <div class="ad-heading" style="margin-top: 4px;">${escHtml(ord.cropName)}（${escHtml(ord.area)} 分地）</div>
-              <p class="ad-caption">${escHtml(ord.farmLocation || '')}</p>
+              <p class="ad-caption">${ord.farmName ? `<strong style="color: var(--ad-text);">${escHtml(ord.farmName)}</strong>・` : ''}${escHtml(ord.farmLocation || '')}</p>
             </div>
             <div class="ad-card--inset ad-card">
               <div class="ad-label">工班與現場小工頭</div>

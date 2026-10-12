@@ -57,6 +57,7 @@
 - **其他登入端點**：`GET /api/notifications` 非 admin 只回全體公告與 `target` 為自己（`token.ref`）的通知，忽略 `target` 參數；`POST /api/line/simulate-push`（LINE 體驗頁）正式模式僅限 admin。
 - **金流通知防少付**：綠界通知除了比對該交易金額，還須等於訂單**目前**的定金、訂單未取消且尚未付款；否則交易記為已付（款項已入帳，回 `1|OK` 避免重送）但訂單不標已付定金，記 log 待人工退款或補收。mock 金流在交易金額與目前定金不同時回 409。
 - **輸入長度**：訂單農場主姓名／現場對口姓名 100 字、電話 30 字、農地位置／現場交辦 255 字，人才報名經歷 255 字、電話 30 字，超過回 400；其餘資料庫約束錯誤（`DataIntegrityViolationException`）統一回 400，不回 500。
+- **我的農場 `/api/farmers/me`（2026-10-12 起，預約派工第一步）**：僅 farmer（其餘角色含 admin 一律 403），只能讀寫自己的 `farmers`（id = `token.ref`）。`GET` 已登錄回 `{farmerId, farmName, contactName, phone, address, farmType}`，尚未登錄 `data: null`（自助註冊時已建立；種子帳號第一次預約前補登）；`PUT` 新增或修改：農場名稱 100 字、聯絡人 50 字、地址／地號 255 字必填，電話去掉 `-`／空白後須為 `0` 開頭 9～10 碼，不可與其他農場主的電話重複（409，自助註冊以此判斷手機是否已註冊）；聯絡人姓名同步寫入 `users.name`。前台 farmer.html 已登錄就直接顯示預約單，訂單的姓名、電話、預設作業地點由此帶入。
 - **工班評價 `/api/ratings`**（皆需登入，權限於 Controller/Service 檢查）：`PUT /orders/{orderId}` 限訂單擁有者或 admin，且訂單須為 `in_progress`／`completed`（否則 409）；`GET /orders/{orderId}` 權限同訂單讀取；`GET /teams`、`/teams/{teamId}`、`/tags` 任何登入者。回應不含評分者編號，訂單編號只回給 admin。
 - **保險登錄 `/api/insurance`**（皆需登入，權限於 Controller/Service 檢查）：`GET /workers`、`POST /workers/{id}/enroll`、`POST /records/{id}/withdraw` 僅 admin；`GET /workers/{id}` 本人或 admin；`GET /teams/{teamId}` 任何登入者，但缺保名單 `gaps` 只回給 admin。
 - **合法用工證明**：`GET /api/certificates/orders/{orderId}` 限訂單擁有者或 admin，依該訂單出勤逐日核對工作許可效期與加保，全部符合才附查驗碼；`GET /api/public/certificates/{certificateNo}?code=` 公開查驗（屬 `/api/public/**`），只回摘要、不含工人姓名。查驗碼為 `AGRI_TOKEN_SECRET` 簽出的 HMAC，未固定密鑰時重啟即改變。

@@ -189,6 +189,33 @@
     typhoon_emergency: ['【緊急救火】防颱搶收 24H 馳援', 'team_b', '全工班跨區緊急馳援']
   };
   function blank(v) { return v == null || String(v).trim() === ''; }
+
+  // 我的農場（GET/PUT /farmers/me）：依登入者 refId 存在 state，檢查與後端 FarmProfileService 相同
+  function farmKey() {
+    var me = currentUser();
+    return me && me.role === 'farmer' && me.refId ? 'GET /farmers/me#' + me.refId : null;
+  }
+  function farmGet() {
+    var k = farmKey();
+    if (!k) return respond(403, { success: false, error: 'FORBIDDEN' });
+    var e = get(k);
+    return respond(200, { success: true, data: e && e.b ? e.b.data : null });
+  }
+  function farmPut(r) {
+    var k = farmKey();
+    if (!k) return respond(403, { success: false, error: 'FORBIDDEN' });
+    var tel = String(r.phone || '').replace(/[\s-]/g, '');
+    if (blank(r.farmName) || String(r.farmName).trim().length > 100) return respond(400, { success: false, error: '請填寫農場名稱（100 字以內）' });
+    if (blank(r.contactName) || String(r.contactName).trim().length > 50) return respond(400, { success: false, error: '請填寫聯絡人姓名（50 字以內）' });
+    if (!/^0\d{8,9}$/.test(tel)) return respond(400, { success: false, error: '請填寫正確的聯絡電話（手機 09 開頭 10 碼，市話含區碼）' });
+    if (blank(r.address) || String(r.address).trim().length > 255) return respond(400, { success: false, error: '請填寫農場地址或地號（255 字以內）' });
+    var data = {
+      farmerId: currentUser().refId, farmName: String(r.farmName).trim(), contactName: String(r.contactName).trim(),
+      phone: tel, address: String(r.address).trim(), farmType: blank(r.farmType) ? '個人農戶' : String(r.farmType).trim()
+    };
+    put(k, { s: 200, b: { success: true, data: data } });
+    return respond(200, { success: true, data: data, message: '農場資料已儲存' });
+  }
   function findIn(listKey, id) {
     var list = listOf(get(listKey)) || [];
     for (var i = 0; i < list.length; i++) if (String(list[i].id) === String(id)) return list[i];
@@ -873,6 +900,8 @@
         roleDesc: (r.farmName || '自助註冊') + ' 農場主' } });
     }
 
+    if (method === 'PUT' && sp.path === '/farmers/me') return farmPut(body || {});
+
     // 有業務邏輯、會影響後續查詢的動作
     if (method === 'POST' && sp.path === '/orders/calculate') {
       try { return respond(200, { success: true, data: calculate(body || {}) }); } catch (err) { return respond(400, { success: false, error: err.message }); }
@@ -1002,6 +1031,7 @@
         var u = currentUser();
         return u ? respond(200, { success: true, user: u, data: u }) : respond(401, { success: false, error: '未登入' });
       }
+      if (sp.path === '/farmers/me') return farmGet();
       if (sp.path === '/line/config') {
         // 錄製時 LINE Bot 沒開；純前端示範的對話由頁面模擬，狀態顯示「模擬中」。金鑰等正式設定照實呈現。
         var lc = findGet(p) || { s: 200, b: { success: true } };

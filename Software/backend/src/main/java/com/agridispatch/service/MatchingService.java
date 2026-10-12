@@ -19,6 +19,9 @@ import java.util.*;
  *   必含一位領班；其餘依 資深＞熟手＞培養中 → 領班「需加強」比例低 → 「優」比例高 → 該類別時數多
  *   名單 ≥ 4 人時保留至少 1 個「培養中」名額，讓新進工人也能累積經驗（避免熟手壟斷）
  * 排序完全不使用國籍、性別、年齡；標籤只影響優先順序，不排除任何合格工人【待確認】。
+ * 農場主指名（order.preferredWorkerId）：指名工人所屬工班排在合格工班第一位、指名工人排在出工名單第一位（角色「農場主指名」）；
+ *   指名工人不合格或撞期時照常推薦其他人，並以 preferredWarning 提醒調度告知農場主。
+ *   尚未排出工名單、但已指名的訂單，視同已佔用指名工人該工期（撞期檢查一併計入）。
  */
 @Service
 public class MatchingService {
@@ -126,6 +129,7 @@ public class MatchingService {
         for (Map<String, Object> r : ratingService.teamSummaries()) ratings.put((String) r.get("teamId"), r);
 
         Map<String, Order> busy = busyWorkers(order);
+        Worker preferred = preferredWorker(order);
         List<Map<String, Object>> out = new ArrayList<>();
         for (DispatchTeam t : teamRepository.findAll()) {
             List<Worker> members = membersOf(t.getId());
@@ -159,6 +163,8 @@ public class MatchingService {
             reasons.add(avg == null ? "工班尚無評價" : "工班評價 " + avg + " ★（" + rating.get("count") + " 則）");
             reasons.add(order.hasPeriod() ? "同期間另有 " + load + " 張訂單" : "目前施工中 " + load + " 張訂單（此訂單未排工期）");
             if (t.getId().equals(defaultTeam)) reasons.add("此類別預設工班");
+            boolean hasPreferred = preferred != null && t.getId().equals(preferred.getTeamId());
+            if (hasPreferred) reasons.add(0, "農場主指名工人 " + displayName(preferred) + " 在此工班");
 
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("teamId", t.getId());
@@ -172,11 +178,13 @@ public class MatchingService {
             m.put("averageRating", avg);
             m.put("activeOrders", load);
             m.put("isDefault", t.getId().equals(defaultTeam));
+            m.put("hasPreferred", hasPreferred);
             m.put("reasons", reasons);
             out.add(m);
         }
         out.sort(Comparator
                 .comparing((Map<String, Object> m) -> !(Boolean) m.get("eligible"))
+                .thenComparing(m -> !(Boolean) m.get("hasPreferred"))
                 .thenComparing(m -> -(Integer) m.get("skilled"))
                 .thenComparing(m -> -(Integer) m.get("senior"))
                 .thenComparing(m -> m.get("averageRating") == null ? 0.0 : -(Double) m.get("averageRating"))
@@ -218,7 +226,24 @@ public class MatchingService {
                 .thenComparing(c -> (String) c.get("workerId")));
 
         List<Map<String, Object>> picks = new ArrayList<>();
-        eligible.stream().filter(c -> Boolean.TRUE.equals(c.get("leader"))).findFirst().ifPresent(c -> {
+        String preferredId = order.getPreferredWorkerId();
+        String preferredWarning = null;
+        if (preferredId != null) {
+            Optional<Map<String, Object>> p = eligible.stream().filter(c -> preferredId.equals(c.get("workerId"))).findFirst();
+            if (p.isPresent()) {
+                p.get().put("role", "農場主指名");
+                picks.add(p.get());
+            } else {
+                String why = excluded.stream().filter(c -> preferredId.equals(c.get("workerId")))
+                        .map(c -> (String) c.get("excludedReason")).findFirst()
+                        .orElse("不在 " + teamId + " 工班或目前無法派工");
+                preferredWarning = "農場主指名的 " + nameOr(order.getPreferredWorkerName(), preferredId) + " 無法排入：" + why
+                        + "；請改派並告知農場主";
+            }
+        }
+        // 必含一位領班（指名工人本身是領班時即由他帶隊）
+        if (!picks.isEmpty() && Boolean.TRUE.equals(picks.get(0).get("leader"))) picks.get(0).put("role", "農場主指名・帶隊領班");
+        else eligible.stream().filter(c -> Boolean.TRUE.equals(c.get("leader"))).findFirst().ifPresent(c -> {
             c.put("role", "帶隊領班");
             picks.add(c);
         });
@@ -234,7 +259,8 @@ public class MatchingService {
                     .filter(c -> isTrainee(c) && !picks.contains(c))
                     .max(Comparator.comparing(c -> (Double) c.get("hours")));
             for (int i = picks.size() - 1; i >= 0 && trainee.isPresent(); i--) {
-                if (!"帶隊領班".equals(picks.get(i).get("role"))) {
+                String role = (String) picks.get(i).get("role");
+                if (role == null) {
                     picks.set(i, trainee.get());
                     break;
                 }
@@ -257,6 +283,8 @@ public class MatchingService {
         m.put("shortage", Math.max(0, needed - eligible.size()));
         m.put("currentCrew", order.crewList());
         m.put("periodChecked", order.hasPeriod());
+        m.put("preferredWorkerId", preferredId);
+        m.put("preferredWarning", preferredWarning);
         m.put("candidates", eligible);
         m.put("excluded", excluded);
         return m;
@@ -282,15 +310,27 @@ public class MatchingService {
     /** 會佔用工人的訂單狀態 */
     private static final Set<String> ACTIVE_STATUS = Set.of(OrderService.PENDING, OrderService.CONFIRMED, OrderService.IN_PROGRESS);
 
-    /** 工期與此訂單重疊、且已排入出工名單的工人 → 撞期的那張訂單（此訂單未排工期則不檢查） */
-    private Map<String, Order> busyWorkers(Order order) {
+    /** 工期與此訂單重疊、且已排入出工名單（或尚無名單但被指名）的工人 → 撞期的那張訂單（此訂單未排工期則不檢查） */
+    Map<String, Order> busyWorkers(Order order) {
         Map<String, Order> busy = new HashMap<>();
         if (!order.hasPeriod()) return busy;
         for (Order o : orderRepository.findAll()) {
-            if (o.getId().equals(order.getId()) || !ACTIVE_STATUS.contains(o.getStatus()) || !o.overlaps(order)) continue;
-            for (String id : o.crewList()) busy.putIfAbsent(id, o);
+            if (Objects.equals(o.getId(), order.getId()) || !ACTIVE_STATUS.contains(o.getStatus()) || !o.overlaps(order)) continue;
+            List<String> crew = o.crewList();
+            for (String id : crew) busy.putIfAbsent(id, o);
+            if (crew.isEmpty() && o.getPreferredWorkerId() != null) busy.putIfAbsent(o.getPreferredWorkerId(), o);
         }
         return busy;
+    }
+
+    /** 訂單的指名工人；未指名、已刪除或目前不開放派工（外籍移工下架）時回 null */
+    private Worker preferredWorker(Order order) {
+        if (order.getPreferredWorkerId() == null) return null;
+        return workerRepository.findById(order.getPreferredWorkerId()).filter(settings::isWorkerAvailable).orElse(null);
+    }
+
+    private static String nameOr(String name, String fallback) {
+        return name == null || name.isBlank() ? fallback : name;
     }
 
     private static String clashText(Order o) {
@@ -315,7 +355,7 @@ public class MatchingService {
     }
 
     /** 出工硬性條件：外籍工作許可有效、今日完整加保；符合回傳 null */
-    private String ineligibleReason(Worker w, List<InsuranceRecord> records, LocalDate today) {
+    String ineligibleReason(Worker w, List<InsuranceRecord> records, LocalDate today) {
         if (!CertificateService.permitValidOn(w, today)) return "工作許可已過期或未登錄";
         List<String> missing = insuranceService.missingTypes(w, records, today);
         if (!missing.isEmpty()) return "未完整加保（缺" + String.join("、", missing.stream().map(InsuranceService.TYPE_LABELS::get).toList()) + "）";
@@ -345,10 +385,12 @@ public class MatchingService {
         m.put("endDate", o.getEndDate() == null ? null : o.getEndDate().toString());
         m.put("assignedTeamId", o.getAssignedTeamId());
         m.put("crew", o.crewList());
+        m.put("preferredWorkerId", o.getPreferredWorkerId());
+        m.put("preferredWorkerName", o.getPreferredWorkerName());
         return m;
     }
 
-    private static String displayName(Worker w) {
+    public static String displayName(Worker w) {
         return w.getChineseName() != null && !w.getChineseName().isBlank() ? w.getChineseName() : w.getName();
     }
 }

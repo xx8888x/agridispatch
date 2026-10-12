@@ -4,6 +4,7 @@ import com.agridispatch.common.ApiException;
 import com.agridispatch.entity.Order;
 import com.agridispatch.security.AuthContext;
 import com.agridispatch.service.OrderService;
+import com.agridispatch.service.PreferredWorkerService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +15,11 @@ import java.util.*;
 @RequestMapping("/api/orders")
 public class OrderController {
     private final OrderService orderService;
+    private final PreferredWorkerService preferredWorkerService;
 
-    public OrderController(OrderService orderService) {
+    public OrderController(OrderService orderService, PreferredWorkerService preferredWorkerService) {
         this.orderService = orderService;
+        this.preferredWorkerService = preferredWorkerService;
     }
 
     /** admin / 農工：全部訂單；farmer：只看自己的訂單 */
@@ -64,7 +67,7 @@ public class OrderController {
         return ResponseEntity.ok(Map.of("success", true, "data", result));
     }
 
-    /** 建立訂單：farmer（自動綁定 farmerId = token.ref）或 admin */
+    /** 建立訂單：farmer（自動綁定 farmerId = token.ref）或 admin；preferredWorkerId 為指名工人（選填，farmer 限合作過的工人） */
     @PostMapping
     public ResponseEntity<?> createOrder(@RequestBody Order order) {
         AuthContext ctx = AuthContext.require();
@@ -77,7 +80,9 @@ public class OrderController {
         } else {
             throw ApiException.forbidden();
         }
-        Order created = orderService.createOrder(order, farmerId);
+        var preferred = preferredWorkerService.resolveForNewOrder(ctx.isAdmin() ? null : farmerId,
+                order.getPreferredWorkerId(), order.getStartDate(), order.getEndDate());
+        Order created = orderService.createOrder(order, farmerId, preferred);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("success", true, "data", created, "message", "成功建立派工訂單"));
     }

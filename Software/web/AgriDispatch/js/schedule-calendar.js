@@ -33,7 +33,8 @@
       loading: '讀取排班中…',
       error: '目前讀不到排班資料，請稍後再試或洽帶隊小工頭。',
       noTeam: '你目前尚未編入工班，排班確定後會出現在這裡。',
-      pendingNote: '待確認：農場主尚未付定金，工期可能調整。'
+      pendingNote: '待確認：農場主尚未付定金，工期可能調整。',
+      preferred: '農場主指名你（回頭客）'
     },
     vi: {
       weekdays: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
@@ -51,7 +52,8 @@
       loading: 'Đang tải lịch…',
       error: 'Không tải được lịch làm việc, vui lòng thử lại sau hoặc hỏi trưởng nhóm.',
       noTeam: 'Bạn chưa được xếp vào nhóm, lịch sẽ hiện ở đây khi được xếp.',
-      pendingNote: 'Chờ xác nhận: chủ nông trại chưa đặt cọc, lịch có thể thay đổi.'
+      pendingNote: 'Chờ xác nhận: chủ nông trại chưa đặt cọc, lịch có thể thay đổi.',
+      preferred: 'Chủ nông trại chỉ định bạn (khách quen)'
     },
     id: {
       weekdays: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
@@ -69,7 +71,8 @@
       loading: 'Memuat jadwal…',
       error: 'Jadwal tidak dapat dimuat, coba lagi nanti atau hubungi mandor.',
       noTeam: 'Anda belum masuk tim, jadwal akan muncul di sini setelah ditetapkan.',
-      pendingNote: 'Menunggu: pemilik kebun belum bayar DP, jadwal bisa berubah.'
+      pendingNote: 'Menunggu: pemilik kebun belum bayar DP, jadwal bisa berubah.',
+      preferred: 'Pemilik kebun memilih Anda (pelanggan tetap)'
     }
   };
 
@@ -83,7 +86,8 @@
     team: '工班', crewSize: '出工人數', teamPending: '工班安排中',
     loading: '讀取派工排程中…',
     error: '目前讀不到訂單資料，請稍後再試。',
-    pendingNote: '尚未付定金：付款後才鎖定工班與工期。'
+    pendingNote: '尚未付定金：付款後才鎖定工班與工期。',
+    preferredWorker: '指名工人'
   };
 
   var PILL = { in_progress: 'ad-pill ad-pill--ok', confirmed: 'ad-pill ad-pill--ok', pending: 'ad-pill ad-pill--warn', completed: 'ad-pill' };
@@ -212,6 +216,7 @@
       rows.push([tx.team, o.teamName || tx.teamPending]);   // 查不到工班名稱（未指派或舊資料的「待分派」）一律顯示安排中
       if (o.assignedTeamId && o.foremanName) rows.push([tx.contact, o.foremanPhone ? o.foremanName + '（' + o.foremanPhone + '）' : o.foremanName]);
       if (size) rows.push([tx.crewSize, size + ' 人／日']);
+      if (o.preferredWorkerName) rows.push([tx.preferredWorker, o.preferredWorkerName]);
     } else {
       if (contact) rows.push([tx.contact, phone ? contact + '（' + phone + '）' : contact]);
       if (van) rows.push([tx.van, van]);
@@ -226,6 +231,7 @@
       '<div class="ad-row__meta ad-num">' + esc(o.id) + (withPeriod ? '' : '・' + esc(tx.period) + ' ' + esc(period)) + '</div>' +
       '<dl class="wc-detail">' + rows.map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('') + '</dl>' +
       (o.status === 'pending' ? '<div class="ad-caption" style="margin-top:6px;color:var(--ad-accent-text);">' + esc(tx.pendingNote) + '</div>' : '') +
+      (o.preferredByFarmer && tx.preferred ? '<div style="margin-top:6px;"><span class="ad-pill ad-pill--warn">' + esc(tx.preferred) + '</span></div>' : '') +
       actionButtons(o) +
       '</div>' +
       '</div>';

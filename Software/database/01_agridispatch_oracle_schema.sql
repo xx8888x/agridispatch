@@ -241,6 +241,8 @@ CREATE TABLE orders (
     package_id         VARCHAR2(40 CHAR),
     farm_id            VARCHAR2(32 CHAR),               -- 下單時選的農場（farms.id）；農場可刪除，故不設外鍵
     farm_name          VARCHAR2(100 CHAR),              -- 下單當時的農場名稱（快照）
+    preferred_worker_id   VARCHAR2(32 CHAR),            -- 農場主指名的工人（workers.id）；工人可刪除，故不設外鍵
+    preferred_worker_name VARCHAR2(100 CHAR),           -- 指名工人姓名（快照）
     start_date         DATE,
     end_date           DATE,
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
@@ -255,6 +257,7 @@ COMMENT ON TABLE orders IS '派工訂單表：早鳥工時包預約與出工履�
 COMMENT ON COLUMN orders.id IS '訂單流水號 (如 ORD-2026-001)';
 COMMENT ON COLUMN orders.farmer_id IS '下單農場主編號（登入 token 的 ref，對應 users.ref_id）；不設 FK 到 farmers：路演帳號與新註冊農場主不一定有 farmers 資料';
 COMMENT ON COLUMN orders.crew_worker_ids IS '出工名單（工號逗號分隔），由派工媒合設定；有名單時派工前加保檢查與打卡連結以名單為準';
+COMMENT ON COLUMN orders.preferred_worker_id IS '農場主指名的回頭工人（限曾到該農場主訂單出工者，建單時驗證）；媒合時排在出工名單第一位，尚無名單時視同佔用該工期';
 COMMENT ON COLUMN orders.start_date IS '預定開工日（含當日）；與 end_date 須同時有值或同時為 NULL';
 COMMENT ON COLUMN orders.end_date IS '預定完工日（含當日）；派工媒合依工期排除撞期工人、打卡依工期判斷所屬訂單';
 COMMENT ON COLUMN orders.plan IS '商業方案 (early_bird:早鳥工時包 315元/hr 不打折, hourly_flex:彈性點工, turnkey:成果統包)';

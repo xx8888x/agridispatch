@@ -136,6 +136,7 @@
           <span><span class="ad-caption">農場</span> ${esc(o.farmerName)}</span>
           <span><span class="ad-caption">作業</span> ${esc(o.categoryName)}</span>
           <span><span class="ad-caption">需求</span> ${o.suggestedWorkers} 人</span>
+          ${o.preferredWorkerId ? `<span><span class="ad-caption">農場主指名</span> <strong>${esc(o.preferredWorkerName || '')}</strong> <span class="ad-num">${esc(o.preferredWorkerId)}</span></span>` : ''}
           <span><span class="ad-caption">依據技能</span> ${esc(plain(o.skillLabel) || '證照類（不依經驗標籤）')}</span>
           <span><span class="ad-caption">目前派工</span> ${esc(o.assignedTeamId || '—')}${o.crew.length ? `・名單 ${o.crew.length} 人` : '・尚無出工名單'}</span>
           <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;"><span class="ad-caption">工期</span>
@@ -197,6 +198,7 @@
     function roleBadge(c) {
       if (!c.role) return '';
       const cls = c.role === '標籤暫停中' ? 'ad-pill ad-pill--danger'
+        : c.role.startsWith('農場主指名') ? 'ad-pill ad-pill--warn'
         : (c.role === '帶隊領班' || c.role === '培養名額') ? 'ad-pill'
         : 'ad-pill ad-pill--ok';
       return `<span class="${cls}">${esc(c.role)}</span>`;
@@ -223,7 +225,7 @@
         </div>` : '');
       document.getElementById('crewFooter').innerHTML = `
         <div class="ad-card" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px;">
-          <div class="ad-caption"><span id="crewCount" class="ad-heading"></span>${d.shortage ? `<div style="color: var(--ad-danger-text);">合格人數不足，缺 ${d.shortage} 人</div>` : ''}${d.periodChecked ? '' : '<div style="color: var(--ad-accent-text);">此訂單尚未排定工期，無法檢查工人是否撞期</div>'}<div id="saveMsg" role="status"></div></div>
+          <div class="ad-caption"><span id="crewCount" class="ad-heading"></span>${d.preferredWarning ? `<div style="color: var(--ad-danger-text);">${esc(d.preferredWarning)}</div>` : ''}${d.shortage ? `<div style="color: var(--ad-danger-text);">合格人數不足，缺 ${d.shortage} 人</div>` : ''}${d.periodChecked ? '' : '<div style="color: var(--ad-accent-text);">此訂單尚未排定工期，無法檢查工人是否撞期</div>'}<div id="saveMsg" role="status"></div></div>
           <button type="button" id="saveBtn" onclick="saveCrew()" class="ad-btn ad-btn--primary">確認派工並儲存</button>
         </div>`;
       updateCount();

@@ -69,7 +69,23 @@ public class Order {
     @jakarta.persistence.Column(name = "end_date")
     private java.time.LocalDate endDate;
 
+    /**
+     * 農場主指名的工人（工號）；只在建立訂單時設定，須為曾到該農場主訂單出工的工人（PreferredWorkerService 驗證）。
+     * 指名是「優先排入」而非保證：媒合時排在出工名單第一位，不合格或撞期時由調度改派並告知農場主
+     */
+    @jakarta.persistence.Column(name = "preferred_worker_id", length = 32)
+    private String preferredWorkerId;
+
+    /** 指名工人姓名（快照）；由後端依 preferredWorkerId 帶入，不接受前端傳入 */
+    @jakarta.persistence.Column(name = "preferred_worker_name", length = 100)
+    private String preferredWorkerName;
+
     public Order() {}
+
+    public String getPreferredWorkerId() { return preferredWorkerId; }
+    public void setPreferredWorkerId(String preferredWorkerId) { this.preferredWorkerId = preferredWorkerId; }
+    public String getPreferredWorkerName() { return preferredWorkerName; }
+    public void setPreferredWorkerName(String preferredWorkerName) { this.preferredWorkerName = preferredWorkerName; }
 
     public String getPackageId() { return packageId; }
     public void setPackageId(String packageId) { this.packageId = packageId; }

@@ -227,6 +227,33 @@
     put(k, { s: 200, b: { success: true, data: list } });
     return respond(method === 'POST' ? 201 : 200, { success: true, data: data, message: method === 'POST' ? '農場已登錄' : '農場資料已儲存' });
   }
+  // 指名回頭工人（/farmers/me/past-workers）：名單取錄製資料，能否排班依目前訂單推算（同後端 PreferredWorkerService，
+  // 只看指名佔用與出工名單；保險、證件等資格以錄製當時為準）
+  var ACTIVE_ORDER = ['pending', 'confirmed', 'in_progress'];
+  function pastWorkerList() {
+    var u = currentUser();
+    if (!u || u.role !== 'farmer') return null;
+    var e = get('GET /farmers/me/past-workers');
+    return (e && e.b && e.b.data) || [];
+  }
+  function workerBusy(workerId, start, end) {
+    return (listOf(get('GET /orders')) || []).some(function (o) {
+      if (ACTIVE_ORDER.indexOf(o.status) < 0 || !o.startDate || !o.endDate || o.startDate > end || o.endDate < start) return false;
+      var m = get('GET /matching/orders/' + encodeURIComponent(o.id));
+      var crew = (m && m.b && m.b.data && m.b.data.order && m.b.data.order.crew) || [];
+      return crew.length ? crew.indexOf(workerId) >= 0 : o.preferredWorkerId === workerId;
+    });
+  }
+  function pastWorkersApi(query) {
+    var list = pastWorkerList();
+    if (!list) return respond(403, { success: false, error: 'FORBIDDEN' });
+    var sq = /[?&]start=([^&]*)/.exec(query || ''), eq = /[?&]end=([^&]*)/.exec(query || '');
+    var start = sq ? decodeURIComponent(sq[1]) : '', end = eq ? decodeURIComponent(eq[1]) : start;
+    return respond(200, { success: true, data: list.map(function (w) {
+      var busy = start ? workerBusy(w.workerId, start, end) : null;
+      return Object.assign({}, w, { available: start ? !busy : null, unavailableReason: busy ? '該期間已有排班' : null });
+    }) });
+  }
   function findIn(listKey, id) {
     var list = listOf(get(listKey)) || [];
     for (var i = 0; i < list.length; i++) if (String(list[i].id) === String(id)) return list[i];
@@ -328,6 +355,18 @@
     }
     order.farmId = farm ? farm.id : null;
     order.farmName = farm ? farm.farmName : null;
+    // 指名回頭工人：限合作過的工人、須有工期且未被佔用；姓名與工班由名單帶入（同後端 PreferredWorkerService）
+    order.preferredWorkerName = null;
+    if (blank(o.preferredWorkerId)) {
+      order.preferredWorkerId = null;
+    } else {
+      var pw = (pastWorkerList() || []).filter(function (w) { return w.workerId === o.preferredWorkerId; })[0];
+      if (!pw) throw new Error('只能指名曾到您農場出工的工人');
+      if (!o.startDate || !o.endDate) throw new Error('指名工人須先選起工日期');
+      if (workerBusy(pw.workerId, o.startDate, o.endDate)) throw new Error(pw.name + ' 在 ' + o.startDate + ' 起的工期已有排班，請改期或不指名');
+      order.preferredWorkerName = pw.name;
+      if (pw.teamId) order.assignedTeamId = pw.teamId;   // 農場主不能自選工班，交給指名工人的工班
+    }
     var e = get('GET /orders') || { s: 200, b: { success: true, data: [] } };
     var list = listOf(e);
     order.id = nextId(list.filter(function (x) { return /^ORD-\d{4}-\d+$/.test(x.id); }), 'ORD-' + now.getFullYear() + '-');
@@ -1114,6 +1153,7 @@
         return u ? respond(200, { success: true, user: u, data: u }) : respond(401, { success: false, error: '未登入' });
       }
       if (sp.path === '/farmers/me/farms') return farmApi('GET');
+      if (sp.path === '/farmers/me/past-workers') return pastWorkersApi(sp.query);
       if (sp.path === '/line/config') {
         // 錄製時 LINE Bot 沒開；純前端示範的對話由頁面模擬，狀態顯示「模擬中」。金鑰等正式設定照實呈現。
         var lc = findGet(p) || { s: 200, b: { success: true } };

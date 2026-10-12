@@ -67,7 +67,7 @@ public class WorkerScheduleService {
             if (toDate != null && start.isAfter(toDate)) continue;
             DispatchTeam team = o.getAssignedTeamId() == null ? null
                     : teams.computeIfAbsent(o.getAssignedTeamId(), id -> teamRepository.findById(id).orElse(null));
-            items.add(item(o, start, end, via, team));
+            items.add(item(o, start, end, via, team, workerId));
         }
         items.sort(Comparator.comparing((Map<String, Object> m) -> m.get("startDate").toString())
                 .thenComparing(m -> m.get("orderId").toString()));
@@ -122,7 +122,7 @@ public class WorkerScheduleService {
         return teamId != null && teamId.equals(o.getAssignedTeamId()) ? "team" : null;
     }
 
-    private static Map<String, Object> item(Order o, LocalDate start, LocalDate end, String via, DispatchTeam team) {
+    private static Map<String, Object> item(Order o, LocalDate start, LocalDate end, String via, DispatchTeam team, String workerId) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("orderId", o.getId());
         m.put("status", o.getStatus());
@@ -130,6 +130,7 @@ public class WorkerScheduleService {
         m.put("startDate", start.toString());
         m.put("endDate", end.toString());
         m.put("assignedVia", via);
+        m.put("preferredByFarmer", workerId.equals(o.getPreferredWorkerId()));   // 農場主指名本人（回頭客）
         m.put("teamId", o.getAssignedTeamId());
         m.put("cropName", o.getCropName());
         m.put("area", o.getArea());

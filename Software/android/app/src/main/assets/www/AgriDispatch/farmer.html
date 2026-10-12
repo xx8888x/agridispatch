@@ -247,6 +247,13 @@
                 <input type="number" id="fWorkersCount" class="ad-input ad-num" inputmode="numeric" min="1" max="30" placeholder="不填由系統估" oninput="calcFarmerForm()">
                 <span class="ad-hint">不影響總價，人數愈多完工愈快</span>
               </div>
+              <div class="ad-field hidden" id="fPreferredField" style="max-width: 360px;">
+                <label class="ad-label" for="fPreferredWorker">指名合作過的工人（選填）</label>
+                <select id="fPreferredWorker" class="ad-select" onchange="renderPreferredHint()">
+                  <option value="">不指名，由合作社安排</option>
+                </select>
+                <span class="ad-hint" id="fPreferredHint">只列出曾到您農場出工的工人；指名不加價，合作社會優先排他到場</span>
+              </div>
               <div class="ad-field">
                 <span class="ad-label" id="fPlanLabel">計價方式</span>
                 <div class="ad-seg" role="radiogroup" aria-labelledby="fPlanLabel" id="fPlanSeg" style="align-self: flex-start;">
@@ -1053,6 +1060,57 @@
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
+    // 指名回頭工人：GET /farmers/me/past-workers?start=&end=，依目前工期標示能否排班；
+    // 沒有合作過的工人、或連不上後端時不顯示這個欄位。?prefer=工號 可預選（訂單卡「再約這位」帶入）
+    let pastWorkersKey = null;
+    let pastWorkers = [];
+    let pendingPrefer = new URLSearchParams(window.location.search).get('prefer');
+
+    async function refreshPastWorkers(startStr, endStr) {
+      const key = `${startStr || ''}|${endStr || ''}`;
+      if (key === pastWorkersKey) return;
+      pastWorkersKey = key;
+      const qs = startStr ? `?start=${encodeURIComponent(startStr)}&end=${encodeURIComponent(endStr || startStr)}` : '';
+      let list = [];
+      try {
+        const res = await fetch(`${(window.AgriAuth && window.AgriAuth.API_BASE) || '/api'}/farmers/me/past-workers${qs}`);
+        const body = await res.json().catch(() => ({}));
+        if (res.ok && body.success !== false && Array.isArray(body.data)) list = body.data;
+      } catch (e) {}
+      if (key !== pastWorkersKey) return;   // 只採用最後一次的工期
+      pastWorkers = list;
+      renderPastWorkers();
+    }
+
+    function renderPastWorkers() {
+      const field = document.getElementById('fPreferredField');
+      const select = document.getElementById('fPreferredWorker');
+      const keep = pendingPrefer || select.value;
+      field.classList.toggle('hidden', pastWorkers.length === 0);
+      select.innerHTML = '<option value="">不指名，由合作社安排</option>' + pastWorkers.map((w) => {
+        const tags = [w.leader ? '領班' : '', `合作 ${w.timesWorked} 次`].filter(Boolean).join('・');
+        const off = w.available === false;
+        return `<option value="${escHtml(w.workerId)}"${off ? ' disabled' : ''}>${escHtml(w.name)}（${escHtml(tags)}）${off ? `－${escHtml(w.unavailableReason || '無法排班')}` : ''}</option>`;
+      }).join('');
+      const pick = pastWorkers.find((w) => w.workerId === keep && w.available !== false);
+      select.value = pick ? pick.workerId : '';
+      if (pastWorkers.length) pendingPrefer = null;
+      renderPreferredHint();
+    }
+
+    function renderPreferredHint() {
+      const hint = document.getElementById('fPreferredHint');
+      const w = pastWorkers.find((x) => x.workerId === document.getElementById('fPreferredWorker').value);
+      if (!w) {
+        const busy = pastWorkers.filter((x) => x.available === false).length;
+        hint.textContent = '只列出曾到您農場出工的工人；指名不加價，合作社會優先排他到場'
+          + (busy ? `。有 ${busy} 位在這段工期已有排班，可改起工日期再選` : '');
+        return;
+      }
+      hint.textContent = `${w.name}${w.teamName ? '（' + w.teamName + '）' : ''}・上次出工 ${w.lastWorkedOn || '—'}。`
+        + '指名會優先排入，若臨時無法出工，合作社會改派並通知您。';
+    }
+
     let lastQuote = null;
     let quoteSeq = 0;
     let quoteTimer = null;
@@ -1076,6 +1134,8 @@
         ? '離線試算：未連上伺服器，金額僅供參考。'
         : '金額由系統依作物與面積即時試算，送出後以合作社確認為準。';
       document.getElementById('fSubmitBtn').disabled = false;
+      const startStr = document.getElementById('fStartDate').value || null;
+      refreshPastWorkers(startStr, endDateFor(startStr, q.estDays));
     }
 
     function renderQuoteError(msg) {
@@ -1162,13 +1222,14 @@
         depositAmount: quote.deposit,
         depositPaid: false,
         status: quote.deposit > 0 ? 'pending' : 'confirmed',
-        assignedTeamId: '待分派',
+        assignedTeamId: null,   // 工班由後端指派（demo token 視同 admin，傳「待分派」會被當成工班代碼而 400）
         // 工期：開工日＋系統建議天數（含開工當天）；後端用於派工撞期檢查與打卡判斷
         startDate: startStr,
         endDate: endDateFor(startStr, quote.estDays),
         foremanName: document.getElementById('fForemanName').value,
         foremanPhone: document.getElementById('fForemanPhone').value,
         foremanNotes: document.getElementById('fForemanNotes').value,
+        preferredWorkerId: document.getElementById('fPreferredWorker').value || null,   // 後端驗證並帶入姓名、工班
         createdAt: new Date().toISOString()
       };
 
@@ -1216,6 +1277,20 @@
       btn.textContent = '已送出';
       renderOrdersList();
       setTimeout(() => { btn.textContent = BOOK_LABEL; }, 3500);
+    }
+
+    // 訂單卡「再約」：切到預約頁並帶入指名（沒有指名的訂單就停在下拉選單讓農場主自己選）
+    function rebookWorker(workerId) {
+      switchFarmerTab('booking');
+      if (!pastWorkers.length) {
+        farmerDemoNotice('目前沒有可指名的工人', '外籍移工服務暫停中或尚無出勤紀錄的工人無法指名，本次預約將由合作社安排。');
+        return;
+      }
+      const select = document.getElementById('fPreferredWorker');
+      if (workerId && [...select.options].some((o) => o.value === workerId && !o.disabled)) select.value = workerId;
+      renderPreferredHint();
+      document.getElementById('fPreferredField').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      select.focus();
     }
 
     // 合規文件／評價按鈕（純前端示範）
@@ -1401,6 +1476,7 @@
         if (paid) actions.push(`<button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" data-pay="${pay}" data-invoice="${escHtml(ord.invoiceNo || '')}" onclick="downloadPaidInvoice(this)">下載發票</button>`);
         if (ord.foremanPhone && st !== 'cancelled') actions.push(`<a href="tel:${escHtml(String(ord.foremanPhone).replace(/[^0-9+]/g, ''))}" class="ad-btn ad-btn--secondary ad-btn--sm">致電小工頭</a>`);
         if (st === 'pending') actions.push(`<button type="button" onclick="switchFarmerTab('booking')" class="ad-btn ad-btn--secondary ad-btn--sm">修改預約</button>`);
+        if (st === 'in_progress' || st === 'completed') actions.push(`<button type="button" data-prefer="${escHtml(ord.preferredWorkerId || '')}" onclick="rebookWorker(this.dataset.prefer)" class="ad-btn ad-btn--secondary ad-btn--sm">${ord.preferredWorkerName ? '再約' + escHtml(ord.preferredWorkerName) : '再約合作過的工人'}</button>`);
 
         const worked = st === 'in_progress' || st === 'completed';
         const compliance = worked
@@ -1433,6 +1509,7 @@
               <div class="ad-heading" style="margin-top: 4px;">${teamName ? `${escHtml(teamName)}（${escHtml(crew)} 人）` : `${escHtml(crew)} 人・工班待分派`}</div>
               ${teamId ? `<p class="ad-caption" data-team-rating="${escHtml(teamId)}">工班評價載入中…</p>` : ''}
               ${teamId && skill ? `<div style="display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0;"><span class="ad-hint" data-team-skills="${escHtml(teamId)}" data-skill="${skill}">技能標籤載入中…</span></div>` : ''}
+              ${ord.preferredWorkerName ? `<p class="ad-caption">指名工人：<strong style="color: var(--ad-text);">${escHtml(ord.preferredWorkerName)}</strong></p>` : ''}
               <p class="ad-caption">小工頭：<strong style="color: var(--ad-text);">${escHtml(ord.foremanName || '未指定')}</strong> ${escHtml(ord.foremanPhone || '')}</p>
               <p class="ad-caption">指示：${escHtml(ord.foremanNotes || '無特殊備註')}</p>
             </div>

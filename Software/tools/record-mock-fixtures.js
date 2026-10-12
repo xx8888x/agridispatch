@@ -117,6 +117,7 @@ const enc = encodeURIComponent;
   // 農場主視角的訂單／名冊
   await record('GET', '/legalize/roster', null, tokens.farmer);
   await record('GET', '/legalize/summary', null, tokens.farmer);
+  await record('GET', '/farmers/me/past-workers', null, tokens.farmer);   // 指名回頭工人（不帶工期；能否排班由 demo-mock 依訂單推算）
 
   // 3. 明細
   const teams = data(got['/dispatch/teams']).map(t => t.id);

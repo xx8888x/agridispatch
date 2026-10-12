@@ -406,6 +406,15 @@ public class OrderService {
      */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public Order createOrder(Order input, String farmerId) {
+        return createOrder(input, farmerId, null);
+    }
+
+    /**
+     * @param preferred 農場主指名的工人（已由 PreferredWorkerService 驗證）；null 表示不指名。
+     *                  client 傳入的 preferredWorkerId / preferredWorkerName 一律忽略，只以此參數為準
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public Order createOrder(Order input, String farmerId, com.agridispatch.entity.Worker preferred) {
         if (input.getFarmerName() == null || input.getFarmerName().isBlank()) {
             throw ApiException.badRequest("農場主姓名 (farmerName) 為必填欄位");
         }
@@ -448,6 +457,15 @@ public class OrderService {
         }
 
         Map<String, Object> calc = applyPricing(order); // 驗證作物 / 面積 / 方案並精算金額
+        if (preferred != null) {
+            order.setPreferredWorkerId(preferred.getId());
+            order.setPreferredWorkerName(MatchingService.displayName(preferred));
+            // 未指定工班時交給指名工人所屬工班，媒合時才能把他排進出工名單
+            if ((order.getAssignedTeamId() == null || order.getAssignedTeamId().isBlank())
+                    && preferred.getTeamId() != null && teamRepository.existsById(preferred.getTeamId())) {
+                order.setAssignedTeamId(preferred.getTeamId());
+            }
+        }
         if (order.getAssignedTeamId() == null || order.getAssignedTeamId().isBlank()) {
             // 類別的建議工班是固定代碼（team_a…）；正式環境工班尚未建立時不指派（null＝待分派），避免違反工班外鍵
             String suggested = (String) calc.get("suggestedTeam");

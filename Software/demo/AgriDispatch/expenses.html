@@ -66,7 +66,7 @@
       <div class="ad-header__actions">
         <a href="../linebot/line.html" class="ad-pill ad-pill--ok" title="派工確認、專車抵達、天候快訊都會推播到你的 LINE"><span class="ad-pill__dot"></span>LINE 已綁定</a>
         <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()" aria-label="示範導覽"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span></button>
-        <a href="farmer-login.html" class="ad-btn ad-btn--ghost ad-btn--sm ad-btn--icon" title="切換帳號" aria-label="切換帳號"><span class="ad-avatar">龍</span></a>
+        <a href="farmer-login.html" class="ad-btn ad-btn--ghost ad-btn--sm ad-btn--icon" title="切換帳號" aria-label="切換帳號"><span class="ad-avatar" id="header-avatar">農</span></a>
       </div>
     </div>
   </header>
@@ -94,10 +94,12 @@
     <div class="no-print" style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; margin-bottom: 24px;">
       <div style="min-width: 0;">
         <h1 class="ad-display">支出明細</h1>
-        <p class="ad-caption" style="margin-top: 6px; max-width: 760px;">彙整向合作社支付的派工勞務費與發票號碼，可依月份篩選後匯出 Excel 或列印成 PDF，交給會計師作為帳務與報稅憑證。</p>
+        <p class="ad-caption" style="margin-top: 6px; max-width: 760px;">依你的訂單與付款紀錄彙整向合作社支付的派工勞務費與發票號碼，可依月份篩選後匯出 Excel 或列印成 PDF，交給會計師作為帳務與報稅憑證。</p>
       </div>
-      <div style="display: flex; flex-wrap: wrap; gap: 8px;"><button type="button" onclick="resetDemo()" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only>重設示範資料</button>
-        <button type="button" onclick="openForm()" class="ad-btn ad-btn--primary">登錄支出</button></div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <button type="button" onclick="loadExpenses()" class="ad-btn ad-btn--ghost ad-btn--sm">重新整理</button>
+        <a href="farmer.html#orders" class="ad-btn ad-btn--secondary ad-btn--sm">回我的訂單</a>
+      </div>
     </div>
 
     <!-- 篩選與匯出 -->
@@ -137,42 +139,18 @@
               <th class="no-print"></th>
             </tr>
           </thead>
-          <tbody id="rows"></tbody>
+          <tbody id="rows"><tr><td colspan="9" style="text-align: center; padding: 32px 12px; color: var(--ad-text-3);">支出資料載入中…</td></tr></tbody>
         </table>
       </div>
 
       <div class="ad-notice ad-notice--warn" style="flex-direction: column; gap: 4px;">
         <p>【待確認】合作社開立之發票種類與稅率（本頁以 5% 營業稅、含稅金額回推未稅），以及個人農民之農業所得是否課稅、勞務費可否列為費用，依財政部規定為準，請洽會計師。</p>
-        <p>「待開立」「待付款」款項不計入本期已開立合計。</p>
+        <p>【待確認】尾款於完工後結清，目前由合作社另行收款，系統尚未記錄尾款的付款與發票；完工訂單的尾款先列為「尾款待結清」。</p>
+        <p>只有「已開立」的款項計入本期已開立合計；「待開立」「待付定金」「尾款待結清」另列。</p>
       </div>
     </div>
 
   </main>
-
-  <!-- 登錄／編輯支出 -->
-  <div id="formModal" class="ad-modal no-print" role="dialog" aria-modal="true" aria-labelledby="formTitle" hidden>
-    <div class="ad-modal__panel">
-      <div class="ad-card__head">
-        <h3 id="formTitle" class="ad-title">登錄支出</h3>
-        <button type="button" onclick="closeForm()" class="ad-btn ad-btn--ghost ad-btn--icon ad-btn--sm" aria-label="關閉"><i data-lucide="x" class="ad-icon"></i></button>
-      </div>
-      <div class="ad-form-grid ad-form-grid--2">
-        <div class="ad-field"><label class="ad-label" for="eDate">付款日期</label><input id="eDate" type="date" class="ad-input"></div>
-        <div class="ad-field"><label class="ad-label" for="eKind">款項</label>
-          <select id="eKind" class="ad-select"><option>定金</option><option>尾款</option><option>加派／急件</option><option>其他勞務</option></select></div>
-        <div class="ad-field"><label class="ad-label" for="eOrder">訂單編號（選填）</label><input id="eOrder" type="text" placeholder="ORD-2026-015" class="ad-input ad-num"></div>
-        <div class="ad-field"><label class="ad-label" for="eAmount">含稅金額 (NT$)</label><input id="eAmount" type="number" inputmode="numeric" min="1" step="1" class="ad-input ad-num"></div>
-      </div>
-      <div class="ad-field"><label class="ad-label" for="eDesc">摘要</label><input id="eDesc" type="text" placeholder="例：屏東枋山愛文芒果採收 4 天" class="ad-input"></div>
-      <div class="ad-form-grid ad-form-grid--2">
-        <div class="ad-field"><label class="ad-label" for="eInvoice">發票號碼</label><input id="eInvoice" type="text" placeholder="AB-12345678" class="ad-input ad-num" style="text-transform: uppercase;"></div>
-        <div class="ad-field"><label class="ad-label" for="eStatus">狀態</label>
-          <select id="eStatus" class="ad-select"><option value="issued">已付款・已開立</option><option value="pending_invoice">已付款・待開立</option><option value="unpaid">待付款</option></select></div>
-      </div>
-      <p id="formError" class="ad-error" role="alert" hidden></p>
-      <button type="button" onclick="submitForm()" class="ad-btn ad-btn--primary ad-btn--block">儲存</button>
-    </div>
-  </div>
 
   <div id="toast" class="ad-toast no-print" role="status" hidden></div>
 
@@ -186,34 +164,23 @@
 
   <script>
     // ------------------------------------------------------------------
-    // 勞務費支出明細（demo：資料存在瀏覽器 localStorage；示範資料對應 farmer.html 兩張訂單）
+    // 勞務費支出明細：由後端資料彙整（GET /api/orders 本人訂單 + GET /api/payments/{orderId}/status 付款紀錄）
+    // - 定金：每筆已付款交易一列（付款日期、金額、發票號碼）；需付定金但尚未付款的訂單列為「待付定金」
+    // - 尾款：系統尚無尾款付款流程，完工訂單的尾款（總額 − 已付定金）列為「尾款待結清」【待確認】
     // ------------------------------------------------------------------
-    const STORE_KEY = 'agri.expenses.v1';
     const TAX_RATE = 0.05;
     const STATUS = {
       issued:          { text: '已開立', cls: 'ad-pill ad-pill--ok' },
-      pending_invoice: { text: '待開立', cls: 'ad-pill ad-pill--warn' },
-      unpaid:          { text: '待付款', cls: 'ad-pill' }
+      pending_invoice: { text: '已付款・待開立', cls: 'ad-pill ad-pill--warn' },
+      unpaid:          { text: '待付定金', cls: 'ad-pill' },
+      balance_due:     { text: '尾款待結清', cls: 'ad-pill ad-pill--warn' }
     };
-    const DEMO = [
-      { id: 'e1', date: '2026-09-20', order: 'ORD-2026-013', desc: '屏東枋山愛文芒果採收 (6 分地・4 天)', kind: '定金', amount: 10584, invoice: 'AG-98765432', status: 'issued' },
-      { id: 'e2', date: '2026-09-29', order: 'ORD-2026-013', desc: '屏東枋山愛文芒果採收 (6 分地・4 天)', kind: '尾款', amount: 42336, invoice: '',            status: 'pending_invoice' },
-      { id: 'e3', date: '2026-10-01', order: 'ORD-2026-014', desc: '苗栗卓蘭高接梨修剪 (4 分地・3 天)',   kind: '定金', amount: 8064,  invoice: '',            status: 'unpaid' }
-    ];
+    const ISSUER = '有限責任智農農業勞務生產合作社';
 
     let entries = [];
-    let editingId = null;
+    let loaded = false;
 
-    function load() {
-      try {
-        const raw = localStorage.getItem(STORE_KEY);
-        if (raw) { entries = JSON.parse(raw); return; }
-      } catch (e) {}
-      entries = JSON.parse(JSON.stringify(DEMO));
-    }
-    function save() {
-      try { localStorage.setItem(STORE_KEY, JSON.stringify(entries)); } catch (e) {}
-    }
+    const API = () => (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
     function esc(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
@@ -229,9 +196,80 @@
       clearTimeout(toast._t);
       toast._t = setTimeout(() => { el.hidden = true; }, 2600);
     }
+    function currentUser() {
+      try { return JSON.parse(sessionStorage.getItem('agri_user') || 'null') || {}; } catch (e) { return {}; }
+    }
+    async function getJson(path) {
+      const res = await fetch(API() + path);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body.success === false) throw new Error(body.error || body.message || `HTTP ${res.status}`);
+      return body;
+    }
+    const day = (v) => (v ? String(v).replace(' ', 'T').slice(0, 10) : '');
+
+    // 一張訂單 → 支出列（定金、待付定金、尾款）
+    function rowsOf(o, paidTxs) {
+      const rows = [];
+      const days = o.startDate && o.endDate ? Math.round((new Date(o.endDate) - new Date(o.startDate)) / 86400000) + 1 : 0;
+      const desc = `${o.cropName || '農務派工'}（${o.area || '—'} 分地${days ? `・${days} 天` : ''}）`
+        + (o.status === 'cancelled' ? '・訂單已取消，定金依服務契約辦理' : '');
+      const base = { order: o.id, desc, crop: o.cropName || '', plan: o.planName || '', finalAmount: Number(o.finalAmount) || 0 };
+      const needDeposit = Number(o.depositAmount) > 0;
+      let depositPaid = 0;
+      paidTxs.forEach((t) => {
+        depositPaid += Number(t.amount) || 0;
+        rows.push(Object.assign({}, base, {
+          id: t.id, date: day(t.paidAt || t.createdAt), kind: '定金', amount: Number(t.amount) || 0,
+          invoice: t.invoiceNo || '', payer: t.payerName || '', paidAt: t.paidAt, status: t.invoiceNo ? 'issued' : 'pending_invoice'
+        }));
+      });
+      if (needDeposit && o.depositPaid && !paidTxs.length) {
+        // 訂單標示已付定金但查無付款交易（例如合作社線下收款）：照列，待合作社補開發票
+        depositPaid = Number(o.depositAmount);
+        rows.push(Object.assign({}, base, { id: o.id + '-dep', date: day(o.createdAt), kind: '定金', amount: depositPaid, invoice: '', status: 'pending_invoice' }));
+      }
+      if (needDeposit && !o.depositPaid && o.status !== 'cancelled') {
+        rows.push(Object.assign({}, base, { id: o.id + '-due', date: day(o.createdAt), kind: '定金', amount: Number(o.depositAmount), invoice: '', status: 'unpaid' }));
+      }
+      if (o.status === 'completed' && base.finalAmount - depositPaid > 0) {
+        rows.push(Object.assign({}, base, {
+          id: o.id + '-bal', date: day(o.endDate || o.createdAt), kind: needDeposit ? '尾款' : '全額',
+          amount: base.finalAmount - depositPaid, invoice: '', status: 'balance_due'
+        }));
+      }
+      return rows;
+    }
+
+    async function loadExpenses() {
+      const tbody = document.getElementById('rows');
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 32px 12px; color: var(--ad-text-3);">支出資料載入中…</td></tr>';
+      try {
+        let orders = (await getJson('/orders')).data || [];
+        const ref = currentUser().refId;
+        if (ref) orders = orders.filter((o) => o.farmerId === ref);   // 正式環境後端已只回本人訂單；demo 錄製資料含他人訂單
+        const lists = await Promise.all(orders.map(async (o) => {
+          let txs = [];
+          if (Number(o.depositAmount) > 0 && o.depositPaid) {
+            const s = (await getJson(`/payments/${encodeURIComponent(o.id)}/status`)).data || {};
+            txs = (s.transactions || []).filter((t) => t.status === 'PAID');
+          }
+          return rowsOf(o, txs);
+        }));
+        entries = lists.flat();
+        loaded = true;
+        buildFilters();
+        render();
+      } catch (e) {
+        loaded = false;
+        document.getElementById('kpiRow').innerHTML = '';
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 32px 12px;">
+          <p class="ad-error" style="margin: 0 0 12px;">支出資料暫時無法載入（${esc(e.message)}）</p>
+          <button type="button" onclick="loadExpenses()" class="ad-btn ad-btn--secondary ad-btn--sm">重新載入</button></td></tr>`;
+      }
+    }
 
     function buildFilters() {
-      const years = [...new Set(entries.map(e => e.date.slice(0, 4)))].sort().reverse();
+      const years = [...new Set(entries.map(e => e.date.slice(0, 4)).filter(Boolean))].sort().reverse();
       if (!years.length) years.push(String(new Date().getFullYear()));
       const ySel = document.getElementById('fYear');
       const keep = ySel.value;
@@ -248,7 +286,7 @@
       const y = document.getElementById('fYear').value;
       const m = document.getElementById('fMonth').value;
       const prefix = m ? `${y}-${m}` : y;
-      return entries.filter(e => e.date.startsWith(prefix)).sort((a, b) => a.date.localeCompare(b.date));
+      return entries.filter(e => e.date.startsWith(prefix)).sort((a, b) => a.date.localeCompare(b.date) || a.order.localeCompare(b.order));
     }
     function periodLabel() {
       const y = document.getElementById('fYear').value;
@@ -257,9 +295,9 @@
     }
 
     function render() {
+      if (!loaded) return;
       const list = filtered();
-      const issued = list.filter(e => e.status === 'issued');
-      const issuedSum = issued.reduce((s, e) => s + e.amount, 0);
+      const issuedSum = list.filter(e => e.status === 'issued').reduce((s, e) => s + e.amount, 0);
       const { net, tax } = split(issuedSum);
       const pendingSum = list.filter(e => e.status !== 'issued').reduce((s, e) => s + e.amount, 0);
       const tiles = [
@@ -274,8 +312,10 @@
           <div class="ad-stat__value">${v}</div>
         </div>`).join('');
 
+      const u = currentUser();
+      const who = u.farmName ? `農場：${u.farmName}${u.name ? `（${u.name}）` : ''}　` : (u.name ? `農場主：${u.name}　` : '');
       document.getElementById('printMeta').textContent =
-        `期間：${periodLabel()}　農場：屏東枋山愛文芒果合作園（陳建龍）　開立單位：有限責任智農農業勞務生產合作社　列印日期：${new Date().toLocaleDateString('zh-TW')}`;
+        `期間：${periodLabel()}　${who}開立單位：${ISSUER}　列印日期：${new Date().toLocaleDateString('zh-TW')}`;
 
       const tbody = document.getElementById('rows');
       if (!list.length) {
@@ -285,6 +325,9 @@
       tbody.innerHTML = list.map(e => {
         const s = split(e.amount);
         const st = STATUS[e.status] || STATUS.unpaid;
+        const action = e.status === 'issued'
+          ? `<button type="button" data-id="${esc(e.id)}" onclick="downloadRowInvoice(this.dataset.id)" class="ad-btn ad-btn--ghost ad-btn--sm">下載發票</button>`
+          : (e.status === 'unpaid' ? '<a href="farmer.html#orders" class="ad-btn ad-btn--ghost ad-btn--sm">去付款</a>' : '');
         return `
           <tr>
             <td class="ad-num" style="white-space: nowrap;">${esc(e.date)}</td>
@@ -293,83 +336,25 @@
             <td class="ad-td-num">${s.net.toLocaleString()}</td>
             <td class="ad-td-num">${s.tax.toLocaleString()}</td>
             <td class="ad-td-num" style="font-weight: 700;">${e.amount.toLocaleString()}</td>
-            <td class="ad-num">${esc(e.invoice || '—')}</td>
+            <td class="ad-num" style="white-space: nowrap;">${esc(e.invoice || '—')}</td>
             <td><span class="${st.cls}">${st.text}</span></td>
-            <td class="no-print" style="white-space: nowrap; text-align: right;">
-              <button type="button" onclick="openForm('${e.id}')" class="ad-btn ad-btn--ghost ad-btn--sm">編輯</button>
-              <button type="button" onclick="removeEntry('${e.id}')" class="ad-btn ad-btn--ghost ad-btn--sm" style="color: var(--ad-danger-text);">刪除</button>
-            </td>
+            <td class="no-print" style="white-space: nowrap; text-align: right;">${action}</td>
           </tr>`;
       }).join('');
     }
 
-    function openForm(id) {
-      editingId = id || null;
-      const e = id ? entries.find(x => x.id === id) : null;
-      document.getElementById('formTitle').textContent = e ? '編輯支出' : '登錄支出';
-      document.getElementById('eDate').value = e ? e.date : new Date().toISOString().slice(0, 10);
-      document.getElementById('eKind').value = e ? e.kind : '尾款';
-      document.getElementById('eOrder').value = e ? e.order : '';
-      document.getElementById('eAmount').value = e ? e.amount : '';
-      document.getElementById('eDesc').value = e ? e.desc : '';
-      document.getElementById('eInvoice').value = e ? e.invoice : '';
-      document.getElementById('eStatus').value = e ? e.status : 'issued';
-      document.getElementById('formError').hidden = true;
-      document.getElementById('formModal').hidden = false;
-    }
-    function closeForm() {
-      document.getElementById('formModal').hidden = true;
-    }
-    function formError(msg) {
-      const el = document.getElementById('formError');
-      el.textContent = msg;
-      el.hidden = false;
-    }
-    function submitForm() {
-      const date = document.getElementById('eDate').value;
-      const amount = parseInt(document.getElementById('eAmount').value, 10);
-      const desc = document.getElementById('eDesc').value.trim();
-      const invoice = document.getElementById('eInvoice').value.trim().toUpperCase();
-      const status = document.getElementById('eStatus').value;
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return formError('請選擇付款日期');
-      if (!(amount > 0)) return formError('請輸入大於 0 的含稅金額');
-      if (!desc) return formError('請填寫摘要');
-      if (status === 'issued' && !/^[A-Z]{2}-?\d{8}$/.test(invoice)) return formError('已開立的款項請填寫發票號碼（2 碼英文 + 8 碼數字）');
-      const data = {
-        date, amount, desc, status,
-        kind: document.getElementById('eKind').value,
-        order: document.getElementById('eOrder').value.trim().toUpperCase(),
-        invoice: invoice ? invoice.replace(/^([A-Z]{2})-?(\d{8})$/, '$1-$2') : ''
-      };
-      if (editingId) {
-        Object.assign(entries.find(x => x.id === editingId), data);
-      } else {
-        entries.push({ id: 'e' + Date.now(), ...data });
-      }
-      save();
-      closeForm();
-      buildFilters();
-      document.getElementById('fYear').value = date.slice(0, 4);
-      render();
-      toast(editingId ? '已更新支出紀錄' : '已登錄支出');
-    }
-    function removeEntry(id) {
-      if (!confirm('確定刪除這筆支出紀錄？')) return;
-      entries = entries.filter(x => x.id !== id);
-      save();
-      buildFilters();
-      render();
-    }
-    function resetDemo() {
-      try { localStorage.removeItem(STORE_KEY); } catch (e) {}
-      load();
-      buildFilters();
-      render();
-      toast('已重設為示範資料');
+    // 下載發票：與「我的訂單」相同，發票號碼、買受人、付款時間取自後端付款紀錄
+    function downloadRowInvoice(id) {
+      const e = entries.find((x) => x.id === id);
+      if (!e || !e.invoice) return;
+      AgriDocs.downloadInvoice(e.order, {
+        invoiceNo: e.invoice, buyerName: e.payer || currentUser().name, paidAt: e.paidAt,
+        cropName: e.crop, planName: e.plan, amount: e.finalAmount, deposit: e.amount
+      });
     }
 
     function exportCsv() {
-      const list = filtered();
+      const list = loaded ? filtered() : [];
       if (!list.length) { toast('這個期間沒有資料可匯出'); return; }
       const q = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
       const head = ['付款日期', '訂單編號', '摘要', '款項', '未稅金額', '稅額', '含稅金額', '發票號碼', '狀態', '開立單位'];
@@ -377,7 +362,7 @@
       list.forEach(e => {
         const s = split(e.amount);
         lines.push([e.date, e.order, e.desc, e.kind, s.net, s.tax, e.amount, e.invoice,
-          (STATUS[e.status] || STATUS.unpaid).text, '有限責任智農農業勞務生產合作社'].map(q).join(','));
+          (STATUS[e.status] || STATUS.unpaid).text, ISSUER].map(q).join(','));
       });
       // 加 BOM，Excel 開啟才不會亂碼
       const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
@@ -391,9 +376,10 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      load();
+      const name = currentUser().name;
+      if (name) document.getElementById('header-avatar').textContent = String(name).trim().charAt(0) || '農';
       buildFilters();
-      render();
+      loadExpenses();
     });
   </script>
 </body>

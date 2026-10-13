@@ -233,7 +233,22 @@
   // 7. 帳號選單：點頁首頭像（aria-label="切換帳號" 或 data-account-menu）展開，提供我的帳號、修改密碼、登出。
   //    用事件委派攔截點擊、選單掛在 body，不改動頁首 DOM（admin.html 等頁首由 Vue 管理）。
   //    已登入但頁首沒有頭像的頁面，在 .ad-header__actions 補一顆。
-  var ROLE_LABEL = { farmer: '農場主', worker_local: '本國工人', worker_foreign: '外籍移工', admin_tech: '科技後台管理員' };
+  // 選單文字依頁面語言（<html lang>，外勞頁 setLang 會更新）；「我的帳號」頁本身目前只有中文
+  var AM_TEXT = {
+    zh: { roles: { farmer: '農場主', worker_local: '本國工人', worker_foreign: '外籍移工', admin_tech: '科技後台管理員' },
+      account: '帳號 ', mine: '我的帳號', password: '修改密碼', manage: '帳號與密碼管理', switchAcct: '切換帳號',
+      logout: '登出', guest: '尚未登入', login: '登入', menu: '帳號選單' },
+    vi: { roles: { farmer: 'Chủ nông trại', worker_local: 'Lao động Đài Loan', worker_foreign: 'Lao động nước ngoài', admin_tech: 'Quản trị viên' },
+      account: 'Tài khoản ', mine: 'Tài khoản của tôi', password: 'Đổi mật khẩu', manage: 'Quản lý tài khoản', switchAcct: 'Đổi tài khoản',
+      logout: 'Đăng xuất', guest: 'Chưa đăng nhập', login: 'Đăng nhập', menu: 'Menu tài khoản' },
+    id: { roles: { farmer: 'Pemilik kebun', worker_local: 'Pekerja Taiwan', worker_foreign: 'Pekerja migran', admin_tech: 'Administrator' },
+      account: 'Akun ', mine: 'Akun saya', password: 'Ganti sandi', manage: 'Kelola akun', switchAcct: 'Ganti akun',
+      logout: 'Keluar', guest: 'Belum masuk', login: 'Masuk', menu: 'Menu akun' }
+  };
+  function amText() {
+    var l = String(document.documentElement.lang || 'zh').slice(0, 2).toLowerCase();
+    return AM_TEXT[l] || AM_TEXT.zh;
+  }
   var ROLE_LOGIN = { farmer: ['main', 'farmer-login.html'], worker_local: ['main', 'worker-local-login.html'],
     worker_foreign: ['main', 'worker-foreign-login.html'], admin_tech: ['tech', 'admin-login.html'] };
 
@@ -278,23 +293,24 @@
     var p = defaultPaths();
     var user = currentUser();
     var switchHref = anchor.tagName === 'A' && anchor.getAttribute('href') ? anchor.getAttribute('href') : loginHref(user, p);
+    var T = amText();
     var html;
     if (user) {
       html = '<div class="am-head"><div class="am-name">' + escapeHtml(user.name || user.username || '') + '</div>' +
-        '<div class="ad-caption">' + escapeHtml(ROLE_LABEL[user.role] || user.role || '') + '・帳號 ' + escapeHtml(user.username || '') + '</div></div>' +
-        '<a role="menuitem" href="' + escapeHtml(p.main + 'account.html') + '"><i data-lucide="user-round" class="ad-icon ad-icon--sm"></i>我的帳號</a>' +
-        '<a role="menuitem" href="' + escapeHtml(p.main + 'account.html#password') + '"><i data-lucide="key-round" class="ad-icon ad-icon--sm"></i>修改密碼</a>' +
-        (user.role === 'admin_tech' ? '<a role="menuitem" href="' + escapeHtml(p.tech + 'accounts.html') + '"><i data-lucide="users" class="ad-icon ad-icon--sm"></i>帳號與密碼管理</a>' : '') +
-        '<a role="menuitem" href="' + escapeHtml(switchHref) + '"><i data-lucide="repeat" class="ad-icon ad-icon--sm"></i>切換帳號</a>' +
-        '<button type="button" role="menuitem" class="am-danger" data-am-logout><i data-lucide="log-out" class="ad-icon ad-icon--sm"></i>登出</button>';
+        '<div class="ad-caption">' + escapeHtml(T.roles[user.role] || user.role || '') + '・' + escapeHtml(T.account + (user.username || '')) + '</div></div>' +
+        '<a role="menuitem" href="' + escapeHtml(p.main + 'account.html') + '"><i data-lucide="user-round" class="ad-icon ad-icon--sm"></i>' + escapeHtml(T.mine) + '</a>' +
+        '<a role="menuitem" href="' + escapeHtml(p.main + 'account.html#password') + '"><i data-lucide="key-round" class="ad-icon ad-icon--sm"></i>' + escapeHtml(T.password) + '</a>' +
+        (user.role === 'admin_tech' ? '<a role="menuitem" href="' + escapeHtml(p.tech + 'accounts.html') + '"><i data-lucide="users" class="ad-icon ad-icon--sm"></i>' + escapeHtml(T.manage) + '</a>' : '') +
+        '<a role="menuitem" href="' + escapeHtml(switchHref) + '"><i data-lucide="repeat" class="ad-icon ad-icon--sm"></i>' + escapeHtml(T.switchAcct) + '</a>' +
+        '<button type="button" role="menuitem" class="am-danger" data-am-logout><i data-lucide="log-out" class="ad-icon ad-icon--sm"></i>' + escapeHtml(T.logout) + '</button>';
     } else {
-      html = '<div class="am-head"><div class="am-name">尚未登入</div></div>' +
-        '<a role="menuitem" href="' + escapeHtml(switchHref) + '"><i data-lucide="log-in" class="ad-icon ad-icon--sm"></i>登入</a>';
+      html = '<div class="am-head"><div class="am-name">' + escapeHtml(T.guest) + '</div></div>' +
+        '<a role="menuitem" href="' + escapeHtml(switchHref) + '"><i data-lucide="log-in" class="ad-icon ad-icon--sm"></i>' + escapeHtml(T.login) + '</a>';
     }
     var menu = document.createElement('div');
     menu.id = 'ad-account-menu';
     menu.setAttribute('role', 'menu');
-    menu.setAttribute('aria-label', '帳號選單');
+    menu.setAttribute('aria-label', T.menu);
     menu.innerHTML = html;
     document.body.appendChild(menu);
     var r = anchor.getBoundingClientRect();

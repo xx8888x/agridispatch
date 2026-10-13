@@ -109,7 +109,8 @@
             <button type="submit" :disabled="loading" class="ad-btn ad-btn--primary ad-btn--lg ad-btn--block">
               {{ loading ? t.loggingIn : t.btnSubmit }}
             </button>
-            <a href="tel:1955" class="ad-caption" style="text-align: center; color: var(--ad-primary-text);">{{ t.helpForgot }}</a>
+            <!-- 忘記密碼：打合作社專線核對身分，由後台設臨時密碼，登入後到「我的帳號」自行修改（1955 是勞動部專線，不能重設本平台密碼） -->
+            <a href="tel:033881234" class="ad-caption" style="text-align: center; color: var(--ad-primary-text);">{{ t.helpForgot }}</a>
           </form>
 
           <!-- 示範身分（僅 demo 模式顯示，資料來自 js/demo-accounts.js） -->
@@ -223,7 +224,7 @@
         pwdLabel: 'Mật Khẩu',
         pwdPlaceholder: 'Nhập mật khẩu',
         pwdDefaultHint: 'Mật khẩu mặc định',
-        helpForgot: 'Quên mật khẩu? Gọi 1955',
+        helpForgot: 'Quên mật khẩu? Gọi hợp tác xã (03) 388-1234 để nhận mật khẩu tạm',
         btnSubmit: 'Đăng nhập',
         loggingIn: 'Đang xác thực...',
         quickDemoTitle: 'Tài khoản mẫu thử nghiệm:'
@@ -264,7 +265,7 @@
         pwdLabel: 'Kata Sandi',
         pwdPlaceholder: 'Masukkan kata sandi',
         pwdDefaultHint: 'Kata sandi default',
-        helpForgot: 'Lupa sandi? Hubungi 1955',
+        helpForgot: 'Lupa sandi? Hubungi koperasi (03) 388-1234 untuk sandi sementara',
         btnSubmit: 'Masuk',
         loggingIn: 'Memverifikasi...',
         quickDemoTitle: 'Akun demonstrasi cepat:'
@@ -305,7 +306,7 @@
         pwdLabel: 'รหัสผ่าน',
         pwdPlaceholder: 'กรอกรหัสผ่าน',
         pwdDefaultHint: 'รหัสผ่านเริ่มต้น',
-        helpForgot: 'ลืมรหัสผ่าน? โทร 1955',
+        helpForgot: 'ลืมรหัสผ่าน? โทรหาสหกรณ์ (03) 388-1234 เพื่อรับรหัสผ่านชั่วคราว',
         btnSubmit: 'เข้าสู่ระบบ',
         loggingIn: 'กำลังตรวจสอบ...',
         quickDemoTitle: 'บัญชีทดลองใช้งาน:'
@@ -346,7 +347,7 @@
         pwdLabel: 'Password',
         pwdPlaceholder: 'Enter password',
         pwdDefaultHint: 'Default password',
-        helpForgot: 'Forgot password? Dial 1955',
+        helpForgot: 'Forgot password? Call the cooperative at (03) 388-1234 for a temporary password',
         btnSubmit: 'Log in',
         loggingIn: 'Authenticating...',
         quickDemoTitle: 'Quick demo profiles:'
@@ -387,7 +388,7 @@
         pwdLabel: '登入密碼',
         pwdPlaceholder: '請輸入密碼',
         pwdDefaultHint: '預設密碼',
-        helpForgot: '忘記密碼？請撥打 1955',
+        helpForgot: '忘記密碼？請撥合作社專線 (03) 388-1234 取得臨時密碼',
         btnSubmit: '登入',
         loggingIn: '登入中…',
         quickDemoTitle: '快速體驗示範身分：'

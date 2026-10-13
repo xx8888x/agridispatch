@@ -44,6 +44,9 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
     /** 查詢指定農工今日所有打卡記錄 */
     List<Attendance> findByWorkerIdAndWorkDate(String workerId, LocalDate workDate);
 
+    /** 指定期間全部工人的出勤（月結算、出勤補登清單用） */
+    List<Attendance> findByWorkDateBetweenOrderByWorkDateAscClockInTimeAsc(LocalDate from, LocalDate to);
+
     /** 查詢指定日期的出勤人次 */
     @Query("SELECT COUNT(a) FROM Attendance a WHERE a.workDate = :date AND a.status IN ('working','completed')")
     long countPresentWorkersByDate(@Param("date") LocalDate date);

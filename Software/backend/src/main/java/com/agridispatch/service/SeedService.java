@@ -61,6 +61,9 @@ public class SeedService {
     private final AgriSettings settings;
     private final com.agridispatch.repository.FinancialLedgerRepository financialLedgerRepository;
     private final com.agridispatch.repository.SharedRosterRepository sharedRosterRepository;
+    private final com.agridispatch.repository.AttendanceCorrectionRepository attendanceCorrectionRepository;
+    private final com.agridispatch.repository.PayrollSlipRepository payrollSlipRepository;
+    private final com.agridispatch.repository.PayrollMonthRepository payrollMonthRepository;
     private final OrderService orderService;
 
     /** demo 密碼雜湊快取（310,000 次 PBKDF2 較耗時，demo 種子共用同一組雜湊） */
@@ -84,7 +87,10 @@ public class SeedService {
                        PasswordHasher passwordHasher,
                        AgriSettings settings,
                        com.agridispatch.repository.SharedRosterRepository sharedRosterRepository,
-                       OrderService orderService) {
+                       OrderService orderService,
+                       com.agridispatch.repository.AttendanceCorrectionRepository attendanceCorrectionRepository,
+                       com.agridispatch.repository.PayrollSlipRepository payrollSlipRepository,
+                       com.agridispatch.repository.PayrollMonthRepository payrollMonthRepository) {
         this.userRepository = userRepository;
         this.cropRepository = cropRepository;
         this.teamRepository = teamRepository;
@@ -104,11 +110,17 @@ public class SeedService {
         this.settings = settings;
         this.sharedRosterRepository = sharedRosterRepository;
         this.orderService = orderService;
+        this.attendanceCorrectionRepository = attendanceCorrectionRepository;
+        this.payrollSlipRepository = payrollSlipRepository;
+        this.payrollMonthRepository = payrollMonthRepository;
     }
 
     public void seedAll(boolean cleanFirst) {
         if (cleanFirst) {
             // 依外鍵相依順序刪除（Oracle schema 有 FK；H2 由 Hibernate 建表時沒有）：先刪參照 orders／workers 的表
+            attendanceCorrectionRepository.deleteAll();   // 參照 clock_ins、workers
+            payrollSlipRepository.deleteAll();            // 參照 payroll_months、workers
+            payrollMonthRepository.deleteAll();
             attendanceRepository.deleteAll();
             financialLedgerRepository.deleteAll();
             teamRatingRepository.deleteAll();

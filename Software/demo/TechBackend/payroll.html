@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 AgriDispatch - 出勤與月結算</title>
+  <script src="js/app-config.js"></script>
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AgriAuth) window.AgriAuth.requireRole(['admin_tech'], 'admin-login.html');
+  </script>
+  <!-- 設計系統：共用 demo 模式標記、圖示、抽屜 -->
+  <script src="js/agri-theme.js"></script>
+  <script src="js/vendor/lucide.min.js"></script>
+  <link rel="stylesheet" href="css/agri.css">
+</head>
+<body class="ad-body">
+
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner" style="max-width: 1180px;">
+      <a href="admin.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">營運後台</span>
+      </a>
+      <div class="ad-header__actions">
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()" aria-label="示範導覽"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span></button>
+        <a href="admin.html" class="ad-btn ad-btn--secondary ad-btn--sm"><i data-lucide="arrow-left" class="ad-icon ad-icon--sm"></i>回後台</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="ad-container" style="width: 100%; max-width: 1180px; padding-block: 24px 40px; display: flex; flex-direction: column; gap: 20px;">
+    <div>
+      <h1 class="ad-display">出勤與月結算</h1>
+      <p class="ad-caption" style="margin-top: 6px; max-width: 820px;">補登漏打的出勤、修正上下班時間（每次都要填原因並留紀錄），確認無誤後結算該月薪資。結算後該月出勤鎖定，工人頁與 LINE 的薪資單改顯示結算結果；需要更正時可重新開放（須填原因）。</p>
+      <p class="ad-caption" style="margin-top: 6px; max-width: 820px; color: var(--ad-accent-text);">【待確認】薪資沿用現行試算規則（月薪制、勞健保自付額為概估）；兼職、打工依時薪計算的規則待合作社確認。</p>
+    </div>
+
+    <div class="ad-card" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+      <div class="ad-field" style="flex: 0 1 220px;">
+        <label class="ad-label" for="monthSel">月份</label>
+        <select id="monthSel" class="ad-select"></select>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; padding-bottom: 8px;">
+        <span id="statusPill" class="ad-pill"></span>
+        <span id="statusMeta" class="ad-caption"></span>
+      </div>
+      <div style="flex: 1 1 auto;"></div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button id="createBtn" type="button" class="ad-btn ad-btn--secondary"><i data-lucide="plus" class="ad-icon ad-icon--sm"></i>補登出勤</button>
+        <button id="settleBtn" type="button" class="ad-btn ad-btn--primary" hidden><i data-lucide="lock" class="ad-icon ad-icon--sm"></i>結算本月</button>
+        <button id="reopenBtn" type="button" class="ad-btn ad-btn--ghost" hidden><i data-lucide="unlock" class="ad-icon ad-icon--sm"></i>重新開放</button>
+      </div>
+    </div>
+
+    <div id="loadError" class="ad-notice ad-notice--danger" role="alert" hidden></div>
+    <div id="pageMsg" role="status" hidden></div>
+    <div id="kpiRow" class="ad-stat-grid"></div>
+    <div id="issues"></div>
+
+    <section>
+      <h2 class="ad-title" style="margin-bottom: 10px;">薪資（<span id="slipKind">試算</span>）</h2>
+      <div class="ad-card" style="padding: 8px 16px; overflow-x: auto;">
+        <table class="ad-table" style="min-width: 860px;">
+          <thead>
+            <tr><th>工人</th><th style="text-align: right;">出勤天數</th><th style="text-align: right;">工時</th><th style="text-align: right;">加班</th>
+              <th style="text-align: right;">應發</th><th style="text-align: right;">勞健保（概估）</th><th style="text-align: right;">實領</th><th>薪資單</th></tr>
+          </thead>
+          <tbody id="slipRows"><tr><td colspan="8" class="ad-caption" style="text-align: center; padding: 24px;">載入中…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 10px;">
+        <h2 class="ad-title" style="flex: 1 1 auto;">出勤紀錄</h2>
+        <input id="q" type="search" class="ad-input" placeholder="搜尋工號、姓名、日期" autocomplete="off" aria-label="搜尋出勤" style="flex: 0 1 260px;">
+        <select id="recFilter" class="ad-select" aria-label="篩選出勤" style="width: auto; min-width: 150px;">
+          <option value="">全部</option>
+          <option value="issue">只看待處理</option>
+          <option value="changed">只看補登／修正過</option>
+        </select>
+      </div>
+      <div class="ad-card" style="padding: 8px 16px; overflow-x: auto;">
+        <table class="ad-table" style="min-width: 860px;">
+          <thead>
+            <tr><th>日期</th><th>工人</th><th>上班</th><th>下班</th><th style="text-align: right;">工時</th><th style="text-align: right;">加班</th><th>標記</th><th></th></tr>
+          </thead>
+          <tbody id="recRows"><tr><td colspan="8" class="ad-caption" style="text-align: center; padding: 24px;">載入中…</td></tr></tbody>
+        </table>
+      </div>
+      <p id="recCount" class="ad-caption" style="margin-top: 6px;"></p>
+    </section>
+  </main>
+
+  <!-- 補登／修正出勤 -->
+  <dialog id="editDialog" class="ad-card" style="max-width: 480px; width: calc(100vw - 32px); border: 1px solid var(--ad-border); padding: 20px;">
+    <form id="editForm" method="dialog" style="display: flex; flex-direction: column; gap: 14px;">
+      <h2 id="editTitle" class="ad-heading"></h2>
+      <p id="editWho" class="ad-caption" hidden></p>
+      <div id="createFields" style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="ad-field">
+          <label class="ad-label" for="fWorker">工人</label>
+          <select id="fWorker" class="ad-select"></select>
+        </div>
+        <div class="ad-field">
+          <label class="ad-label" for="fDate">出勤日期</label>
+          <input id="fDate" type="date" class="ad-input">
+        </div>
+        <div class="ad-field">
+          <label class="ad-label" for="fOrder">訂單編號（選填）</label>
+          <input id="fOrder" type="text" class="ad-input" maxlength="40" autocomplete="off" placeholder="例：ORD-2026-013">
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px;">
+        <div class="ad-field" style="flex: 1;">
+          <label class="ad-label" for="fIn">上班時間</label>
+          <input id="fIn" type="time" class="ad-input">
+        </div>
+        <div class="ad-field" style="flex: 1;">
+          <label class="ad-label" for="fOut">下班時間</label>
+          <input id="fOut" type="time" class="ad-input">
+        </div>
+      </div>
+      <p class="ad-caption" style="margin-top: -6px;">下班時間早於上班時間時，視為隔天下班（夜間作業）。</p>
+      <div class="ad-field">
+        <label class="ad-label" for="fReason">原因（必填，會留在修正紀錄）</label>
+        <input id="fReason" type="text" class="ad-input" maxlength="200" autocomplete="off" placeholder="例：手機沒電，帶班師傅確認 8:00 到場">
+      </div>
+      <div id="editMsg" role="alert" hidden></div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button type="button" class="ad-btn ad-btn--ghost" onclick="document.getElementById('editDialog').close()">關閉</button>
+        <button id="editBtn" type="submit" class="ad-btn ad-btn--primary">儲存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 結算／重新開放 -->
+  <dialog id="monthDialog" class="ad-card" style="max-width: 460px; width: calc(100vw - 32px); border: 1px solid var(--ad-border); padding: 20px;">
+    <form id="monthForm" method="dialog" style="display: flex; flex-direction: column; gap: 14px;">
+      <h2 id="monthTitle" class="ad-heading"></h2>
+      <p id="monthDesc" class="ad-caption"></p>
+      <div id="reasonField" class="ad-field">
+        <label class="ad-label" for="mReason">重新開放原因（必填）</label>
+        <input id="mReason" type="text" class="ad-input" maxlength="200" autocomplete="off">
+      </div>
+      <div id="monthMsg" role="alert" hidden></div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button type="button" class="ad-btn ad-btn--ghost" onclick="document.getElementById('monthDialog').close()">關閉</button>
+        <button id="monthBtn" type="submit" class="ad-btn ad-btn--primary">確定</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 補登／修正歷程 -->
+  <dialog id="historyDialog" class="ad-card" style="max-width: 560px; width: calc(100vw - 32px); border: 1px solid var(--ad-border); padding: 20px;">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <h2 class="ad-heading">補登／修正紀錄</h2>
+      <p id="historyWho" class="ad-caption"></p>
+      <div id="historyRows" class="ad-list"></div>
+      <div style="display: flex; justify-content: flex-end;">
+        <button type="button" class="ad-btn ad-btn--ghost" onclick="document.getElementById('historyDialog').close()">關閉</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    const API = (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+    const demoNav = window.AgriTheme ? AgriTheme.demoNav() : { open() {} };
+    let months = [];
+    let view = null;        // 目前月份總覽
+    let records = [];       // 目前月份出勤
+    let workers = [];       // 補登用工人清單
+    let editing = null;     // 修正中的出勤；null 表示補登
+    let monthAction = null; // 'settle' | 'reopen'
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function money(n) { return 'NT$ ' + Math.round(Number(n) || 0).toLocaleString('zh-TW'); }
+    function hrs(n) { return n == null ? '—' : (Math.round(n * 10) / 10) + ' h'; }
+    function hm(t) { return t ? String(t).slice(11, 16) : ''; }
+    /** 下班時間：跨日時標「隔日」 */
+    function outText(r) {
+      if (!r.clockOut) return '<span class="ad-pill ad-pill--danger">未下班</span>';
+      return (String(r.clockOut).slice(0, 10) !== r.workDate ? '隔日 ' : '') + esc(hm(r.clockOut));
+    }
+    function stamp(t) { return t ? String(t).replace('T', ' ').slice(0, 16) : '—'; }
+
+    async function api(path, init) {
+      const res = await fetch(`${API}${path}`, init);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body.success === false) {
+        throw new Error(res.status === 403 ? '只有科技後台管理員可以操作出勤與月結算' : (body.error || body.message || `HTTP ${res.status}`));
+      }
+      return body;
+    }
+    const post = (path, data, method) => api(path, { method: method || 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data || {}) });
+    const errText = (e) => e instanceof TypeError ? '無法連線伺服器' : e.message;
+
+    function showPageMsg(text, kind) {
+      const el = document.getElementById('pageMsg');
+      el.className = `ad-notice ad-notice--${kind || 'ok'}`;
+      el.textContent = text;
+      el.hidden = !text;
+    }
+
+    async function loadMonths() {
+      months = (await api('/payroll/months')).data || [];
+      const sel = document.getElementById('monthSel');
+      const keep = sel.value;
+      sel.innerHTML = months.map(m => `<option value="${esc(m.month)}">${esc(m.month)}　${esc(m.statusLabel)}${m.ended ? '' : '（本月）'}</option>`).join('');
+      // 預設：最近一個已過完、還沒結算的月份；都結算了就選上個月
+      const pick = keep || (months.find(m => m.ended && !m.settled) || months[1] || months[0] || {}).month;
+      if (pick) sel.value = pick;
+    }
+
+    async function load() {
+      const err = document.getElementById('loadError');
+      const month = document.getElementById('monthSel').value;
+      if (!month) return;
+      try {
+        const [ov, recs] = await Promise.all([api(`/payroll/months/${encodeURIComponent(month)}`), api(`/payroll/attendance?month=${encodeURIComponent(month)}`)]);
+        view = ov.data;
+        records = recs.data || [];
+        err.hidden = true;
+      } catch (e) {
+        view = null;
+        records = [];
+        err.textContent = `無法載入出勤與結算資料：${errText(e)}`;
+        err.hidden = false;
+      }
+      render();
+    }
+
+    function render() {
+      const v = view || { workers: [], issues: [] };
+      const pill = document.getElementById('statusPill');
+      pill.className = v.settled ? 'ad-pill ad-pill--ok' : v.status === 'reopened' ? 'ad-pill ad-pill--warn' : 'ad-pill';
+      pill.textContent = v.statusLabel || '';
+      document.getElementById('statusMeta').textContent = v.settled ? `${stamp(v.settledAt)} 由 ${v.settledBy || '—'} 結算`
+        : v.status === 'reopened' ? `${stamp(v.reopenedAt)} 由 ${v.reopenedBy || '—'} 重新開放：${v.reopenReason || ''}`
+        : v.ended === false ? '本月尚未結束，不能結算' : '';
+      document.getElementById('settleBtn').hidden = !(view && !v.settled && v.ended);
+      document.getElementById('settleBtn').disabled = !v.canSettle;
+      document.getElementById('settleBtn').title = v.canSettle ? '' : (v.blockers ? '還有未下班的出勤，請先修正' : '');
+      document.getElementById('reopenBtn').hidden = !v.settled;
+      document.getElementById('createBtn').disabled = !!v.settled;
+      document.getElementById('createBtn').title = v.settled ? '該月已結算，請先重新開放' : '';
+      document.getElementById('slipKind').textContent = v.settled ? '已結算' : '試算';
+
+      const tiles = [
+        ['有出勤的工人', `${(v.workers || []).length} 人`, 'ad-stat--primary'],
+        ['總工時', hrs(v.totalWorkedHours), ''],
+        ['實領合計', money(v.totalNetPay), 'ad-stat--accent'],
+        ['待修正', `${v.blockers || 0} 筆`, v.blockers ? 'ad-stat--danger' : '']
+      ];
+      document.getElementById('kpiRow').innerHTML = tiles.map(([k, val, c]) => `
+        <div class="ad-stat ${c}"><div class="ad-stat__label">${esc(k)}</div><div class="ad-stat__value">${esc(val)}</div></div>`).join('');
+
+      const issues = v.issues || [];
+      document.getElementById('issues').innerHTML = issues.length ? `
+        <div class="ad-notice ${v.blockers ? 'ad-notice--danger' : 'ad-notice--warn'}" style="flex-direction: column; align-items: flex-start; gap: 6px;">
+          <div style="font-weight: 600;">${v.blockers ? `有 ${v.blockers} 筆未下班的出勤，修正後才能結算` : '請確認以下出勤'}</div>
+          ${issues.map(i => {
+            const r = records.find(x => String(x.id) === String(i.attendanceId));
+            return `<div>${esc(i.workDate)}・${esc(r ? r.workerName : i.workerId)}（${esc(i.workerId)}）・${esc(i.label)}
+              ${v.settled ? '' : `<button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" data-edit="${esc(i.attendanceId)}" style="margin-left: 6px;">修正</button>`}</div>`;
+          }).join('')}
+        </div>` : '';
+
+      document.getElementById('slipRows').innerHTML = (v.workers || []).length ? v.workers.map(w => `
+        <tr>
+          <td>${esc(w.workerName || w.workerId)} <span class="ad-caption">${esc(w.workerId)}</span></td>
+          <td class="ad-num" style="text-align: right;">${esc(w.workDays)}</td>
+          <td class="ad-num" style="text-align: right;">${hrs(w.workedHours)}</td>
+          <td class="ad-num" style="text-align: right;">${hrs(w.overtimeHours)}</td>
+          <td class="ad-num" style="text-align: right;">${money(w.grossPay)}</td>
+          <td class="ad-num" style="text-align: right;">−${money(w.totalDeductions)}</td>
+          <td class="ad-num" style="text-align: right; font-weight: 600;">${money(w.netPay)}</td>
+          <td>${w.settled ? `<span class="ad-pill ad-pill--ok">${esc(w.slipId)}</span>` : '<span class="ad-pill">試算</span>'}</td>
+        </tr>`).join('') : '<tr><td colspan="8" class="ad-caption" style="text-align: center; padding: 24px;">這個月沒有已下班的出勤。</td></tr>';
+
+      renderRecords();
+    }
+
+    function renderRecords() {
+      const q = document.getElementById('q').value.trim().toLowerCase();
+      const f = document.getElementById('recFilter').value;
+      const locked = view && view.settled;
+      const list = records.filter(r => (!q || [r.workerName, r.workerId, r.workDate, r.orderId].some(x => String(x || '').toLowerCase().includes(q)))
+        && (f !== 'issue' || r.open || r.longShift) && (f !== 'changed' || r.corrections > 0));
+      document.getElementById('recCount').textContent = `共 ${list.length} 筆（本月 ${records.length} 筆）`;
+      document.getElementById('recRows').innerHTML = list.length ? list.map(r => {
+        const tags = [
+          r.manual ? '<span class="ad-pill">補登</span>' : '',
+          r.corrections > (r.manual ? 1 : 0) ? `<span class="ad-pill ad-pill--warn">修正 ${r.corrections - (r.manual ? 1 : 0)} 次</span>` : '',
+          r.longShift ? '<span class="ad-pill ad-pill--warn">超過 16 小時</span>' : ''
+        ].join(' ');
+        return `<tr>
+          <td class="ad-num">${esc(r.workDate)}</td>
+          <td>${esc(r.workerName || r.workerId)} <span class="ad-caption">${esc(r.workerId)}</span>${r.orderId ? `<div class="ad-caption">${esc(r.orderId)}</div>` : ''}</td>
+          <td class="ad-num">${esc(hm(r.clockIn))}</td>
+          <td class="ad-num">${outText(r)}</td>
+          <td class="ad-num" style="text-align: right;">${hrs(r.actualHours)}</td>
+          <td class="ad-num" style="text-align: right;">${r.overtimeHours ? hrs(r.overtimeHours) : '—'}</td>
+          <td>${tags}</td>
+          <td style="white-space: nowrap; text-align: right;">
+            ${r.corrections ? `<button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-history="${esc(r.id)}">紀錄</button>` : ''}
+            ${locked ? '' : `<button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" data-edit="${esc(r.id)}">修正</button>`}
+          </td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="8" class="ad-caption" style="text-align: center; padding: 24px;">沒有符合的出勤。</td></tr>';
+    }
+
+    // ---------------- 補登／修正 ----------------
+    function editMsg(text, kind) {
+      const el = document.getElementById('editMsg');
+      el.className = `ad-notice ad-notice--${kind || 'danger'}`;
+      el.textContent = text;
+      el.hidden = !text;
+    }
+
+    async function openCreate() {
+      editing = null;
+      if (!workers.length) {
+        try { workers = (await api('/workers')).data || []; } catch (e) { workers = []; }
+      }
+      document.getElementById('fWorker').innerHTML = workers.map(w => `<option value="${esc(w.id)}">${esc(w.id)}　${esc(w.chineseName || w.name)}${w.teamId ? '（' + esc(w.teamId) + '）' : ''}</option>`).join('');
+      const month = document.getElementById('monthSel').value;
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById('fDate').value = today.slice(0, 7) === month ? today : `${month}-01`;
+      document.getElementById('fDate').max = today;
+      document.getElementById('fOrder').value = '';
+      document.getElementById('fIn').value = '08:00';
+      document.getElementById('fOut').value = '17:00';
+      document.getElementById('fReason').value = '';
+      document.getElementById('editTitle').textContent = '補登出勤';
+      document.getElementById('editWho').hidden = true;
+      document.getElementById('createFields').hidden = false;
+      resetEditBtn();
+      document.getElementById('editDialog').showModal();
+    }
+
+    function openEdit(id) {
+      const r = records.find(x => String(x.id) === String(id));
+      if (!r) return;
+      editing = r;
+      document.getElementById('editTitle').textContent = r.open ? '補上下班時間' : '修正出勤時間';
+      const who = document.getElementById('editWho');
+      who.textContent = `${r.workerName || r.workerId}（${r.workerId}）・${r.workDate}・原本 ${hm(r.clockIn)}～${r.clockOut ? hm(r.clockOut) : '未下班'}`;
+      who.hidden = false;
+      document.getElementById('createFields').hidden = true;
+      document.getElementById('fIn').value = hm(r.clockIn);
+      document.getElementById('fOut').value = r.clockOut ? hm(r.clockOut) : '';
+      document.getElementById('fReason').value = '';
+      resetEditBtn();
+      document.getElementById('editDialog').showModal();
+    }
+
+    function resetEditBtn() {
+      const btn = document.getElementById('editBtn');
+      btn.disabled = false;
+      btn.textContent = '儲存';
+      editMsg('');
+    }
+
+    document.getElementById('editForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const reason = document.getElementById('fReason').value.trim();
+      const clockIn = document.getElementById('fIn').value, clockOut = document.getElementById('fOut').value;
+      if (!clockIn || !clockOut) return editMsg('請填上班與下班時間。');
+      if (!reason) return editMsg('請填寫原因。');
+      const btn = document.getElementById('editBtn');
+      btn.disabled = true;
+      try {
+        if (editing) {
+          await post(`/payroll/attendance/${encodeURIComponent(editing.id)}`, { clockIn, clockOut, reason }, 'PUT');
+        } else {
+          await post('/payroll/attendance', {
+            workerId: document.getElementById('fWorker').value, workDate: document.getElementById('fDate').value,
+            orderId: document.getElementById('fOrder').value.trim() || null, clockIn, clockOut, reason
+          });
+        }
+        document.getElementById('editDialog').close();
+        showPageMsg(editing ? '已修正出勤，工時已重算。' : '已補登出勤。');
+        await load();
+      } catch (err) {
+        btn.disabled = false;
+        editMsg(`未儲存：${errText(err)}`);
+      }
+    });
+
+    // ---------------- 歷程 ----------------
+    async function openHistory(id) {
+      const r = records.find(x => String(x.id) === String(id));
+      document.getElementById('historyWho').textContent = r ? `${r.workerName || r.workerId}（${r.workerId}）・${r.workDate}` : '';
+      const box = document.getElementById('historyRows');
+      box.innerHTML = '<p class="ad-caption">載入中…</p>';
+      document.getElementById('historyDialog').showModal();
+      try {
+        const list = (await api(`/payroll/attendance/${encodeURIComponent(id)}/corrections`)).data || [];
+        box.innerHTML = list.map(c => `
+          <div class="ad-row" style="align-items: flex-start;">
+            <div class="ad-row__main">
+              <div class="ad-row__title" style="white-space: normal;">${esc(c.actionLabel)}・${esc(stamp(c.createdAt))}・${esc(c.operator)}</div>
+              <div class="ad-row__meta">${c.action === 'create' ? '' : `${esc(hm(c.beforeClockIn))}～${c.beforeClockOut ? esc(hm(c.beforeClockOut)) : '未下班'} → `}${esc(hm(c.afterClockIn))}～${esc(hm(c.afterClockOut))}</div>
+              <div class="ad-caption" style="margin-top: 4px;">原因：${esc(c.reason)}</div>
+            </div>
+          </div>`).join('') || '<p class="ad-caption">沒有紀錄。</p>';
+      } catch (err) {
+        box.innerHTML = `<div class="ad-notice ad-notice--danger">無法載入：${esc(errText(err))}</div>`;
+      }
+    }
+
+    // ---------------- 結算／重新開放 ----------------
+    function monthMsg(text, kind) {
+      const el = document.getElementById('monthMsg');
+      el.className = `ad-notice ad-notice--${kind || 'danger'}`;
+      el.textContent = text;
+      el.hidden = !text;
+    }
+
+    function openMonth(action) {
+      if (!view) return;
+      monthAction = action;
+      const settle = action === 'settle';
+      document.getElementById('monthTitle').textContent = settle ? `結算 ${view.month}` : `重新開放 ${view.month}`;
+      document.getElementById('monthDesc').textContent = settle
+        ? `將為 ${(view.workers || []).length} 位工人產生薪資單（實領合計 ${money(view.totalNetPay)}）。結算後該月出勤鎖定，不能再補登或修正。`
+        : '重新開放後會刪除該月的結算薪資單，可再補登、修正後重新結算。工人頁會回到試算。';
+      document.getElementById('reasonField').hidden = settle;
+      document.getElementById('mReason').value = '';
+      const btn = document.getElementById('monthBtn');
+      btn.className = `ad-btn ${settle ? 'ad-btn--primary' : 'ad-btn--danger'}`;
+      btn.textContent = settle ? '確定結算' : '重新開放';
+      btn.disabled = false;
+      monthMsg('');
+      document.getElementById('monthDialog').showModal();
+    }
+
+    document.getElementById('monthForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const month = view && view.month;
+      if (!month) return;
+      const reason = document.getElementById('mReason').value.trim();
+      if (monthAction === 'reopen' && !reason) return monthMsg('請填寫重新開放的原因。');
+      const btn = document.getElementById('monthBtn');
+      btn.disabled = true;
+      try {
+        await post(`/payroll/months/${encodeURIComponent(month)}/${monthAction}`, monthAction === 'reopen' ? { reason } : {});
+        document.getElementById('monthDialog').close();
+        showPageMsg(monthAction === 'settle' ? `${month} 已結算，出勤已鎖定。` : `${month} 已重新開放。`);
+        await loadMonths();
+        await load();
+      } catch (err) {
+        btn.disabled = false;
+        monthMsg(`未完成：${errText(err)}`);
+      }
+    });
+
+    // ---------------- 事件 ----------------
+    document.addEventListener('click', (e) => {
+      const ed = e.target.closest('button[data-edit]');
+      if (ed) return openEdit(ed.dataset.edit);
+      const h = e.target.closest('button[data-history]');
+      if (h) return openHistory(h.dataset.history);
+    });
+    document.getElementById('createBtn').addEventListener('click', openCreate);
+    document.getElementById('settleBtn').addEventListener('click', () => openMonth('settle'));
+    document.getElementById('reopenBtn').addEventListener('click', () => openMonth('reopen'));
+    document.getElementById('monthSel').addEventListener('change', () => { showPageMsg(''); load(); });
+    document.getElementById('q').addEventListener('input', renderRecords);
+    document.getElementById('recFilter').addEventListener('change', renderRecords);
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (window.lucide) lucide.createIcons();
+      try {
+        await loadMonths();
+      } catch (e) {
+        const err = document.getElementById('loadError');
+        err.textContent = `無法載入月份：${errText(e)}`;
+        err.hidden = false;
+        return;
+      }
+      load();
+    });
+  </script>
+</body>
+</html>

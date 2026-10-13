@@ -111,7 +111,7 @@
 
   // ---------------- 使用者／登入 ----------------
   var ROLE_BY_PAGE = [
-    [/^(admin|vue-crud|insurance|skills|matching|accounts|leaves)/, 'admin_tech'],
+    [/^(admin|vue-crud|insurance|skills|matching|accounts|leaves|payroll)/, 'admin_tech'],
     [/^(farmer|legalize|expenses)/, 'farmer'],
     [/^worker-foreign/, 'worker_foreign'],
     [/^worker-local|^worker-skills/, 'worker_local']
@@ -1460,6 +1460,237 @@
     return respond(200, { success: true, data: leaveView(l), message: msg });
   }
 
+  // ---------------- 出勤補登／修正、月結算（移植自後端 PayrollService／WorkerService.slipFor；狀態存 localStorage）----------------
+  var PAYROLL_KEY = 'MOCK /payroll';
+  var PAY_MIN_MONTHLY = 29500, PAY_MIN_HOURLY = 196, PAY_MONTH_HOURS = 240, PAY_OT_RATE = 4 / 3;
+  var MANUAL_LOCATION = '合作社補登';
+  function payFail(status, msg) { var e = new Error(msg); e.status = status; return e; }
+  function payTry(fn) {
+    try { return respond(200, { success: true, data: fn() }); } catch (err) { return respond(err.status || 400, { success: false, error: err.message }); }
+  }
+  function payrollState() { var e = get(PAYROLL_KEY); return e && e.months ? e : { months: {}, corrections: [] }; }
+  function payWorkers() { return listOf(get('GET /workers')) || []; }
+  function payName(w) { return w ? (w.chineseName || w.name || w.id) : ''; }
+  function ymNow() { return localStamp(new Date()).slice(0, 7); }
+  function ymAdd(ym, n) {
+    var m = +ym.slice(0, 4) * 12 + (+ym.slice(5, 7) - 1) + n;
+    return Math.floor(m / 12) + '-' + ('0' + (m % 12 + 1)).slice(-2);
+  }
+  function payMonth(s) {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(String(s || ''))) throw payFail(400, '月份須為 YYYY-MM');
+    if (s > ymNow()) throw payFail(400, '不可查詢未來的月份');
+    return s;
+  }
+  function round1(n) { return Math.round(n * 10) / 10; }
+  /** 某月全部（或指定工人）的出勤 */
+  function payRecords(month, workerId) {
+    var out = [];
+    payWorkers().forEach(function (w) {
+      if (workerId && w.id !== workerId) return;
+      attendanceStore(w.id).list.forEach(function (a) { if (String(a.workDate).slice(0, 7) === month) out.push(a); });
+    });
+    out.sort(function (a, b) { return String(a.workDate + a.clockInTime).localeCompare(String(b.workDate + b.clockInTime)); });
+    return out;
+  }
+  function payFind(id) {
+    var ws = payWorkers();
+    for (var i = 0; i < ws.length; i++) {
+      var st = attendanceStore(ws[i].id);
+      for (var j = 0; j < st.list.length; j++) if (String(st.list[j].id) === String(id)) return { st: st, rec: st.list[j], workerId: ws[i].id };
+    }
+    return null;
+  }
+  function paySlip(w, month) {
+    var recs = payRecords(month, w.id);
+    var ot = 0, total = 0, days = {};
+    recs.forEach(function (a) { ot += a.overtimeHours || 0; total += a.actualHours || 0; if (a.clockOutTime) days[a.workDate] = 1; });
+    var turnkey = w.tier === 'tier3_turnkey';
+    var base = turnkey ? (w.baseSalary || 0) : Math.max(w.baseSalary || 0, PAY_MIN_MONTHLY);
+    var hourly = Math.max(base / PAY_MONTH_HOURS, PAY_MIN_HOURLY);
+    var otPay = Math.round(ot * hourly * PAY_OT_RATE);
+    var labor = Math.round(base * 0.125 * 0.2), health = Math.round(base * 0.0517 * 0.3);
+    var gross = base + (w.agriBonus || 0) + (w.transportAllowance || 0) + otPay;
+    return {
+      workerId: w.id, workerName: payName(w), tier: w.tier, workDays: Object.keys(days).length,
+      workedHours: round1(total), overtimeHours: round1(ot), baseSalary: base, agriSubsidy: w.agriBonus || 0,
+      transportHeatAllowance: w.transportAllowance || 0, overtimePay: otPay, laborInsuranceDeduction: labor,
+      healthInsuranceDeduction: health, taxWithholding: 0, grossPay: gross, totalDeductions: labor + health,
+      netPay: gross - labor - health
+    };
+  }
+  function payWorkersWith(month) {
+    var ids = {};
+    payRecords(month).forEach(function (a) { if (a.clockOutTime) ids[a.workerId] = 1; });
+    return payWorkers().filter(function (w) { return ids[w.id]; }).sort(function (a, b) { return a.id < b.id ? -1 : 1; });
+  }
+  function payMonthInfo(month) {
+    var pm = payrollState().months[month];
+    var m = { month: month, status: pm ? pm.status : 'open', statusLabel: !pm ? '未結算' : pm.status === 'settled' ? '已結算' : '已重新開放',
+      settled: !!pm && pm.status === 'settled', ended: month < ymNow() };
+    if (pm) ['settledAt', 'settledBy', 'workerCount', 'totalNet', 'reopenedAt', 'reopenedBy', 'reopenReason'].forEach(function (k) { m[k] = pm[k] == null ? null : pm[k]; });
+    return m;
+  }
+  function payIssues(recs) {
+    var out = [];
+    recs.forEach(function (a) {
+      var type = !a.clockOutTime ? 'missing_clock_out' : (a.actualHours || 0) > 16 ? 'long_shift' : null;
+      if (type) out.push({ attendanceId: a.id, workerId: a.workerId, workDate: a.workDate, type: type,
+        label: type === 'missing_clock_out' ? '未下班打卡（結算前須修正）' : '工時超過 16 小時，請確認' });
+    });
+    return out;
+  }
+  function payOverview(month) {
+    payMonth(month);
+    var d = payMonthInfo(month), pm = payrollState().months[month];
+    var issues = payIssues(payRecords(month));
+    var blockers = issues.filter(function (i) { return i.type === 'missing_clock_out'; }).length;
+    d.issues = issues;
+    d.blockers = blockers;
+    d.canSettle = month < ymNow() && !d.settled && blockers === 0;
+    d.workers = d.settled ? clone(pm.slips) : payWorkersWith(month).map(function (w) {
+      var s = paySlip(w, month); s.status = '試算'; s.settled = false; return s;
+    });
+    d.totalWorkedHours = round1(d.workers.reduce(function (t, w) { return t + (w.workedHours || 0); }, 0));
+    d.totalNetPay = d.workers.reduce(function (t, w) { return t + (w.netPay || 0); }, 0);
+    d.note = '勞健保自付額為概估；依工作型態（兼職、打工）計時薪的規則【待確認】（示範資料，存在瀏覽器）';
+    return d;
+  }
+  function paySettle(month) {
+    payMonth(month);
+    if (month >= ymNow()) throw payFail(400, '只能結算已過完的月份（' + month + ' 尚未結束）');
+    var ps = payrollState(), pm = ps.months[month];
+    if (pm && pm.status === 'settled') throw payFail(409, month + ' 已結算');
+    var open = payRecords(month).filter(function (a) { return !a.clockOutTime; });
+    if (open.length) throw payFail(409, '還有 ' + open.length + ' 筆未下班的出勤，請先修正：' + open.map(function (a) { return a.workerId + '（' + a.workDate + '）'; }).join('、'));
+    var slips = payWorkersWith(month).map(function (w) {
+      var s = paySlip(w, month);
+      s.slipId = 'PS-' + month.replace('-', '') + '-' + w.id; s.period = month.slice(0, 4) + '年' + month.slice(5) + '月'; s.month = month;
+      s.status = '已結算'; s.settled = true; s.simulated = false; s.deductionsEstimated = true;
+      return s;
+    });
+    var me = currentUser();
+    ps.months[month] = Object.assign({}, pm, { status: 'settled', settledAt: localStamp(new Date()), settledBy: (me && me.username) || 'admin_tech',
+      workerCount: slips.length, totalNet: slips.reduce(function (t, s) { return t + s.netPay; }, 0), slips: slips });
+    put(PAYROLL_KEY, ps);
+    return payOverview(month);
+  }
+  function payReopen(month, reason) {
+    payMonth(month);
+    if (blank(reason)) throw payFail(400, '請填寫原因');
+    var ps = payrollState(), pm = ps.months[month];
+    if (!pm || pm.status !== 'settled') throw payFail(409, month + ' 尚未結算，不需重新開放');
+    var me = currentUser();
+    ps.months[month] = Object.assign({}, pm, { status: 'reopened', slips: null, reopenedAt: localStamp(new Date()),
+      reopenedBy: (me && me.username) || 'admin_tech', reopenReason: String(reason).trim().slice(0, 200) });
+    put(PAYROLL_KEY, ps);
+    return payOverview(month);
+  }
+  function payLocked(date) {
+    var pm = payrollState().months[String(date).slice(0, 7)];
+    if (pm && pm.status === 'settled') throw payFail(409, String(date).slice(0, 7) + ' 已月結算，出勤不可再補登或修正；如需更正請先重新開放該月');
+  }
+  function payTime(v, label) {
+    var s = String(v == null ? '' : v).trim();
+    if (!/^\d{1,2}:\d{2}$/.test(s)) throw payFail(400, blank(s) ? '請填' + label + '（HH:mm）' : label + '須為 HH:mm');
+    var p = s.split(':');
+    if (+p[0] > 23 || +p[1] > 59) throw payFail(400, label + '須為 HH:mm');
+    return ('0' + p[0]).slice(-2) + ':' + p[1];
+  }
+  function payShift(date, inText, outText) {
+    var tin = payTime(inText, '上班時間'), tout = payTime(outText, '下班時間');
+    if (tin === tout) throw payFail(400, '上班與下班時間不可相同');
+    var start = new Date(date + 'T' + tin + ':00'), end = new Date(date + 'T' + tout + ':00');
+    if (tout < tin) end.setDate(end.getDate() + 1);
+    if (end > new Date()) throw payFail(400, '下班時間不可晚於現在');
+    return [start, end];
+  }
+  function payOverlap(workerId, shift, selfId) {
+    attendanceStore(workerId).list.forEach(function (o) {
+      if (String(o.id) === String(selfId) || !o.clockInTime) return;
+      var oin = new Date(o.clockInTime), oout = o.clockOutTime ? new Date(o.clockOutTime) : new Date(8640000000000000);
+      if (shift[0] < oout && oin < shift[1]) throw payFail(409, '與同一工人 ' + o.workDate + ' 的出勤（' + String(o.clockInTime).slice(11, 16) + ' 起）時間重疊');
+    });
+  }
+  function payAudit(a, action, beforeIn, beforeOut, reason) {
+    var ps = payrollState(), me = currentUser();
+    ps.corrections.push({ clockInId: a.id, action: action, actionLabel: action === 'create' ? '補登' : '修正',
+      beforeClockIn: beforeIn || null, beforeClockOut: beforeOut || null, afterClockIn: a.clockInTime, afterClockOut: a.clockOutTime,
+      reason: reason, operator: (me && me.username) || 'admin_tech', createdAt: localStamp(new Date()) });
+    put(PAYROLL_KEY, ps);
+  }
+  function payCount(id) { return payrollState().corrections.filter(function (c) { return String(c.clockInId) === String(id); }).length; }
+  function payView(a) {
+    var w = findIn('GET /workers', a.workerId);
+    return { id: a.id, workerId: a.workerId, workerName: payName(w), workDate: a.workDate, clockIn: a.clockInTime, clockOut: a.clockOutTime,
+      actualHours: a.actualHours, overtimeHours: a.overtimeHours, status: a.status, orderId: a.orderId, location: a.location,
+      manual: a.location === MANUAL_LOCATION, open: !a.clockOutTime, longShift: (a.actualHours || 0) > 16, corrections: payCount(a.id) };
+  }
+  function payReason(v) {
+    if (blank(v)) throw payFail(400, '請填寫原因');
+    if (String(v).trim().length > 200) throw payFail(400, '原因最多 200 字');
+    return String(v).trim();
+  }
+  function payCreate(b) {
+    if (blank(b.workerId)) throw payFail(400, '請選擇工人（workerId）');
+    var w = findIn('GET /workers', b.workerId);
+    if (!w) throw payFail(404, '找不到工人：' + b.workerId);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(b.workDate || ''))) throw payFail(400, '出勤日期須為 YYYY-MM-DD');
+    if (b.workDate > localStamp(new Date()).slice(0, 10)) throw payFail(400, '出勤日期不可晚於今天');
+    var shift = payShift(b.workDate, b.clockIn, b.clockOut), reason = payReason(b.reason);
+    payLocked(b.workDate);
+    payOverlap(w.id, shift, null);
+    var maxId = 0;
+    payWorkers().forEach(function (x) { attendanceStore(x.id).list.forEach(function (a) { maxId = Math.max(maxId, +a.id || 0); }); });
+    var st = attendanceStore(w.id);
+    var a = { id: maxId + 1, workerId: w.id, workDate: b.workDate, clockInTime: localStamp(shift[0]), clockOutTime: null,
+      location: MANUAL_LOCATION, gpsAccuracyMeters: null, status: 'working', actualHours: null, normalHours: null, overtimeHours: null,
+      foremanSignature: null, orderId: blank(b.orderId) ? null : String(b.orderId).trim(), foremanRating: null, foremanRatedBy: null,
+      foremanRatedAt: null, createdAt: localStamp(new Date()) };
+    completeShift(a, shift[1]);
+    st.list.unshift(a);
+    st.list.sort(function (x, y) { return String(y.workDate).localeCompare(String(x.workDate)); });
+    saveAttendance(w.id, st);
+    payAudit(a, 'create', null, null, reason);
+    return payView(a);
+  }
+  function payUpdate(id, b) {
+    var reason = payReason(b.reason);
+    var hit = payFind(id);
+    if (!hit) throw payFail(404, '找不到出勤紀錄：' + id);
+    var a = hit.rec;
+    payLocked(a.workDate);
+    var beforeIn = a.clockInTime, beforeOut = a.clockOutTime;
+    var inText = blank(b.clockIn) ? String(beforeIn).slice(11, 16) : b.clockIn;
+    var outText = !blank(b.clockOut) ? b.clockOut : beforeOut ? String(beforeOut).slice(11, 16) : null;
+    if (outText == null) throw payFail(400, '這筆出勤尚未下班，請填下班時間');
+    var shift = payShift(a.workDate, inText, outText);
+    if (localStamp(shift[0]) === beforeIn && localStamp(shift[1]) === beforeOut) throw payFail(400, '時間沒有變更');
+    payOverlap(hit.workerId, shift, a.id);
+    a.clockInTime = localStamp(shift[0]);
+    completeShift(a, shift[1]);
+    saveAttendance(hit.workerId, hit.st);
+    payAudit(a, 'update', beforeIn, beforeOut, reason);
+    return payView(a);
+  }
+  function payMonths() {
+    var out = [], m = ymNow();
+    for (var i = 0; i < 12; i++) out.push(payMonthInfo(ymAdd(m, -i)));
+    return out;
+  }
+  /** 工人薪資頁：已結算月份的薪資單換成結算快照（同後端 WorkerService.calculatePayroll） */
+  function paySettledSlips(entry, workerId) {
+    var months = payrollState().months;
+    var data = entry && entry.b && entry.b.data;
+    if (!data || !Array.isArray(data.historicalSlips)) return entry;
+    data.historicalSlips = data.historicalSlips.map(function (s) {
+      var ym = String(s.period || '').replace(/^(\d{4})年(\d{2})月$/, '$1-$2');
+      var pm = months[ym];
+      var hit = pm && pm.status === 'settled' && (pm.slips || []).filter(function (x) { return x.workerId === workerId; })[0];
+      return hit ? clone(hit) : s;
+    });
+    return entry;
+  }
+
   function handleWrite(method, p, bodyText) {
     var sp = splitPath(p);
     var body = null;
@@ -1488,6 +1719,13 @@
         username: phone, name: String(r.name), role: 'farmer', refId: 'F900',
         roleDesc: (r.farmName || '自助註冊') + ' 農場主' } });
     }
+
+    // 出勤補登／修正、月結算（科技後台）
+    var pw = /^\/payroll\/(?:months\/([^/]+)\/(settle|reopen)|attendance(?:\/([^/]+))?)$/.exec(sp.path);
+    if (pw && pw[2] === 'settle' && method === 'POST') return payTry(function () { return paySettle(decodeURIComponent(pw[1])); });
+    if (pw && pw[2] === 'reopen' && method === 'POST') return payTry(function () { return payReopen(decodeURIComponent(pw[1]), (body || {}).reason); });
+    if (pw && !pw[2] && !pw[3] && method === 'POST') return payTry(function () { return payCreate(body || {}); });
+    if (pw && pw[3] && method === 'PUT') return payTry(function () { return payUpdate(decodeURIComponent(pw[3]), body || {}); });
 
     var lw = /^\/workers\/([^/]+)\/leaves$/.exec(sp.path);
     if (lw && method === 'POST') return leaveCreate(decodeURIComponent(lw[1]), body || {});
@@ -1649,6 +1887,21 @@
       if (sp.path === '/farmers/me/past-workers') return pastWorkersApi(sp.query);
       var rg = /^\/rosters(?:\/([^/]+))?$/.exec(sp.path);
       if (rg) return rostersApi(rg[1] && decodeURIComponent(rg[1]));
+      if (sp.path === '/payroll/months') return payTry(payMonths);
+      var pg = /^\/payroll\/months\/([^/]+)$/.exec(sp.path);
+      if (pg) return payTry(function () { return payOverview(decodeURIComponent(pg[1])); });
+      if (sp.path === '/payroll/attendance') {
+        var pq = function (k) { var m = new RegExp('[?&]' + k + '=([^&]*)').exec(sp.query); return m ? decodeURIComponent(m[1]) : ''; };
+        return payTry(function () { return payRecords(payMonth(pq('month')), pq('workerId') || null).map(payView); });
+      }
+      var pc = /^\/payroll\/attendance\/([^/]+)\/corrections$/.exec(sp.path);
+      if (pc) return payTry(function () {
+        var cid = decodeURIComponent(pc[1]);
+        if (!payFind(cid)) throw payFail(404, '找不到出勤紀錄：' + cid);
+        return payrollState().corrections.filter(function (c) { return String(c.clockInId) === cid; });
+      });
+      var pp = /^\/workers\/([^/]+)\/payroll$/.exec(sp.path);
+      if (pp && findGet(p)) { var pe = paySettledSlips(findGet(p), decodeURIComponent(pp[1])); return respond(pe.s || 200, pe.b); }
       if (sp.path === '/leaves/types') {
         return respond(200, { success: true, data: LEAVE_TYPES.map(function (t) { return { key: t[0], label: t[1] }; }) });
       }

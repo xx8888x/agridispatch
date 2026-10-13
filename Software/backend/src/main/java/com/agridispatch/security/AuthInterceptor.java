@@ -69,6 +69,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             new String[]{"GET", "/api/talents"}, new String[]{"GET", "/api/talents/**"},
             new String[]{"POST", "/api/talents"},
             new String[]{"PUT", "/api/talents/**"}, new String[]{"DELETE", "/api/talents/**"},
+            new String[]{"*", "/api/payroll/**"},                // 出勤補登／修正、月結算（PayrollController）
             new String[]{"GET", "/api/workers"},
             new String[]{"POST", "/api/workers"},
             new String[]{"PUT", "/api/workers/*"}, new String[]{"DELETE", "/api/workers/*"},

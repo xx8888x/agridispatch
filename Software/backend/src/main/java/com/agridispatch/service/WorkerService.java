@@ -4,7 +4,9 @@ import com.agridispatch.common.ApiException;
 import com.agridispatch.common.IdGenerator;
 import com.agridispatch.common.LaborConstants;
 import com.agridispatch.entity.Attendance;
+import com.agridispatch.entity.PayrollSlip;
 import com.agridispatch.entity.Worker;
+import com.agridispatch.repository.PayrollSlipRepository;
 import com.agridispatch.repository.WorkerRepository;
 import com.agridispatch.security.Masking;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,12 +34,15 @@ public class WorkerService {
     private final WorkerRepository workerRepository;
     private final AttendanceService attendanceService;
     private final ObjectMapper objectMapper;
+    private final PayrollSlipRepository payrollSlipRepository;
     private final Object idLock = new Object();
 
-    public WorkerService(WorkerRepository workerRepository, AttendanceService attendanceService, ObjectMapper objectMapper) {
+    public WorkerService(WorkerRepository workerRepository, AttendanceService attendanceService, ObjectMapper objectMapper,
+                         PayrollSlipRepository payrollSlipRepository) {
         this.workerRepository = workerRepository;
         this.attendanceService = attendanceService;
         this.objectMapper = objectMapper;
+        this.payrollSlipRepository = payrollSlipRepository;
     }
 
     public List<Worker> getAllWorkers() {
@@ -167,35 +172,31 @@ public class WorkerService {
 
     // =========================================================================
     // 薪資試算（依工人實際資料 + 本月出勤計算；勞健保扣款為概估，標示 simulated）
+    // 已月結算的月份改回傳結算當時的快照（payroll_slips，PayrollService.settle）
     // =========================================================================
 
     public Map<String, Object> calculatePayroll(String workerId) {
         Worker w = requireWorker(workerId);
         YearMonth ym = YearMonth.now();
-        List<Attendance> records = attendanceService.getAttendanceByMonth(workerId, ym.getYear(), ym.getMonthValue());
-        double overtimeHours = records.stream().mapToDouble(a -> a.getOvertimeHours() != null ? a.getOvertimeHours() : 0).sum();
-        double totalHours = records.stream().mapToDouble(a -> a.getActualHours() != null ? a.getActualHours() : 0).sum();
-
-        Map<String, Object> current = buildSlip(w, overtimeHours);
+        Map<String, Object> current = slipFor(w, ym);
         current.put("month", ym.getYear() + "年" + String.format("%02d", ym.getMonthValue()) + "月 (預估結算)");
         current.put("payDate", ym.plusMonths(1).atDay(5) + " (預定入帳)");
         current.put("bankAccount", "（尚未登錄薪轉帳戶）");
         current.put("status", "試算中");
-        current.put("workedHours", Math.round(totalHours * 10.0) / 10.0);
-        current.put("overtimeHours", Math.round(overtimeHours * 10.0) / 10.0);
 
         List<Map<String, Object>> pastSlips = new ArrayList<>();
         for (int i = 1; i <= 3; i++) {
             YearMonth past = ym.minusMonths(i);
-            // 歷月薪資單也依該月實際出勤的加班時數試算（與本月同一套 buildSlip），前端不需自備數字
-            List<Attendance> pastRecords = attendanceService.getAttendanceByMonth(workerId, past.getYear(), past.getMonthValue());
-            double pastOvertime = pastRecords.stream().mapToDouble(a -> a.getOvertimeHours() != null ? a.getOvertimeHours() : 0).sum();
-            Map<String, Object> brief = buildSlip(w, pastOvertime);
+            Optional<PayrollSlip> settled = payrollSlipRepository.findById(PayrollSlip.idOf(past.toString(), w.getId()));
+            if (settled.isPresent()) {
+                pastSlips.add(settled.get().toSlipMap());
+                continue;
+            }
+            // 未結算的歷月薪資單依該月實際出勤試算（與本月同一套 slipFor），前端不需自備數字
+            Map<String, Object> brief = slipFor(w, past);
             brief.put("period", past.getYear() + "年" + String.format("%02d", past.getMonthValue()) + "月");
-            brief.put("overtimeHours", Math.round(pastOvertime * 10.0) / 10.0);
             brief.put("status", "試算");
             brief.put("slipId", "SIM-" + past.toString().replace("-", "") + "-" + w.getId());
-            brief.put("simulated", true);
             pastSlips.add(brief);
         }
 
@@ -210,6 +211,21 @@ public class WorkerService {
         data.put("currentMonth", current);
         data.put("historicalSlips", pastSlips);
         return data;
+    }
+
+    /**
+     * 指定月份的薪資單：依該月已下班的出勤累計工時、加班時數與出勤天數試算（月結算時存成 payroll_slips）
+     */
+    public Map<String, Object> slipFor(Worker w, YearMonth ym) {
+        List<Attendance> records = attendanceService.getAttendanceByMonth(w.getId(), ym.getYear(), ym.getMonthValue());
+        double overtimeHours = records.stream().mapToDouble(a -> a.getOvertimeHours() != null ? a.getOvertimeHours() : 0).sum();
+        double totalHours = records.stream().mapToDouble(a -> a.getActualHours() != null ? a.getActualHours() : 0).sum();
+        long days = records.stream().filter(a -> a.getClockOutTime() != null).map(Attendance::getWorkDate).distinct().count();
+        Map<String, Object> slip = buildSlip(w, overtimeHours);
+        slip.put("workDays", (int) days);
+        slip.put("workedHours", Math.round(totalHours * 10.0) / 10.0);
+        slip.put("overtimeHours", Math.round(overtimeHours * 10.0) / 10.0);
+        return slip;
     }
 
     private Map<String, Object> buildSlip(Worker w, double overtimeHours) {

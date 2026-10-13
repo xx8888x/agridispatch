@@ -1,6 +1,6 @@
 # 智農派工 (AgriDispatch) - 資料庫實體關聯圖與資料字典 (ERD)
 
-> **文件版本**：v3.6.0（2026-10-02，新增 `legalize_workers` 工班合法化清冊，見 2.15）；v3.5.0（2026-10-02，`line_users` 改為 LINE 雙帳號結構並開始使用，見 2.14）；v3.4.0（2026-10-01，依 `Software/backend/src/main/java/com/agridispatch/entity/*.java` 實際 JPA 實體更新：新增 `team_ratings`、`insurance_records`、`skill_reviews`、`clock_ins.orderId` 與領班評核欄位、`orders.crewWorkerIds`、`orders.startDate`／`endDate`，補列 `farmers`、`financial_ledger`、`line_users`、`line_messages`；v3.0.0 為 2026-09-23）
+> **文件版本**：v3.7.0（2026-10-13，新增出勤補登／修正與月結算 `attendance_corrections`、`payroll_months`、`payroll_slips`，見 2.17～2.19、第參章第 15 點）；v3.6.0（2026-10-02，新增 `legalize_workers` 工班合法化清冊，見 2.15）；v3.5.0（2026-10-02，`line_users` 改為 LINE 雙帳號結構並開始使用，見 2.14）；v3.4.0（2026-10-01，依 `Software/backend/src/main/java/com/agridispatch/entity/*.java` 實際 JPA 實體更新：新增 `team_ratings`、`insurance_records`、`skill_reviews`、`clock_ins.orderId` 與領班評核欄位、`orders.crewWorkerIds`、`orders.startDate`／`endDate`，補列 `farmers`、`financial_ledger`、`line_users`、`line_messages`；v3.0.0 為 2026-09-23）
 > **資料庫**：H2 檔案資料庫（`Software/backend/data/agridispatch_db`），Hibernate `ddl-auto: update` 自動建表
 > **Visio 圖檔**：同資料夾的 `.vdx` / `.vsdx` 為 v2.0 舊版，**以本文件的 Mermaid 圖為準**
 
@@ -130,6 +130,43 @@ erDiagram
         string foremanRatedBy "評核者（領班工號或 admin）"
         datetime foremanRatedAt
         datetime createdAt
+    }
+    attendance_corrections {
+        long id PK "自動遞增"
+        long clockInId "→ clock_ins.id"
+        string workerId "→ workers.id"
+        date workDate
+        string action "create 補登 / update 修正"
+        datetime beforeClockIn
+        datetime beforeClockOut
+        datetime afterClockIn
+        datetime afterClockOut
+        string reason "必填"
+        string operator "操作人帳號"
+        datetime createdAt
+    }
+    payroll_months {
+        string month PK "YYYY-MM（欄位 pay_month）"
+        string status "settled / reopened"
+        datetime settledAt
+        string settledBy
+        int workerCount
+        long totalNet
+        datetime reopenedAt
+        string reopenedBy
+        string reopenReason
+    }
+    payroll_slips {
+        string id PK "PS-YYYYMM-工號"
+        string month "→ payroll_months（欄位 pay_month）"
+        string workerId "→ workers.id"
+        string workerName
+        int workDays
+        double workedHours
+        double overtimeHours
+        int grossPay
+        int totalDeductions
+        int netPay
     }
     talents {
         string id PK
@@ -261,6 +298,9 @@ erDiagram
     orders ||..o{ payment_transactions : "orderId"
     workers ||..o{ clock_ins : "workerId"
     orders ||..o{ clock_ins : "orderId"
+    clock_ins ||..o{ attendance_corrections : "clockInId"
+    payroll_months ||..o{ payroll_slips : "month"
+    workers ||..o{ payroll_slips : "workerId"
     orders ||..o| team_ratings : "orderId"
     dispatch_teams ||..o{ team_ratings : "teamId"
     farmers ||..o{ legalize_workers : "farmerId（邏輯關聯）"
@@ -502,6 +542,44 @@ erDiagram
 ### 2.16 保留實體（程式尚未使用）
 `farmers`、`financial_ledger`、`line_messages` 為對應 Oracle 早期設計的 JPA 實體（2026-09-29 加入），目前沒有任何 Service／Controller 讀寫，H2 會因 `ddl-auto: update` 自動建立空表。農場主目前以 `users`（role=`farmer`）加 `orders.farmerId` 表示；雙軌分帳尚未落地成帳本資料。
 
+### 2.17 出勤補登／修正紀錄 `attendance_corrections`（實體 `AttendanceCorrection`，2026-10-13 起）
+| 欄位 | 型別 | 說明 |
+| :--- | :--- | :--- |
+| `id` (PK) | Long | 自動遞增 |
+| `clock_in_id` | Long | → `clock_ins.id`（補登時為新建的那筆） |
+| `worker_id` / `work_date` | String(32) / LocalDate | 冗餘存放，方便依工人、月份查詢 |
+| `action` | String(10) | `create` 補登 / `update` 修正 |
+| `before_clock_in` / `before_clock_out` | LocalDateTime | 修正前時間（補登為 null；未下班的紀錄 `before_clock_out` 為 null） |
+| `after_clock_in` / `after_clock_out` | LocalDateTime | 修正後時間（必填） |
+| `reason` | String(200) | 原因（必填） |
+| `operator` | String(64) | 操作人帳號（token sub） |
+| `created_at` | LocalDateTime | 建立時間 |
+
+> 只新增、不修改不刪除。API：`/api/payroll/attendance`（僅 admin），見第參章第 15 點。
+
+### 2.18 月結算 `payroll_months`（實體 `PayrollMonth`，2026-10-13 起）
+| 欄位 | 型別 | 說明 |
+| :--- | :--- | :--- |
+| `pay_month` (PK) | String(7) | `YYYY-MM`（`MONTH` 是 H2 保留字，故欄位名加前綴） |
+| `status` | String(10) | `settled` 已結算 / `reopened` 已重新開放；沒有資料列＝未結算 |
+| `settled_at` / `settled_by` | LocalDateTime / String(64) | 最近一次結算時間與操作人 |
+| `worker_count` / `total_net` | Integer / Long | 結算時的工人數與實領合計 |
+| `reopened_at` / `reopened_by` / `reopen_reason` | LocalDateTime / String(64) / String(200) | 最近一次重新開放 |
+
+### 2.19 月結算薪資單 `payroll_slips`（實體 `PayrollSlip`，2026-10-13 起）
+| 欄位 | 型別 | 說明 |
+| :--- | :--- | :--- |
+| `id` (PK) | String(40) | `PS-YYYYMM-工號`，例 `PS-202609-W026` |
+| `pay_month` | String(7) | → `payroll_months.pay_month`（Oracle 有外鍵：須先寫月份） |
+| `worker_id` / `worker_name` / `tier` | String | 結算當時的工人資料快照 |
+| `work_days` / `worked_hours` / `overtime_hours` | int / double / double | 該月已下班出勤的天數、工時、加班時數 |
+| `base_salary` / `agri_subsidy` / `transport_allowance` / `overtime_pay` | int | 應發項目（同 `WorkerService` 試算） |
+| `labor_insurance` / `health_insurance` | int | 勞健保自付額（概估） |
+| `gross_pay` / `total_deductions` / `net_pay` | int | 應發、扣款、實領 |
+| `created_at` | LocalDateTime | 結算時間 |
+
+> 同一月份同一工人唯一（Oracle `uq_payroll_slips_month_worker`）；重新開放該月時整批刪除。
+
 ---
 
 ## 參、 商業完整性規則（程式實作）
@@ -531,6 +609,11 @@ erDiagram
 12. **工班評價**：限訂單擁有者或 admin；訂單須為 `in_progress` 或 `completed` 且已分派工班；`score` 1～5、標籤限白名單、留言 ≤300 字。
 13. **種子資料**：`SeedService` 依 ID 補缺，只新增不存在的資料、不覆蓋既有內容；本國工 `arcNumber` 為 null。
 14. **權限**：農場主只能讀寫自己的訂單（`farmerId = token.ref`）；工人只能存取自己的出勤與薪資；詳見規格書第肆、捌章。
+15. **出勤補登／修正與月結算**（`PayrollService`，2026-10-13 起，僅 admin）：
+   - 補登 `{workerId, workDate, clockIn, clockOut, orderId?, reason}`、修正 `{clockIn?, clockOut?, reason}`：原因必填；下班早於上班視為隔天下班；單筆不超過 24 小時、下班不可晚於現在、出勤日不可晚於今天；與同一工人前後一天的其他出勤重疊回 409；工時依 `Attendance.completeShift` 重算；每次寫一筆 `attendance_corrections`。補登的出勤 `location` 為「合作社補登」。
+   - 月結算：只能結算已過完的月份；該月有未下班的出勤回 409（須先修正）；有已下班出勤的工人各存一張 `payroll_slips` 快照（不受外籍移工功能開關影響）。結算後該月出勤不可補登或修正（409）。
+   - 重新開放須填原因，刪除該月快照；工人薪資頁（`GET /api/workers/{id}/payroll`）與 LINE W-04 的歷月薪資單，已結算月份顯示快照（`status`「已結算」、`simulated:false`），未結算仍為試算。
+   - 計薪規則沿用 `WorkerService`（月薪制、勞健保概估）；兼職、打工依時薪計算【待確認】。
 
 ---
 

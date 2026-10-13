@@ -128,7 +128,8 @@
       { root: 'tech', href: 'matching.html', title: '派工媒合與出工名單', meta: '撞期排除、人選建議' },
       { root: 'tech', href: 'admin-line.html', title: 'LINE 官方帳號', meta: '兩帳號狀態、帳號綁定' },
       { root: 'tech', href: 'accounts.html', title: '帳號與密碼管理', meta: '忘記密碼時重設臨時密碼' },
-      { root: 'tech', href: 'leaves.html', title: '請假審核', meta: '工人請假核准、撞期改派' }
+      { root: 'tech', href: 'leaves.html', title: '請假審核', meta: '工人請假核准、撞期改派' },
+      { root: 'tech', href: 'payroll.html', title: '出勤補登與月結算', meta: '漏打卡補登、薪資結算鎖定' }
     ] },
     { group: '介紹與工具', items: [
       { root: 'main', href: 'index.html', title: '首頁', meta: '農民入口' },

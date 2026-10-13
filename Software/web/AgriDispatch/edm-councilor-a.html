@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>屏東縣議員推薦推廣 - 智農派工 EDM 海報 (方案 A)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/agri.css">
+  <style>
+    @media print {
+      body {
+        background: white !important;
+        color: black !important;
+        padding: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-card {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 12px !important;
+      }
+      .page-container {
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+    }
+    .hero-gradient {
+      background: linear-gradient(135deg, #065f46 0%, #047857 60%, #0f766e 100%);
+    }
+    .badge-gold {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #0f172a;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 font-sans antialiased min-h-screen py-6 px-3 sm:px-6">
+
+  <!-- Top Action Toolbar (Hidden in Print) -->
+  <aside class="no-print max-w-4xl mx-auto mb-5 flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl shadow-sm border border-slate-200" aria-label="工具列">
+    <div class="flex items-center gap-2">
+      <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold text-sm">A</span>
+      <div>
+        <h2 class="font-extrabold text-slate-800 text-sm">方案 A：親民基層服務版（無價格字樣）</h2>
+        <p class="text-xs text-slate-500">已配合需求移除「每小時 315 元起」等價格標示，適合基層拜訪、產銷班開會、LINE 圖片轉傳</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="brochure.html" class="px-3 py-1.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition">返回文宣庫</a>
+      <button onclick="window.print()" class="px-4 py-1.5 rounded-xl bg-emerald-700 text-white text-xs font-extrabold hover:bg-emerald-800 shadow transition flex items-center gap-1.5">
+        🖨️ 列印 A4 海報 / 存為 PDF
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Printable A4 Poster Container -->
+  <main class="page-container max-w-4xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200 print-card">
+    
+    <!-- Top Joint Banner (議員與合作社聯名頂帶) -->
+    <header class="bg-amber-500 text-slate-950 px-6 py-3 border-b-2 border-amber-600 flex flex-wrap items-center justify-between gap-2 text-xs font-black">
+      <div class="flex items-center gap-2">
+        <span class="px-2 py-0.5 rounded bg-slate-950 text-amber-400 font-black">屏東便民服務</span>
+        <span class="text-sm font-extrabold tracking-wide">屏東縣議會 議員【議員姓名】服務處 ╳ 智農外展派工 聯合推廣</span>
+      </div>
+      <div class="text-slate-900 font-bold hidden sm:block">
+        🌱 關心農友・合法用工・守護屏東綠金
+      </div>
+    </header>
+
+    <!-- Hero Banner -->
+    <section class="hero-gradient text-white p-6 sm:p-10 relative overflow-hidden" aria-labelledby="hero-title">
+      <div class="relative z-10 space-y-3">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full badge-gold text-xs font-black tracking-wider uppercase shadow-md">
+          <span>★ 屏東果農產季搶工救星</span>
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-900"></span>
+          <span>議員為您引進合法特許正規軍</span>
+        </div>
+        <h1 id="hero-title" class="text-3xl sm:text-5xl font-black tracking-tight leading-tight text-white drop-shadow-sm">
+          芒果紅了，工人呢？
+        </h1>
+        <p class="text-base sm:text-xl font-bold text-emerald-100 max-w-2xl leading-relaxed">
+          別再忍受私人工頭臨時放鳥、天天提心吊膽請黑工！
+        </p>
+        <p class="text-xs sm:text-sm text-emerald-200/90 max-w-2xl">
+          在地議員替屏東果農爭取到合法特許「外展技術工班」—— 產季保證出工、遲到免單、放鳥違約加倍賠！
+        </p>
+      </div>
+      <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
+    </section>
+
+    <!-- Section 1: Three Brutal Pain Points (果農的三大血淚) -->
+    <section class="p-6 sm:p-8 bg-slate-50 border-b border-slate-200" aria-labelledby="pain-points-title">
+      <div class="text-center sm:text-left mb-5">
+        <h2 id="pain-points-title" class="text-lg font-black text-slate-900 flex items-center justify-center sm:justify-start gap-2">
+          <span class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
+          果農的三大心酸血淚，議員都聽到了！
+        </h2>
+        <p class="text-xs text-slate-500 mt-1">
+          每年 5～6 月採收期，全聯、外銷貿易商車子在等，您是否也遇過這些無奈？
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white p-4 rounded-2xl border border-red-200 shadow-sm space-y-2">
+          <div class="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-black text-base">1</div>
+          <h3 class="font-bold text-slate-900 text-sm">產季大放鳥</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            氣溫飆破 35 度，果子過熟快掉地，私人工頭一通電話說「今天沒人」，眼睜睜看著一年心血爛在樹上！
+          </p>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-red-200 shadow-sm space-y-2">
+          <div class="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-black text-base">2</div>
+          <h3 class="font-bold text-slate-900 text-sm">隔壁加價就被截走</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            非法人力無合約約束，隔壁果園臨時每人多喊 300 塊，約好的人當天硬生生被搶走，投訴無門！
+          </p>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-red-200 shadow-sm space-y-2">
+          <div class="bg-red-600 text-white w-8 h-8 rounded-xl flex items-center justify-center font-black text-base">3</div>
+          <h3 class="font-bold text-red-700 text-sm">請黑工重罰 15~75 萬</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            無奈僱用地下黑工，天天巡田提心吊膽，深怕勞檢上門重罰 15～75 萬元，甚至連外銷與契作資格都被取消！
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Comparison Table (地下販仔 vs 智農正規軍) -->
+    <section class="p-6 sm:p-8 border-b border-slate-200 space-y-4" aria-labelledby="comparison-title">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h2 id="comparison-title" class="text-lg font-black text-slate-900">
+            傳統農村地下販仔 vs. ⭐ 智農特許外展平台（正規軍）
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">有法律契約約束、依法納保，才是真正有保障的現代農業派工！</p>
+        </div>
+        <span class="text-xs px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-extrabold self-start sm:self-auto border border-emerald-300">
+          100% 依法投保
+        </span>
+      </div>
+
+      <div class="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+            <tr>
+              <th class="p-3 w-1/5">比較項目</th>
+              <th class="p-3 w-2/5 text-red-600 bg-red-50/70">❌ 傳統地下工頭（販仔）</th>
+              <th class="p-3 w-2/5 text-emerald-800 bg-emerald-50/90 font-extrabold">⭐ 智農特許外展平台（正規軍）</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr>
+              <td class="p-3 font-bold text-slate-800">合法身分</td>
+              <td class="p-3 text-slate-600 bg-red-50/30">違法黑工，查獲重罰 <strong class="text-red-600">15～75 萬元</strong></td>
+              <td class="p-3 text-emerald-900 bg-emerald-50/40 font-bold">特許外展農務，全員投保職保，雇主 0 風險</td>
+            </tr>
+            <tr>
+              <td class="p-3 font-bold text-slate-800">出工誠信</td>
+              <td class="p-3 text-slate-600 bg-red-50/30">口頭承諾，隔壁加價馬上被截走放鳥</td>
+              <td class="p-3 text-emerald-900 bg-emerald-50/40 font-bold">白紙黑字簽訂法律契約，保證出工，放鳥雙倍賠</td>
+            </tr>
+            <tr>
+              <td class="p-3 font-bold text-slate-800">採收手路</td>
+              <td class="p-3 text-slate-600 bg-red-50/30">粗魯碰傷果皮、蹭掉外銷珍貴保護果粉</td>
+              <td class="p-3 text-emerald-900 bg-emerald-50/40 font-bold">受過外銷 SOP 培訓，精準留蒂 0.5cm 保護果粉</td>
+            </tr>
+            <tr>
+              <td class="p-3 font-bold text-slate-800">天候遇雨</td>
+              <td class="p-3 text-slate-600 bg-red-50/30">田裡泥濘停工，果農白賠錢、工班乾等</td>
+              <td class="p-3 text-emerald-900 bg-emerald-50/40 font-bold">演算法即時轉派室內冷鏈預冷包裝，工時全額折抵</td>
+            </tr>
+            <tr>
+              <td class="p-3 font-bold text-slate-800">發票憑證</td>
+              <td class="p-3 text-slate-600 bg-red-50/30">只能拿手寫白單，無法抵稅、無法過 ESG 稽核</td>
+              <td class="p-3 text-emerald-900 bg-emerald-50/40 font-bold">開立合法統一發票，全聯、好市多、日韓外銷 100% 過關</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Section 3: Four Steel Guarantees (四大鋼鐵保證) -->
+    <section class="p-6 sm:p-8 bg-slate-50 border-b border-slate-200 space-y-4" aria-labelledby="guarantees-title">
+      <h2 id="guarantees-title" class="text-lg font-black text-slate-900 flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-emerald-600"></span>
+        智農派工給屏東農友的「四大鋼鐵保證」
+      </h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        <div class="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-1.5">
+          <div class="flex items-center gap-2 text-emerald-800 font-extrabold text-sm">
+            <span>🛡️</span> 保證 1：保證出工・違約加倍賠償
+          </div>
+          <p class="text-slate-600 leading-relaxed">
+            只要簽署早鳥合約，約定出工日清晨 07:00 準時抵達果園。若因平台失誤延誤出工，當日工資全免，並加倍賠償農損！
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-1.5">
+          <div class="flex items-center gap-2 text-emerald-800 font-extrabold text-sm">
+            <span>✂️</span> 保證 2：外銷級採收技術・護特級果粉
+          </div>
+          <p class="text-slate-600 leading-relaxed">
+            全員配戴棉質手套，剪蒂精準預留 0.5～1.0 公分，避免流膠污染果皮與刺傷鄰果，特級良率達 95% 以上！
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-1.5">
+          <div class="flex items-center gap-2 text-emerald-800 font-extrabold text-sm">
+            <span>🌧️</span> 保證 3：梅雨天候避險・室內冷鏈折抵
+          </div>
+          <p class="text-slate-600 leading-relaxed">
+            遇暴雨泥濘無法下田時，協調轉派合作之室內冷鏈集貨場進行外銷分級包裝，原約定工時全額折抵，不浪費每一分工時！
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-1.5">
+          <div class="flex items-center gap-2 text-emerald-800 font-extrabold text-sm">
+            <span>📑</span> 保證 4：合法發票與名冊・安心報帳免受罰
+          </div>
+          <p class="text-slate-600 leading-relaxed">
+            完工立即開立合法統一發票，並檢附勞工職保名冊，隨時受檢、合法合規，經營農園體面又有尊嚴！
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4: Reservation & No Price Feature Card (產季早鳥專案 - 無價格標籤) -->
+    <section class="p-6 sm:p-8 border-b border-slate-200" aria-labelledby="package-title">
+      <div class="p-6 rounded-3xl bg-emerald-50 border-2 border-emerald-600 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="space-y-2 text-center md:text-left">
+          <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-black shadow-sm">
+            ★ 產季鎖約推薦・名額有限
+          </span>
+          <h2 id="package-title" class="text-xl sm:text-2xl font-black text-slate-900">
+            【愛文芒果・蓮霧・鳳梨產季早鳥保證出工專案】
+          </h2>
+          <p class="text-xs text-slate-700 max-w-xl leading-relaxed">
+            專為屏東在地外銷供果園、契作農戶與產銷班量身打造！依果園面積與採收波段彈性規劃，由在地調度專員免費親自到田訪視估工，簽訂正式法律契約，確保產季第一優先排班出工。
+          </p>
+          <div class="flex flex-wrap items-center gap-3 pt-2 text-xs text-emerald-900 font-bold justify-center md:justify-start">
+            <span class="bg-white px-2.5 py-1 rounded-lg border border-emerald-200">✓ 優先鎖定採收週名額</span>
+            <span class="bg-white px-2.5 py-1 rounded-lg border border-emerald-200">✓ 專員親赴果園免費估工</span>
+            <span class="bg-white px-2.5 py-1 rounded-lg border border-emerald-200">✓ 享有四大鋼鐵合約保障</span>
+          </div>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-white border border-emerald-300 text-center min-w-[220px] shadow-sm flex-shrink-0 space-y-3">
+          <span class="text-xs font-bold text-amber-700 bg-amber-100 px-3 py-1 rounded-full inline-block">
+            產季前搶先登記
+          </span>
+          <p class="text-base font-black text-slate-800">
+            第一優先排班保障
+          </p>
+          <p class="text-[11px] text-slate-500 leading-tight">
+            採收完成現場驗收滿意<br>開立統一發票合規核銷
+          </p>
+          <a href="#contact" class="block w-full py-2.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black shadow transition">
+            立即洽詢登記排班
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5: LINE 3 Steps Booking (手機一鍵預約) -->
+    <section class="p-6 sm:p-8 bg-slate-50 border-b border-slate-200" aria-labelledby="steps-title">
+      <div class="text-center max-w-xl mx-auto mb-6">
+        <h2 id="steps-title" class="text-lg font-black text-slate-900">免下載 App！拿起手機打開 LINE，3 步驟輕鬆預約</h2>
+        <p class="text-xs text-slate-500 mt-1">老農阿公阿嬤也能輕鬆叫工，在地調度專員全程為您服務！</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+        <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-2">
+          <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 font-black text-base mx-auto flex items-center justify-center">1</div>
+          <h3 class="font-bold text-slate-900 text-sm">第 1 步：加 LINE 預約</h3>
+          <p class="text-xs text-slate-500">掃描下方 QR Code 或來電，告知果園地點與耕作分地面積。</p>
+        </div>
+
+        <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-2">
+          <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 font-black text-base mx-auto flex items-center justify-center">2</div>
+          <h3 class="font-bold text-slate-900 text-sm">第 2 步：專員到田訪視</h3>
+          <p class="text-xs text-slate-500">調度專員親赴果園確認動線與採收週，白紙黑字簽訂正式契約。</p>
+        </div>
+
+        <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-2">
+          <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 font-black text-base mx-auto flex items-center justify-center">3</div>
+          <h3 class="font-bold text-slate-900 text-sm">第 3 步：準時出工驗收</h3>
+          <p class="text-xs text-slate-500">約定日技術工班清晨準時抵達果園，驗收滿意開立合法發票！</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer / Contact Info (聯名服務窗口) -->
+    <footer id="contact" class="p-6 sm:p-8 bg-slate-900 text-white space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+        <div class="space-y-3">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl font-black text-white">智農派工</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-amber-400 text-slate-950 font-black">外展農務示範機構</span>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            有限責任智農農業勞務生產合作社 ╳ 智農科技股份有限公司 聯合營運<br>
+            以智慧科技調度解決產季缺工，守護屏東果農的心血與尊嚴！
+          </p>
+          <div class="pt-2 text-xs text-slate-300 space-y-1">
+            <p>📍 <strong>屏東枋山營運服務處</strong>：屏東縣枋山鄉加祿路（加祿保安宮旁）</p>
+            <p>📞 <strong>枋山產區調度專線</strong>：08-XXX-XXXX / 行動：0912-345-678</p>
+            <p>🏛️ <strong>屏東縣議員【議員姓名】服務處</strong>：屏東縣【鄉鎮市】【路街段】【號】</p>
+            <p>☎️ <strong>議員聯合服務專線</strong>：【08-XXXX-XXXX】</p>
+          </div>
+        </div>
+
+        <!-- LINE QR Code Mock Box -->
+        <div class="bg-white/10 p-5 rounded-2xl border border-white/20 text-center space-y-3">
+          <div class="inline-block p-3 bg-white rounded-2xl shadow-md">
+            <svg class="w-28 h-28 mx-auto" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Simulated QR Code SVG pattern -->
+              <rect width="100" height="100" fill="white"/>
+              <rect x="10" y="10" width="25" height="25" fill="#0f172a"/>
+              <rect x="15" y="15" width="15" height="15" fill="white"/>
+              <rect x="18" y="18" width="9" height="9" fill="#0f172a"/>
+              <rect x="65" y="10" width="25" height="25" fill="#0f172a"/>
+              <rect x="70" y="15" width="15" height="15" fill="white"/>
+              <rect x="73" y="18" width="9" height="9" fill="#0f172a"/>
+              <rect x="10" y="65" width="25" height="25" fill="#0f172a"/>
+              <rect x="15" y="70" width="15" height="15" fill="white"/>
+              <rect x="18" y="73" width="9" height="9" fill="#0f172a"/>
+              <rect x="42" y="15" width="6" height="6" fill="#0f172a"/>
+              <rect x="52" y="25" width="6" height="6" fill="#0f172a"/>
+              <rect x="42" y="42" width="16" height="16" fill="#047857"/>
+              <rect x="65" y="45" width="6" height="12" fill="#0f172a"/>
+              <rect x="75" y="65" width="15" height="6" fill="#0f172a"/>
+              <rect x="45" y="75" width="12" height="12" fill="#0f172a"/>
+              <rect x="65" y="80" width="8" height="8" fill="#0f172a"/>
+            </svg>
+          </div>
+          <div>
+            <span class="text-xs font-bold text-amber-300 block">📱 手機掃碼或搜尋 LINE ID</span>
+            <span class="text-sm font-black text-white font-mono tracking-wider">@agridispatch</span>
+            <span class="text-[11px] text-slate-300 block mt-1">24 小時線上填單預約・在地專員到田接洽</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="border-t border-white/10 pt-4 text-center text-[11px] text-slate-400">
+        © 2026 智農派工 AgriDispatch. 保留所有權利。外展農務機構試辦規劃中，服務細節以簽訂正式契約為準。
+      </div>
+    </footer>
+
+  </main>
+
+</body>
+</html>

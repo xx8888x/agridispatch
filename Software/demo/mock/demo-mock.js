@@ -806,6 +806,33 @@
   }
 
   // ---------------- LINE 帳號綁定（移植 LineBindingService.bind / unbind / list） ----------------
+  // 薪資入帳通知（同後端 LineNotifyService.salaryPaid）：只統計收得到的人，不真的發送
+  function salaryPaid(b) {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(String(b.month || ''))) return respond(400, { success: false, error: 'month 格式須為 yyyy-MM' });
+    if (b.payDate && !/^\d{4}-\d{2}-\d{2}$/.test(String(b.payDate))) return respond(400, { success: false, error: 'payDate 格式須為 yyyy-MM-dd' });
+    var items = b.items;
+    if (!Array.isArray(items) || !items.length || items.length > 500) return respond(400, { success: false, error: 'items 須為 1～500 筆' });
+    var seen = {}, ids = [];
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i] || {}, id = String(it.workerId || '').trim().toUpperCase(), net = Number(it.netPay);
+      if (!id || !(net >= 0 && net < 1000000)) return respond(400, { success: false, error: '每筆須有 workerId 與 0～999,999 的 netPay' });
+      if (seen[id]) return respond(400, { success: false, error: 'workerId 重複：' + id });
+      seen[id] = true;
+      ids.push(id);
+    }
+    var foreignOn = !!(window.AGRI_CONFIG && window.AGRI_CONFIG.features && window.AGRI_CONFIG.features.foreignWorkers);
+    var bound = (lineStore().list || []).filter(function (x) { return x.channel === 'worker' && x.bound && x.followed !== false; });
+    var sent = 0, unknown = [], notReached = [];
+    ids.forEach(function (id) {
+      var w = findIn('GET /workers', id);
+      if (!w) { unknown.push(id); return; }
+      var ok = bound.some(function (x) { return String(x.refId || '').toUpperCase() === id; }) && (foreignOn || w.tier !== 'tier1_foreign');
+      if (ok) sent++; else notReached.push(id);
+    });
+    return respond(200, { success: true, type: 'salary_paid', month: b.month, workers: ids.length,
+      workerRecipients: sent, skippedQuietHours: 0, unknownWorkers: unknown, notReached: notReached });
+  }
+
   function lineStore() {
     var key = 'GET /line/bindings', e = get(key) || { s: 200, b: { success: true, bindings: [] } };
     e.b.bindings = e.b.bindings || [];
@@ -1308,6 +1335,7 @@
       });
       return respond(200, { success: true, date: tmr, orders: due.length, workerRecipients: people, skippedQuietHours: 0 });
     }
+    if (method === 'POST' && sp.path === '/line/notify/salary-paid') return salaryPaid(body || {});
     if (method === 'POST' && sp.path === '/line/notify/farmer-broadcast') {
       if (blank(body && body.text)) return respond(400, { success: false, error: '請輸入通知內容' });
       var farmers = (lineStore().list || []).filter(function (x) { return x.channel === 'farmer' && x.bound; }).length;

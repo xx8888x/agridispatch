@@ -26,7 +26,8 @@
   科技後台：LINE 官方帳號（農場主／工作者）狀態與帳號綁定管理
   規格：文件/07_系統分析及文件/05_LINE官方帳號拆分規格.md 6.4、第拾參章
   資料：GET /api/line/config（兩帳號設定狀態）、GET /api/line/bindings、DELETE /api/line/bindings/{id}、
-        GET /api/line/notify/status、POST /api/line/notify/tomorrow、POST /api/line/notify/farmer-broadcast（皆僅 admin）
+        GET /api/line/notify/status、POST /api/line/notify/tomorrow、POST /api/line/notify/farmer-broadcast、
+        POST /api/line/notify/salary-paid（薪資入帳通知）、GET /api/workers（核對工號姓名）（皆僅 admin）
 -->
 <body class="ad-body min-h-screen flex flex-col">
 
@@ -77,6 +78,37 @@
             <span class="ad-hint">只會發到「智農派工（農場主）」帳號。工作人員帳號不做全員廣播。</span>
           </div>
           <div><button type="button" class="ad-btn ad-btn--line ad-btn--sm" id="broadcast-btn">發送通知</button></div>
+        </div>
+
+        <!-- 薪資入帳通知：系統沒有發薪作業（薪資只有試算），合作社實際撥款後在這裡貼上實發名單手動發送 -->
+        <div class="ad-card" style="padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+          <div>
+            <div class="ad-row__title">薪資入帳通知</div>
+            <p class="ad-caption" style="margin-top: 4px;">合作社把薪資撥進工人的薪轉帳戶之後，在這裡貼上實發名單發送。每位工人只會收到自己的金額，並依各自的語言發送。金額請填實際撥出的數字，不要用系統試算值。</p>
+          </div>
+          <div class="ad-form-grid ad-form-grid--2">
+            <div class="ad-field">
+              <label class="ad-label" for="salary-month">薪資月份</label>
+              <input class="ad-input" type="month" id="salary-month">
+            </div>
+            <div class="ad-field">
+              <label class="ad-label" for="salary-paydate">入帳日（選填）</label>
+              <input class="ad-input" type="date" id="salary-paydate">
+            </div>
+          </div>
+          <div class="ad-field">
+            <label class="ad-label" for="salary-list">實發名單</label>
+            <textarea class="ad-textarea" id="salary-list" rows="5" spellcheck="false" placeholder="每行一位：工號, 實發金額&#10;W001, 36850&#10;W006, 35200"></textarea>
+            <span class="ad-hint">可直接從薪資系統或試算表複製貼上（逗號、Tab 或空白分隔都可以，金額可帶千分位）；第一行是標題也沒關係。也可以
+              <label for="salary-file" style="color: var(--ad-primary-text); cursor: pointer; text-decoration: underline;">匯入 CSV 檔</label>。</span>
+            <input type="file" id="salary-file" accept=".csv,.txt,text/csv,text/plain" hidden>
+          </div>
+          <div id="salary-preview" hidden></div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" id="salary-check-btn">核對名單</button>
+            <button type="button" class="ad-btn ad-btn--line ad-btn--sm" id="salary-send-btn" disabled>發送入帳通知</button>
+          </div>
+          <div id="salary-result" class="ad-notice" hidden></div>
         </div>
       </div>
     </section>
@@ -224,6 +256,7 @@
         const st = await res.json();
         $('tomorrow-meta').textContent = '每天傍晚自動發給隔天的出工名單。工作人員只在 ' + st.workerHours + ' 之間收到推播'
           + (st.inWorkerHours ? '。' : '，現在不在這個時段，立即發送也會略過。');
+        workerHoursNote = st.inWorkerHours ? '' : '現在不在工作人員推播時段（' + st.workerHours + '），發送會全部略過。';
       } catch (e) { /* 離線時沿用預設說明 */ }
     }
 
@@ -259,6 +292,145 @@
       } catch (e) {
         showError('發送失敗，請確認 LINE 機器人服務已啟動。');
       } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // ------------------------------------------------------------ 薪資入帳通知
+    let workerNames = null;     // 工號 → 姓名（GET /workers）；讀不到時為 {}
+    let salaryRows = [];        // 核對過、可發送的 [{workerId, netPay}]
+    let workerHoursNote = '';
+
+    // 預設上個月
+    (function () {
+      const d = new Date();
+      d.setDate(1);
+      d.setMonth(d.getMonth() - 1);
+      $('salary-month').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    })();
+
+    const money = (n) => 'NT$ ' + Number(n).toLocaleString('en-US');
+
+    // 一行一位：工號 + 分隔（逗號／Tab／分號／空白）+ 金額（可帶 NT$、千分位、引號）；無法解析的行回報出來
+    function parseSalaryList(text) {
+      const rows = [], errors = [], seen = {};
+      text.split(/\r?\n/).forEach((raw, i) => {
+        const line = raw.replace(/^﻿/, '').trim();
+        if (!line) return;
+        const m = /^"?([A-Za-z][A-Za-z0-9_-]*)"?\s*[,\t;，\s]\s*(.+)$/.exec(line);
+        const amount = m ? m[2].replace(/["\s]|NT\$|元/gi, '').replace(/,/g, '') : '';
+        if (!m || !/^\d+(\.\d+)?$/.test(amount)) {
+          // 第一行常是標題（工號,實發金額），沒有數字就略過不算錯
+          if (i === 0 && !/\d{3,}/.test(line)) return;
+          errors.push('第 ' + (i + 1) + ' 行看不懂：' + line);
+          return;
+        }
+        const id = m[1].toUpperCase(), net = Math.round(Number(amount));
+        if (net >= 1000000) { errors.push('第 ' + (i + 1) + ' 行金額過大：' + line); return; }
+        if (seen[id]) { errors.push('第 ' + (i + 1) + ' 行工號重複：' + id); return; }
+        seen[id] = true;
+        rows.push({ workerId: id, netPay: net });
+      });
+      return { rows, errors };
+    }
+
+    async function loadWorkerNames() {
+      if (workerNames) return workerNames;
+      workerNames = {};
+      try {
+        const res = await fetch(API + '/workers');
+        const body = await res.json().catch(() => ({}));
+        (body.data || []).forEach((w) => { workerNames[String(w.id).toUpperCase()] = w.chineseName || w.name || ''; });
+      } catch (e) { /* 讀不到姓名：只顯示工號 */ }
+      return workerNames;
+    }
+
+    // 綁定狀態以頁面上的綁定清單為準（工作者帳號、已綁定、未封鎖才收得到）
+    function lineStatusOf(id) {
+      const b = bindings.find((x) => x.channel === 'worker' && x.bound && String(x.refId || '').toUpperCase() === id);
+      if (!b) return ['ad-pill--warn', '未綁定 LINE，收不到'];
+      if (!b.followed) return ['ad-pill--danger', '已封鎖，收不到'];
+      return ['ad-pill--ok', 'LINE 已綁定'];
+    }
+
+    function salaryResetSend() {
+      salaryRows = [];
+      $('salary-send-btn').disabled = true;
+      $('salary-result').hidden = true;
+    }
+
+    async function checkSalaryList() {
+      salaryResetSend();
+      const { rows, errors } = parseSalaryList($('salary-list').value);
+      const box = $('salary-preview');
+      if (!rows.length && !errors.length) { box.hidden = true; showError('請先貼上實發名單。'); return; }
+      showError('');
+      const names = await loadWorkerNames();
+      const hasNames = Object.keys(names).length > 0;
+      let total = 0, reach = 0;
+      const trs = rows.map((r) => {
+        total += r.netPay;
+        const known = !hasNames || names[r.workerId] !== undefined;
+        const st = known ? lineStatusOf(r.workerId) : ['ad-pill--danger', '查無此工號'];
+        if (st[0] === 'ad-pill--ok') reach++;
+        return '<tr><td class="ad-num">' + esc(r.workerId) + '</td><td>' + esc(names[r.workerId] || '') + '</td>'
+          + '<td class="ad-num" style="text-align: right;">' + esc(money(r.netPay)) + '</td>'
+          + '<td><span class="ad-pill ' + st[0] + '">' + esc(st[1]) + '</span></td></tr>';
+      }).join('');
+      box.innerHTML = (errors.length ? '<div class="ad-notice ad-notice--danger" style="margin-bottom: 8px;">' + errors.map(esc).join('<br>') + '</div>' : '')
+        + (rows.length ? '<div class="overflow-x-auto"><table class="ad-table" style="white-space: nowrap;"><thead><tr><th>工號</th><th>姓名</th><th style="text-align: right;">實發金額</th><th>LINE</th></tr></thead><tbody>'
+          + trs + '</tbody></table></div>'
+          + '<p class="ad-caption" style="margin-top: 8px;">共 ' + rows.length + ' 人、合計 ' + esc(money(total)) + '；其中 ' + reach + ' 人收得到 LINE 通知。'
+          + esc(workerHoursNote) + '</p>' : '');
+      box.hidden = false;
+      // 有看不懂的行就先不讓發送，避免漏發
+      if (rows.length && !errors.length) {
+        salaryRows = rows;
+        $('salary-send-btn').disabled = false;
+      }
+    }
+
+    $('salary-check-btn').addEventListener('click', checkSalaryList);
+    ['salary-list', 'salary-month', 'salary-paydate'].forEach((id) => $(id).addEventListener('input', salaryResetSend));
+    $('salary-file').addEventListener('change', async (ev) => {
+      const f = ev.target.files && ev.target.files[0];
+      if (!f) return;
+      if (f.size > 512 * 1024) { showError('檔案太大（上限 512 KB）。'); ev.target.value = ''; return; }
+      $('salary-list').value = await f.text();
+      ev.target.value = '';
+      checkSalaryList();
+    });
+
+    $('salary-send-btn').addEventListener('click', async () => {
+      const month = $('salary-month').value, payDate = $('salary-paydate').value;
+      if (!/^\d{4}-\d{2}$/.test(month)) { showError('請選擇薪資月份。'); return; }
+      if (!salaryRows.length) return;
+      const total = salaryRows.reduce((a, r) => a + r.netPay, 0);
+      if (!confirm('確定通知 ' + salaryRows.length + ' 位工人「' + month + ' 薪資已入帳」？\n合計 ' + money(total)
+        + '\n\n請確認合作社已實際撥款、金額是實發數字。通知送出後無法收回。')) return;
+      const btn = $('salary-send-btn');
+      btn.disabled = true;
+      const out = $('salary-result');
+      try {
+        const res = await fetch(API + '/line/notify/salary-paid', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ month, payDate: payDate || undefined, items: salaryRows })
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(d.error || d.message || ('HTTP ' + res.status));
+        const parts = ['已通知 ' + d.workerRecipients + ' 人'];
+        if (d.skippedQuietHours) parts.push('推播時段外略過 ' + d.skippedQuietHours + ' 人（請在時段內重送這幾位）');
+        if (d.notReached && d.notReached.length) parts.push('收不到（未綁定或已封鎖）：' + d.notReached.join('、'));
+        if (d.unknownWorkers && d.unknownWorkers.length) parts.push('查無工號：' + d.unknownWorkers.join('、'));
+        out.className = 'ad-notice ' + (d.skippedQuietHours || (d.unknownWorkers || []).length ? 'ad-notice--warn' : 'ad-notice--ok');
+        out.textContent = parts.join('。') + '。';
+        out.hidden = false;
+        toast('已發送薪資入帳通知');
+        salaryRows = [];
+      } catch (e) {
+        out.className = 'ad-notice ad-notice--danger';
+        out.textContent = '發送失敗：' + (e.message || '請確認後台與 LINE 機器人服務都已啟動') + '。';
+        out.hidden = false;
         btn.disabled = false;
       }
     });

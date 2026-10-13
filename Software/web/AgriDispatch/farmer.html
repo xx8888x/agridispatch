@@ -1755,7 +1755,7 @@
         const isNew = created && !isNaN(created) && (Date.now() - created.getTime()) < 30 * 60 * 1000;
         const needDeposit = Number(ord.depositAmount) > 0;
         const depositPct = Number(ord.finalAmount) > 0 ? Math.round(Number(ord.depositAmount) / Number(ord.finalAmount) * 100) : 20;
-        const paid = !!ord.depositPaid;
+        const paid = needDeposit && !!ord.depositPaid;   // 實際付過定金（免定金方案即使 depositPaid=true 也沒有付款紀錄與發票）
         const st = ord.status;
         const statusPill = st === 'cancelled' ? '<span class="ad-pill">已取消</span>'
           : st === 'completed' ? '<span class="ad-pill ad-pill--ok">已完工</span>'

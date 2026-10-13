@@ -44,7 +44,7 @@ $cut = ($schema | Select-String -SimpleMatch "【初始種子資料 (SEED DATA)�
 if (-not $cut) { throw "找不到建表腳本的種子資料標記" }
 $ddl = $schema[0..($cut - 3)] -join "`n"
 [IO.File]::WriteAllText((Join-Path $stage "schema-ddl.sql"), $ddl + "`n", (New-Object Text.UTF8Encoding $false))
-foreach ($f in "server-setup.sh", "server-deploy.sh", "enable-https.sh") {
+foreach ($f in "server-setup.sh", "server-deploy.sh", "enable-https.sh", "server-ops.sh", "agri-backup.sh", "agri-healthcheck.sh") {
     $t = (Get-Content (Join-Path $here $f) -Raw -Encoding UTF8) -replace "`r`n", "`n"
     [IO.File]::WriteAllText((Join-Path $stage $f), $t, (New-Object Text.UTF8Encoding $false))
 }
@@ -76,7 +76,7 @@ Check "打包 LINE Bot"
 Write-Host "[deploy] 3/4 上傳"
 & ssh @sshOpts $target "mkdir -p /tmp/agri-deploy"
 Check "SSH 連線"
-$files = @("app.jar", "web.tar.gz", "linebot.tar.gz", "migrations.tar.gz", "schema-ddl.sql", "server-setup.sh", "server-deploy.sh", "enable-https.sh")
+$files = @("app.jar", "web.tar.gz", "linebot.tar.gz", "migrations.tar.gz", "schema-ddl.sql", "server-setup.sh", "server-deploy.sh", "enable-https.sh", "server-ops.sh", "agri-backup.sh", "agri-healthcheck.sh")
 if ($Accounts) { $files += "accounts.sql" }
 & scp @sshOpts ($files | ForEach-Object { Join-Path $stage $_ }) "${target}:/tmp/agri-deploy/"
 if ($LASTEXITCODE -ne 0) { throw "上傳失敗" }

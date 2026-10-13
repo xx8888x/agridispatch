@@ -82,5 +82,7 @@ if [ -f $UP/accounts.sql ]; then
   sql_app < $UP/accounts.sql | grep -c "merged" | xargs echo "  帳號 merged："
   shred -u $UP/accounts.sql 2>/dev/null || rm -f $UP/accounts.sql
 fi
+echo "[deploy] 維運：備份排程與健康檢查"
+if [ -f $UP/server-ops.sh ]; then bash $UP/server-ops.sh; else echo "  未上傳 server-ops.sh，略過"; fi
 rm -f $UP/app.jar $UP/web.tar.gz
 echo "[deploy] 完成"

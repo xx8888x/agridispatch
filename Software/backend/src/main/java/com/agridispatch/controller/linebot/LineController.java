@@ -40,8 +40,8 @@ public class LineController {
     private final LineFarmerQueryService farmerQueryService;
 
     /** LINE Channel Secret / Access Token：由 agri.line.* 或環境變數 LINE_CHANNEL_SECRET / LINE_CHANNEL_ACCESS_TOKEN 提供，預設空值 */
-    private volatile String channelSecret;
-    private volatile String channelAccessToken;
+    private final String channelSecret;
+    private final String channelAccessToken;
 
     public LineController(OrderRepository orderRepository,
                           CalendarService calendarService,
@@ -224,27 +224,6 @@ public class LineController {
         if (bot != null) linebot.putAll(bot);
         res.put("linebot", linebot);
         return ResponseEntity.ok(res);
-    }
-
-    /** 僅 admin_tech：執行期更新金鑰（僅存記憶體，重啟後以環境變數為準） */
-    @PostMapping("/config")
-    public ResponseEntity<?> updateConfig(@RequestBody Map<String, String> cfg) {
-        String secret = cfg.get("channelSecret");
-        String token = cfg.get("channelAccessToken");
-        if (secret != null && !secret.isBlank()) {
-            if (secret.length() > 256) throw new IllegalArgumentException("channelSecret 過長");
-            this.channelSecret = secret.trim();
-        }
-        if (token != null && !token.isBlank()) {
-            if (token.length() > 1024) throw new IllegalArgumentException("channelAccessToken 過長");
-            this.channelAccessToken = token.trim();
-        }
-        boolean isMock = isMockMode();
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "mode", isMock ? "MOCK" : "PRODUCTION",
-                "message", "LINE 設定已更新，目前模式: " + (isMock ? "【本地模擬】" : "【正式生產】")
-        ));
     }
 
     // =========================================================================

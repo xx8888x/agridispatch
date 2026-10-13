@@ -896,11 +896,6 @@
               ...(adminKey ? { 'X-Admin-Key': adminKey } : {})
             },
             body: JSON.stringify({ channel: document.getElementById('cfg-channel').value, channelSecret: secret, channelAccessToken: token })
-          }),
-          fetch(`${API_BASE}/line/config`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ channelSecret: secret, channelAccessToken: token })
           })
         ]);
 

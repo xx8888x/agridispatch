@@ -225,7 +225,8 @@ public class TestSimulator {
         failed += expect("推播 明日出工（越語）", NotifyMessages.render(W, "tomorrow_task", "vi", np), 0, "Thông báo đi làm ngày mai");
         failed += expect("推播 天候室內（印尼語）", NotifyMessages.render(W, "weather_worker", "id", np), 0, "dalam ruangan");
         failed += expect("推播 定金入帳金額", NotifyMessages.render(F, "deposit_paid", "zh", np), 0, "NT$ 10,584");
-        failed += expectEq("工作者帳號不支援農場主通知", String.valueOf(NotifyMessages.supports(W, "order_status")), "false");
+        failed += workerCardChecks();
+        failed += expectEq("工作者帳號不支援農場主通知",String.valueOf(NotifyMessages.supports(W, "order_status")), "false");
         failed += expectEq("工作者帳號禁止 broadcast", String.valueOf(LineApiClient.of(W).broadcast(FlexMessageBuilder.wrapText("x"))), "false");
 
         // 主動選擇的語言不被國籍覆蓋（規格 3.2 第 1 點）
@@ -253,6 +254,71 @@ public class TestSimulator {
         Config.FEATURE_FOREIGN_WORKERS = foreignSetting;
 
         System.out.println(failed == 0 ? "✅ 自動檢核全部通過！" : "❌ 自動檢核失敗 " + failed + " 項");
+        return failed;
+    }
+
+    /**
+     * W-01、W-03、W-04 本人資料卡片（WorkerCards）：以後端 data 的樣本產生，三語 JSON 合法、帶出本人資料；
+     * 正式模式後端查不到時不出示範資料
+     */
+    private static int workerCardChecks() {
+        int failed = 0;
+        Channel W = Channel.WORKER;
+        String url = FlexMessageBuilder.webPageUrl("worker-local.html");
+        Map<String, Object> item = new java.util.HashMap<>(Map.of("orderId", "ORD-2026-005", "statusLabel", "已排定",
+                "timeSlotLabel", "全日", "place", "屏東縣枋山鄉", "cropName", "愛文芒果", "categoryName", "採收分級",
+                "area", 2.0, "foremanName", "林小祥", "foremanPhone", "0912-000-111", "preferredByFarmer", true));
+        Map<String, Object> crew = Map.of("teamName", "工班 B", "total", 6L, "present", 4L, "absentNames", List.of("甲", "乙"));
+        Map<String, Object> task = new java.util.HashMap<>(Map.of("kind", "task", "date", "2026-10-13", "workerName", "林小祥",
+                "machinery", false, "items", List.of(item), "crew", crew));
+        Map<String, Object> idle = new java.util.HashMap<>(Map.of("kind", "task", "date", "2026-10-13", "workerName", "林小祥",
+                "machinery", true, "items", List.of(),
+                "next", Map.of("startDate", "2026-10-15", "timeSlotLabel", "上午", "place", "雲林縣", "cropName", "蒜頭")));
+        Map<String, Object> wItem = Map.of("orderId", "ORD-2026-005", "timeSlotLabel", "全日", "indoor", true,
+                "place", "屏南冷鏈中心", "work", "分級包裝", "vehicle", "ABC-1234", "driver", "陳司機");
+        Map<String, Object> weather = Map.of("kind", "weather", "date", "2026-10-13", "workerName", "林小祥",
+                "weather", "暴雨 24°C", "alertLevel", "danger", "items", List.of(wItem));
+        Map<String, Object> salary = new java.util.HashMap<>(Map.of("kind", "salary", "month", "2026-10", "workerName", "林小祥",
+                "payDate", "2026-11-05", "workedHours", 64.5, "overtimeHours", 2.0, "baseSalary", 29500L,
+                "agriSubsidy", 0L, "totalDeductions", 1201L, "netPay", 30000L));
+        for (String lang : List.of("zh", "vi", "id")) {
+            failed += expectEq("W-01 任務卡 " + lang, String.valueOf(validMessages(WorkerCards.task(lang, task, url))), "true");
+            failed += expectEq("W-01 無任務 " + lang, String.valueOf(validMessages(WorkerCards.task(lang, idle, url))), "true");
+            failed += expectEq("W-03 集合卡 " + lang, String.valueOf(validMessages(List.of(WorkerCards.weather(lang, weather)))), "true");
+            failed += expectEq("W-04 薪資卡 " + lang, String.valueOf(validMessages(List.of(WorkerCards.salary(lang, salary, url)))), "true");
+        }
+        List<String> t = WorkerCards.task("zh", task, url);
+        failed += expect("W-01 帶出本人訂單與地點", t, 0, "【ORD-2026-005】全日・已排定");
+        failed += expect("W-01 面積", t, 0, "採收分級・愛文芒果・2 公頃");
+        failed += expect("W-01 農場主指名", t, 0, "農場主指名您");
+        failed += expect("W-01 組長附工班摘要", t, 1, "工班 B：6 人中 4 人已上班打卡");
+        failed += expect("W-01 尚未打卡名單", t, 1, "尚未打卡：甲、乙");
+        failed += expectEq("W-01 非組長只有一張卡", String.valueOf(WorkerCards.task("zh", idle, url).size()), "1");
+        failed += expect("W-01 無任務時附下一筆", WorkerCards.task("zh", idle, url), 0, "下一筆：2026-10-15・上午・雲林縣・蒜頭");
+        failed += expect("W-01 機耕師標題", WorkerCards.task("zh", idle, url), 0, "今日機耕工單");
+        failed += expect("W-01 越語", WorkerCards.task("vi", task, url), 0, "Nhiệm vụ hôm nay");
+        failed += expect("W-03 室內與接駁", List.of(WorkerCards.weather("zh", weather)), 0, "接駁：ABC-1234・司機 陳司機");
+        failed += expect("W-03 改室內（印尼語）", List.of(WorkerCards.weather("id", weather)), 0, "dalam ruangan");
+        String sal = WorkerCards.salary("zh", salary, url);
+        failed += expect("W-04 預估實領", List.of(sal), 0, "預估實領：NT$ 30,000");
+        failed += expect("W-04 工時", List.of(sal), 0, "本月出勤 64.5 小時（加班 2 小時）");
+        failed += expectEq("W-04 津貼為 0 不列", String.valueOf(!sal.contains("農業津貼")), "true");
+
+        // 正式模式（假金鑰）且後端查不到：不回示範資料（阮文雄、W001）
+        String savedSecret = W.secret, savedToken = W.accessToken;
+        try {
+            W.secret = "real_secret_for_check"; W.accessToken = "real_token_for_check";
+            for (String a : List.of("a=task", "a=weather", "a=salary")) {
+                String u = "U_CHECK_PROD_" + a.substring(2);
+                IdentityStore.override(W, u, IdentityStore.preset("local"));
+                List<String> r = LineBotDispatcher.handle(BotEvent.postback(W, u, a));
+                String all = String.join("", r);
+                failed += expectEq("正式模式查不到 " + a + " 不出示範資料",
+                        String.valueOf(all.contains("暫時查不到您的資料") && !all.contains("阮文雄") && !all.contains("W001")), "true");
+            }
+        } finally {
+            W.secret = savedSecret; W.accessToken = savedToken;
+        }
         return failed;
     }
 

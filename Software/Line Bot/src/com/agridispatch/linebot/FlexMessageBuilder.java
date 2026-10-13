@@ -290,7 +290,7 @@ public class FlexMessageBuilder {
     }
 
     /** 標題列＋若干段文字＋若干按鈕的通用卡片 */
-    private static String simpleBubble(String headerBg, String subtitle, String title, List<String> lines, List<String> buttons) {
+    static String simpleBubble(String headerBg, String subtitle, String title, List<String> lines, List<String> buttons) {
         StringBuilder body = new StringBuilder();
         for (String line : lines) {
             if (body.length() > 0) body.append(",\n");
@@ -345,7 +345,7 @@ public class FlexMessageBuilder {
                 .formatted(escapeJson(label), escapeJson(text));
     }
 
-    private static String uriButton(String label, String uri, String color) {
+    static String uriButton(String label, String uri, String color) {
         return """
             { "type": "button", "style": "primary", "height": "sm", "color": "%s", "action": { "type": "uri", "label": "%s", "uri": "%s" } }"""
                 .formatted(color, escapeJson(label), escapeJson(uri));

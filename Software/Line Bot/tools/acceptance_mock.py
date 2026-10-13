@@ -247,7 +247,7 @@ def run_main_checks():
     # 3 越南籍工人完成綁定
     s, b = bind("W001", "worker", uid(3))
     d = chat("worker", uid(3), text="nhiệm vụ")
-    record(3, "越南籍工人完成綁定", s == 200 and "Thẻ Nhiệm Vụ" in texts(d) and d["menuKey"] == "worker_main_vi",
+    record(3, "越南籍工人完成綁定", s == 200 and "Nhiệm vụ hôm nay" in texts(d) and "Nguyễn Văn Hùng" not in texts(d) and d["menuKey"] == "worker_main_vi",
            "綁定 %s；回「%s」，選單 %s" % (s, alt(d["messages"][0])[:24], d["menuKey"]))
 
     # 4（第一段）越南籍工人點「中文」
@@ -258,12 +258,17 @@ def run_main_checks():
     # 5 本勞（中文）點今日任務
     bind("W030", "worker", uid(5))
     d = chat("worker", uid(5), postback="a=task")
-    record(5, "本勞（中文）點今日任務", "今日派工任務卡" in texts(d) and "派工確認單" not in texts(d), "回「%s」" % alt(d["messages"][0])[:24])
+    # W-01／W-03／W-04 向後端查本人資料：不再是示範卡（阮文雄、$8,800 範本）
+    others = [texts(chat("worker", uid(5), postback=a)) for a in ("a=weather", "a=salary")]
+    record(5, "本勞（中文）點今日任務", "今日任務" in texts(d) and "阮文雄" not in texts(d)
+           and "派工確認單" not in texts(d) and "天候與集合通知" in others[0] and "本月薪資試算" in others[1]
+           and "$8,800" not in others[1],
+           "回「%s」；天候、薪資也是本人資料卡" % alt(d["messages"][0])[:24])
 
     # 6 機耕師點今日任務
     bind("W012", "worker", uid(6))
     d = chat("worker", uid(6), postback="a=task")
-    record(6, "機耕師點今日任務", "代噴任務卡" in texts(d), "回「%s」" % alt(d["messages"][0])[:26])
+    record(6, "機耕師點今日任務", "今日機耕工單" in texts(d) and "大疆 T50" not in texts(d), "回「%s」" % alt(d["messages"][0])[:26])
 
     # 7 工作者帳號問農場主功能
     outs = [texts(chat("worker", uid(5), text=t)) for t in ("黑轉白", "早鳥", "費率")]
@@ -380,7 +385,7 @@ def check_after_restart(four_a):
     d = chat("worker", uid(3), text="任務")
     idt = identity("worker", uid(3))
     record(4, "越南籍工人點「中文」，重啟後仍為中文",
-           four_a and "今日派工任務卡" in texts(d) and d["menuKey"] == "worker_main_zh" and idt.get("langLocked") is True,
+           four_a and "今日任務" in texts(d) and "Nhiệm vụ" not in texts(d) and d["menuKey"] == "worker_main_zh" and idt.get("langLocked") is True,
            "選單 worker_main_zh、lang_locked=Y；後端與 Line Bot 都重啟後回「%s」" % alt(d["messages"][0])[:20])
 
 

@@ -18,6 +18,7 @@ Software\Line Bot\
 │       ├── LineBotDispatcher.java     # 分發入口：依帳號交給下列兩個分派器
 │       ├── FarmerDispatcher.java      # 農場主帳號功能 F-01～F-08
 │       ├── WorkerDispatcher.java      # 工作者帳號功能 W-01～W-08 (多語)
+│       ├── WorkerCards.java           # W-01／W-03／W-04 本人資料卡（後端 internal/query 的 data，依語言組卡）
 │       ├── Identity.java、IdentityStore.java  # 使用者身分與語言 (存後端 line_users；後端不可用時暫存記憶體)
 │       ├── BackendClient.java         # 呼叫後端 /api/line/internal/* (X-Internal-Key)
 │       ├── InternalHandler.java       # 後端呼叫的 /internal/richmenu/link (X-Internal-Key)

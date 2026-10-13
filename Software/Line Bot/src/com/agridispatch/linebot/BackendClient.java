@@ -58,6 +58,20 @@ public final class BackendClient {
         return res == null ? null : arrayElements(res, "\"messages\"");
     }
 
+    /**
+     * 工作者帳號本人資料查詢（action：task／weather／salary）：回傳後端 data 物件；
+     * 後端可用但沒有資料（未綁定、身分不符、功能關閉）回傳空 Map，後端不可用時回傳 null。
+     */
+    public static Map<String, Object> workerData(String userId, String action) {
+        String res = post("query", "{\"channel\":\"" + Channel.WORKER.key + "\",\"lineUserId\":\"" + esc(userId)
+                + "\",\"action\":\"" + esc(action) + "\"}");
+        if (res == null) return null;
+        Object data = SimpleJson.parseObject(res).get("data");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> m = data instanceof Map ? (Map<String, Object>) data : Map.of();
+        return m;
+    }
+
     private static String post(String path, String body) {
         if (Config.INTERNAL_KEY == null) {
             if (warnedNoKey.compareAndSet(false, true)) {

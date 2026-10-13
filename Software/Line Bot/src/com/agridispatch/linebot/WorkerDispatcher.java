@@ -10,6 +10,7 @@ import static com.agridispatch.linebot.FarmerDispatcher.has;
 /**
  * 智農派工 - 工作者帳號分派器（規格 4.2；本勞與外勞共用，多語）
  * W-01 今日任務、W-02 打卡、W-03 天候與集合、W-04 薪資、W-05 出勤紀錄、W-06 切換語言、W-07 帳號綁定、W-08 使用說明；
+ * W-01、W-03、W-04 向後端查本人資料（WorkerCards）；後端查不到時，正式模式請使用者開工作者頁面，Mock 模式才用示範卡片；
  * 語音訊息（規格 5.5）辨識後以確認卡呈現
  *
  * 外籍移工功能下架（Config.FEATURE_FOREIGN_WORKERS=false）時：一律繁體中文、不辨識語言切換，
@@ -136,6 +137,10 @@ final class WorkerDispatcher {
         switch (action) {
             case "task": {
                 if (!me.isWorker()) return bindingRequired(lang, userId);
+                Map<String, Object> d = BackendClient.workerData(userId, "task");
+                if (d != null && !d.isEmpty()) return WorkerCards.task(lang, d, FlexMessageBuilder.workerPageUrl(me));
+                if (!CH.isMock()) return WorkerCards.unavailable(lang, FlexMessageBuilder.workerPageUrl(me));
+                // Mock 模式且後端沒有本人資料（模擬器自行指定的身分）：示範卡片
                 List<String> out = new ArrayList<>();
                 if (me.isMachinery()) {
                     if (!"zh".equals(lang)) out.add(FlexMessageBuilder.wrapText(I18n.t(lang, "fallback.zh")));
@@ -149,12 +154,19 @@ final class WorkerDispatcher {
             case "clock":
                 if (!me.isWorker()) return bindingRequired(lang, userId);
                 return List.of(FlexMessageBuilder.getWorkerLinkFlex(lang, "clock", FlexMessageBuilder.workerPageUrl(me)));
-            case "weather":
+            case "weather": {
                 if (!me.isWorker()) return bindingRequired(lang, userId);
+                Map<String, Object> d = BackendClient.workerData(userId, "weather");
+                if (d != null && !d.isEmpty()) return List.of(WorkerCards.weather(lang, d));
+                if (!CH.isMock()) return WorkerCards.unavailable(lang, FlexMessageBuilder.workerPageUrl(me));
                 return List.of(FlexMessageBuilder.getWorkerWeatherFlex(lang));
+            }
             case "salary": {
                 if (!me.isWorker()) return bindingRequired(lang, userId);
-                // 8,800 元就業獎勵的適用對象【待確認】；確認前維持現行卡片內容
+                Map<String, Object> d = BackendClient.workerData(userId, "salary");
+                if (d != null && !d.isEmpty()) return List.of(WorkerCards.salary(lang, d, FlexMessageBuilder.workerPageUrl(me)));
+                if (!CH.isMock()) return WorkerCards.unavailable(lang, FlexMessageBuilder.workerPageUrl(me));
+                // Mock 示範卡片（8,800 元就業獎勵的適用對象【待確認】）
                 List<String> out = new ArrayList<>();
                 if (!"zh".equals(lang)) out.add(FlexMessageBuilder.wrapText(I18n.t(lang, "fallback.zh")));
                 out.add(FlexMessageBuilder.getSalaryBonusFlex());

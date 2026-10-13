@@ -7,7 +7,7 @@
 > **功能下架（2026-10-12）**：外籍移工（外勞）功能暫時下架，平台先以本國勞工（正職、兼職、中高齡、打工、學生打工）為主。Line Bot 以功能開關 `FEATURE_FOREIGN_WORKERS`（環境變數；或 `config.properties` 的 `feature.foreign-workers`）處理、不刪程式，**預設 `false`**，與前端 `features.foreignWorkers` 一致。關閉時工作者帳號：綁定卡只有本國籍入口、不產生 `role=worker_foreign` 的綁定網址；不出語言選擇與三語歡迎、不辨識語言切換、不採用 LINE 介面語言，回覆與推播一律繁體中文；已綁定為 `worker_foreign` 的舊使用者只回「外籍工作者服務暫停中，請洽合作社或帶班師傅」與聯絡合作社卡，選單回帳號預設 `worker_guest`；舊選單送來 `a=lang`、`a=lang_help` 時回「目前僅提供繁體中文介面」或使用說明。圖文選單 `worker_guest` 改為中文功能格（今日任務、上下班打卡、薪資明細、帳號綁定、使用說明、聯絡合作社），`worker_main_zh` 的「語言・說明」改「使用說明」（`a=help`）。**恢復方式**：設 `FEATURE_FOREIGN_WORKERS=true`（或 `feature.foreign-workers=true`）重啟 Line Bot；圖文選單另把 `tools/make_rich_menus.py` 的 `FEATURE_FOREIGN_WORKERS` 改 `True`、重新產生並以 `RichMenuUploader` 上傳。下文第參、肆、捌、玖章所述多語與外籍流程為開關打開時的行為。後端 `worker_foreign` 角色與資料未變動。
 > **狀態（2026-10-13 對照程式更新）**：P1～P5 已實作，並以 `TestSimulator --check` 與 `tools/acceptance_mock.py`（15/15）在模擬模式驗收；01、02、03 文件與 `Software/Line Bot/README.md` 已同步。已完成：Line Bot `/callback/farmer`、`/callback/worker` 雙 webhook 與 `FarmerDispatcher`／`WorkerDispatcher`（舊 `/callback`、`/webhook` 過渡路徑仍保留）；後端 `line_users`（6.5）、`LineBindingService`、內部端點 `/api/line/internal/identity`／`follow-state`／`query`、綁定 API（6.4）、LIFF ID token 驗證；Line Bot 內部端點 `/internal/richmenu/link`、`/internal/notify`、`/internal/push`；6 份圖文選單與上傳工具；LIFF 綁定頁、科技後台 `admin-line.html`、模擬器雙帳號；推播（第柒章 7.0）；工作者語音（5.5，預設關閉）；後端舊 `POST /api/line/webhook` 已停用（回 410）。
 >
-> **尚未完成**：(1) P0 兩個官方帳號與 LINE Login／LIFF 尚未申請，實機驗收（P6、`07_` 手冊）未做；(2) 農場主 F-01 我的訂單由後端回本人資料（後端離線或無綁定資料時退回範本），F-04 天候避險仍為固定範本；(3) 工作者 W-01 今日任務、W-03 天候集合、W-04 薪資：後端 `internal/query` 已可回本人資料（2026-10-13），Line Bot 端截至本次更新仍回固定範本卡片；W-02 打卡、W-05 出勤以卡片連結開啟工人頁，不在聊天室內列出；(4) 薪資入帳推播待發薪功能；(5) Flex 範本檔名尚未依第玖章改為 `<功能代碼>_<lang>.json`；(6) `line_messages` 未啟用。另：黑轉白（F-02）亦有功能開關 `FEATURE_LEGALIZE`（預設 `false`，關閉時回暫停說明）。第壹章 1.1 為拆分前的問題紀錄、第拾壹章為當時規劃的變更範圍，保留供追溯。
+> **尚未完成**：(1) P0 兩個官方帳號與 LINE Login／LIFF 尚未申請，實機驗收（P6、`07_` 手冊）未做；(2) 農場主 F-01 我的訂單由後端回本人資料（後端離線或無綁定資料時退回範本），F-04 天候避險仍為固定範本；(3) 工作者 W-01 今日任務、W-03 天候集合、W-04 薪資已改為本人資料（2026-10-13：後端 `internal/query` 回 `data`，Line Bot `WorkerCards` 依語言組卡；正式模式查不到時請使用者開工人頁，只有 Mock 模式才退回示範卡片）；W-04 為試算（勞健保概估），8,800 元就業獎勵適用對象仍【待確認】；W-02 打卡、W-05 出勤以卡片連結開啟工人頁，不在聊天室內列出；(4) 薪資入帳推播待發薪功能；(5) Flex 範本檔名尚未依第玖章改為 `<功能代碼>_<lang>.json`；(6) `line_messages` 未啟用。另：黑轉白（F-02）亦有功能開關 `FEATURE_LEGALIZE`（預設 `false`，關閉時回暫停說明）。第壹章 1.1 為拆分前的問題紀錄、第拾壹章為當時規劃的變更範圍，保留供追溯。
 
 ---
 
@@ -158,10 +158,10 @@
 
 | 代碼 | 功能 | 公開 | 觸發 | 回覆內容依身分 | 現況對應 |
 |---|---|---|---|---|---|
-| W-01 | 今日任務 | | `a=task` ／ 任務、出勤、nhiệm vụ、tugas | 一般工人：任務卡；機耕師：機耕工單；帶班師傅與 `isLeader` 組長：任務卡附工班出勤摘要與評核連結 | `getWorkerTaskFlex`、`getMachineryTaskFlex`（工單部分） |
+| W-01 | 今日任務 | | `a=task` ／ 任務、出勤、nhiệm vụ、tugas | 一般工人：任務卡；機耕師：機耕工單；帶班師傅與 `isLeader` 組長：任務卡附工班出勤摘要與評核連結 | ✅ 本人今日排班（無則附 14 天內下一筆）、組長附工班今日打卡人數與未打卡名單：後端 `LineWorkerQueryService`、Line Bot `WorkerCards.task`（Mock 示範：`getWorkerTaskFlex`、`getMachineryTaskFlex`） |
 | W-02 | 上下班打卡 | | `a=clock` | 開啟既有打卡網頁（不在聊天室內直接打卡） | 新增（連到既有工人頁） |
-| W-03 | 天候與集合通知 | | `a=weather` ／ 天氣、mưa、hujan | 本人當日出工名單的集合地點、接駁變更 | `getWeatherHedgeFlex`（改寫為工人視角） |
-| W-04 | 薪資與津貼明細 | | `a=salary` ／ 薪資、lương、gaji | 本人明細；8,800 元就業獎勵僅對適用身分顯示【待確認：適用對象】 | `getSalaryBonusFlex` |
+| W-03 | 天候與集合通知 | | `a=weather` ／ 天氣、mưa、hujan | 本人當日出工名單的集合地點、接駁變更 | ✅ 目前天候＋本人今日各班次集合地點、作業、車號與司機；工班狀態 `hedged_indoor` 時改用避險地點：`WorkerCards.weather`（不回後台天候訊息，內含營收） |
+| W-04 | 薪資與津貼明細 | | `a=salary` ／ 薪資、lương、gaji | 本人明細；8,800 元就業獎勵僅對適用身分顯示【待確認：適用對象】 | ✅ 本月薪資試算（`WorkerService.calculatePayroll`）：`WorkerCards.salary`；只列工人資料上登錄的農業津貼，8,800 適用對象確認前不另標示（Mock 示範：`getSalaryBonusFlex`） |
 | W-05 | 我的出勤紀錄 | | `a=attendance` | 本人近 30 日出勤 | 新增（後端既有 `/api/attendance`） |
 | W-06 | 切換語言 | ✅ | `a=lang&v=zh|vi|id` ／ 中文、越南、印尼 | — | 語言切換（改為 postback 並存資料庫） |
 | W-07 | 帳號綁定 ／ 我的帳號 | ✅ | `a=account` ／ 綁定、帳號 | LIFF；畫面提供本勞、外勞兩種入口 | `getBindingFlex`（補本勞按鈕） |
@@ -304,7 +304,7 @@ flowchart LR
 |---|---|---|---|
 | POST | `/api/line/internal/identity` | `{channel, lineUserId}` | `{bound, role, subRole, nationality, isLeader, lang, menuKey}`；未綁定回 `bound:false` 與已記錄的語言 |
 | POST | `/api/line/internal/follow-state` | `{channel, lineUserId, followed?, lang?, langLocked?, displayName?}` | `{success, ...identity}`；語言選擇（W-06）帶 `langLocked:true`；加好友時的 LINE 介面語言不帶（未鎖定才採用） |
-| POST | `/api/line/internal/query` | `{channel, lineUserId, action, text?}` | `{success, messages:[LINE 訊息物件]}`；後端依 channel 與身分限制可回答的 action（4.1、4.2），不符回 `messages:[]` |
+| POST | `/api/line/internal/query` | `{channel, lineUserId, action, text?}` | `{success, messages:[LINE 訊息物件], data?}`；後端依 channel 與身分限制可回答的 action（4.1、4.2），不符回 `messages:[]`、不帶 `data`。農場主帳號回 `messages`；工作者帳號 `task`／`weather`／`salary` 回 `data`（本人資料，Line Bot 依使用者語言組卡片，與推播 7.0 同樣分工） |
 
 **Line Bot 提供（後端呼叫）**
 

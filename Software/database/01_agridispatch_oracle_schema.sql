@@ -324,9 +324,9 @@ CREATE TABLE workers (
     nationality         VARCHAR2(50 CHAR)  NOT NULL,
     is_leader           CHAR(1)       DEFAULT 'N' NOT NULL,
     tier                VARCHAR2(30 CHAR),
-    employment_type     VARCHAR2(16 CHAR),   -- 本國工人工作型態：full_time 正職／part_time 兼職／senior 中高齡／casual 臨時打工／student 學生打工
     base_salary         NUMBER(8)     DEFAULT 29500 NOT NULL,
     agri_bonus          NUMBER(8)     DEFAULT 8800 NOT NULL,
+    employment_type     VARCHAR2(16 CHAR),   -- 本國工人工作型態：full_time 正職／part_time 兼職／senior 中高齡／casual 臨時打工／student 學生打工
     transport_allowance NUMBER(8)     DEFAULT 2400 NOT NULL,
     arc_number          VARCHAR2(32 CHAR),
     passport_number     VARCHAR2(32 CHAR),
@@ -346,9 +346,9 @@ CREATE TABLE workers (
 COMMENT ON TABLE workers IS '在籍外展農工表：外展機構合法聘僱之 20 位外展移工與本國師級人才';
 COMMENT ON COLUMN workers.id IS '移工編號 (如 W001)';
 COMMENT ON COLUMN workers.nationality IS '國籍 (越南, 印尼, 泰國, 本國)';
-COMMENT ON COLUMN workers.employment_type IS '工作型態 (full_time 正職, part_time 兼職, senior 中高齡, casual 臨時打工, student 學生打工；外籍為 NULL)';
 COMMENT ON COLUMN workers.base_salary IS '外展保障基本法定底薪（2026 年最低工資 NT$ 29,500）';
 COMMENT ON COLUMN workers.agri_bonus IS '中央農業部外展就業獎勵 (最高 NT$ 8,800/月)';
+COMMENT ON COLUMN workers.employment_type IS '工作型態 (full_time 正職, part_time 兼職, senior 中高齡, casual 臨時打工, student 學生打工；外籍為 NULL)';
 COMMENT ON COLUMN workers.transport_allowance IS '高溫與專車交通津貼 (NT$ 2,400/月)';
 
 -- ====================================================================

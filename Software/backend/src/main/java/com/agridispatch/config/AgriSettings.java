@@ -21,6 +21,10 @@ public class AgriSettings {
     @Value("${agri.security.token-secret:}")
     private String tokenSecret;
 
+    /** 未設定 AGRI_TOKEN_SECRET 時，自動產生的密鑰存放檔（環境變數 AGRI_TOKEN_SECRET_FILE）；重啟沿用同一把，用工證明查驗碼與 token 才不會失效 */
+    @Value("${agri.security.token-secret-file:}")
+    private String tokenSecretFile;
+
     /** 管理員初始密碼（環境變數 AGRI_ADMIN_PASSWORD） */
     @Value("${agri.security.admin-password:}")
     private String adminPassword;
@@ -93,6 +97,8 @@ public class AgriSettings {
     }
 
     public String getTokenSecret() { return tokenSecret; }
+
+    public String getTokenSecretFile() { return tokenSecretFile; }
 
     public String getAdminPassword() { return adminPassword; }
 

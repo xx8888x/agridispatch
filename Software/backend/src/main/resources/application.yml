@@ -41,6 +41,8 @@ agri:
     foreign-workers: ${AGRI_FEATURE_FOREIGN_WORKERS:false}
   security:
     token-secret: ${AGRI_TOKEN_SECRET:}
+    # 未設定 token-secret 時：自動產生並存到此檔，重啟沿用（避免 token 與用工證明查驗碼失效）；正式環境仍請設 AGRI_TOKEN_SECRET
+    token-secret-file: ${AGRI_TOKEN_SECRET_FILE:./data/token-secret}
     admin-password: ${AGRI_ADMIN_PASSWORD:}
     login-lock-admin-only: ${AGRI_LOGIN_LOCK_ADMIN_ONLY:false}
   cors:

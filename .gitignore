@@ -16,6 +16,7 @@ Software/backend/data/*.mv.db
 Software/backend/data/*.trace.db
 Software/backend/data/*.lock.db
 Software/backend/data/roadshow-accounts.csv
+Software/backend/data/token-secret
 Software/database/local/
 *.log
 

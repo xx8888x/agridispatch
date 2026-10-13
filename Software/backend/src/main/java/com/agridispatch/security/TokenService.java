@@ -9,7 +9,11 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.Instant;
@@ -40,15 +44,53 @@ public class TokenService {
         this.settings = settings;
         String configured = settings.getTokenSecret();
         if (configured == null || configured.isBlank()) {
-            byte[] rnd = new byte[32];
-            new SecureRandom().nextBytes(rnd);
-            this.secret = rnd;
-            log.warn("[安全] 未設定 AGRI_TOKEN_SECRET（agri.security.token-secret），已於本次啟動隨機產生 Token 密鑰；重啟後所有既有 token 將失效。");
+            this.secret = loadOrCreateSecretFile(settings.getTokenSecretFile());
         } else {
             if (configured.length() < 32) {
                 log.warn("[安全] AGRI_TOKEN_SECRET 長度不足 32 字元，建議改用更長的隨機字串。");
             }
             this.secret = configured.getBytes(StandardCharsets.UTF_8);
+        }
+    }
+
+    /**
+     * 未設定 AGRI_TOKEN_SECRET：讀取密鑰檔；沒有就隨機產生並寫入（權限盡量限本人），之後重啟沿用同一把。
+     * 未指定檔案或寫入失敗時退回本次啟動隨機密鑰（重啟即失效）。
+     */
+    private static byte[] loadOrCreateSecretFile(String file) {
+        if (file != null && !file.isBlank()) {
+            Path path = Path.of(file.trim());
+            try {
+                if (Files.isRegularFile(path)) {
+                    String saved = Files.readString(path, StandardCharsets.UTF_8).trim();
+                    if (saved.length() >= 32) {
+                        log.warn("[安全] 未設定 AGRI_TOKEN_SECRET，沿用密鑰檔 {}；正式環境請改設環境變數。", path.toAbsolutePath());
+                        return saved.getBytes(StandardCharsets.UTF_8);
+                    }
+                }
+                byte[] rnd = new byte[48];
+                new SecureRandom().nextBytes(rnd);
+                String created = B64URL.encodeToString(rnd);
+                if (path.getParent() != null) Files.createDirectories(path.getParent());
+                Files.writeString(path, created, StandardCharsets.UTF_8);
+                restrictToOwner(path);
+                log.warn("[安全] 未設定 AGRI_TOKEN_SECRET，已產生 Token 密鑰並存到 {}（重啟沿用）；正式環境請改設環境變數。", path.toAbsolutePath());
+                return created.getBytes(StandardCharsets.UTF_8);
+            } catch (IOException | RuntimeException e) {
+                log.warn("[安全] 無法讀寫 Token 密鑰檔 {}：{}", path.toAbsolutePath(), e.toString());
+            }
+        }
+        byte[] rnd = new byte[32];
+        new SecureRandom().nextBytes(rnd);
+        log.warn("[安全] 未設定 AGRI_TOKEN_SECRET（agri.security.token-secret），已於本次啟動隨機產生 Token 密鑰；重啟後所有既有 token 與用工證明查驗碼將失效。");
+        return rnd;
+    }
+
+    private static void restrictToOwner(Path path) {
+        try {
+            Files.setPosixFilePermissions(path, PosixFilePermissions.fromString("rw-------"));
+        } catch (UnsupportedOperationException | IOException ignored) {
+            // Windows 等非 POSIX 檔案系統：沿用資料夾權限
         }
     }
 

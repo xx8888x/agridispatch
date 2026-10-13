@@ -2,9 +2,12 @@ package com.agridispatch.security;
 
 import com.agridispatch.config.AgriSettings;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Optional;
@@ -102,5 +105,26 @@ class TokenServiceTest {
         String t = a.issue("x", "farmer", "F001", false);
         assertTrue(a.verify(t).isPresent());
         assertTrue(b.verify(t).isEmpty(), "未設定密鑰時每次啟動隨機產生");
+    }
+
+    @Test
+    void secretFilePersistsAcrossRestarts(@TempDir Path dir) throws Exception {
+        Path file = dir.resolve("sub").resolve("token-secret");
+        AgriSettings s = settings(false, "");
+        ReflectionTestUtils.setField(s, "tokenSecretFile", file.toString());
+        TokenService first = new TokenService(s);
+        assertTrue(Files.isRegularFile(file), "未設定密鑰時應產生密鑰檔");
+        String t = first.issue("x", "farmer", "F001", false);
+        TokenService restarted = new TokenService(s);
+        assertTrue(restarted.verify(t).isPresent(), "重啟後沿用密鑰檔，既有 token 仍有效");
+    }
+
+    @Test
+    void configuredSecretIgnoresFile(@TempDir Path dir) {
+        Path file = dir.resolve("token-secret");
+        AgriSettings s = settings(false, "unit-test-secret-0123456789abcdef-xyz");
+        ReflectionTestUtils.setField(s, "tokenSecretFile", file.toString());
+        new TokenService(s);
+        assertFalse(Files.exists(file), "有設定 AGRI_TOKEN_SECRET 時不寫密鑰檔");
     }
 }

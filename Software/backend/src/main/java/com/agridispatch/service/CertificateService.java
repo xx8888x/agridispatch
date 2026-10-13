@@ -21,7 +21,7 @@ import java.util.*;
  * 合法用工證明：依訂單的出勤紀錄，逐日核對「工作許可在效期內」與「應加保險種皆在保」，
  * 全部符合才可開立；附查驗碼，通路稽核人員可在公開頁面核對證明內容未被竄改。
  *
- * 查驗碼由伺服器密鑰（AGRI_TOKEN_SECRET）簽出，未固定密鑰時每次重啟會改變。
+ * 查驗碼由伺服器密鑰（AGRI_TOKEN_SECRET）簽出；未設定時沿用自動產生的密鑰檔（agri.security.token-secret-file），兩者皆無才會在重啟後改變。
  */
 @Service
 public class CertificateService {

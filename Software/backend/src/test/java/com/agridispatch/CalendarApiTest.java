@@ -1,7 +1,6 @@
 package com.agridispatch;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -93,33 +92,33 @@ class CalendarApiTest extends ApiTestSupport {
         assertEquals(5, j.get("selectedMonth").asInt());
         JsonNode h = j.get("data");
         assertEquals(12, h.size());
-        assertEquals(List.of("H02", "H01", "H12", "H03", "H04", "H05", "H06", "H07", "H08", "H09", "H10", "H11"), ids(h));
+        assertEquals(List.of("H01", "H12", "H03", "H04", "H05", "H06", "H07", "H08", "H09", "H10", "H11", "H02"), ids(h));
 
         // H01 大樹玉荷包 5/20：距 2027-05-15 共 5 天 → 採收倒數中（rose）
-        JsonNode h01 = h.get(1);
+        JsonNode h01 = h.get(0);
         assertEquals(2027, h01.get("harvestYear").asInt());
         assertEquals(5, h01.get("countdownDays").asInt());
         assertEquals("2027年5月20日", h01.get("harvestDateStr").asText());
         assertEquals("rose", h01.get("statusColor").asText());
 
         // H12 綠竹筍 6/10：26 天 → 預約搶工中（amber）；H03 6/25：41 天 → amber
-        assertEquals(26, h.get(2).get("countdownDays").asInt());
+        assertEquals(26, h.get(1).get("countdownDays").asInt());
+        assertEquals("amber", h.get(1).get("statusColor").asText());
+        assertEquals(41, h.get(2).get("countdownDays").asInt());
         assertEquals("amber", h.get(2).get("statusColor").asText());
-        assertEquals(41, h.get(3).get("countdownDays").asInt());
-        assertEquals("amber", h.get(3).get("statusColor").asText());
         // H04 7/15：61 天 → 生長監測中（emerald）
-        assertEquals(61, h.get(4).get("countdownDays").asInt());
-        assertEquals("emerald", h.get(4).get("statusColor").asText());
+        assertEquals(61, h.get(3).get("countdownDays").asInt());
+        assertEquals("emerald", h.get(3).get("statusColor").asText());
 
         // H10 車城洋蔥 2/20：早於 5 月 → 算到隔年 2028，距 281 天
-        JsonNode h10 = h.get(10);
+        JsonNode h10 = h.get(9);
         assertEquals("H10", h10.get("id").asText());
         assertEquals(2028, h10.get("harvestYear").asInt());
         assertEquals(281, h10.get("countdownDays").asInt());
         assertEquals("2028年2月20日", h10.get("harvestDateStr").asText());
 
         // H02 枋山芒果 5/10：同月但已過基準日 15 日 → 算到 2028-05-10（2028 為閏年，共 361 天）
-        JsonNode h02 = h.get(0);
+        JsonNode h02 = h.get(11);
         assertEquals(2028, h02.get("harvestYear").asInt());
         assertEquals(361, h02.get("countdownDays").asInt());
         assertEquals("emerald", h02.get("statusColor").asText());
@@ -165,12 +164,7 @@ class CalendarApiTest extends ApiTestSupport {
         assertEquals(ChronoUnit.DAYS.between(today, harvest), first.get("countdownDays").asLong());
     }
 
-    /**
-     * 「收穫日倒數清單」應以倒數天數由近到遠排列。
-     * 目前排序只比月份差與日，未考慮基準日：同月但已過的收穫日（倒數約 360 天）會排在最前面。
-     * 例：選 2027 年 5 月 → H02 枋山芒果 5/10（倒數 361 天）排第 1，H01 5/20（倒數 5 天）排第 2。
-     */
-    @Disabled("疑似 bug：CalendarService.getUpcomingHarvests 排序未考慮基準日，同月已過的收穫日排在最前（倒數約 360 天）")
+    /** 「收穫日倒數清單」以倒數天數由近到遠排列：同月但已過基準日的收穫日（算到明年）排在最後（2026-10-13 修正）。 */
     @Test
     void harvestsShouldBeOrderedByCountdown() throws Exception {
         JsonNode h = get("/api/calendar/harvests?year=2027&month=5").get("data");

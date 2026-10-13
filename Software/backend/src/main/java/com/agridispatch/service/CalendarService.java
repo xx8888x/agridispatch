@@ -171,20 +171,6 @@ public class CalendarService {
                     "🔥 清晨破曉掘筍", "清晨 04:00 摸黑掘筍防出青、冰水預冷鎖甜、生鮮冷藏", "team_a", "taoyuan_veg", 10)
         ));
 
-        // 依據年月份差進行動態時序輪轉排序 (當月與即將到來的月份排在最前)
-        allHarvests.sort((a, b) -> {
-            int ma = (int) a.get("month");
-            int mb = (int) b.get("month");
-            int diffA = (ma - baseMonth + 12) % 12;
-            int diffB = (mb - baseMonth + 12) % 12;
-            if (diffA != diffB) {
-                return Integer.compare(diffA, diffB);
-            }
-            int da = (int) a.get("day");
-            int db = (int) b.get("day");
-            return Integer.compare(da, db);
-        });
-
         // 動態計算距離預估收穫天數與所屬年度
         for (Map<String, Object> h : allHarvests) {
             int m = (int) h.get("month");
@@ -212,6 +198,8 @@ public class CalendarService {
             }
         }
 
+        // 依倒數天數由近到遠排序（同月但已過基準日的收穫日算到明年，排在最後）
+        allHarvests.sort(Comparator.comparingInt(h -> (int) h.get("countdownDays")));
         return allHarvests;
     }
 

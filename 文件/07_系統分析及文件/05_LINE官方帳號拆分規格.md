@@ -316,7 +316,7 @@ flowchart LR
 - 舊 `POST /api/line/webhook`（以 channel secret 驗簽）已停用：一律回 410，不讀 body、不處理訊息（`03_認證與API安全規格.md` 已同步）。
 - `/internal/richmenu/link` 回應 `result`：`linked`／`unlinked`（guest＝回到帳號預設）／`mock`／`missing`（尚未上傳該選單）／`failed`；`/internal/push` 於 P5 加入。
 - 本機開發：`start_all.bat` 未設定 `AGRI_LINEBOT_INTERNAL_KEY` 時每次啟動產生一組，後端與 LINE Bot 共用；LINE Bot 未設定金鑰或後端離線時，身分改存記憶體（P1 行為）。
-- 後端 `GET/POST /api/line/config` 改為顯示兩個帳號的設定狀態（向 Line Bot `/health` 取得），後端不再保存 channel token。
+- 後端 `GET /api/line/config`（僅 admin_tech）顯示兩個帳號的設定狀態（向 Line Bot `/health` 取得），後端不再保存 channel token。原「執行中修改金鑰」的 `POST /api/line/config` 已於 2026-10-13 移除：金鑰只由環境變數或 LINE Bot `config.properties` 提供。LINE Bot 自己的 `/api/config`（`X-Admin-Key` 保護）不變。
 
 ### 6.4 後端對外端點（新增）
 
@@ -493,7 +493,7 @@ LINE 官方帳號依「每月主動推播則數」計費，**回覆訊息（Repl
 | Line Bot | `LineApiClient.java` | 依 channel 取 token；新增 multicast、per-user 選單連結；移除工作者帳號的 broadcast |
 | Line Bot | `FlexMessageBuilder.java`、`flex_templates/` | 依 4.1／4.2 拆分卡片；工人卡片三語化；綁定卡分帳號 |
 | Line Bot | `RichMenuUploader.java`、`rich_menu/` | 6 份選單（第捌章） |
-| 後端 | `LineController.java` | 新增 6.3、6.4 端點；`/api/line/webhook` 標停用；`/config` 改顯示兩帳號狀態 |
+| 後端 | `LineController.java` | 新增 6.3、6.4 端點；`/api/line/webhook` 停用（回 410）；`GET /config` 改顯示兩帳號狀態，`POST /config`（執行中改金鑰）已於 2026-10-13 移除 |
 | 後端 | `LineUser.java`、`LineUserRepository.java` | 依 6.5 修改；新增 `LineBindingService` |
 | 後端 | `AuthInterceptor` 等授權設定 | 內部端點改以內部金鑰驗證，綁定端點需登入 |
 | 前端 | `Software/demo/linebot/line.html` | 模擬器上方切換「農場主帳號／工作者帳號」；工作者帳號可選身分與語言（P4 完成：手機頂部顯示目前帳號、細分身分、「示範身分／實際綁定」切換、真正的圖文選單、一次顯示全部回覆） |

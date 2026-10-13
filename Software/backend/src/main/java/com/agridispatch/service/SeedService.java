@@ -64,6 +64,7 @@ public class SeedService {
     private final com.agridispatch.repository.AttendanceCorrectionRepository attendanceCorrectionRepository;
     private final com.agridispatch.repository.PayrollSlipRepository payrollSlipRepository;
     private final com.agridispatch.repository.PayrollMonthRepository payrollMonthRepository;
+    private final com.agridispatch.repository.WorkerLeaveRepository workerLeaveRepository;
     private final OrderService orderService;
 
     /** demo 密碼雜湊快取（310,000 次 PBKDF2 較耗時，demo 種子共用同一組雜湊） */
@@ -90,7 +91,8 @@ public class SeedService {
                        OrderService orderService,
                        com.agridispatch.repository.AttendanceCorrectionRepository attendanceCorrectionRepository,
                        com.agridispatch.repository.PayrollSlipRepository payrollSlipRepository,
-                       com.agridispatch.repository.PayrollMonthRepository payrollMonthRepository) {
+                       com.agridispatch.repository.PayrollMonthRepository payrollMonthRepository,
+                       com.agridispatch.repository.WorkerLeaveRepository workerLeaveRepository) {
         this.userRepository = userRepository;
         this.cropRepository = cropRepository;
         this.teamRepository = teamRepository;
@@ -113,6 +115,7 @@ public class SeedService {
         this.attendanceCorrectionRepository = attendanceCorrectionRepository;
         this.payrollSlipRepository = payrollSlipRepository;
         this.payrollMonthRepository = payrollMonthRepository;
+        this.workerLeaveRepository = workerLeaveRepository;
     }
 
     public void seedAll(boolean cleanFirst) {
@@ -121,6 +124,7 @@ public class SeedService {
             attendanceCorrectionRepository.deleteAll();   // 參照 clock_ins、workers
             payrollSlipRepository.deleteAll();            // 參照 payroll_months、workers
             payrollMonthRepository.deleteAll();
+            workerLeaveRepository.deleteAll();            // 參照 workers
             attendanceRepository.deleteAll();
             financialLedgerRepository.deleteAll();
             teamRatingRepository.deleteAll();

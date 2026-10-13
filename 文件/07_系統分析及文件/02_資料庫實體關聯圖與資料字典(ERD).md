@@ -1,6 +1,6 @@
 # 智農派工 (AgriDispatch) - 資料庫實體關聯圖與資料字典 (ERD)
 
-> **文件版本**：v3.7.0（2026-10-13，新增出勤補登／修正與月結算 `attendance_corrections`、`payroll_months`、`payroll_slips`，見 2.17～2.19、第參章第 15 點）；v3.6.0（2026-10-02，新增 `legalize_workers` 工班合法化清冊，見 2.15）；v3.5.0（2026-10-02，`line_users` 改為 LINE 雙帳號結構並開始使用，見 2.14）；v3.4.0（2026-10-01，依 `Software/backend/src/main/java/com/agridispatch/entity/*.java` 實際 JPA 實體更新：新增 `team_ratings`、`insurance_records`、`skill_reviews`、`clock_ins.orderId` 與領班評核欄位、`orders.crewWorkerIds`、`orders.startDate`／`endDate`，補列 `farmers`、`financial_ledger`、`line_users`、`line_messages`；v3.0.0 為 2026-09-23）
+> **文件版本**：v3.8.0（2026-10-13，新增工人請假 `worker_leaves`，見 2.20、第參章第 16 點）；v3.7.0（2026-10-13，新增出勤補登／修正與月結算 `attendance_corrections`、`payroll_months`、`payroll_slips`，見 2.17～2.19、第參章第 15 點）；v3.6.0（2026-10-02，新增 `legalize_workers` 工班合法化清冊，見 2.15）；v3.5.0（2026-10-02，`line_users` 改為 LINE 雙帳號結構並開始使用，見 2.14）；v3.4.0（2026-10-01，依 `Software/backend/src/main/java/com/agridispatch/entity/*.java` 實際 JPA 實體更新：新增 `team_ratings`、`insurance_records`、`skill_reviews`、`clock_ins.orderId` 與領班評核欄位、`orders.crewWorkerIds`、`orders.startDate`／`endDate`，補列 `farmers`、`financial_ledger`、`line_users`、`line_messages`；v3.0.0 為 2026-09-23）
 > **資料庫**：H2 檔案資料庫（`Software/backend/data/agridispatch_db`），Hibernate `ddl-auto: update` 自動建表
 > **Visio 圖檔**：同資料夾的 `.vdx` / `.vsdx` 為 v2.0 舊版，**以本文件的 Mermaid 圖為準**
 
@@ -168,6 +168,16 @@ erDiagram
         int totalDeductions
         int netPay
     }
+    worker_leaves {
+        string id PK "LV-YYYY-NNN"
+        string workerId "→ workers.id"
+        string leaveType "12 種假別代碼"
+        date startDate
+        date endDate
+        string timeSlot "full_day/morning/afternoon"
+        string status "pending/approved/rejected/cancelled"
+        string decisionNote
+    }
     talents {
         string id PK
         string name
@@ -301,6 +311,7 @@ erDiagram
     clock_ins ||..o{ attendance_corrections : "clockInId"
     payroll_months ||..o{ payroll_slips : "month"
     workers ||..o{ payroll_slips : "workerId"
+    workers ||..o{ worker_leaves : "workerId"
     orders ||..o| team_ratings : "orderId"
     dispatch_teams ||..o{ team_ratings : "teamId"
     farmers ||..o{ legalize_workers : "farmerId（邏輯關聯）"
@@ -580,6 +591,22 @@ erDiagram
 
 > 同一月份同一工人唯一（Oracle `uq_payroll_slips_month_worker`）；重新開放該月時整批刪除。
 
+### 2.20 工人請假 `worker_leaves`（實體 `WorkerLeave`，2026-10-13 起）
+| 欄位 | 型別 | 說明 |
+| :--- | :--- | :--- |
+| `id` (PK) | String(32) | `LV-YYYY-NNN`，例 `LV-2026-001` |
+| `worker_id` | String(32) | → `workers.id`（Oracle 有外鍵；demo 重建種子須先刪本表） |
+| `leave_type` | String(20) | `annual` 特休 / `personal` 事假 / `sick` 普通傷病假 / `menstrual` 生理假 / `family_care` 家庭照顧假 / `marriage` 婚假 / `bereavement` 喪假 / `official` 公假 / `injury` 公傷病假 / `maternity` 產假產檢假 / `paternity` 陪產檢及陪產假 / `other` 其他 |
+| `start_date` / `end_date` | LocalDate | 期間（含頭尾）；`end_date ≥ start_date` |
+| `time_slot` | String(16) | `full_day` 整天 / `morning` 上午 / `afternoon` 下午（半天假限單日） |
+| `reason` | String(200) | 事由（選填） |
+| `status` | String(20) | `pending` 待審核 / `approved` 已核准 / `rejected` 已駁回 / `cancelled` 已取消 |
+| `requested_by` | String(64) | 申請人帳號（工人本人或代為申請的 admin） |
+| `created_at` | LocalDateTime | 申請時間 |
+| `decided_by` / `decided_at` / `decision_note` | String(64) / LocalDateTime / String(200) | 核准、駁回或取消的操作人、時間與備註（駁回原因必填） |
+
+> API：`/api/workers/{id}/leaves`、`/api/leaves/**`，見第參章第 16 點與規格書 03 第 5 節。
+
 ---
 
 ## 參、 商業完整性規則（程式實作）
@@ -614,6 +641,12 @@ erDiagram
    - 月結算：只能結算已過完的月份；該月有未下班的出勤回 409（須先修正）；有已下班出勤的工人各存一張 `payroll_slips` 快照（不受外籍移工功能開關影響）。結算後該月出勤不可補登或修正（409）。
    - 重新開放須填原因，刪除該月快照；工人薪資頁（`GET /api/workers/{id}/payroll`）與 LINE W-04 的歷月薪資單，已結算月份顯示快照（`status`「已結算」、`simulated:false`），未結算仍為試算。
    - 計薪規則沿用 `WorkerService`（月薪制、勞健保概估）；兼職、打工依時薪計算【待確認】。
+16. **工人請假**（`LeaveService`，2026-10-13 起）：
+   - 申請（本人或 admin 代為）：12 種假別；單次最多 31 天、開始日最早 30 天前（補請）、半天假限單日；與本人待審核或已核准的假重疊回 409。
+   - 審核（admin）：待審核才可核准或駁回，駁回須填原因；取消：待審核本人或 admin 皆可，已核准本人只能在開始日前取消，admin 隨時可取消。
+   - 已核准的假在派工媒合視同撞期（`MatchingService.busyWorkers`）：出工名單、指名、共享班表一併排除，半天假只佔該時段；待審核不擋派工。申請與核准回傳本人已排入的重疊訂單／班表（`conflicts`），由合作社改派，系統不自動移出名單。
+   - 通知：本人申請 → App 推播給 admin；核准、駁回、admin 取消已核准的假 → LINE 工作者帳號 `leave_decided`（三語）與 App 推播給本人。
+   - 假別給薪、天數上限與證明文件依勞基法、勞工請假規則、性平法【待確認】；系統只記錄假別，不檢查額度、不影響薪資試算。
 
 ---
 

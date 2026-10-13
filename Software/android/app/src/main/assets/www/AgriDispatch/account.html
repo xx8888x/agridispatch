@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 AgriDispatch - 我的帳號</title>
+  <script src="js/app-config.js"></script>
+  <script src="js/api-client.js"></script>
+  <script>
+    // 任何已登入身分都能進來；production 未登入導向登入大廳
+    if (window.AgriAuth) window.AgriAuth.requireRole(null, 'login.html');
+  </script>
+  <!-- 設計系統 -->
+  <script src="js/agri-theme.js"></script>
+  <link rel="stylesheet" href="css/agri.css">
+  <script src="js/vendor/lucide.min.js"></script>
+</head>
+<body class="ad-body">
+
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner" style="max-width: 640px;">
+      <a id="backLink" href="login.html" class="ad-btn ad-btn--ghost ad-btn--sm">← 回工作台</a>
+      <div class="ad-header__actions">
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="AgriTheme.demoNav().open()" aria-label="示範導覽"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="ad-container" style="width: 100%; max-width: 640px; padding-block: 24px 40px; display: flex; flex-direction: column; gap: 20px;">
+    <h1 class="ad-display">我的帳號</h1>
+
+    <div id="loadError" class="ad-notice ad-notice--danger" role="alert" hidden></div>
+
+    <section class="ad-card" aria-labelledby="profileTitle">
+      <div class="ad-card__head"><h2 id="profileTitle" class="ad-heading">個人資料</h2></div>
+      <div id="profile" class="ad-list"><p class="ad-caption">載入中…</p></div>
+      <p class="ad-caption" style="margin-top: 12px;">姓名、電話等資料要更正，請聯絡合作社。</p>
+    </section>
+
+    <section id="password" class="ad-card" aria-labelledby="pwdTitle">
+      <div class="ad-card__head"><h2 id="pwdTitle" class="ad-heading">修改密碼</h2></div>
+      <form id="pwdForm" novalidate style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- 讓密碼管理器知道是哪個帳號 -->
+        <input id="pwdUser" type="text" autocomplete="username" hidden>
+        <div class="ad-field">
+          <label class="ad-label" for="pwdOld">目前的密碼</label>
+          <input id="pwdOld" type="password" autocomplete="current-password" maxlength="128" class="ad-input" required>
+        </div>
+        <div class="ad-field">
+          <label class="ad-label" for="pwdNew">新密碼</label>
+          <input id="pwdNew" type="password" autocomplete="new-password" minlength="8" maxlength="128" class="ad-input" required>
+          <span class="ad-hint">8～128 個字元。</span>
+        </div>
+        <div class="ad-field">
+          <label class="ad-label" for="pwdNew2">再輸入一次新密碼</label>
+          <input id="pwdNew2" type="password" autocomplete="new-password" maxlength="128" class="ad-input" required>
+        </div>
+        <div id="pwdMsg" role="alert" hidden></div>
+        <button id="pwdBtn" type="submit" class="ad-btn ad-btn--primary">更新密碼</button>
+        <p class="ad-caption">更新後所有裝置都要用新密碼重新登入。</p>
+        <p class="ad-caption" data-demo-only>示範模式：只會改到示範資料。</p>
+      </form>
+    </section>
+
+    <section class="ad-card" aria-labelledby="logoutTitle">
+      <div class="ad-card__head"><h2 id="logoutTitle" class="ad-heading">登出</h2></div>
+      <p class="ad-caption" style="margin-bottom: 12px;">在共用的電腦或手機上用完，請記得登出。</p>
+      <button type="button" class="ad-btn ad-btn--secondary" onclick="AgriTheme.logout()"><i data-lucide="log-out" class="ad-icon ad-icon--sm"></i>登出</button>
+    </section>
+  </main>
+
+  <script>
+    const API = (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+    const ROLE_LABEL = { farmer: '農場主', worker_local: '本國工人', worker_foreign: '外籍移工', admin_tech: '科技後台管理員' };
+    const ROLE_HOME = { farmer: 'farmer.html', worker_local: 'worker-local.html', worker_foreign: 'worker-foreign.html', admin_tech: '../TechBackend/admin.html' };
+    const ROLE_LOGIN = { farmer: 'farmer-login.html', worker_local: 'worker-local-login.html', worker_foreign: 'worker-foreign-login.html', admin_tech: '../TechBackend/admin-login.html' };
+    let me = null;
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function row(label, value) {
+      return `<div class="ad-row"><div class="ad-row__main"><div class="ad-row__meta">${esc(label)}</div><div class="ad-row__title" style="white-space: normal;">${esc(value || '—')}</div></div></div>`;
+    }
+
+    // 角色說明（roleDesc）常已含角色名稱，例如「○○農場 農場主」，含了就不重複
+    function roleText(u) {
+      const label = ROLE_LABEL[u.role] || u.role || '';
+      if (!u.roleDesc) return label;
+      return u.roleDesc.includes(label) ? u.roleDesc : `${label}・${u.roleDesc}`;
+    }
+
+    async function loadMe() {
+      const err = document.getElementById('loadError');
+      try {
+        const res = await fetch(`${API}/auth/me`);
+        const body = await res.json().catch(() => ({}));
+        if (res.status === 401) throw new Error('尚未登入，請先登入。');
+        if (!res.ok || body.success === false) throw new Error(body.error || `HTTP ${res.status}`);
+        me = body.user || body.data;
+      } catch (e) {
+        err.innerHTML = `無法取得帳號資料：${esc(e.message)} <a href="login.html" style="font-weight: 600;">前往登入</a>`;
+        err.hidden = false;
+        document.getElementById('profile').innerHTML = '';
+        document.getElementById('pwdBtn').disabled = true;
+        return;
+      }
+      if (ROLE_HOME[me.role]) document.getElementById('backLink').href = ROLE_HOME[me.role];
+      document.getElementById('pwdUser').value = me.username || '';
+      const wp = me.workerProfile || {};
+      document.getElementById('profile').innerHTML = [
+        row('姓名', me.name),
+        row('身分', roleText(me)),
+        row('登入帳號', me.username),
+        me.refId && me.refId !== me.username ? row(me.role === 'farmer' ? '農場主編號' : '工號', me.refId) : '',
+        wp.teamId ? row('所屬工班', wp.teamId) : '',
+        wp.phone ? row('聯絡電話', wp.phone) : ''
+      ].join('');
+      if (me.demo) {
+        document.getElementById('profile').insertAdjacentHTML('beforeend',
+          '<p class="ad-caption" style="margin-top: 8px;">示範帳號（免密登入），不能修改密碼。</p>');
+        document.getElementById('pwdBtn').disabled = true;
+      }
+    }
+
+    function showPwdMsg(text, ok) {
+      const el = document.getElementById('pwdMsg');
+      el.className = ok ? 'ad-notice ad-notice--ok' : 'ad-notice ad-notice--danger';
+      el.textContent = text;
+      el.hidden = !text;
+    }
+
+    document.getElementById('pwdForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const oldPassword = document.getElementById('pwdOld').value;
+      const newPassword = document.getElementById('pwdNew').value;
+      const again = document.getElementById('pwdNew2').value;
+      if (!oldPassword) return showPwdMsg('請輸入目前的密碼。');
+      if (newPassword.length < 8 || newPassword.length > 128) return showPwdMsg('新密碼長度需為 8～128 個字元。');
+      if (newPassword !== again) return showPwdMsg('兩次輸入的新密碼不一致。');
+      if (newPassword === oldPassword) return showPwdMsg('新密碼不能跟目前的密碼相同。');
+      showPwdMsg('');
+      const btn = document.getElementById('pwdBtn');
+      btn.disabled = true;
+      btn.textContent = '更新中…';
+      try {
+        const res = await fetch(`${API}/auth/change-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ oldPassword, newPassword })
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) throw new Error(body.error || body.message || `HTTP ${res.status}`);
+      } catch (err) {
+        showPwdMsg(err instanceof TypeError ? '無法連線伺服器，密碼未更新，請稍後再試。' : `密碼未更新：${err.message}`);
+        btn.disabled = false;
+        btn.textContent = '更新密碼';
+        return;
+      }
+      // 後端已讓舊 token 全部失效：清掉本機登入狀態，請使用者用新密碼重新登入
+      const login = ROLE_LOGIN[me && me.role] || 'login.html';
+      if (window.AgriAuth) window.AgriAuth.clearSession();
+      e.target.reset();
+      showPwdMsg('密碼已更新，請用新密碼重新登入。即將前往登入頁…', true);
+      btn.textContent = '已更新';
+      setTimeout(() => { window.location.href = login; }, 2000);
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+      loadMe().then(() => { if (location.hash === '#password') document.getElementById('pwdOld').focus(); });
+    });
+  </script>
+</body>
+</html>

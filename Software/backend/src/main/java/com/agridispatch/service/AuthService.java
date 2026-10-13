@@ -254,6 +254,39 @@ public class AuthService {
         workerRepository.save(w);
     }
 
+    /**
+     * 管理員帳號清單（帳號與密碼管理頁用）：users 帳號與農工工號。
+     * 只回識別與顯示用欄位，不含密碼雜湊與證號；hasPassword=false 表示尚未設定密碼、無法登入。
+     */
+    public List<Map<String, Object>> listAccounts() {
+        List<Map<String, Object>> list = new ArrayList<>();
+        userRepository.findAll().forEach(u -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("identifier", u.getUsername());
+            m.put("name", u.getName());
+            m.put("role", u.getRole());
+            m.put("refId", u.getRefId());
+            m.put("roleDesc", u.getRoleDesc());
+            m.put("kind", "user");
+            m.put("hasPassword", u.getPassword() != null && !u.getPassword().isBlank());
+            list.add(m);
+        });
+        workerRepository.findAll().forEach(w -> {
+            Principal p = fromWorker(w);
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("identifier", w.getId());
+            m.put("name", workerDisplayName(w));
+            m.put("role", p.role());
+            m.put("refId", w.getId());
+            m.put("roleDesc", workerRoleDesc(w));
+            m.put("teamId", w.getTeamId());
+            m.put("kind", "worker");
+            m.put("hasPassword", w.getPasswordHash() != null && !w.getPasswordHash().isBlank());
+            list.add(m);
+        });
+        return list;
+    }
+
     private static void validateNewPassword(String pw) {
         if (pw == null || pw.length() < 8 || pw.length() > 128) {
             throw ApiException.badRequest("新密碼長度需為 8～128 字元");

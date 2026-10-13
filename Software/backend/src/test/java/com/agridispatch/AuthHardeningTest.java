@@ -134,6 +134,32 @@ class AuthHardeningTest extends ApiTestSupport {
     }
 
     @Test
+    void accountListIsAdminOnlyAndHasNoSecrets() throws Exception {
+        resetPassword("farmer", "Farmer#2026pw");
+        resetPassword("W006", "Worker#2026pw");
+        assertEquals(403, call("GET", "/api/auth/accounts", login("farmer", "Farmer#2026pw"), null).getResponse().getStatus());
+        assertEquals(403, call("GET", "/api/auth/accounts", login("W006", "Worker#2026pw"), null).getResponse().getStatus());
+        assertEquals(401, call("GET", "/api/auth/accounts", null, null).getResponse().getStatus());
+
+        MvcResult r = call("GET", "/api/auth/accounts", adminToken, null);
+        assertEquals(200, r.getResponse().getStatus());
+        String raw = r.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertFalse(raw.contains("password\"") || raw.contains("passwordHash") || raw.contains("arcNumber"), "不得輸出密碼雜湊或證號");
+        JsonNode farmer = null, w006 = null;
+        for (JsonNode a : json(r).get("data")) {
+            if ("farmer".equals(a.get("identifier").asText())) farmer = a;
+            if ("W006".equals(a.get("identifier").asText())) w006 = a;
+        }
+        assertNotNull(farmer);
+        assertEquals("farmer", farmer.get("role").asText());
+        assertEquals("user", farmer.get("kind").asText());
+        assertTrue(farmer.get("hasPassword").asBoolean());
+        assertNotNull(w006);
+        assertEquals("worker", w006.get("kind").asText());
+        assertTrue(w006.get("hasPassword").asBoolean());
+    }
+
+    @Test
     void adminResetPasswordInvalidatesTargetTokens() throws Exception {
         resetPassword("W001", "Worker#2026pw");
         String worker = login("AD88123451", "Worker#2026pw");

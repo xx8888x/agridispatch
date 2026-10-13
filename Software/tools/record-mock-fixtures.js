@@ -108,12 +108,18 @@ const enc = encodeURIComponent;
     '/calendar', '/calendar/harvests', '/calendar/quarters', '/calendar/months',
     '/insurance/types', '/insurance/workers', '/legalize/types', '/legalize/roster', '/legalize/summary',
     '/ratings/tags', '/ratings/teams', '/payments/methods', '/notifications',
-    '/line/config', '/line/bindings', '/line/notify/status', '/public/config', '/auth/quick-profiles',
+    '/line/config', '/line/bindings', '/line/notify/status', '/public/config', '/auth/quick-profiles', '/auth/accounts',
     '/dispatch/overview', '/dispatch/weather-state', '/dispatch/teams', '/attendance/summary/present-count',
     '/skills/workers', '/rosters'   // 共享班表以 admin 視角錄製（含名單與認領農戶），demo-mock 依登入角色過濾
   ];
   const got = {};
   for (const p of simple) got[p] = await record('GET', p);
+  // 帳號清單只留種子帳號（SeedService）：本機資料庫可能有路演來賓等真實人名的帳號，不錄進公開的示範站
+  const acc = fixtures['GET /auth/accounts'];
+  if (acc && acc.b && Array.isArray(acc.b.data)) {
+    const SEED_USERS = new Set(['admin_tech', 'farmer', 'farmer_yilan', 'worker_foreign', 'worker_labor', 'worker_local']);
+    acc.b.data = acc.b.data.filter(a => a.kind === 'worker' || SEED_USERS.has(a.identifier));
+  }
   // 農場主視角的訂單／名冊
   await record('GET', '/legalize/roster', null, tokens.farmer);
   await record('GET', '/legalize/summary', null, tokens.farmer);

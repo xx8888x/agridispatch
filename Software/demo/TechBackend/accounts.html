@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 AgriDispatch - 帳號與密碼管理</title>
+  <script src="js/app-config.js"></script>
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AgriAuth) window.AgriAuth.requireRole(['admin_tech'], 'admin-login.html');
+  </script>
+  <!-- 設計系統：共用 demo 模式標記、圖示、抽屜 -->
+  <script src="js/agri-theme.js"></script>
+  <script src="js/vendor/lucide.min.js"></script>
+  <link rel="stylesheet" href="css/agri.css">
+</head>
+<body class="ad-body">
+
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner" style="max-width: 1080px;">
+      <a href="admin.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">營運後台</span>
+      </a>
+      <div class="ad-header__actions">
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()" aria-label="示範導覽"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span></button>
+        <a href="admin.html" class="ad-btn ad-btn--secondary ad-btn--sm"><i data-lucide="arrow-left" class="ad-icon ad-icon--sm"></i>回後台</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="ad-container" style="width: 100%; max-width: 1080px; padding-block: 24px 40px; display: flex; flex-direction: column; gap: 20px;">
+    <div>
+      <h1 class="ad-display">帳號與密碼管理</h1>
+      <p class="ad-caption" style="margin-top: 6px; max-width: 760px;">使用者忘記密碼時，請先以電話或當面核對身分（姓名、手機、工號），再於此設定臨時密碼並告知本人；請本人登入後到「我的帳號」改成自己的密碼。重設後，該帳號在所有裝置上的登入都會失效。</p>
+    </div>
+
+    <div class="ad-card" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+      <div class="ad-field" style="flex: 1 1 240px;">
+        <label class="ad-label" for="q">搜尋</label>
+        <input id="q" type="search" class="ad-input" placeholder="姓名、帳號、工號" autocomplete="off">
+      </div>
+      <div class="ad-field" style="flex: 0 1 200px;">
+        <label class="ad-label" for="roleFilter">身分</label>
+        <select id="roleFilter" class="ad-select">
+          <option value="">全部</option>
+          <option value="farmer">農場主</option>
+          <option value="worker_local">本國工人</option>
+          <option value="worker_foreign" data-feature="foreignWorkers">外籍移工</option>
+          <option value="admin_tech">科技後台管理員</option>
+        </select>
+      </div>
+      <span id="count" class="ad-caption" style="padding-bottom: 10px;"></span>
+    </div>
+
+    <div id="loadError" class="ad-notice ad-notice--danger" role="alert" hidden></div>
+
+    <div class="ad-card" style="padding: 0; overflow-x: auto;">
+      <table class="ad-table">
+        <thead>
+          <tr><th>姓名</th><th>身分</th><th>登入帳號</th><th>密碼</th><th style="text-align: right;">操作</th></tr>
+        </thead>
+        <tbody id="rows"><tr><td colspan="5" class="ad-caption">載入中…</td></tr></tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- 重設密碼對話框 -->
+  <dialog id="resetDialog" class="ad-card" style="max-width: 440px; width: calc(100vw - 32px); border: 1px solid var(--ad-border); padding: 20px;">
+    <form id="resetForm" method="dialog" style="display: flex; flex-direction: column; gap: 14px;">
+      <h2 class="ad-heading">重設密碼</h2>
+      <p id="resetWho" class="ad-caption"></p>
+      <div class="ad-field">
+        <label class="ad-label" for="resetPwd">臨時密碼</label>
+        <div style="display: flex; gap: 8px;">
+          <input id="resetPwd" type="text" class="ad-input" minlength="8" maxlength="128" autocomplete="off" spellcheck="false" style="flex: 1; font-family: ui-monospace, monospace;">
+          <button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" onclick="fillRandom()">重新產生</button>
+        </div>
+        <span class="ad-hint">8～128 個字元。已自動產生一組，可直接使用。</span>
+      </div>
+      <label style="display: flex; gap: 8px; align-items: flex-start;" class="ad-caption">
+        <input id="resetConfirm" type="checkbox" style="margin-top: 3px;">
+        <span>我已用電話或當面核對過本人身分。</span>
+      </label>
+      <div id="resetMsg" role="alert" hidden></div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button type="button" class="ad-btn ad-btn--ghost" onclick="closeReset()">取消</button>
+        <button id="resetBtn" type="submit" class="ad-btn ad-btn--primary">重設密碼</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    const API = (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+    const demoNav = window.AgriTheme ? AgriTheme.demoNav() : { open() {} };
+    const ROLE_LABEL = { farmer: '農場主', worker_local: '本國工人', worker_foreign: '外籍移工', admin_tech: '科技後台管理員' };
+    let accounts = [];
+    let target = null;
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    async function load() {
+      const err = document.getElementById('loadError');
+      try {
+        const res = await fetch(`${API}/auth/accounts`);
+        const body = await res.json().catch(() => ({}));
+        if (res.status === 403) throw new Error('只有科技後台管理員可以管理帳號');
+        if (!res.ok || body.success === false) throw new Error(body.error || `HTTP ${res.status}`);
+        const showForeign = !window.AgriTheme || AgriTheme.feature('foreignWorkers');
+        accounts = (body.data || []).filter(a => showForeign || a.role !== 'worker_foreign');
+        err.hidden = true;
+      } catch (e) {
+        err.textContent = `無法載入帳號清單：${e instanceof TypeError ? '無法連線伺服器' : e.message}`;
+        err.hidden = false;
+        accounts = [];
+      }
+      render();
+    }
+
+    function render() {
+      const q = document.getElementById('q').value.trim().toLowerCase();
+      const role = document.getElementById('roleFilter').value;
+      const list = accounts.filter(a => (!role || a.role === role) &&
+        (!q || [a.name, a.identifier, a.refId, a.roleDesc].some(v => String(v || '').toLowerCase().includes(q))));
+      document.getElementById('count').textContent = `共 ${list.length} 個帳號`;
+      document.getElementById('rows').innerHTML = list.length ? list.map(a => `
+        <tr>
+          <td><div style="font-weight: 600;">${esc(a.name)}</div>${a.roleDesc ? `<div class="ad-caption">${esc(a.roleDesc)}</div>` : ''}</td>
+          <td>${esc(ROLE_LABEL[a.role] || a.role)}</td>
+          <td class="ad-num">${esc(a.identifier)}${a.refId && a.refId !== a.identifier ? `<div class="ad-caption">${esc(a.refId)}</div>` : ''}</td>
+          <td>${a.hasPassword ? '<span class="ad-pill ad-pill--ok">已設定</span>' : '<span class="ad-pill ad-pill--warn">未設定・無法登入</span>'}</td>
+          <td style="text-align: right;"><button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" data-id="${esc(a.identifier)}">${a.hasPassword ? '重設密碼' : '設定密碼'}</button></td>
+        </tr>`).join('') : '<tr><td colspan="5" class="ad-caption">沒有符合的帳號</td></tr>';
+    }
+
+    // 臨時密碼：12 碼，排除容易唸錯、看錯的 0/O、1/l/I
+    function randomPassword() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+      const buf = new Uint32Array(12);
+      crypto.getRandomValues(buf);
+      return Array.from(buf, n => chars[n % chars.length]).join('');
+    }
+    function fillRandom() { document.getElementById('resetPwd').value = randomPassword(); }
+
+    function showResetMsg(text, ok) {
+      const el = document.getElementById('resetMsg');
+      el.className = ok ? 'ad-notice ad-notice--ok' : 'ad-notice ad-notice--danger';
+      el.textContent = text;
+      el.hidden = !text;
+    }
+
+    function openReset(id) {
+      target = accounts.find(a => a.identifier === id);
+      if (!target) return;
+      document.getElementById('resetWho').textContent =
+        `${target.name}（${ROLE_LABEL[target.role] || target.role}・帳號 ${target.identifier}）`;
+      document.getElementById('resetConfirm').checked = false;
+      document.getElementById('resetBtn').disabled = false;
+      document.getElementById('resetBtn').textContent = '重設密碼';
+      showResetMsg('');
+      fillRandom();
+      document.getElementById('resetDialog').showModal();
+    }
+    function closeReset() { document.getElementById('resetDialog').close(); }
+
+    document.getElementById('rows').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-id]');
+      if (btn) openReset(btn.dataset.id);
+    });
+    document.getElementById('q').addEventListener('input', render);
+    document.getElementById('roleFilter').addEventListener('change', render);
+
+    document.getElementById('resetForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pwd = document.getElementById('resetPwd').value.trim();
+      if (pwd.length < 8 || pwd.length > 128) return showResetMsg('臨時密碼長度需為 8～128 個字元。');
+      if (!document.getElementById('resetConfirm').checked) return showResetMsg('請先核對本人身分並勾選確認。');
+      const btn = document.getElementById('resetBtn');
+      btn.disabled = true;
+      btn.textContent = '處理中…';
+      try {
+        const res = await fetch(`${API}/auth/reset-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier: target.identifier, newPassword: pwd })
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) throw new Error(body.error || body.message || `HTTP ${res.status}`);
+      } catch (err) {
+        showResetMsg(err instanceof TypeError ? '無法連線伺服器，密碼未重設。' : `密碼未重設：${err.message}`);
+        btn.disabled = false;
+        btn.textContent = '重設密碼';
+        return;
+      }
+      target.hasPassword = true;
+      render();
+      showResetMsg(`已重設。請告知本人臨時密碼「${pwd}」，並請他登入後到「我的帳號」改密碼。這個視窗關閉後不會再顯示。`, true);
+      btn.textContent = '已重設';
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+      load();
+    });
+  </script>
+</body>
+</html>

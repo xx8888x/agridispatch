@@ -87,6 +87,12 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("success", true, "message", "密碼已重設"));
     }
 
+    /** 管理員帳號清單：{identifier, name, role, refId, roleDesc, kind, hasPassword}（授權由 AuthInterceptor 檢查 admin_tech） */
+    @GetMapping("/accounts")
+    public ResponseEntity<?> accounts() {
+        return ResponseEntity.ok(Map.of("success", true, "data", authService.listAccounts()));
+    }
+
     private static String str(Object o) {
         return o == null ? null : o.toString();
     }

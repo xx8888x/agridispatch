@@ -126,7 +126,8 @@
       { root: 'tech', href: 'insurance.html', title: '保險登錄與加保檢查', meta: '勞健保、職災險' },
       { root: 'tech', href: 'skills.html', title: '技能標籤與複核', meta: '熟手判定與審核' },
       { root: 'tech', href: 'matching.html', title: '派工媒合與出工名單', meta: '撞期排除、人選建議' },
-      { root: 'tech', href: 'admin-line.html', title: 'LINE 官方帳號', meta: '兩帳號狀態、帳號綁定' }
+      { root: 'tech', href: 'admin-line.html', title: 'LINE 官方帳號', meta: '兩帳號狀態、帳號綁定' },
+      { root: 'tech', href: 'accounts.html', title: '帳號與密碼管理', meta: '忘記密碼時重設臨時密碼' }
     ] },
     { group: '介紹與工具', items: [
       { root: 'main', href: 'index.html', title: '首頁', meta: '農民入口' },
@@ -229,8 +230,120 @@
     icons(btn);
   }
 
-  window.AgriTheme = { mode: mode, icons: icons, drawer: drawer, toast: toast, demoNav: demoNav, feature: feature,
-    employment: EMPLOYMENT, employmentLabel: employmentLabel, visibleWorkers: visibleWorkers };
+  // 7. 帳號選單：點頁首頭像（aria-label="切換帳號" 或 data-account-menu）展開，提供我的帳號、修改密碼、登出。
+  //    用事件委派攔截點擊、選單掛在 body，不改動頁首 DOM（admin.html 等頁首由 Vue 管理）。
+  //    已登入但頁首沒有頭像的頁面，在 .ad-header__actions 補一顆。
+  var ROLE_LABEL = { farmer: '農場主', worker_local: '本國工人', worker_foreign: '外籍移工', admin_tech: '科技後台管理員' };
+  var ROLE_LOGIN = { farmer: ['main', 'farmer-login.html'], worker_local: ['main', 'worker-local-login.html'],
+    worker_foreign: ['main', 'worker-foreign-login.html'], admin_tech: ['tech', 'admin-login.html'] };
 
-  document.addEventListener('DOMContentLoaded', function () { icons(); demoNavFab(); });
+  function currentUser() {
+    try { return window.AgriAuth && window.AgriAuth.getToken() ? window.AgriAuth.getUser() : null; } catch (e) { return null; }
+  }
+
+  function loginHref(user, p) {
+    var l = user && ROLE_LOGIN[user.role];
+    return l ? (p[l[0]] || '') + l[1] : p.main + 'login.html';
+  }
+
+  function logout() {
+    var href = loginHref(currentUser(), defaultPaths());
+    if (window.AgriAuth) window.AgriAuth.clearSession();
+    window.location.href = href;
+  }
+
+  function closeAccountMenu() {
+    var m = document.getElementById('ad-account-menu');
+    if (m) m.remove();
+    document.removeEventListener('keydown', accountMenuKey);
+  }
+
+  function accountMenuKey(e) { if (e.key === 'Escape') closeAccountMenu(); }
+
+  function openAccountMenu(anchor) {
+    if (!document.getElementById('ad-account-menu-css')) {
+      var css = document.createElement('style');
+      css.id = 'ad-account-menu-css';
+      css.textContent = '#ad-account-menu{position:fixed;z-index:80;width:260px;max-width:calc(100vw - 32px);background:var(--ad-surface);' +
+        'border:1px solid var(--ad-border);border-radius:var(--ad-radius);box-shadow:var(--ad-shadow);padding:8px;color:var(--ad-text)}' +
+        '#ad-account-menu .am-head{padding:8px 10px 10px;border-bottom:1px solid var(--ad-border);margin-bottom:6px}' +
+        '#ad-account-menu .am-name{font-weight:600;overflow-wrap:anywhere}' +
+        '#ad-account-menu a,#ad-account-menu button{display:flex;align-items:center;gap:8px;width:100%;padding:9px 10px;border:0;background:none;' +
+        'border-radius:var(--ad-radius-sm);color:inherit;font:inherit;text-align:left;text-decoration:none;cursor:pointer}' +
+        '#ad-account-menu a:hover,#ad-account-menu button:hover,#ad-account-menu a:focus-visible,#ad-account-menu button:focus-visible{background:var(--ad-surface-2)}' +
+        '#ad-account-menu .am-danger{color:var(--ad-danger-text)}' +
+        '@media print{#ad-account-menu{display:none!important}}';
+      document.head.appendChild(css);
+    }
+    var p = defaultPaths();
+    var user = currentUser();
+    var switchHref = anchor.tagName === 'A' && anchor.getAttribute('href') ? anchor.getAttribute('href') : loginHref(user, p);
+    var html;
+    if (user) {
+      html = '<div class="am-head"><div class="am-name">' + escapeHtml(user.name || user.username || '') + '</div>' +
+        '<div class="ad-caption">' + escapeHtml(ROLE_LABEL[user.role] || user.role || '') + '・帳號 ' + escapeHtml(user.username || '') + '</div></div>' +
+        '<a role="menuitem" href="' + escapeHtml(p.main + 'account.html') + '"><i data-lucide="user-round" class="ad-icon ad-icon--sm"></i>我的帳號</a>' +
+        '<a role="menuitem" href="' + escapeHtml(p.main + 'account.html#password') + '"><i data-lucide="key-round" class="ad-icon ad-icon--sm"></i>修改密碼</a>' +
+        (user.role === 'admin_tech' ? '<a role="menuitem" href="' + escapeHtml(p.tech + 'accounts.html') + '"><i data-lucide="users" class="ad-icon ad-icon--sm"></i>帳號與密碼管理</a>' : '') +
+        '<a role="menuitem" href="' + escapeHtml(switchHref) + '"><i data-lucide="repeat" class="ad-icon ad-icon--sm"></i>切換帳號</a>' +
+        '<button type="button" role="menuitem" class="am-danger" data-am-logout><i data-lucide="log-out" class="ad-icon ad-icon--sm"></i>登出</button>';
+    } else {
+      html = '<div class="am-head"><div class="am-name">尚未登入</div></div>' +
+        '<a role="menuitem" href="' + escapeHtml(switchHref) + '"><i data-lucide="log-in" class="ad-icon ad-icon--sm"></i>登入</a>';
+    }
+    var menu = document.createElement('div');
+    menu.id = 'ad-account-menu';
+    menu.setAttribute('role', 'menu');
+    menu.setAttribute('aria-label', '帳號選單');
+    menu.innerHTML = html;
+    document.body.appendChild(menu);
+    var r = anchor.getBoundingClientRect();
+    menu.style.top = Math.round(r.bottom + 8) + 'px';
+    menu.style.right = Math.max(16, Math.round(window.innerWidth - r.right)) + 'px';
+    var out = menu.querySelector('[data-am-logout]');
+    if (out) out.addEventListener('click', logout);
+    icons(menu);
+    document.addEventListener('keydown', accountMenuKey);
+    var first = menu.querySelector('a,button');
+    if (first) first.focus();
+  }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target && e.target.closest ? e.target : null;
+    if (!t) return;
+    var anchor = t.closest('[data-account-menu], a[aria-label="切換帳號"]');
+    var open = document.getElementById('ad-account-menu');
+    if (anchor) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (open) closeAccountMenu(); else openAccountMenu(anchor);
+      return;
+    }
+    if (open && !t.closest('#ad-account-menu')) closeAccountMenu();
+  }, true);
+
+  function accountButton(retried) {
+    if (document.querySelector('[data-account-menu], a[aria-label="切換帳號"]')) return;
+    var user = currentUser();
+    var actions = document.querySelector('.ad-header__actions');
+    if (!actions) return;
+    if (!user) {
+      // demo 模式在頁面第一次呼叫 API 時才自動登入，稍後再看一次
+      if (!retried) setTimeout(function () { accountButton(true); }, 1500);
+      return;
+    }
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ad-btn ad-btn--ghost ad-btn--sm ad-btn--icon';
+    btn.setAttribute('data-account-menu', '');
+    btn.setAttribute('aria-label', '帳號選單');
+    btn.title = '帳號選單';
+    btn.innerHTML = '<span class="ad-avatar">' + escapeHtml(String(user.name || user.username || '我').trim().charAt(0) || '我') + '</span>';
+    actions.appendChild(btn);
+  }
+
+  window.AgriTheme = { mode: mode, icons: icons, drawer: drawer, toast: toast, demoNav: demoNav, feature: feature,
+    employment: EMPLOYMENT, employmentLabel: employmentLabel, visibleWorkers: visibleWorkers, logout: logout };
+
+  document.addEventListener('DOMContentLoaded', function () { icons(); demoNavFab(); accountButton(); });
 })();

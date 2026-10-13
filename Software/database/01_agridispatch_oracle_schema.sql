@@ -52,6 +52,11 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END;
 /
 BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE push_tokens CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
     EXECUTE IMMEDIATE 'DROP TABLE line_messages CASCADE CONSTRAINTS';
 EXCEPTION WHEN OTHERS THEN NULL;
 END;
@@ -492,6 +497,22 @@ CREATE TABLE line_messages (
 );
 
 COMMENT ON TABLE line_messages IS 'LINE 訊息與推播歷程表：記錄 Flex Message 廣播與即時警報';
+
+-- App 推播權杖（FCM）：一台裝置一筆，綁定最後上傳的登入者；id 為 token 的 SHA-256
+CREATE TABLE push_tokens (
+    id                 VARCHAR2(64 CHAR)   NOT NULL,
+    token              VARCHAR2(1024 CHAR) NOT NULL,
+    username           VARCHAR2(64 CHAR)   NOT NULL,
+    ref_id             VARCHAR2(32 CHAR),
+    role               VARCHAR2(32 CHAR),
+    platform           VARCHAR2(16 CHAR)   DEFAULT 'android' NOT NULL,
+    updated_at         TIMESTAMP      DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT pk_push_tokens PRIMARY KEY (id)
+);
+CREATE INDEX idx_push_tokens_ref ON push_tokens (ref_id);
+CREATE INDEX idx_push_tokens_role ON push_tokens (role);
+
+COMMENT ON TABLE push_tokens IS 'App 推播權杖：Android FCM token 與登入者對應（NotificationController /api/notifications/fcm/register）';
 
 -- ====================================================================
 -- 12. 產品文宣 DM 範本表 (BROCHURES)

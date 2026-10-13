@@ -35,12 +35,56 @@
       if (token) sessionStorage.setItem(TOKEN_KEY, token);
       if (user) sessionStorage.setItem(USER_KEY, JSON.stringify(user));
     } catch (e) { /* 無痕模式等，忽略 */ }
+    if (token) setTimeout(registerPushToken, 0);
   }
   function clearSession() {
+    unregisterPushToken();
     try {
       sessionStorage.removeItem(TOKEN_KEY);
       sessionStorage.removeItem(USER_KEY);
     } catch (e) { /* ignore */ }
+  }
+
+  // ------------------------------------------------------------------
+  // App 推播：Android App 有 FCM token（AgriNativeBridge.getFcmToken，未接 Firebase 時為空字串）時，
+  // 登入後上傳給後端綁定目前登入者；同一個 session 只送一次；登出（clearSession）時解除綁定。
+  // 純前端 Mock 不送。網站沒有原生橋接，不受影響。
+  // ------------------------------------------------------------------
+  // 原生 fetch（下方會包裝 window.fetch）；須在 clearSession 第一次被呼叫前宣告
+  const nativeFetch = global.fetch ? global.fetch.bind(global) : null;
+  const PUSH_KEY = 'agri_push_token';
+  function nativeFcmToken() {
+    const bridge = global.AgriNativeBridge;
+    if (!bridge || typeof bridge.getFcmToken !== 'function') return '';
+    try {
+      const t = bridge.getFcmToken() || '';
+      return t.indexOf('MOCK_FCM_TOKEN') === 0 ? '' : t;
+    } catch (e) { return ''; }
+  }
+  function pushRequest(path, token, fcm) {
+    return nativeFetch( // 不經下方 fetch 包裝，避免 401 導向迴圈
+      `${API_BASE}/notifications/fcm/${path}`, {
+      method: 'POST',
+      keepalive: true,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ token: fcm, platform: 'android' })
+    });
+  }
+  function registerPushToken() {
+    if (CFG.mock || !nativeFetch) return;
+    const token = getToken();
+    const fcm = nativeFcmToken();
+    if (!token || !fcm) return;
+    try { if (sessionStorage.getItem(PUSH_KEY) === fcm) return; } catch (e) { /* ignore */ }
+    pushRequest('register', token, fcm)
+      .then((res) => { if (res.ok) { try { sessionStorage.setItem(PUSH_KEY, fcm); } catch (e) { /* ignore */ } } })
+      .catch(() => { /* 後端離線：下次載入頁面再試 */ });
+  }
+  function unregisterPushToken() {
+    let fcm = null;
+    try { fcm = sessionStorage.getItem(PUSH_KEY); sessionStorage.removeItem(PUSH_KEY); } catch (e) { /* ignore */ }
+    const token = getToken();
+    if (fcm && token && nativeFetch) pushRequest('unregister', token, fcm).catch(() => {});
   }
 
   // ------------------------------------------------------------------
@@ -85,7 +129,6 @@
   // ------------------------------------------------------------------
   // fetch 包裝：自動帶 token / demo 自動登入 / production 401 導向
   // ------------------------------------------------------------------
-  const nativeFetch = global.fetch ? global.fetch.bind(global) : null;
   let demoLoginInflight = null;
 
   function resolveUrl(input) {
@@ -128,13 +171,12 @@
     return /\/api\/auth\/(login|demo-login)(\?|$)/.test(url);
   }
 
-  // role：不給就依頁面判斷；沒有固定角色的頁面（例如 pitch.html 的工時包購買）可指定要用哪個示範身分
-  async function ensureDemoLogin(role) {
+  async function ensureDemoLogin() {
     if (getToken()) return getToken();
     if (demoLoginInflight) return demoLoginInflight;
 
     demoLoginInflight = (async () => {
-      role = role || detectPageRole();
+      const role = detectPageRole();
       if (!role || !nativeFetch) return null;
       try {
         const res = await nativeFetch(`${API_BASE}/auth/demo-login`, {
@@ -249,6 +291,9 @@
       }
     });
   }
+
+  // 已登入的頁面載入時補送（例如 App 啟動後才拿到 FCM token）
+  registerPushToken();
 
   global.AgriAuth = {
     MODE,

@@ -94,6 +94,8 @@ public class MainActivity extends AppCompatActivity {
 
         // 初始化系統推播通知渠道 (Android 8.0+)
         NotificationHelper.initChannels(this);
+        // FCM：有 google-services.json 時取得推播 token 存本機，由網頁登入後上傳後端 (api-client.js)
+        AgriFirebaseMessagingService.refreshToken(this);
 
         // Android 13+ 主動請求通知權限
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {

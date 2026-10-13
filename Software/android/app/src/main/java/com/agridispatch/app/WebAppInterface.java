@@ -97,7 +97,8 @@ public class WebAppInterface {
             return ""; // 非受信任頁面 (非內建 asset / 非白名單正式網域) 不回傳敏感資料
         }
         try {
-            return sharedPrefs.getString("fcm_token", "MOCK_FCM_TOKEN_" + Build.ID);
+            // 未接上 Firebase（沒有 google-services.json）時回空字串，網頁就不會上傳
+            return sharedPrefs.getString(AgriFirebaseMessagingService.KEY_TOKEN, "");
         } catch (Exception e) {
             return "";
         }

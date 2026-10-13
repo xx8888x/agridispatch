@@ -68,3 +68,6 @@ agri:
   linebot:
     internal-key: ${AGRI_LINEBOT_INTERNAL_KEY:}
     base-url: ${AGRI_LINEBOT_BASE_URL:http://localhost:5000}
+  # App 推播（Firebase Cloud Messaging HTTP v1）：Firebase 主控台下載的服務帳戶 JSON 路徑（放 repo 外）；未設定時不送 App 推播
+  fcm:
+    service-account-file: ${AGRI_FCM_SERVICE_ACCOUNT_FILE:${GOOGLE_APPLICATION_CREDENTIALS:}}

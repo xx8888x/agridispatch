@@ -1,16 +1,17 @@
 package com.agridispatch.controller.common;
 
+import com.agridispatch.service.FcmPushService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * 智農派工 (AgriDispatch) - 跨平台推播與通知中心控制器
  * 支援 FCM 雲端推播權杖註冊、天候避險廣播與原生系統通知紀錄
+ * 通知紀錄存記憶體；FCM token 存 push_tokens 表，/send 同時以 FcmPushService 推播到 App（未設定 FCM 時只留紀錄）
  */
 @RestController
 @RequestMapping("/api/notifications")
@@ -19,9 +20,10 @@ public class NotificationController {
     private static final int MAX_HISTORY = 500;
 
     private final List<Map<String, Object>> notificationHistory = new CopyOnWriteArrayList<>();
-    private final Map<String, String> fcmTokens = new ConcurrentHashMap<>();
+    private final FcmPushService pushService;
 
-    public NotificationController(com.agridispatch.config.AgriSettings settings) {
+    public NotificationController(com.agridispatch.config.AgriSettings settings, FcmPushService pushService) {
+        this.pushService = pushService;
         // 預載示範通知紀錄（agri.seed.demo-data；正式環境不預載，避免假的天候廣播出現在所有人的通知裡）
         if (!settings.isSeedDemoData()) return;
         Map<String, Object> n1 = new LinkedHashMap<>();
@@ -84,30 +86,57 @@ public class NotificationController {
             notificationHistory.remove(notificationHistory.size() - 1);
         }
 
+        Map<String, Object> push = pushService.send(target, title, message, channel);
+
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "通知已發送",
-                "data", notif
+                "data", notif,
+                "push", push
         ));
     }
 
     @PostMapping("/fcm/register")
     public ResponseEntity<?> registerFcmToken(@RequestBody Map<String, String> req) {
-        // FCM token 一律綁定目前登入者，不接受替他人註冊
+        // FCM token 一律綁定目前登入者，不接受替他人註冊；同一台裝置換人登入時改綁
         com.agridispatch.security.AuthContext ctx = com.agridispatch.security.AuthContext.require();
-        String userId = ctx.sub();
-        String token = Objects.toString(req.get("token"), "");
-        if (token.length() > 4096) {
-            throw new IllegalArgumentException("FCM token 過長");
-        }
-        if (!token.isBlank()) {
-            fcmTokens.put(userId, token);
+        String token = validToken(req.get("token"));
+        if (token != null) {
+            pushService.register(token, ctx.sub(), ctx.ref(), ctx.role(), req.get("platform"));
         }
         return ResponseEntity.ok(Map.of(
                 "success", true,
-                "message", "FCM Token 註冊成功",
-                "registeredUsersCount", fcmTokens.size()
+                "message", token != null ? "FCM Token 註冊成功" : "未提供 FCM Token",
+                "pushConfigured", pushService.isConfigured()
         ));
     }
-}
 
+    /** 登出時移除本裝置 token（只刪屬於目前登入者的） */
+    @PostMapping("/fcm/unregister")
+    public ResponseEntity<?> unregisterFcmToken(@RequestBody Map<String, String> req) {
+        com.agridispatch.security.AuthContext ctx = com.agridispatch.security.AuthContext.require();
+        String token = validToken(req.get("token"));
+        boolean removed = token != null && pushService.unregister(token, ctx.sub());
+        return ResponseEntity.ok(Map.of("success", true, "removed", removed));
+    }
+
+    /** 僅 admin：App 推播設定狀態（不回傳金鑰與 token） */
+    @GetMapping("/fcm/status")
+    public ResponseEntity<?> fcmStatus() {
+        com.agridispatch.security.AuthContext.require().requireAdmin();
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "configured", pushService.isConfigured(),
+                "registeredDevices", pushService.tokenCount()
+        ));
+    }
+
+    private static String validToken(String raw) {
+        String token = raw == null ? "" : raw.trim();
+        if (token.length() > 1024) {
+            throw new IllegalArgumentException("FCM token 過長");
+        }
+        // App 未接上 Firebase 時舊版會回傳 MOCK_FCM_TOKEN_*，不登記
+        return token.isEmpty() || token.startsWith("MOCK_FCM_TOKEN") ? null : token;
+    }
+}

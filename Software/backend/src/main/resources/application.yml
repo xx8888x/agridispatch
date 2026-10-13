@@ -1,5 +1,8 @@
 server:
   port: 3000
+  # 在反向代理（Nginx）後面：以 X-Forwarded-For 取得使用者 IP（登入、註冊次數限制用）。
+  # Tomcat 只採信本機與內網代理（server.tomcat.remoteip.internal-proxies 預設值）送來的標頭，直接對外連線時偽造的標頭無效
+  forward-headers-strategy: native
 
 spring:
   application:

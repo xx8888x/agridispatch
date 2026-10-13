@@ -33,7 +33,7 @@ public class AuthController {
         }
         String password = str(req.get("password"));
 
-        // 來源 IP 一律取連線端位址（不信任可偽造的 X-Forwarded-For）；部署在反向代理後須設定 server.forward-headers-strategy
+        // 來源 IP：直接連線時為連線端位址；經本機／內網反向代理時由 Tomcat 依 X-Forwarded-For 換成使用者 IP（application.yml 的 server.forward-headers-strategy）
         return authService.login(identifier, password, request.getRemoteAddr())
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED)

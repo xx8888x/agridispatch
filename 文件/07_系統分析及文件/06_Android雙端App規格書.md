@@ -75,6 +75,14 @@ Gradle `flavorDimensions = ['side']`，同一份程式碼產出兩支 APK：
 
 兩支 App 套件名稱不同，`app/google-services.json` 必須在同一個 Firebase 專案下同時註冊 `com.agridispatch.app` 與 `com.agridispatch.app.admin`，否則 google-services 外掛建置會失敗（目前未放此檔，建置會略過外掛，推播不運作）。
 
+推播流程（2026-10-13 起程式已接通，待 Firebase 專案建立後實測）：
+
+1. App 啟動時 `AgriFirebaseMessagingService.refreshToken()` 以 `FirebaseMessaging.getToken()` 取得 token，存本機 `fcm_token`（`onNewToken` 更換時亦同）；沒有 `google-services.json` 時略過，`getFcmToken()` 回空字串。
+2. App 不持有登入憑證：網頁 `api-client.js` 在登入後（及已登入的頁面載入時）讀 `AgriNativeBridge.getFcmToken()`，以本人 Bearer token 呼叫 `POST /api/notifications/fcm/register`；登出（`clearSession`）時呼叫 `/fcm/unregister`。純前端 Mock 不送。
+3. 後端存 `push_tokens` 表（一台裝置一筆，換人登入改綁），`POST /api/notifications/send`（僅 admin）依 `target`（`all`、角色、`workers`、個人 ref／帳號）以 `FcmPushService` 走 FCM HTTP v1 發送；FCM 回 404／UNREGISTERED 的 token 自動刪除；外籍移工功能關閉時不推 `worker_foreign`。`GET /api/notifications/fcm/status`（admin）看設定與裝置數。
+4. 後端設定：環境變數 `AGRI_FCM_SERVICE_ACCOUNT_FILE`（或 `GOOGLE_APPLICATION_CREDENTIALS`）指向 Firebase 主控台「專案設定 → 服務帳戶 → 產生新的私密金鑰」下載的 JSON，檔案放 repo 外；未設定時只寫 log 不送。
+5. 尚未接上的事件推播：派工、天候等事件目前只走 LINE（`LineNotifyService`），App 推播只由通知中心 `/send` 觸發；是否同步推 App【待確認】（避免同一事件 LINE 與 App 各收一次）。
+
 ---
 
 ## 參、 身分與人力分類資料表
@@ -329,4 +337,5 @@ debug 版已開啟 WebView 遠端偵錯（`WebView.setWebContentsDebuggingEnable
 | 4 | Firebase 專案同時註冊兩個套件名稱並放入 `google-services.json` | 營運 |
 | 5 | 泰國、菲律賓是否開放【待確認】；開放後依 3.3 調整 | 營運→Android、前端、LINE |
 | 6 | 若日後改採方案 B（農場主、工人分開上架）：新增 flavor 並在該 flavor 固定 `ClientRole` | Android |
-| 7 | 各前端頁首在手機寬度（約 400px）會擠成多行（例如「切換身分」斷成兩行、副標換行），需前端調整 RWD | 前端（`Software/demo/`） |
+| 7 | ~~各前端頁首在手機寬度（約 400px）會擠成多行~~ ✅ 已由共用頁首 RWD（≤480px 隱藏角色字與狀態 pill）修正；2026-10-13 於 320／360px 逐頁量測 23 頁頁首皆無換行，另修 `farmer-certificate.html`、`brochure.html` 列印鈕溢出。實體手機（含系統字級放大）仍待第 1 項一併確認 | 前端（`Software/demo/`） |
+| 8 | App 推播實測：建 Firebase 專案（第 4 項）→ 後端設 `AGRI_FCM_SERVICE_ACCOUNT_FILE` → 實機登入後由後台 `/api/notifications/send` 發送確認收到（見 2.3） | 營運、Android |

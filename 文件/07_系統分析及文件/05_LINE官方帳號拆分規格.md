@@ -1,11 +1,13 @@
 # 智農派工 LINE 官方帳號拆分規格（方案 B：農場主／工作者雙帳號）
 
-> **文件版本**：v1.0.2（2026-10-02，草案；P1 實作後修正 6.2、拾.5 的 `/mock/chat` 規則；P2 實作後補 6.3 `langLocked`、6.5 `ref_id` 欄、5.3 demo 假 token）
+> **文件版本**：v1.1.0（2026-10-13，「狀態」改為反映已實作現況；第柒章開頭、6.3 舊 webhook 說明同步）；v1.0.2（2026-10-02，草案；P1 實作後修正 6.2、拾.5 的 `/mock/chat` 規則；P2 實作後補 6.3 `langLocked`、6.5 `ref_id` 欄、5.3 demo 假 token）
 > **實作進度**：P1 ✅（Line Bot 雙帳號骨架）、P2 ✅（後端 `line_users`、內部端點、綁定 API；LIFF 綁定頁屬 P4）、P3 ✅（6 份圖文選單、上傳工具、依身分自動連結；實機上傳待 P0 帳號）、P4 ✅（LIFF 綁定頁 `line-bind.html`、科技後台 `admin-line.html`、LINE 模擬器雙帳號）、P5 ✅（推播：訂單狀態、定金、天候、明日出工、農場主方案通知；薪資入帳待發薪功能）、P6 ⏳（模擬驗收 15/15 ✅、文件同步 ✅；實機驗收待 P0，步驟見 `07_LINE官方帳號上線與實機驗收手冊.md`）
 > **適用範圍**：`Software/Line Bot/`（port 5000）、`Software/backend/`（port 3000）的 LINE 相關程式、`Software/demo/linebot/line.html` 模擬器、科技後台 LINE 設定頁
 > **相關文件**：`01_系統分析與架構設計規格書.md` 第陸章（LINE 子系統現況）、`02_資料庫實體關聯圖與資料字典(ERD).md`（`line_users`）、`03_認證與API安全規格.md`（端點權限）、`Software/android/docs/角色與人力分類表.md`（身分與國別代碼）
 > **功能下架（2026-10-12）**：外籍移工（外勞）功能暫時下架，平台先以本國勞工（正職、兼職、中高齡、打工、學生打工）為主。Line Bot 以功能開關 `FEATURE_FOREIGN_WORKERS`（環境變數；或 `config.properties` 的 `feature.foreign-workers`）處理、不刪程式，**預設 `false`**，與前端 `features.foreignWorkers` 一致。關閉時工作者帳號：綁定卡只有本國籍入口、不產生 `role=worker_foreign` 的綁定網址；不出語言選擇與三語歡迎、不辨識語言切換、不採用 LINE 介面語言，回覆與推播一律繁體中文；已綁定為 `worker_foreign` 的舊使用者只回「外籍工作者服務暫停中，請洽合作社或帶班師傅」與聯絡合作社卡，選單回帳號預設 `worker_guest`；舊選單送來 `a=lang`、`a=lang_help` 時回「目前僅提供繁體中文介面」或使用說明。圖文選單 `worker_guest` 改為中文功能格（今日任務、上下班打卡、薪資明細、帳號綁定、使用說明、聯絡合作社），`worker_main_zh` 的「語言・說明」改「使用說明」（`a=help`）。**恢復方式**：設 `FEATURE_FOREIGN_WORKERS=true`（或 `feature.foreign-workers=true`）重啟 Line Bot；圖文選單另把 `tools/make_rich_menus.py` 的 `FEATURE_FOREIGN_WORKERS` 改 `True`、重新產生並以 `RichMenuUploader` 上傳。下文第參、肆、捌、玖章所述多語與外籍流程為開關打開時的行為。後端 `worker_foreign` 角色與資料未變動。
-> **狀態**：本規格只定義目標設計，程式尚未修改。實作完成後須同步更新上列 01、02、03 文件與 `Software/Line Bot/README.md`。
+> **狀態（2026-10-13 對照程式更新）**：P1～P5 已實作，並以 `TestSimulator --check` 與 `tools/acceptance_mock.py`（15/15）在模擬模式驗收；01、02、03 文件與 `Software/Line Bot/README.md` 已同步。已完成：Line Bot `/callback/farmer`、`/callback/worker` 雙 webhook 與 `FarmerDispatcher`／`WorkerDispatcher`（舊 `/callback`、`/webhook` 過渡路徑仍保留）；後端 `line_users`（6.5）、`LineBindingService`、內部端點 `/api/line/internal/identity`／`follow-state`／`query`、綁定 API（6.4）、LIFF ID token 驗證；Line Bot 內部端點 `/internal/richmenu/link`、`/internal/notify`、`/internal/push`；6 份圖文選單與上傳工具；LIFF 綁定頁、科技後台 `admin-line.html`、模擬器雙帳號；推播（第柒章 7.0）；工作者語音（5.5，預設關閉）；後端舊 `POST /api/line/webhook` 已停用（回 410）。
+>
+> **尚未完成**：(1) P0 兩個官方帳號與 LINE Login／LIFF 尚未申請，實機驗收（P6、`07_` 手冊）未做；(2) 農場主 F-01 我的訂單由後端回本人資料（後端離線或無綁定資料時退回範本），F-04 天候避險仍為固定範本；(3) 工作者 W-01 今日任務、W-03 天候集合、W-04 薪資：後端 `internal/query` 已可回本人資料（2026-10-13），Line Bot 端截至本次更新仍回固定範本卡片；W-02 打卡、W-05 出勤以卡片連結開啟工人頁，不在聊天室內列出；(4) 薪資入帳推播待發薪功能；(5) Flex 範本檔名尚未依第玖章改為 `<功能代碼>_<lang>.json`；(6) `line_messages` 未啟用。另：黑轉白（F-02）亦有功能開關 `FEATURE_LEGALIZE`（預設 `false`，關閉時回暫停說明）。第壹章 1.1 為拆分前的問題紀錄、第拾壹章為當時規劃的變更範圍，保留供追溯。
 
 ---
 
@@ -311,7 +313,7 @@ flowchart LR
 | POST | `/internal/richmenu/link` | `{channel, lineUserId, menuKey}` | `menuKey` 為第捌章代碼；`guest` 表示解除個人選單、回到預設 |
 | POST | `/internal/push` | `{channel, to:[lineUserId...], messages:[...]}` | 1 人用 Push，多人用 Multicast（每次最多 500 人，Line Bot 自動分批）；**不提供 broadcast** |
 
-- 現行 `POST /api/line/webhook`（以 channel secret 驗簽）在 `internal/query` 上線後標為停用，過渡期保留、之後移除；`03_認證與API安全規格.md` 的公開端點清單同步修改。
+- 舊 `POST /api/line/webhook`（以 channel secret 驗簽）已停用：一律回 410，不讀 body、不處理訊息（`03_認證與API安全規格.md` 已同步）。
 - `/internal/richmenu/link` 回應 `result`：`linked`／`unlinked`（guest＝回到帳號預設）／`mock`／`missing`（尚未上傳該選單）／`failed`；`/internal/push` 於 P5 加入。
 - 本機開發：`start_all.bat` 未設定 `AGRI_LINEBOT_INTERNAL_KEY` 時每次啟動產生一組，後端與 LINE Bot 共用；LINE Bot 未設定金鑰或後端離線時，身分改存記憶體（P1 行為）。
 - 後端 `GET/POST /api/line/config` 改為顯示兩個帳號的設定狀態（向 Line Bot `/health` 取得），後端不再保存 channel token。
@@ -353,7 +355,7 @@ flowchart LR
 
 ## 柒、 推播規格
 
-系統目前不會自動推播（01 規格書 5.2 註記）。本章定義拆帳號後的推播歸屬，實作排在最後階段。
+本章定義拆帳號後的推播歸屬，已於 P5 實作（見 7.0；薪資入帳除外）。
 
 | 通知 | 帳號 | 對象 | 觸發 | 方式 |
 |---|---|---|---|---|

@@ -278,7 +278,11 @@ def run_main_checks():
     # 8 農場主帳號問工作者功能
     bind("farmer", "farmer", uid(8))
     o = texts(chat("farmer", uid(8), text="薪資"))
-    record(8, "農場主帳號輸入「薪資」", "此帳號提供農場主使用" in o, "回「%s」" % o[:24])
+    # F-01／F-04 向後端查本人資料：不再是示範卡（枋山愛文芒果派工確認單、突發暴雨避險快訊）
+    fo, fw = texts(chat("farmer", uid(8), postback="a=orders")), texts(chat("farmer", uid(8), postback="a=weather"))
+    record(8, "農場主帳號輸入「薪資」", "此帳號提供農場主使用" in o and fo.startswith("我的訂單 ORD-")
+           and fw.startswith("天候避險"), "回「%s」；我的訂單「%s」、天候「%s」" % (o[:24], fo[:22], fw[:16]),
+           "同時驗 F-01 我的訂單、F-04 天候避險為本人資料卡")
 
     # 9 農場主身分綁工作者帳號
     s, b = jget(BE + "/api/line/bind", body={"channel": "worker", "idToken": "mock:" + uid(9)}, headers=login("farmer"))

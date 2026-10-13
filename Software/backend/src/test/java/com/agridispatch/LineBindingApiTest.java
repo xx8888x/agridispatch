@@ -255,26 +255,28 @@ class LineBindingApiTest extends ApiTestSupport {
     void farmerOrderQueryReturnsOnlyOwnOrders() throws Exception {
         String uid = newLineUserId();
         Map<String, Object> q = new LinkedHashMap<>(Map.of("channel", "farmer", "lineUserId", uid, "action", "orders", "text", "查訂單"));
-        // 未綁定 → 空清單（LINE Bot 會改回綁定卡）
-        assertEquals(0, json(internal("query", KEY, q)).get("messages").size());
+        // 未綁定 → 不帶 data（LINE Bot 會改回綁定卡）
+        JsonNode unbound = json(internal("query", KEY, q));
+        assertEquals(0, unbound.get("messages").size());
+        assertFalse(unbound.has("data"));
 
         rebind(login("farmer", "123456"), "farmer", uid); // F001
-        JsonNode msgs = json(internal("query", KEY, q)).get("messages");
-        assertEquals(1, msgs.size());
-        String alt = msgs.get(0).get("altText").asText();
-        assertTrue(alt.contains("ORD-2026-001") || alt.contains("ORD-2026-013") || alt.contains("ORD-2026-014"), alt);
+        JsonNode d = json(internal("query", KEY, q)).get("data");
+        assertEquals("orders", d.get("kind").asText());
+        assertTrue(d.get("total").asInt() >= 1);
+        String id = d.get("order").get("id").asText();
+        assertTrue(id.equals("ORD-2026-001") || id.equals("ORD-2026-013") || id.equals("ORD-2026-014"), id);
 
         // 指定別人的單號也只會回本人的訂單
         q.put("text", "ord-2026-002");
-        String alt2 = json(internal("query", KEY, q)).get("messages").get(0).get("altText").asText();
-        assertFalse(alt2.contains("ORD-2026-002"), alt2);
+        assertNotEquals("ORD-2026-002", json(internal("query", KEY, q)).get("data").get("order").get("id").asText());
 
-        // 沒有訂單的農場主 → 文字提示
+        // 沒有訂單的農場主 → total 0、沒有 order
         String uid2 = newLineUserId();
         rebind(login("farmer_yilan", "123456"), "farmer", uid2);
-        JsonNode none = json(internal("query", KEY, Map.of("channel", "farmer", "lineUserId", uid2, "action", "orders")))
-                .get("messages");
-        assertEquals("text", none.get(0).get("type").asText());
+        JsonNode none = json(internal("query", KEY, Map.of("channel", "farmer", "lineUserId", uid2, "action", "orders"))).get("data");
+        assertEquals(0, none.get("total").asInt());
+        assertFalse(none.has("order"));
 
         // 費率、產曆（公開）
         assertEquals(1, json(internal("query", KEY, Map.of("channel", "farmer", "lineUserId", newLineUserId(), "action", "rates")))

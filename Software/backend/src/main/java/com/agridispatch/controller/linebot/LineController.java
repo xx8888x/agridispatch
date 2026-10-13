@@ -10,6 +10,7 @@ import com.agridispatch.config.AgriSettings;
 import com.agridispatch.service.CalendarService;
 import com.agridispatch.service.LineBindingService;
 import com.agridispatch.service.LineBotClient;
+import com.agridispatch.service.LineFarmerQueryService;
 import com.agridispatch.service.LineWorkerQueryService;
 import com.agridispatch.service.OrderService;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +37,7 @@ public class LineController {
     private final LineBindingService lineBindingService;
     private final LineBotClient lineBotClient;
     private final LineWorkerQueryService workerQueryService;
+    private final LineFarmerQueryService farmerQueryService;
 
     /** LINE Channel Secret / Access Token：由 agri.line.* 或環境變數 LINE_CHANNEL_SECRET / LINE_CHANNEL_ACCESS_TOKEN 提供，預設空值 */
     private volatile String channelSecret;
@@ -47,6 +49,7 @@ public class LineController {
                           LineBindingService lineBindingService,
                           LineBotClient lineBotClient,
                           LineWorkerQueryService workerQueryService,
+                          LineFarmerQueryService farmerQueryService,
                           @Value("${agri.line.channel-secret:}") String channelSecret,
                           @Value("${agri.line.channel-access-token:}") String channelAccessToken) {
         this.orderRepository = orderRepository;
@@ -55,6 +58,7 @@ public class LineController {
         this.lineBindingService = lineBindingService;
         this.lineBotClient = lineBotClient;
         this.workerQueryService = workerQueryService;
+        this.farmerQueryService = farmerQueryService;
         this.channelSecret = channelSecret == null ? "" : channelSecret.trim();
         this.channelAccessToken = channelAccessToken == null ? "" : channelAccessToken.trim();
     }
@@ -107,8 +111,8 @@ public class LineController {
 
     /**
      * 依帳號與身分限制可回答的動作（規格 4.1、4.2）：
-     * 農場主帳號 orders（限已綁定、只回本人訂單）、rates、calendar，回 messages（LINE 訊息物件）；
-     * 工作者帳號 task、weather、salary（限已綁定、只回本人），回 data（本人資料，由 LINE Bot 依語言組卡片，見 LineWorkerQueryService）；
+     * 農場主帳號 rates、calendar（公開）回 messages（LINE 訊息物件）；orders、weather（限已綁定、只回本人）回 data（見 LineFarmerQueryService）；
+     * 工作者帳號 task、weather、salary（限已綁定、只回本人）回 data（見 LineWorkerQueryService）；data 由 LINE Bot 組卡片；
      * 其餘回空清單、不帶 data
      */
     @PostMapping("/internal/query")
@@ -124,15 +128,6 @@ public class LineController {
         List<Map<String, Object>> messages = new ArrayList<>();
         if (LineUser.CHANNEL_FARMER.equals(channel) && action != null) {
             switch (action) {
-                case "orders" -> lineBindingService.boundUser(channel, str(req.get("lineUserId")))
-                        .filter(u -> "farmer".equals(u.getRole()) && u.getRefId() != null)
-                        .ifPresent(u -> {
-                            List<Order> mine = orderRepository.findAll().stream()
-                                    .filter(o -> u.getRefId().equalsIgnoreCase(o.getFarmerId())).toList();
-                            messages.add(mine.isEmpty()
-                                    ? buildTextReply("目前查不到您名下的訂單。可到網站「我要派工」下單，或輸入「服務導覽」查看功能。")
-                                    : buildOrderQueryFlex(text, mine));
-                        });
                 case "rates" -> messages.add(buildRateQueryFlex());
                 case "calendar" -> messages.add(buildCalendarQueryFlex(text));
                 default -> { }
@@ -141,6 +136,12 @@ public class LineController {
         Map<String, Object> res = new LinkedHashMap<>();
         res.put("success", true);
         res.put("messages", messages);
+        if (LineUser.CHANNEL_FARMER.equals(channel)) {
+            lineBindingService.boundUser(channel, str(req.get("lineUserId")))
+                    .filter(u -> AuthContext.ROLE_FARMER.equals(u.getRole()))
+                    .flatMap(u -> farmerQueryService.query(u.getRefId(), action, text))
+                    .ifPresent(d -> res.put("data", d));
+        }
         if (LineUser.CHANNEL_WORKER.equals(channel)) {
             lineBindingService.boundUser(channel, str(req.get("lineUserId")))
                     .filter(u -> AuthContext.ROLE_WORKER_LOCAL.equals(u.getRole()) || AuthContext.ROLE_WORKER_FOREIGN.equals(u.getRole()))
@@ -269,7 +270,7 @@ public class LineController {
 
         Map<String, Object> flex = new LinkedHashMap<>();
         flex.put("type", "flex");
-        flex.put("altText", "📋 派工訂單查詢結果 - " + (target != null ? target.getId() : "ORD-2026-001"));
+        flex.put("altText", "📋 派工訂單查詢結果 - " + (target != null ? target.getId() : "查無訂單"));
 
         Map<String, Object> contents = new LinkedHashMap<>();
         contents.put("type", "bubble");
@@ -282,19 +283,19 @@ public class LineController {
         header.put("backgroundColor", "#047857");
         header.put("paddingAll", "20px");
 
-        String orderId = target != null ? target.getId() : "ORD-2026-001";
-        String cropName = target != null ? target.getCropName() : "枋山愛文芒果 (6.0 分地)";
-        String status = target != null ? OrderService.statusLabel(target.getStatus()) : "已派工 (出勤中)";
-        String foreman = (target != null && target.getForemanName() != null && !target.getForemanName().isBlank())
-                ? target.getForemanName() + " (" + target.getForemanPhone() + ")"
-                : "陳建龍 (農場主本人帶隊 0921-999-888)";
-        String catName = target != null && target.getCategoryName() != null ? target.getCategoryName() : "採收與初級分級";
-        double total = target != null ? target.getFinalAmount() : 52920.0;
+        // 欄位一律取自訂單（LineFarmerQueryService.detail，與 LINE 農場主帳號 F-01 相同）；查無訂單時只顯示提示
+        Map<String, Object> d = target != null ? farmerQueryService.detail(target) : Map.of();
+        String orderId = target != null ? target.getId() : "（查無訂單）";
+        String period = d.get("startDate") == null ? "待排定"
+                : d.get("startDate") + " ～ " + d.get("endDate") + "・" + d.get("timeSlotLabel");
+        String foreman = nz(d.get("foremanName"), "待通知") + (d.get("foremanPhone") == null ? "" : " (" + d.get("foremanPhone") + ")");
 
         List<Map<String, Object>> hItems = new ArrayList<>();
-        hItems.add(createLabel("訂單查詢結果・即時履約戰情", "#A7F3D0", "xs", "bold"));
-        hItems.add(createLabel(orderId + " ｜ " + status, "#FFFFFF", "xl", "bold"));
-        hItems.add(createLabel("作物：" + cropName + " ｜ 類別：" + catName, "#D1FAE5", "xs", "regular"));
+        hItems.add(createLabel("訂單查詢結果", "#A7F3D0", "xs", "bold"));
+        hItems.add(createLabel(orderId + (target != null ? " ｜ " + d.get("statusLabel") : ""), "#FFFFFF", "xl", "bold"));
+        if (target != null) {
+            hItems.add(createLabel("作物：" + nz(d.get("cropName"), "—") + " ｜ 類別：" + nz(d.get("categoryName"), "—"), "#D1FAE5", "xs", "regular"));
+        }
         header.put("contents", hItems);
         contents.put("header", header);
 
@@ -306,16 +307,20 @@ public class LineController {
         body.put("paddingAll", "20px");
 
         List<Map<String, Object>> bItems = new ArrayList<>();
-        bItems.add(createRowKV("指派工班", "工班 B 組 (6人，領班: 阿迪 Agus)"));
-        bItems.add(createRowKV("接送專車", "智農 2 號車 (司機: 李大哥 0912-222-444)"));
-        bItems.add(createRowKV("現場小工頭", foreman));
-        bItems.add(createRowKV("作業手路", "留蒂 0.5cm 護果粉採收 / 完整驗收標準"));
-        bItems.add(createRowKV("合約保障", "SLA 遲到免單、放鳥雙倍賠償、依法加保勞健保"));
-        bItems.add(createRowKV("總計金額", "NT$ " + String.format("%,.0f", total) + " (定金已收 20%)"));
+        if (target != null) {
+            bItems.add(createRowKV("工期", period));
+            bItems.add(createRowKV("指派工班", nz(d.get("teamName"), "待安排") + "（每日 " + d.get("workersPerDay") + " 人）"));
+            bItems.add(createRowKV("帶隊對口", foreman));
+            if (!nz(d.get("foremanNotes"), "").isEmpty()) bItems.add(createRowKV("現場交辦", nz(d.get("foremanNotes"), "")));
+            bItems.add(createRowKV("總計金額", "NT$ " + String.format("%,d", target.getFinalAmount())
+                    + (target.isDepositPaid() ? "（定金已付）" : "（定金未付）")));
+        } else {
+            bItems.add(createLabel("目前沒有訂單資料。", "#1E293B", "sm", "regular"));
+        }
         body.put("contents", bItems);
         contents.put("body", body);
 
-        // Footer
+        // Footer：只放有真實資料的按鈕（帶隊對口電話）
         Map<String, Object> footer = new LinkedHashMap<>();
         footer.put("type", "box");
         footer.put("layout", "vertical");
@@ -323,8 +328,9 @@ public class LineController {
         footer.put("paddingAll", "16px");
 
         List<Map<String, Object>> fItems = new ArrayList<>();
-        fItems.add(createButton("📍 查看工班 GPS 即時座標", "https://agridispatch.tw/track/" + orderId, "#059669"));
-        fItems.add(createButton("📞 撥打現場專車司機電話", "tel:0912222444", "#3B82F6"));
+        if (d.get("foremanPhone") != null) {
+            fItems.add(createButton("📞 撥打帶隊對口電話", "tel:" + String.valueOf(d.get("foremanPhone")).replaceAll("[^0-9+]", ""), "#3B82F6"));
+        }
         footer.put("contents", fItems);
         contents.put("footer", footer);
 
@@ -459,10 +465,14 @@ public class LineController {
         fItems.add(createButton("⚡ 立即線上派工試算 (農場主專區)", "https://agridispatch.tw/web/farmer-login.html", "#D97706"));
         fItems.add(createButton("📞 預約產銷班長專屬派工熱線", "tel:0800888999", "#059669"));
         footer.put("contents", fItems);
-        contents.put("footer", footer);
+        if (!fItems.isEmpty()) contents.put("footer", footer);
 
         flex.put("contents", contents);
         return flex;
+    }
+
+    private static String nz(Object v, String fallback) {
+        return v == null || String.valueOf(v).isBlank() ? fallback : String.valueOf(v);
     }
 
     private Map<String, Object> buildFarmerOrderFlex() {
@@ -562,13 +572,6 @@ public class LineController {
 
         flex.put("contents", contents);
         return flex;
-    }
-
-    private Map<String, Object> buildTextReply(String text) {
-        Map<String, Object> reply = new LinkedHashMap<>();
-        reply.put("type", "text");
-        reply.put("text", text);
-        return reply;
     }
 
     private Map<String, Object> createLabel(String text, String color, String size, String weight) {

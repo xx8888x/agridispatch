@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 智農派工 - 呼叫後端內部端點（規格 05 第 6.3 節，純 Java 零依賴）
  *   POST {BACKEND_API_BASE}/line/internal/identity      身分查詢
  *   POST {BACKEND_API_BASE}/line/internal/follow-state  追蹤狀態與語言
- *   POST {BACKEND_API_BASE}/line/internal/query         需要真實資料的查詢（農場主訂單、費率、產曆）
+ *   POST {BACKEND_API_BASE}/line/internal/query         需要真實資料的查詢（本人訂單、天候、任務、薪資；費率、產曆）
  * 以 X-Internal-Key（AGRI_LINEBOT_INTERNAL_KEY）驗證，取代先前借用 channel secret 簽章的 /api/line/webhook。
  * 未設定金鑰、後端離線或拒絕時回傳 null，由呼叫端改用本地資料（IdentityStore 記憶體、本地卡片）。
  */
@@ -59,12 +59,12 @@ public final class BackendClient {
     }
 
     /**
-     * 工作者帳號本人資料查詢（action：task／weather／salary）：回傳後端 data 物件；
+     * 本人資料查詢（農場主 orders／weather，工作者 task／weather／salary）：回傳後端 data 物件；
      * 後端可用但沒有資料（未綁定、身分不符、功能關閉）回傳空 Map，後端不可用時回傳 null。
      */
-    public static Map<String, Object> workerData(String userId, String action) {
-        String res = post("query", "{\"channel\":\"" + Channel.WORKER.key + "\",\"lineUserId\":\"" + esc(userId)
-                + "\",\"action\":\"" + esc(action) + "\"}");
+    public static Map<String, Object> data(Channel channel, String userId, String action, String text) {
+        String res = post("query", "{\"channel\":\"" + channel.key + "\",\"lineUserId\":\"" + esc(userId)
+                + "\",\"action\":\"" + esc(action) + "\",\"text\":\"" + esc(text) + "\"}");
         if (res == null) return null;
         Object data = SimpleJson.parseObject(res).get("data");
         @SuppressWarnings("unchecked")

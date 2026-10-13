@@ -226,6 +226,7 @@ public class TestSimulator {
         failed += expect("推播 天候室內（印尼語）", NotifyMessages.render(W, "weather_worker", "id", np), 0, "dalam ruangan");
         failed += expect("推播 定金入帳金額", NotifyMessages.render(F, "deposit_paid", "zh", np), 0, "NT$ 10,584");
         failed += workerCardChecks();
+        failed += farmerCardChecks();
         failed += expectEq("工作者帳號不支援農場主通知",String.valueOf(NotifyMessages.supports(W, "order_status")), "false");
         failed += expectEq("工作者帳號禁止 broadcast", String.valueOf(LineApiClient.of(W).broadcast(FlexMessageBuilder.wrapText("x"))), "false");
 
@@ -318,6 +319,61 @@ public class TestSimulator {
             }
         } finally {
             W.secret = savedSecret; W.accessToken = savedToken;
+        }
+        return failed;
+    }
+
+    /** F-01 我的訂單、F-04 天候避險（FarmerCards）：以後端 data 的樣本產生；正式模式後端查不到時不出示範資料 */
+    private static int farmerCardChecks() {
+        int failed = 0;
+        Channel F = Channel.FARMER;
+        Map<String, Object> order = new java.util.HashMap<>(Map.of("id", "ORD-2026-001", "statusLabel", "施工中",
+                "cropName", "愛文芒果", "categoryName", "採收分級", "area", 2.0, "farmLocation", "屏東縣枋山鄉",
+                "startDate", "2026-10-13", "endDate", "2026-10-14", "timeSlotLabel", "全日", "teamName", "工班 B"));
+        order.putAll(Map.of("workersPerDay", 4L, "foremanName", "陳建龍", "foremanPhone", "0921-000-111",
+                "finalAmount", 52920L, "depositAmount", 10584L, "depositPaid", true));
+        Map<String, Object> orders = Map.of("kind", "orders", "total", 3L, "order", order,
+                "others", List.of(Map.of("id", "ORD-2026-013", "statusLabel", "已排定", "startDate", "2026-10-23", "cropName", "芒果")));
+        String oc = FarmerCards.orders(orders);
+        failed += expectEq("F-01 訂單卡 JSON", String.valueOf(validMessages(List.of(oc))), "true");
+        failed += expect("F-01 本人訂單標題", List.of(oc), 0, "ORD-2026-001｜施工中");
+        failed += expect("F-01 工班與人數", List.of(oc), 0, "指派工班：工班 B（每日 4 人）");
+        failed += expect("F-01 金額與定金", List.of(oc), 0, "NT$ 52,920（定金 NT$ 10,584 已付）");
+        failed += expect("F-01 其他訂單", List.of(oc), 0, "ORD-2026-013（已排定・2026-10-23・芒果）");
+        failed += expect("F-01 撥打帶隊對口", List.of(oc), 0, "tel:0921000111");
+        failed += expectEq("F-01 不含寫死資料", String.valueOf(!oc.contains("0912-222-444") && !oc.contains("agridispatch.tw/track")
+                && !oc.contains("阿迪")), "true");
+        String none = FarmerCards.orders(Map.of("kind", "orders", "total", 0L));
+        failed += expect("F-01 沒有訂單", List.of(none), 0, "目前查不到您名下的訂單");
+
+        Map<String, Object> wo = new java.util.HashMap<>(Map.of("id", "ORD-2026-001", "cropName", "愛文芒果", "place", "屏東縣枋山鄉",
+                "startDate", "2026-10-13", "endDate", "2026-10-14", "timeSlotLabel", "全日", "workingToday", true, "teamIndoor", true,
+                "region", Map.of("region", "屏東枋山", "condition", "雷陣雨", "temp", "27°C", "rainChance", "80%", "advice", "暫停採收")));
+        Map<String, Object> later = Map.of("id", "ORD-2026-013", "cropName", "芒果", "place", "枋山", "startDate", "2026-10-15",
+                "endDate", "2026-10-16", "workingToday", false, "teamIndoor", false);
+        String wc = FarmerCards.weather(Map.of("kind", "weather", "date", "2026-10-13", "weather", "暴雨", "alertLevel", "danger",
+                "orders", List.of(wo, later)));
+        failed += expectEq("F-04 天候卡 JSON", String.valueOf(validMessages(List.of(wc))), "true");
+        failed += expect("F-04 當地天氣", List.of(wc), 0, "當地：雷陣雨・27°C・降雨 80%");
+        failed += expect("F-04 工班改室內", List.of(wc), 0, "今日工班改到室內避險作業");
+        failed += expect("F-04 近期開工", List.of(wc), 0, "2026-10-15 開工，出發前會依天候再確認");
+        failed += expect("F-04 警戒色", List.of(wc), 0, "#B91C1C");
+        failed += expect("F-04 沒有訂單", List.of(FarmerCards.weather(Map.of("kind", "weather", "weather", "晴", "alertLevel", "normal",
+                "orders", List.of()))), 0, "目前沒有施工中或 3 天內開工的訂單");
+
+        // 正式模式（假金鑰）且後端查不到：不回示範資料
+        String savedSecret = F.secret, savedToken = F.accessToken;
+        try {
+            F.secret = "real_secret_for_check"; F.accessToken = "real_token_for_check";
+            for (String a : List.of("a=orders", "a=weather")) {
+                String u = "U_CHECK_FPROD_" + a.substring(2);
+                IdentityStore.override(F, u, IdentityStore.preset("farmer"));
+                String all = String.join("", LineBotDispatcher.handle(BotEvent.postback(F, u, a)));
+                failed += expectEq("正式模式查不到 " + a + " 不出示範資料", String.valueOf(all.contains("暫時查不到您的資料")
+                        && !all.contains("枋山愛文芒果派工確認單") && !all.contains("突發暴雨避險")), "true");
+            }
+        } finally {
+            F.secret = savedSecret; F.accessToken = savedToken;
         }
         return failed;
     }

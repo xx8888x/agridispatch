@@ -137,7 +137,7 @@ final class WorkerDispatcher {
         switch (action) {
             case "task": {
                 if (!me.isWorker()) return bindingRequired(lang, userId);
-                Map<String, Object> d = BackendClient.workerData(userId, "task");
+                Map<String, Object> d = BackendClient.data(CH, userId, "task", "");
                 if (d != null && !d.isEmpty()) return WorkerCards.task(lang, d, FlexMessageBuilder.workerPageUrl(me));
                 if (!CH.isMock()) return WorkerCards.unavailable(lang, FlexMessageBuilder.workerPageUrl(me));
                 // Mock 模式且後端沒有本人資料（模擬器自行指定的身分）：示範卡片
@@ -156,14 +156,14 @@ final class WorkerDispatcher {
                 return List.of(FlexMessageBuilder.getWorkerLinkFlex(lang, "clock", FlexMessageBuilder.workerPageUrl(me)));
             case "weather": {
                 if (!me.isWorker()) return bindingRequired(lang, userId);
-                Map<String, Object> d = BackendClient.workerData(userId, "weather");
+                Map<String, Object> d = BackendClient.data(CH, userId, "weather", "");
                 if (d != null && !d.isEmpty()) return List.of(WorkerCards.weather(lang, d));
                 if (!CH.isMock()) return WorkerCards.unavailable(lang, FlexMessageBuilder.workerPageUrl(me));
                 return List.of(FlexMessageBuilder.getWorkerWeatherFlex(lang));
             }
             case "salary": {
                 if (!me.isWorker()) return bindingRequired(lang, userId);
-                Map<String, Object> d = BackendClient.workerData(userId, "salary");
+                Map<String, Object> d = BackendClient.data(CH, userId, "salary", "");
                 if (d != null && !d.isEmpty()) return List.of(WorkerCards.salary(lang, d, FlexMessageBuilder.workerPageUrl(me)));
                 if (!CH.isMock()) return WorkerCards.unavailable(lang, FlexMessageBuilder.workerPageUrl(me));
                 // Mock 示範卡片（8,800 元就業獎勵的適用對象【待確認】）

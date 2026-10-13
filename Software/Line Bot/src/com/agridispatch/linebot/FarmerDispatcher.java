@@ -8,6 +8,7 @@ import java.util.Set;
 /**
  * 智農派工 - 農場主帳號分派器（規格 4.1）
  * F-01 我的訂單、F-02 黑轉白、F-03 早鳥、F-04 天候避險、F-05 機耕代噴預約、F-06 費率與產曆、F-07 帳號綁定、F-08 服務導覽
+ * F-01、F-04 向後端查本人資料（FarmerCards）；後端查不到時，正式模式請農場主到網站查看，Mock 模式才用示範卡片
  */
 final class FarmerDispatcher {
     private FarmerDispatcher() {}
@@ -63,9 +64,10 @@ final class FarmerDispatcher {
         switch (action) {
             case "orders": {
                 if (!me.isFarmer()) return bindingRequired(userId);
-                // 後端只回本人訂單（規格 4.1）；後端離線或沒有綁定資料（Mock 示範農場主）時改用派工確認單範本
-                List<String> reply = BackendClient.query(CH, userId, "orders", text);
-                return reply != null && !reply.isEmpty() ? reply : List.of(FlexMessageBuilder.getFarmerOrderFlex());
+                // 後端只回本人訂單（規格 4.1）；查不到時正式模式請農場主到網站查看，Mock 模式（示範農場主）才用派工確認單範本
+                Map<String, Object> d = BackendClient.data(CH, userId, "orders", text);
+                if (d != null && !d.isEmpty()) return List.of(FarmerCards.orders(d));
+                return CH.isMock() ? List.of(FlexMessageBuilder.getFarmerOrderFlex()) : FarmerCards.unavailable();
             }
             case "legalize": {
                 // 功能下架（Config.FEATURE_LEGALIZE=false）：手機上尚未更新的舊圖文選單仍可能送來 a=legalize
@@ -78,9 +80,13 @@ final class FarmerDispatcher {
                 String typeText = key != null && LEGALIZE_KEYS.containsKey(key) ? LEGALIZE_KEYS.get(key) : text;
                 return List.of(FlexMessageBuilder.getLegalizeFlex(typeText));
             }
-            case "weather":
+            case "weather": {
                 if (!me.isFarmer()) return bindingRequired(userId);
-                return List.of(FlexMessageBuilder.getWeatherHedgeFlex());
+                // 本人施工中與 3 天內開工的訂單 × 天候（後端）；查不到時同 orders
+                Map<String, Object> d = BackendClient.data(CH, userId, "weather", text);
+                if (d != null && !d.isEmpty()) return List.of(FarmerCards.weather(d));
+                return CH.isMock() ? List.of(FlexMessageBuilder.getWeatherHedgeFlex()) : FarmerCards.unavailable();
+            }
             case "early_bird":
                 return List.of(FlexMessageBuilder.getEarlyBirdFlex());
             case "machinery_book":

@@ -32,14 +32,14 @@ Software\Line Bot\
 │       └── RichMenuUploader.java      # 六宮格 Rich Menu 一鍵上傳發布工具
 ├── i18n/                              # 工作者帳號文字：worker_zh／vi／id.properties (UTF-8；越、印尼語待母語校對)
 ├── flex_templates/                    # 8 大情境 Flex Message JSON 範本 (相容 LINE Bot Designer)
-│   ├── 01_farmer_order.json           # 枋山愛文芒果派工確認單
-│   ├── 02_worker_task_zh.json         # 移工每日任務卡 (繁體中文)
-│   ├── 03_worker_task_vi.json         # 移工每日任務卡 (🇻🇳 越南語)
-│   ├── 04_worker_task_id.json         # 移工每日任務卡 (🇮🇩 印尼語)
-│   ├── 05_weather_hedge.json          # 突發暴雨避險・專車轉移通報
-│   ├── 06_early_bird.json             # 產季早鳥保證工時包 (315 元/hr・鎖定名額)
-│   ├── 07_machinery_task.json         # 本國機耕師與大疆 T50 代噴工單
-│   └── 08_salary_bonus.json           # 農業部 8,800 元就業獎勵與薪資透明卡
+│   ├── F-01_zh.json                   # 枋山愛文芒果派工確認單（檔名規則 <功能代碼>_<lang>.json，規格第玖章）
+│   ├── F-03_zh.json                   # 產季早鳥保證工時包 (315 元/hr・鎖定名額)
+│   ├── F-04_zh.json                   # 突發暴雨避險・專車轉移通報
+│   ├── W-01_zh.json                   # 移工每日任務卡 (繁體中文)
+│   ├── W-01_vi.json                   # 移工每日任務卡 (🇻🇳 越南語)
+│   ├── W-01_id.json                   # 移工每日任務卡 (🇮🇩 印尼語)
+│   ├── W-01-machinery_zh.json         # 本國機耕師與大疆 T50 代噴工單
+│   └── W-04_zh.json                   # 農業部 8,800 元就業獎勵與薪資透明卡
 ├── rich_menu/                         # 兩帳號共 6 份圖文選單（<代碼>.json + .jpg，由 tools/make_rich_menus.py 產生）
 ├── tools/make_rich_menus.py           # 圖文選單產生器（選單按鈕與文字的原始定義）
 ├── config.properties                  # 伺服器與 LINE 金鑰設定檔 (已列於 .gitignore，不會被提交)

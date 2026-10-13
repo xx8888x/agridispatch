@@ -33,7 +33,7 @@ public class FlexMessageBuilder {
      */
     public static String getFarmerOrderFlex() {
         return wrapFlex("智農派工 - 枋山愛文芒果派工確認單", 
-                loadTemplateOrFallback("01_farmer_order.json", """
+                loadTemplateOrFallback("F-01_zh.json", """
                 {
                   "type": "bubble",
                   "header": { "type": "box", "layout": "vertical", "backgroundColor": "#047857", "contents": [{ "type": "text", "text": "智農派工・履約派遣單", "color": "#FFFFFF", "weight": "bold" }] }
@@ -47,13 +47,13 @@ public class FlexMessageBuilder {
     public static String getWorkerTaskFlex(String lang) {
         if ("vi".equalsIgnoreCase(lang)) {
             return wrapFlex("Thẻ Nhiệm Vụ Hôm Nay - W001 Nguyễn Văn Hùng", 
-                    loadTemplateOrFallback("03_worker_task_vi.json", "{}"));
+                    loadTemplateOrFallback("W-01_vi.json", "{}"));
         } else if ("id".equalsIgnoreCase(lang)) {
             return wrapFlex("Kartu Tugas Hari Ini - W006 Agus Santoso", 
-                    loadTemplateOrFallback("04_worker_task_id.json", "{}"));
+                    loadTemplateOrFallback("W-01_id.json", "{}"));
         } else {
             return wrapFlex("今日派工任務卡 - W001 阮文雄", 
-                    loadTemplateOrFallback("02_worker_task_zh.json", "{}"));
+                    loadTemplateOrFallback("W-01_zh.json", "{}"));
         }
     }
 
@@ -62,7 +62,7 @@ public class FlexMessageBuilder {
      */
     public static String getWeatherHedgeFlex() {
         return wrapFlex("突發暴雨避險快訊 - 全體轉移室內冷鏈", 
-                loadTemplateOrFallback("05_weather_hedge.json", "{}"));
+                loadTemplateOrFallback("F-04_zh.json", "{}"));
     }
 
     /**
@@ -70,7 +70,7 @@ public class FlexMessageBuilder {
      */
     public static String getEarlyBirdFlex() {
         return wrapFlex("2026 產季早鳥保證工時包 - 315元/hr・鎖定名額・優先排班", 
-                loadTemplateOrFallback("06_early_bird.json", "{}"));
+                loadTemplateOrFallback("F-03_zh.json", "{}"));
     }
 
     /**
@@ -78,7 +78,7 @@ public class FlexMessageBuilder {
      */
     public static String getMachineryTaskFlex() {
         return wrapFlex("本國專業農機與大疆 T50 代噴任務卡", 
-                loadTemplateOrFallback("07_machinery_task.json", "{}"));
+                loadTemplateOrFallback("W-01-machinery_zh.json", "{}"));
     }
 
     /**
@@ -86,7 +86,7 @@ public class FlexMessageBuilder {
      */
     public static String getSalaryBonusFlex() {
         return wrapFlex("薪資明細與中央就業獎勵津貼 ($8,800)", 
-                loadTemplateOrFallback("08_salary_bonus.json", "{}"));
+                loadTemplateOrFallback("W-04_zh.json", "{}"));
     }
 
     // =========================================================================

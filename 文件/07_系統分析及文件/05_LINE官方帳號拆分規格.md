@@ -7,7 +7,7 @@
 > **功能下架（2026-10-12）**：外籍移工（外勞）功能暫時下架，平台先以本國勞工（正職、兼職、中高齡、打工、學生打工）為主。Line Bot 以功能開關 `FEATURE_FOREIGN_WORKERS`（環境變數；或 `config.properties` 的 `feature.foreign-workers`）處理、不刪程式，**預設 `false`**，與前端 `features.foreignWorkers` 一致。關閉時工作者帳號：綁定卡只有本國籍入口、不產生 `role=worker_foreign` 的綁定網址；不出語言選擇與三語歡迎、不辨識語言切換、不採用 LINE 介面語言，回覆與推播一律繁體中文；已綁定為 `worker_foreign` 的舊使用者只回「外籍工作者服務暫停中，請洽合作社或帶班師傅」與聯絡合作社卡，選單回帳號預設 `worker_guest`；舊選單送來 `a=lang`、`a=lang_help` 時回「目前僅提供繁體中文介面」或使用說明。圖文選單 `worker_guest` 改為中文功能格（今日任務、上下班打卡、薪資明細、帳號綁定、使用說明、聯絡合作社），`worker_main_zh` 的「語言・說明」改「使用說明」（`a=help`）。**恢復方式**：設 `FEATURE_FOREIGN_WORKERS=true`（或 `feature.foreign-workers=true`）重啟 Line Bot；圖文選單另把 `tools/make_rich_menus.py` 的 `FEATURE_FOREIGN_WORKERS` 改 `True`、重新產生並以 `RichMenuUploader` 上傳。下文第參、肆、捌、玖章所述多語與外籍流程為開關打開時的行為。後端 `worker_foreign` 角色與資料未變動。
 > **狀態（2026-10-13 對照程式更新）**：P1～P5 已實作，並以 `TestSimulator --check` 與 `tools/acceptance_mock.py`（15/15）在模擬模式驗收；01、02、03 文件與 `Software/Line Bot/README.md` 已同步。已完成：Line Bot `/callback/farmer`、`/callback/worker` 雙 webhook 與 `FarmerDispatcher`／`WorkerDispatcher`（舊 `/callback`、`/webhook` 過渡路徑仍保留）；後端 `line_users`（6.5）、`LineBindingService`、內部端點 `/api/line/internal/identity`／`follow-state`／`query`、綁定 API（6.4）、LIFF ID token 驗證；Line Bot 內部端點 `/internal/richmenu/link`、`/internal/notify`、`/internal/push`；6 份圖文選單與上傳工具；LIFF 綁定頁、科技後台 `admin-line.html`、模擬器雙帳號；推播（第柒章 7.0）；工作者語音（5.5，預設關閉）；後端舊 `POST /api/line/webhook` 已停用（回 410）。
 >
-> **尚未完成**：(1) P0 兩個官方帳號與 LINE Login／LIFF 尚未申請，實機驗收（P6、`07_` 手冊）未做；(2) 農場主 F-01 我的訂單由後端回本人資料（後端離線或無綁定資料時退回範本），F-04 天候避險仍為固定範本；(3) 工作者 W-01 今日任務、W-03 天候集合、W-04 薪資已改為本人資料（2026-10-13：後端 `internal/query` 回 `data`，Line Bot `WorkerCards` 依語言組卡；正式模式查不到時請使用者開工人頁，只有 Mock 模式才退回示範卡片）；W-04 為試算（勞健保概估），8,800 元就業獎勵適用對象仍【待確認】；W-02 打卡、W-05 出勤以卡片連結開啟工人頁，不在聊天室內列出；(4) 薪資入帳推播待發薪功能；(5) Flex 範本檔名尚未依第玖章改為 `<功能代碼>_<lang>.json`；(6) `line_messages` 未啟用。另：黑轉白（F-02）亦有功能開關 `FEATURE_LEGALIZE`（預設 `false`，關閉時回暫停說明）。第壹章 1.1 為拆分前的問題紀錄、第拾壹章為當時規劃的變更範圍，保留供追溯。
+> **尚未完成**：(1) P0 兩個官方帳號與 LINE Login／LIFF 尚未申請，實機驗收（P6、`07_` 手冊）未做；(2) 農場主 F-01 我的訂單由後端回本人資料（後端離線或無綁定資料時退回範本），F-04 天候避險仍為固定範本；(3) 工作者 W-01 今日任務、W-03 天候集合、W-04 薪資已改為本人資料（2026-10-13：後端 `internal/query` 回 `data`，Line Bot `WorkerCards` 依語言組卡；正式模式查不到時請使用者開工人頁，只有 Mock 模式才退回示範卡片）；W-04 為試算（勞健保概估），8,800 元就業獎勵適用對象仍【待確認】；W-02 打卡、W-05 出勤以卡片連結開啟工人頁，不在聊天室內列出；(4) 薪資入帳推播待發薪功能；(5) ~~Flex 範本檔名改為 `<功能代碼>_<lang>.json`~~ 2026-10-13 已改（`F-01_zh`、`F-03_zh`、`F-04_zh`、`W-01_{zh,vi,id}`、`W-01-machinery_zh`、`W-04_zh`；現僅作 Mock 模式示範卡片）；(6) `line_messages` 未啟用。另：黑轉白（F-02）亦有功能開關 `FEATURE_LEGALIZE`（預設 `false`，關閉時回暫停說明）。第壹章 1.1 為拆分前的問題紀錄、第拾壹章為當時規劃的變更範圍，保留供追溯。
 
 ---
 
@@ -145,10 +145,10 @@
 
 | 代碼 | 功能 | 公開 | 觸發（選單 postback ／ 關鍵字） | 資料來源 | 現況對應 |
 |---|---|---|---|---|---|
-| F-01 | 我的訂單與派工確認單 | | `a=orders` ／ 派工、訂單、單號、ORD- | 後端：僅本人訂單 | `getFarmerOrderFlex`（固定範本）、後端 `buildOrderQueryFlex` |
+| F-01 | 我的訂單與派工確認單 | | `a=orders` ／ 派工、訂單、單號、ORD- | 後端：僅本人訂單 | ✅ 指定單號或作物的那筆，否則施工中＞已排定＞待確認；工期、工班名稱與每日人數、帶隊對口、金額與定金，附其餘訂單摘要：後端 `LineFarmerQueryService`、Line Bot `FarmerCards.orders`（不回工人個資；Mock 示範：`getFarmerOrderFlex`） |
 | F-02 | 現有工班黑轉白 | | `a=legalize` ／ 黑轉白、黑工 | Line Bot 範本 | `getLegalizeFlex` |
 | F-03 | 早鳥工時包 | ✅ | `a=early_bird` ／ 早鳥、預購 | Line Bot 範本 | `getEarlyBirdFlex` |
-| F-04 | 天候避險（我的訂單受影響情形） | | `a=weather` ／ 避險、天氣、暴雨 | 後端：本人進行中訂單 × 天候狀態 | `getWeatherHedgeFlex`（固定範本） |
+| F-04 | 天候避險（我的訂單受影響情形） | | `a=weather` ／ 避險、天氣、暴雨 | 後端：本人進行中訂單 × 天候狀態 | ✅ 目前天候＋本人施工中或 3 天內開工的訂單；依農場地址對應產區天氣（例「屏東縣枋山鄉」對「屏東枋山」），工班狀態 `hedged_indoor` 時標示今日改室內：`FarmerCards.weather`（不回後台天候訊息；Mock 示範：`getWeatherHedgeFlex`） |
 | F-05 | 機耕代噴預約 | ✅ | `a=machinery_book` ／ 機耕、代噴、無人機 | Line Bot 範本 ＋ 預約網頁 | `getMachineryTaskFlex`（拆出預約部分） |
 | F-06 | 費率試算與產曆 | ✅ | `a=rates`、`a=calendar` ／ 費率、價格、產曆、採收 | 後端 | 後端 `buildRateQueryFlex`、`buildCalendarQueryFlex` |
 | F-07 | 帳號綁定 ／ 我的帳號 | ✅ | `a=account` ／ 綁定、帳號 | LIFF | `getBindingFlex`（只留農場主按鈕） |
@@ -304,7 +304,7 @@ flowchart LR
 |---|---|---|---|
 | POST | `/api/line/internal/identity` | `{channel, lineUserId}` | `{bound, role, subRole, nationality, isLeader, lang, menuKey}`；未綁定回 `bound:false` 與已記錄的語言 |
 | POST | `/api/line/internal/follow-state` | `{channel, lineUserId, followed?, lang?, langLocked?, displayName?}` | `{success, ...identity}`；語言選擇（W-06）帶 `langLocked:true`；加好友時的 LINE 介面語言不帶（未鎖定才採用） |
-| POST | `/api/line/internal/query` | `{channel, lineUserId, action, text?}` | `{success, messages:[LINE 訊息物件], data?}`；後端依 channel 與身分限制可回答的 action（4.1、4.2），不符回 `messages:[]`、不帶 `data`。農場主帳號回 `messages`；工作者帳號 `task`／`weather`／`salary` 回 `data`（本人資料，Line Bot 依使用者語言組卡片，與推播 7.0 同樣分工） |
+| POST | `/api/line/internal/query` | `{channel, lineUserId, action, text?}` | `{success, messages:[LINE 訊息物件], data?}`；後端依 channel 與身分限制可回答的 action（4.1、4.2），不符回 `messages:[]`、不帶 `data`。農場主帳號 `rates`／`calendar` 回 `messages`，`orders`／`weather` 回 `data`；工作者帳號 `task`／`weather`／`salary` 回 `data`（本人資料，由 Line Bot 組卡片，工作者帳號依使用者語言；與推播 7.0 同樣分工） |
 
 **Line Bot 提供（後端呼叫）**
 
@@ -463,7 +463,7 @@ LINE 官方帳號依「每月主動推播則數」計費，**回覆訊息（Repl
 
 - 外籍移工功能下架期間（`FEATURE_FOREIGN_WORKERS=false`，預設）工作者帳號一律繁體中文，越語、印尼語資源檔保留、恢復開關後即可使用。
 - 工作者帳號所有回覆文字、Flex 範本、選單圖面都要有三語版本；缺翻譯時退回 `zh`，並在 log 記錄缺漏的鍵值。
-- Flex 範本檔名規則：`flex_templates/<功能代碼>_<lang>.json`（例 `W-01_vi.json`）；現行 `02/03/04_worker_task_*.json` 改名對齊。
+- Flex 範本檔名規則：`flex_templates/<功能代碼>_<lang>.json`（例 `W-01_vi.json`；同功能的變體以 `-` 接在代碼後，例 `W-01-machinery_zh.json`）；2026-10-13 已改名對齊。
 - 固定文字集中為語系資源檔（`i18n/worker_zh.properties` 等，UTF-8），不再寫在 Java 字串中。
 - 越語、印尼語文案上線前由母語人員校對【待確認：校對人選】。
 

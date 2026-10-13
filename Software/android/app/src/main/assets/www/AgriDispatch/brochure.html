@@ -86,7 +86,7 @@
         <div class="ad-header__actions">
           <span class="ad-pill" :class="backendOnline ? 'ad-pill--ok' : 'ad-pill--warn'" data-demo-only><span class="ad-pill__dot"></span>{{ backendOnline ? '後台連線' : '離線展示' }}</span>
           <a href="../TechBackend/admin.html" class="ad-btn ad-btn--ghost ad-btn--sm ad-hide-sm" data-demo-only>後台管理 DM</a>
-          <button type="button" @click="printBrochure()" class="ad-btn ad-btn--primary ad-btn--sm">列印／存成 PDF</button>
+          <button type="button" @click="printBrochure()" class="ad-btn ad-btn--primary ad-btn--sm">列印<span class="ad-hide-sm">／存成 PDF</span></button>
         </div>
       </div>
     </header>

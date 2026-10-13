@@ -116,7 +116,7 @@
   var DEMO_PAGES = [
     { group: '角色工作台', items: [
       { root: 'main', href: 'farmer.html', title: '農場主', meta: '預約、訂單、工班' },
-      { root: 'main', href: 'worker-foreign.html', title: '外展移工', meta: '今日任務、打卡、薪資（越／印／泰／中）', feature: 'foreignWorkers' },
+      { root: 'main', href: 'worker-foreign.html', title: '外展移工', meta: '今日任務、打卡、薪資（越／印／中）', feature: 'foreignWorkers' },
       { root: 'main', href: 'worker-local.html', title: '帶隊領班／機耕師', meta: '帶隊、打卡、薪資' },
       { root: 'main', href: 'worker-local.html?role=labor', title: '合作社勞務員', meta: '出勤、打卡、薪資' },
       { root: 'tech', href: 'admin.html', title: '科技營運後台', meta: '天候戰情、派工調度、營收' },

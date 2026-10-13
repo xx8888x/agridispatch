@@ -109,10 +109,10 @@
               <span class="ad-avatar ad-avatar--lg">雄</span>
               <div style="min-width: 0;">
                 <h3 class="ad-heading">Nguyễn Văn Hùng</h3>
-                <p class="ad-caption">智農外展農工 #001（越南）</p>
+                <p class="ad-caption" data-i18n="profileSub">智農外展農工 #001（越南）</p>
               </div>
             </div>
-            <span id="badge-dispatched" class="ad-pill ad-pill--ok">已派工</span>
+            <span id="badge-dispatched" class="ad-pill ad-pill--ok" data-i18n="dispatched">已派工</span>
           </div>
 
           <!-- 打卡 -->
@@ -199,30 +199,30 @@
           <div class="ad-card" style="padding: 24px;">
             <div class="ad-card__head">
               <div>
-                <h3 id="txt-att-title" class="ad-heading">本月出勤與打卡紀錄</h3>
-                <p id="txt-att-sub" class="ad-caption">GPS 現場打卡・8 小時標準工時・依勞基法核算加班費</p>
+                <h3 id="txt-att-title" class="ad-heading" data-i18n="attTitle">本月出勤與打卡紀錄</h3>
+                <p id="txt-att-sub" class="ad-caption" data-i18n="attSub">GPS 現場打卡・8 小時標準工時・依勞基法核算加班費</p>
               </div>
               <span id="attMonthPill" class="ad-pill ad-num">本月</span>
             </div>
 
             <div class="ad-stat-grid">
-              <div class="ad-stat"><div class="ad-stat__label">本月出勤</div><div id="attDays" class="ad-stat__value">—<small>天</small></div></div>
-              <div class="ad-stat"><div class="ad-stat__label">正常工時</div><div id="attNormal" class="ad-stat__value">—<small>小時</small></div></div>
-              <div class="ad-stat"><div class="ad-stat__label">累計加班</div><div id="attOvertime" class="ad-stat__value">—<small>小時</small></div></div>
-              <div class="ad-stat ad-stat--primary"><div class="ad-stat__label">打卡異常</div><div class="ad-stat__value">0<small>次</small></div></div>
+              <div class="ad-stat"><div class="ad-stat__label" data-i18n="statDays">本月出勤</div><div id="attDays" class="ad-stat__value">—<small data-i18n="unitDay">天</small></div></div>
+              <div class="ad-stat"><div class="ad-stat__label" data-i18n="statNormal">正常工時</div><div id="attNormal" class="ad-stat__value">—<small data-i18n="unitHour">小時</small></div></div>
+              <div class="ad-stat"><div class="ad-stat__label" data-i18n="statOvertime">累計加班</div><div id="attOvertime" class="ad-stat__value">—<small data-i18n="unitHour">小時</small></div></div>
+              <div class="ad-stat ad-stat--primary"><div class="ad-stat__label" data-i18n="statAbnormal">打卡異常</div><div class="ad-stat__value">0<small data-i18n="unitTimes">次</small></div></div>
             </div>
 
             <div style="margin-top: 20px;">
-              <div class="ad-label" style="margin-bottom: 8px;">近期打卡與小工頭簽核</div>
+              <div class="ad-label" style="margin-bottom: 8px;" data-i18n="recentTitle">近期打卡與小工頭簽核</div>
               <div class="ad-list">
                 <div class="ad-row">
                   <div class="ad-row__main">
                     <div id="row-today-date" class="ad-row__title ad-num">今日</div>
                     <div id="row-today-meta" class="ad-row__meta">屏東高樹洋蔥試驗田・小工頭：林小祥</div>
                   </div>
-                  <div class="ad-row__aside">
+                  <div class="ad-row__aside" style="flex-shrink: 1; max-width: 55%;">
                     <div id="row-today-status" class="ad-num" style="font-weight: 600; color: var(--ad-accent-text);">上班打卡（作業中）</div>
-                    <div class="ad-caption">預計 16:00 下班</div>
+                    <div class="ad-caption" data-i18n="expectedOff">預計 16:00 下班</div>
                   </div>
                 </div>
                 <div id="attRecent" style="display: contents;"></div>
@@ -273,8 +273,8 @@
     <div id="tabContentPayroll" class="hidden space-y-6">
 
       <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
-        <p id="txt-pay-sub-title" class="ad-caption" style="margin: 0;">底薪保障・農業部 $8,800 就業獎勵・加班費透明計發・歷月薪資條下載</p>
-        <button type="button" onclick="downloadSlip(-1)" class="ad-btn ad-btn--primary">下載本月薪資單</button>
+        <p id="txt-pay-sub-title" class="ad-caption" style="margin: 0;" data-i18n="paySub">底薪保障・農業部 $8,800 就業獎勵・加班費透明計發・歷月薪資條下載</p>
+        <button type="button" onclick="downloadSlip(-1)" class="ad-btn ad-btn--primary" data-i18n="downloadMonth">下載本月薪資單</button>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -286,15 +286,15 @@
             <span id="payDate" class="ad-caption ad-num"></span>
           </div>
 
-          <div class="ad-label" style="margin-bottom: 8px;">應發項目</div>
+          <div class="ad-label" style="margin-bottom: 8px;" data-i18n="earnings">應發項目</div>
           <div id="payEarnings" class="ad-list"></div>
 
-          <div class="ad-label" style="margin: 16px 0 8px;">法定應扣項目</div>
+          <div class="ad-label" style="margin: 16px 0 8px;" data-i18n="deductions">法定應扣項目</div>
           <div id="payDeductions" class="ad-list"></div>
 
           <div class="ad-card ad-card--accent" style="margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
             <div>
-              <div class="ad-heading">本月預估淨所得</div>
+              <div class="ad-heading" data-i18n="netTitle">本月預估淨所得</div>
               <div id="payBank" class="ad-caption"></div>
             </div>
             <strong id="payNet" class="ad-price ad-price--lg ad-price--accent">—</strong>
@@ -307,29 +307,29 @@
 
           <div class="ad-card">
             <div class="ad-card__head">
-              <h4 class="ad-heading">農業部 8,800 就業獎勵撥款進度</h4>
-              <span class="ad-pill ad-pill--warn">試算中</span>
+              <h4 class="ad-heading" data-i18n="bonusTitle">農業部 8,800 就業獎勵撥款進度</h4>
+              <span class="ad-pill ad-pill--warn" data-i18n="bonusPill">試算中</span>
             </div>
             <ol class="ad-steps">
               <li>
-                <strong class="ad-heading" style="font-size: 15px; display: block;">合作社出勤申報</strong>
-                <span class="ad-caption">依合作社出勤紀錄申報，適用對象與條件【待確認】農業部規定。</span>
+                <strong class="ad-heading" style="font-size: 15px; display: block;" data-i18n="step1">合作社出勤申報</strong>
+                <span class="ad-caption" data-i18n="step1Desc">依合作社出勤紀錄申報，適用對象與條件【待確認】農業部規定。</span>
               </li>
               <li>
-                <strong class="ad-heading" style="font-size: 15px; display: block;">農業部跨部會審核</strong>
-                <span class="ad-caption">核對居留證與聘僱合約。</span>
+                <strong class="ad-heading" style="font-size: 15px; display: block;" data-i18n="step2">農業部跨部會審核</strong>
+                <span class="ad-caption" data-i18n="step2Desc">核對居留證與聘僱合約。</span>
               </li>
               <li>
-                <strong class="ad-heading" style="font-size: 15px; display: block; color: var(--ad-accent-text);">國庫撥付入個人帳戶</strong>
-                <span id="payBonusDate" class="ad-caption">依合作社薪資系統發放日撥入個人帳戶。</span>
+                <strong class="ad-heading" style="font-size: 15px; display: block; color: var(--ad-accent-text);" data-i18n="step3">國庫撥付入個人帳戶</strong>
+                <span id="payBonusDate" class="ad-caption" data-i18n="step3Desc">依合作社薪資系統發放日撥入個人帳戶。</span>
               </li>
             </ol>
           </div>
 
           <div class="ad-card">
             <div class="ad-card__head">
-              <h4 class="ad-heading">歷史薪資單</h4>
-              <span class="ad-caption">近 3 個月</span>
+              <h4 class="ad-heading" data-i18n="historyTitle">歷史薪資單</h4>
+              <span class="ad-caption" data-i18n="history3">近 3 個月</span>
             </div>
             <div id="payHistory" class="ad-list"></div>
           </div>
@@ -410,7 +410,83 @@
         bonusAgri: "農業部外展就業獎勵津貼",
         transportSub: "高溫與田間交通補助",
         totalEst: "本月實領預估總額",
-        scheduleTitle: "本週出勤與接送班表"
+        scheduleTitle: "本週出勤與接送班表",
+        dispatched: "已派工",
+        attTitle: "本月出勤與打卡紀錄",
+        attSub: "GPS 現場打卡・8 小時標準工時・依勞基法核算加班費",
+        statDays: "本月出勤",
+        statNormal: "正常工時",
+        statOvertime: "累計加班",
+        statAbnormal: "打卡異常",
+        unitDay: "天",
+        unitHour: "小時",
+        unitTimes: "次",
+        recentTitle: "近期打卡與小工頭簽核",
+        todayMark: "（今日）",
+        expectedOff: "預計 16:00 下班",
+        rowWorking: "{t} 上班打卡（作業中）",
+        rowShift: "{in} ~ {out}（{h}h{ot}）",
+        otShort: "・加班 {o}h",
+        foremanLabel: "小工頭：",
+        profileSub: "智農外展農工 #001（越南）",
+        signedOk: "小工頭已簽核",
+        signedWait: "待簽核",
+        pillToday: "今日出勤",
+        pillConfirmed: "已排定",
+        pillPending: "待確認",
+        pillCompleted: "已完工",
+        pillHedge: "避險排班",
+        periodTbd: "工期待排定",
+        scheduleMeta: "{van} 06:30 發車・{loc}・對口：{who}",
+        hedgeRow: "遇午後暴雨：轉派 {loc}",
+        hedgeTaskDefault: "室內作業免淋雨",
+        listSep: "、",
+        insLabor: "勞保",
+        insEmployment: "就保",
+        insOccupational: "職保",
+        insHealth: "健保",
+        paySub: "底薪保障・農業部 $8,800 就業獎勵・加班費透明計發・歷月薪資條下載",
+        downloadMonth: "下載本月薪資單",
+        payMonthTitle: "薪資核算明細・{m}",
+        thisMonth: "本月",
+        monthFmt: "{y} 年 {m} 月",
+        payDateTpl: "預定發放 {d}",
+        earnings: "應發項目",
+        deductions: "法定應扣項目",
+        netTitle: "本月預估淨所得",
+        rowBase: "外展保障基本底薪",
+        rowBaseMeta: "法定最低月薪（全額保障出工）",
+        rowAgri: "農業部外展就業獎勵津貼",
+        rowAgriMeta: "適用對象與條件【待確認】農業部規定",
+        rowOt: "平日與產季超時加班費",
+        rowOtMeta: "本月累計 {h} 小時，依勞基法加班費率試算",
+        rowTransport: "高溫防暑與田間交通補助",
+        rowTransportMeta: "合作社全勤防暑補貼",
+        rowLabor: "勞工保險自付額",
+        rowLaborMeta: "保障職災與生育老年給付（概估）",
+        rowHealth: "全民健康保險自付額",
+        rowHealthMeta: "在台就醫健保平權（概估）",
+        bankTpl: "薪轉帳戶：{b}",
+        bankNone: "（尚未登錄薪轉帳戶）",
+        payNoteDefault: "依底薪、津貼與出勤試算，勞健保自付額為概估值，實際以合作社薪資系統為準。",
+        payNoteOffline: "離線示範：未連上伺服器，金額依示範底薪與津貼試算，僅供參考。",
+        bonusDateTpl: "預計 {d} 撥入個人帳戶。",
+        bonusTitle: "農業部 8,800 就業獎勵撥款進度",
+        bonusPill: "試算中",
+        step1: "合作社出勤申報",
+        step1Desc: "依合作社出勤紀錄申報，適用對象與條件【待確認】農業部規定。",
+        step2: "農業部跨部會審核",
+        step2Desc: "核對居留證與聘僱合約。",
+        step3: "國庫撥付入個人帳戶",
+        step3Desc: "依合作社薪資系統發放日撥入個人帳戶。",
+        historyTitle: "歷史薪資單",
+        history3: "近 3 個月",
+        historyMeta: "試算實領 {m}",
+        historyOt: "（含加班 {h} 小時）",
+        downloadPdf: "下載 PDF",
+        payErr: "無法取得薪資資料：{msg}",
+        errOffline: "無法連線伺服器，請稍後再試",
+        errForbidden: "沒有權限查看這位工人的薪資"
       },
       vi: {
         navTask: "Nhiệm vụ",
@@ -469,7 +545,83 @@
         bonusAgri: "Trợ cấp khuyến khích việc làm Bộ Nông Nghiệp",
         transportSub: "Trợ cấp nhiệt độ cao và đi lại",
         totalEst: "Ước tính thực nhận tháng này",
-        scheduleTitle: "Lịch Trình Làm Việc & Xe Đưa Đón Tuần Này"
+        scheduleTitle: "Lịch Trình Làm Việc & Xe Đưa Đón Tuần Này",
+        dispatched: "Đã phân công",
+        attTitle: "Chấm công & chuyên cần tháng này",
+        attSub: "Chấm công GPS tại ruộng・8 giờ tiêu chuẩn・tăng ca tính theo Luật Lao động",
+        statDays: "Ngày làm tháng này",
+        statNormal: "Giờ thường",
+        statOvertime: "Tổng tăng ca",
+        statAbnormal: "Chấm công bất thường",
+        unitDay: "ngày",
+        unitHour: "giờ",
+        unitTimes: "lần",
+        recentTitle: "Chấm công gần đây & xác nhận của đội trưởng",
+        todayMark: " (hôm nay)",
+        expectedOff: "Dự kiến tan ca 16:00",
+        rowWorking: "Vào ca {t} (đang làm)",
+        rowShift: "{in} ~ {out} ({h}h{ot})",
+        otShort: "・tăng ca {o}h",
+        foremanLabel: "Đội trưởng: ",
+        profileSub: "Lao động AgriDispatch #001 (Việt Nam)",
+        signedOk: "Đội trưởng đã xác nhận",
+        signedWait: "Chờ xác nhận",
+        pillToday: "Đi làm hôm nay",
+        pillConfirmed: "Đã xếp lịch",
+        pillPending: "Chờ xác nhận",
+        pillCompleted: "Hoàn thành",
+        pillHedge: "Lịch tránh mưa",
+        periodTbd: "Chưa xếp ngày",
+        scheduleMeta: "{van} xuất phát 06:30・{loc}・Phụ trách: {who}",
+        hedgeRow: "Nếu mưa chiều: chuyển sang {loc}",
+        hedgeTaskDefault: "Làm việc trong nhà, không bị mưa",
+        listSep: ", ",
+        insLabor: "BH lao động",
+        insEmployment: "BH việc làm",
+        insOccupational: "BH tai nạn lao động",
+        insHealth: "BH y tế",
+        paySub: "Lương cơ bản bảo đảm・Thưởng 8.800 NTD của Bộ Nông nghiệp・Tăng ca minh bạch・Tải phiếu lương các tháng",
+        downloadMonth: "Tải phiếu lương tháng này",
+        payMonthTitle: "Chi tiết lương・{m}",
+        thisMonth: "Tháng này",
+        monthFmt: "{m}/{y}",
+        payDateTpl: "Dự kiến trả {d}",
+        earnings: "Khoản được nhận",
+        deductions: "Khoản khấu trừ theo luật",
+        netTitle: "Thực nhận ước tính tháng này",
+        rowBase: "Lương cơ bản bảo đảm",
+        rowBaseMeta: "Lương tối thiểu theo luật (bảo đảm đủ công)",
+        rowAgri: "Trợ cấp khuyến khích việc làm Bộ Nông nghiệp",
+        rowAgriMeta: "Đối tượng và điều kiện áp dụng: chờ Bộ Nông nghiệp xác nhận",
+        rowOt: "Tiền tăng ca ngày thường và mùa vụ",
+        rowOtMeta: "Tháng này {h} giờ, tính theo mức tăng ca của Luật Lao động",
+        rowTransport: "Trợ cấp nắng nóng và đi lại",
+        rowTransportMeta: "Trợ cấp chống nóng đủ công của hợp tác xã",
+        rowLabor: "Phần tự đóng BH lao động",
+        rowLaborMeta: "Bảo vệ tai nạn lao động, thai sản, hưu trí (ước tính)",
+        rowHealth: "Phần tự đóng BH y tế toàn dân",
+        rowHealthMeta: "Khám chữa bệnh tại Đài Loan như người bản xứ (ước tính)",
+        bankTpl: "Tài khoản nhận lương: {b}",
+        bankNone: "(chưa đăng ký tài khoản nhận lương)",
+        payNoteDefault: "Tính theo lương cơ bản, trợ cấp và chuyên cần; phần BH tự đóng là ước tính, số thực tế theo hệ thống lương của hợp tác xã.",
+        payNoteOffline: "Bản demo ngoại tuyến: chưa kết nối máy chủ, số tiền chỉ để tham khảo.",
+        bonusDateTpl: "Dự kiến chuyển vào tài khoản cá nhân ngày {d}.",
+        bonusTitle: "Tiến độ chi thưởng 8.800 NTD của Bộ Nông nghiệp",
+        bonusPill: "Đang tính",
+        step1: "Hợp tác xã khai báo chuyên cần",
+        step1Desc: "Khai báo theo chấm công của hợp tác xã; đối tượng và điều kiện chờ Bộ Nông nghiệp xác nhận.",
+        step2: "Bộ Nông nghiệp thẩm định",
+        step2Desc: "Đối chiếu thẻ cư trú và hợp đồng lao động.",
+        step3: "Chuyển vào tài khoản cá nhân",
+        step3Desc: "Chuyển vào tài khoản cá nhân theo ngày trả lương của hợp tác xã.",
+        historyTitle: "Phiếu lương các tháng trước",
+        history3: "3 tháng gần nhất",
+        historyMeta: "Thực nhận ước tính {m}",
+        historyOt: " (gồm tăng ca {h} giờ)",
+        downloadPdf: "Tải PDF",
+        payErr: "Không lấy được dữ liệu lương: {msg}",
+        errOffline: "Không kết nối được máy chủ, vui lòng thử lại sau",
+        errForbidden: "Bạn không có quyền xem lương của người này"
       },
       id: {
         navTask: "Tugas",
@@ -528,7 +680,83 @@
         bonusAgri: "Subsidi Insentif Kerja Kementerian Pertanian",
         transportSub: "Tunjangan Cuaca Panas & Transportasi",
         totalEst: "Perkiraan Gaji Bersih Bulan Ini",
-        scheduleTitle: "Jadwal Kerja & Jemputan Minggu Ini"
+        scheduleTitle: "Jadwal Kerja & Jemputan Minggu Ini",
+        dispatched: "Ditugaskan",
+        attTitle: "Absensi & kehadiran bulan ini",
+        attSub: "Absen GPS di lokasi・8 jam kerja standar・lembur sesuai UU Ketenagakerjaan",
+        statDays: "Hari kerja bulan ini",
+        statNormal: "Jam normal",
+        statOvertime: "Total lembur",
+        statAbnormal: "Absen tidak normal",
+        unitDay: "hari",
+        unitHour: "jam",
+        unitTimes: "kali",
+        recentTitle: "Absen terakhir & persetujuan mandor",
+        todayMark: " (hari ini)",
+        expectedOff: "Perkiraan pulang 16:00",
+        rowWorking: "Masuk {t} (sedang bekerja)",
+        rowShift: "{in} ~ {out} ({h}j{ot})",
+        otShort: "・lembur {o}j",
+        foremanLabel: "Mandor: ",
+        profileSub: "Pekerja AgriDispatch #001 (Vietnam)",
+        signedOk: "Disetujui mandor",
+        signedWait: "Menunggu persetujuan",
+        pillToday: "Kerja hari ini",
+        pillConfirmed: "Terjadwal",
+        pillPending: "Menunggu",
+        pillCompleted: "Selesai",
+        pillHedge: "Jadwal hujan",
+        periodTbd: "Tanggal belum ditetapkan",
+        scheduleMeta: "{van} berangkat 06:30・{loc}・Penanggung jawab: {who}",
+        hedgeRow: "Jika hujan sore: pindah ke {loc}",
+        hedgeTaskDefault: "Kerja di dalam ruangan, tidak kehujanan",
+        listSep: ", ",
+        insLabor: "Asuransi tenaga kerja",
+        insEmployment: "Asuransi pekerjaan",
+        insOccupational: "Asuransi kecelakaan kerja",
+        insHealth: "Asuransi kesehatan",
+        paySub: "Gaji pokok terjamin・Insentif NT$ 8.800 Kementerian Pertanian・Lembur transparan・Unduh slip gaji",
+        downloadMonth: "Unduh slip gaji bulan ini",
+        payMonthTitle: "Rincian gaji・{m}",
+        thisMonth: "Bulan ini",
+        monthFmt: "{m}/{y}",
+        payDateTpl: "Dibayar {d}",
+        earnings: "Pendapatan",
+        deductions: "Potongan wajib",
+        netTitle: "Perkiraan gaji bersih bulan ini",
+        rowBase: "Gaji pokok terjamin",
+        rowBaseMeta: "Upah minimum resmi (dijamin penuh)",
+        rowAgri: "Subsidi insentif kerja Kementerian Pertanian",
+        rowAgriMeta: "Sasaran dan syarat: menunggu konfirmasi Kementerian Pertanian",
+        rowOt: "Upah lembur hari biasa dan musim panen",
+        rowOtMeta: "Bulan ini {h} jam, dihitung sesuai tarif lembur UU Ketenagakerjaan",
+        rowTransport: "Tunjangan cuaca panas & transportasi",
+        rowTransportMeta: "Tunjangan panas kehadiran penuh dari koperasi",
+        rowLabor: "Iuran asuransi tenaga kerja",
+        rowLaborMeta: "Perlindungan kecelakaan kerja, melahirkan, hari tua (perkiraan)",
+        rowHealth: "Iuran asuransi kesehatan nasional",
+        rowHealthMeta: "Berobat di Taiwan setara warga lokal (perkiraan)",
+        bankTpl: "Rekening gaji: {b}",
+        bankNone: "(rekening gaji belum didaftarkan)",
+        payNoteDefault: "Dihitung dari gaji pokok, tunjangan, dan kehadiran; iuran asuransi adalah perkiraan, jumlah resmi mengikuti sistem gaji koperasi.",
+        payNoteOffline: "Demo offline: belum terhubung ke server, jumlah hanya perkiraan.",
+        bonusDateTpl: "Diperkirakan masuk ke rekening pribadi pada {d}.",
+        bonusTitle: "Status pencairan insentif NT$ 8.800",
+        bonusPill: "Dihitung",
+        step1: "Koperasi melaporkan kehadiran",
+        step1Desc: "Dilaporkan sesuai absensi koperasi; sasaran dan syarat menunggu konfirmasi Kementerian Pertanian.",
+        step2: "Verifikasi Kementerian Pertanian",
+        step2Desc: "Pencocokan ARC dan kontrak kerja.",
+        step3: "Transfer ke rekening pribadi",
+        step3Desc: "Ditransfer ke rekening pribadi pada tanggal gajian koperasi.",
+        historyTitle: "Slip gaji sebelumnya",
+        history3: "3 bulan terakhir",
+        historyMeta: "Perkiraan gaji bersih {m}",
+        historyOt: " (termasuk lembur {h} jam)",
+        downloadPdf: "Unduh PDF",
+        payErr: "Data gaji tidak dapat dimuat: {msg}",
+        errOffline: "Tidak dapat terhubung ke server, coba lagi nanti",
+        errForbidden: "Anda tidak berhak melihat gaji pekerja ini"
       }
     };
 
@@ -572,8 +800,15 @@
       updateTitle();
       renderPunchUI();
       applyTaskCard();
+      renderTodayDate();
+      if (lastRecords) renderRecentRecords(lastRecords);
+      if (legalData) renderLegal(legalData);
+      if (payrollData) renderPayroll(payrollData);
+      else if (payrollError) renderPayrollError(payrollError);
       if (window.ScheduleCalendar) ScheduleCalendar.setLang(currentLang);
     }
+    // 範本字串 {key} 代換
+    const fill = (tpl, vars) => String(tpl).replace(/\{(\w+)\}/g, (m, k) => (vars[k] != null ? vars[k] : m));
 
     // 標題隨頁籤切換：任務頁籤顯示「今日任務」，薪資頁籤顯示「薪資」（並隱藏今日出勤狀態）
     let currentTab = 'task';
@@ -675,15 +910,16 @@
         sign.style.fontWeight = outDone ? '600' : '';
       }
 
-      // 近期紀錄的今日列（內容為中文資料列，維持原文）
+      // 近期紀錄的今日列
       const row = $('row-today-status');
       if (row) {
         if (outDone) {
           const sh = shiftHours || calcShift(clockInTime, clockOutTime);
-          row.textContent = `${clockInTime.slice(0, 5)} ~ ${clockOutTime.slice(0, 5)}（${sh.actual.toFixed(1)}h${sh.overtime > 0 ? `・加班 ${sh.overtime.toFixed(1)}h` : ''}）`;
+          row.textContent = fill(tr('rowShift'), { in: clockInTime.slice(0, 5), out: clockOutTime.slice(0, 5), h: fmtH(sh.actual),
+            ot: sh.overtime > 0 ? fill(tr('otShort'), { o: fmtH(sh.overtime) }) : '' });
           row.style.color = 'var(--ad-primary-text)';
         } else if (inDone) {
-          row.textContent = `${clockInTime.slice(0, 5)} 上班打卡（作業中）`;
+          row.textContent = fill(tr('rowWorking'), { t: clockInTime.slice(0, 5) });
           row.style.color = 'var(--ad-accent-text)';
         }
       }
@@ -780,27 +1016,27 @@
       set('val-location', TASK.location);
       set('val-foreman', TASK.foremanPhone ? `${TASK.foreman} (${TASK.foremanPhone})` : TASK.foreman);
       set('val-tasks', TASK.tasks);
-      set('row-today-meta', `${TASK.location.split(' (')[0]}・小工頭：${TASK.foreman}`);
+      set('row-today-meta', `${TASK.location.split(' (')[0]}・${tr('foremanLabel')}${TASK.foreman}`);
 
       // 本週班表：工班的訂單（依工期），最後一列是天候避險時的室內改派地點
       const list = document.getElementById('schedule-list');
       if (!list) return;
       const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
       const PILL = {
-        in_progress: ['ad-pill ad-pill--ok', '今日出勤'], confirmed: ['ad-pill ad-pill--ok', '已排定'],
-        pending: ['ad-pill', '待確認'], completed: ['ad-pill', '已完工']
+        in_progress: ['ad-pill ad-pill--ok', tr('pillToday')], confirmed: ['ad-pill ad-pill--ok', tr('pillConfirmed')],
+        pending: ['ad-pill', tr('pillPending')], completed: ['ad-pill', tr('pillCompleted')]
       };
       const rows = TASK.mine.slice()
         .sort((a, b) => String(a.startDate || '9999').localeCompare(String(b.startDate || '9999')))
         .slice(-3)
         .map((o) => {
           const isToday = o.id === order.id;
-          const pill = isToday ? ['ad-pill ad-pill--ok', '今日出勤'] : (PILL[o.status] || ['ad-pill', o.status]);
-          const period = o.startDate ? (o.endDate && o.endDate !== o.startDate ? `${o.startDate.slice(5)}～${o.endDate.slice(5)}` : o.startDate.slice(5)) : '工期待排定';
+          const pill = isToday ? ['ad-pill ad-pill--ok', tr('pillToday')] : (PILL[o.status] || ['ad-pill', o.status]);
+          const period = o.startDate ? (o.endDate && o.endDate !== o.startDate ? `${o.startDate.slice(5)}～${o.endDate.slice(5)}` : o.startDate.slice(5)) : tr('periodTbd');
           return `<div class="ad-row"${isToday ? ' style="border-color: var(--ad-primary); background: var(--ad-primary-soft);"' : ''}>
                 <div class="ad-row__main">
                   <div class="ad-row__title" style="white-space: normal;">${esc(period)}：${esc(String(o.cropName || '').split(' (')[0])}（${esc(o.id)}）</div>
-                  <div class="ad-row__meta">${esc(String(team.vehicle).split(' (')[0])} 06:30 發車・${esc((o.farmLocation || '').split(' (')[0])}・對口：${esc(o.foremanName || team.leader)}</div>
+                  <div class="ad-row__meta">${esc(fill(tr('scheduleMeta'), { van: String(team.vehicle).split(' (')[0], loc: (o.farmLocation || '').split(' (')[0], who: o.foremanName || team.leader }))}</div>
                 </div>
                 <span class="${pill[0]}">${esc(pill[1])}</span>
               </div>`;
@@ -808,10 +1044,10 @@
       if (team.hedgeLocation) {
         rows.push(`<div class="ad-row">
                 <div class="ad-row__main">
-                  <div class="ad-row__title" style="white-space: normal;">遇午後暴雨：轉派 ${esc(team.hedgeLocation)}</div>
-                  <div class="ad-row__meta">${esc(team.hedgeTask || '室內作業免淋雨')}</div>
+                  <div class="ad-row__title" style="white-space: normal;">${esc(fill(tr('hedgeRow'), { loc: team.hedgeLocation }))}</div>
+                  <div class="ad-row__meta">${esc(team.hedgeTask || tr('hedgeTaskDefault'))}</div>
                 </div>
-                <span class="ad-pill ad-pill--warn">避險排班</span>
+                <span class="ad-pill ad-pill--warn">${esc(tr('pillHedge'))}</span>
               </div>`);
       }
       list.innerHTML = rows.join('');
@@ -844,7 +1080,7 @@
         return { ...localSlip(0), period: ymLabel(d), status: '離線試算', slipId: 'SIM-OFFLINE-' + i, simulated: true };
       });
       return { simulated: true, offline: true, currentMonth: cur, historicalSlips: past,
-        note: '離線示範：未連上伺服器，金額依示範底薪與津貼試算，僅供參考。' };
+        note: translations.zh.payNoteOffline };
     }
 
     async function fetchPayroll(workerId) {
@@ -853,23 +1089,26 @@
         res = await fetch(`${API_BASE}/workers/${encodeURIComponent(workerId)}/payroll`);
       } catch (e) {
         // 連不上後端：只有 demo 離線展示用試算複本；正式版如實顯示錯誤
-        if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode === 'production') throw new Error('無法連線伺服器，請稍後再試');
+        if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode === 'production') throw new Error('errOffline');
         return localPayroll();
       }
       const body = await res.json().catch(() => ({}));
       if (res.ok && body.success && body.data) return body.data;
       // 403（看別人的薪資）等，如實顯示，不編數字；後端 403 只回代碼，換成看得懂的說明
-      throw new Error(res.status === 403 ? '沒有權限查看這位工人的薪資' : (body.error || `HTTP ${res.status}`));
+      throw new Error(res.status === 403 ? 'errForbidden' : (body.error || `HTTP ${res.status}`));
     }
 
+    // msg 為翻譯表鍵（errOffline、errForbidden）或後端錯誤原文
+    let payrollError = null;
     function renderPayrollError(msg) {
       payrollData = null;
+      payrollError = msg;
       const net = document.getElementById('payNet');
       if (net) net.textContent = '—';
       ['payEarnings', 'payDeductions', 'payHistory'].forEach((id) => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
       ['payDate', 'payBank'].forEach((id) => { const el = document.getElementById(id); if (el) el.textContent = ''; });
       const note = document.getElementById('payNote');
-      if (note) note.textContent = `無法取得薪資資料：${msg}`;
+      if (note) note.textContent = fill(tr('payErr'), { msg: translations.zh[msg] ? tr(msg) : msg });
     }
 
     function payRow(title, meta, amount, cls) {
@@ -879,31 +1118,44 @@
 
     let payrollData = null;
 
+    // 後端月份標籤為中文（「2026年10月 (預估結算)」「2026年09月」）：取年月依語言重排；日期去掉「(預定入帳)」
+    function monthLabel(label) {
+      const m = /(\d{4})\s*年\s*(\d{1,2})\s*月/.exec(label || '');
+      return m ? fill(tr('monthFmt'), { y: m[1], m: currentLang === 'zh' ? m[2] : String(Number(m[2])) }) : (label || tr('thisMonth'));
+    }
+    const payDay = (d) => String(d || '').replace(/\s*\(.*\)\s*$/, '');
+
     function renderPayroll(p) {
       payrollData = p;
+      payrollError = null;
       const c = p.currentMonth;
-      document.getElementById('payMonthTitle').textContent = `薪資核算明細・${c.month || '本月'}`;
-      document.getElementById('payDate').textContent = c.payDate ? `預定發放 ${c.payDate.replace(' (預定入帳)', '')}` : '';
+      document.getElementById('payMonthTitle').textContent = fill(tr('payMonthTitle'), { m: currentLang === 'zh' ? (c.month || tr('thisMonth')) : monthLabel(c.month) });
+      document.getElementById('payDate').textContent = c.payDate ? fill(tr('payDateTpl'), { d: payDay(c.payDate) }) : '';
       document.getElementById('payEarnings').innerHTML = [
-        payRow('外展保障基本底薪', '法定最低月薪（全額保障出工）', money(c.baseSalary)),
-        payRow('農業部外展就業獎勵津貼', '適用對象與條件【待確認】農業部規定', `+ ${money(c.agriSubsidy)}`, 'plus'),
-        payRow('平日與產季超時加班費', `本月累計 ${c.overtimeHours != null ? c.overtimeHours : 0} 小時，依勞基法加班費率試算`, `+ ${money(c.overtimePay)}`),
-        payRow('高溫防暑與田間交通補助', '合作社全勤防暑補貼', `+ ${money(c.transportHeatAllowance)}`)
+        payRow(tr('rowBase'), tr('rowBaseMeta'), money(c.baseSalary)),
+        payRow(tr('rowAgri'), tr('rowAgriMeta'), `+ ${money(c.agriSubsidy)}`, 'plus'),
+        payRow(tr('rowOt'), fill(tr('rowOtMeta'), { h: fmtH(c.overtimeHours || 0) }), `+ ${money(c.overtimePay)}`),
+        payRow(tr('rowTransport'), tr('rowTransportMeta'), `+ ${money(c.transportHeatAllowance)}`)
       ].join('');
       document.getElementById('payDeductions').innerHTML = [
-        payRow('勞工保險自付額', '保障職災與生育老年給付（概估）', `- ${money(c.laborInsuranceDeduction)}`, 'minus'),
-        payRow('全民健康保險自付額', '在台就醫健保平權（概估）', `- ${money(c.healthInsuranceDeduction)}`, 'minus')
+        payRow(tr('rowLabor'), tr('rowLaborMeta'), `- ${money(c.laborInsuranceDeduction)}`, 'minus'),
+        payRow(tr('rowHealth'), tr('rowHealthMeta'), `- ${money(c.healthInsuranceDeduction)}`, 'minus')
       ].join('');
       document.getElementById('payNet').textContent = money(c.netPay);
-      document.getElementById('payBank').textContent = `薪轉帳戶：${c.bankAccount || '（尚未登錄薪轉帳戶）'}`;
-      document.getElementById('payNote').textContent = p.note || '依底薪、津貼與出勤試算，勞健保自付額為概估值，實際以合作社薪資系統為準。';
+      // 帳號未登錄時後端回中文占位字，改用翻譯
+      const bank = c.bankAccount && !/尚未登錄/.test(c.bankAccount) ? c.bankAccount : tr('bankNone');
+      document.getElementById('payBank').textContent = fill(tr('bankTpl'), { b: bank });
+      // 後端說明只有中文：中文照原文，其他語言用翻譯好的通用說明
+      document.getElementById('payNote').textContent = currentLang === 'zh'
+        ? (p.note || tr('payNoteDefault'))
+        : tr(p.offline ? 'payNoteOffline' : 'payNoteDefault');
       const bonusDate = document.getElementById('payBonusDate');
-      if (bonusDate && c.payDate) bonusDate.textContent = `預計 ${c.payDate.replace(' (預定入帳)', '')} 撥入個人帳戶。`;
+      if (bonusDate && c.payDate) bonusDate.textContent = fill(tr('bonusDateTpl'), { d: payDay(c.payDate) });
 
       document.getElementById('payHistory').innerHTML = (p.historicalSlips || []).map((s, i) => `
         <div class="ad-row">
-          <div class="ad-row__main"><div class="ad-row__title ad-num">${s.period.replace('年', ' 年 ').replace('月', ' 月')}</div><div class="ad-row__meta">試算實領 ${money(s.netPay)}${s.overtimeHours ? `（含加班 ${s.overtimeHours} 小時）` : ''}</div></div>
-          <button type="button" onclick="downloadSlip(${i})" class="ad-btn ad-btn--secondary ad-btn--sm">下載 PDF</button>
+          <div class="ad-row__main"><div class="ad-row__title ad-num">${monthLabel(s.period)}</div><div class="ad-row__meta">${fill(tr('historyMeta'), { m: money(s.netPay) })}${s.overtimeHours ? fill(tr('historyOt'), { h: fmtH(s.overtimeHours) }) : ''}</div></div>
+          <button type="button" onclick="downloadSlip(${i})" class="ad-btn ad-btn--secondary ad-btn--sm">${tr('downloadPdf')}</button>
         </div>`).join('');
     }
 
@@ -918,11 +1170,10 @@
     }
 
     // 聘僱與加保狀態：工作許可效期取自工人資料，加保取自保險登錄；讀不到就顯示「無法讀取」
-    const INS_LABEL = { labor: '勞保', employment: '就保', occupational: '職保', health: '健保' };
+    const INS_KEY = { labor: 'insLabor', employment: 'insEmployment', occupational: 'insOccupational', health: 'insHealth' };
+    const insLabel = (k) => (INS_KEY[k] ? tr(INS_KEY[k]) : k);
+    let legalData = null;   // { w, ins, insOk } 或 { error: true }
     async function loadLegalStatus(workerId) {
-      const badge = document.getElementById('legalBadge');
-      const permitEl = document.getElementById('legalPermitVal');
-      const insEl = document.getElementById('legalInsVal');
       try {
         const [wRes, iRes] = await Promise.all([
           fetch(`${API_BASE}/workers/${encodeURIComponent(workerId)}`),
@@ -930,6 +1181,25 @@
         ]);
         const w = await wRes.json().catch(() => ({})), ins = await iRes.json().catch(() => ({}));
         if (!wRes.ok || !w.success) throw new Error(w.error || `HTTP ${wRes.status}`);
+        legalData = { w, ins, insOk: iRes.ok && ins.success && ins.data };
+      } catch (e) {
+        legalData = { error: true };
+      }
+      renderLegal(legalData);
+    }
+
+    function renderLegal(L) {
+      const badge = document.getElementById('legalBadge');
+      const permitEl = document.getElementById('legalPermitVal');
+      const insEl = document.getElementById('legalInsVal');
+      badge.removeAttribute('data-i18n');
+      if (L.error) {
+        badge.textContent = tr('legalUnavailable');
+        badge.className = 'ad-pill';
+        return;
+      }
+      const { w, ins } = L;
+      {
         const expiry = w.data.permitExpiry;
         if (expiry) {
           const days = Math.floor((new Date(expiry + 'T00:00:00') - new Date()) / 86400000);
@@ -938,14 +1208,14 @@
         } else {
           permitEl.textContent = '—';
         }
-        if (iRes.ok && ins.success && ins.data) {
-          const missing = (ins.data.missing || []).map((k) => INS_LABEL[k] || k);
+        if (L.insOk) {
+          const missing = (ins.data.missing || []).map(insLabel);
           if (missing.length) {
-            insEl.textContent = tr('legalMissing').replace('{x}', missing.join('、'));
-            badge.textContent = tr('legalMissing').replace('{x}', missing.join('、'));
+            insEl.textContent = tr('legalMissing').replace('{x}', missing.join(tr('listSep')));
+            badge.textContent = tr('legalMissing').replace('{x}', missing.join(tr('listSep')));
             badge.className = 'ad-pill ad-pill--warn';
           } else {
-            insEl.textContent = (ins.data.required || []).map((k) => INS_LABEL[k] || k).join('、') || tr('legalOk');
+            insEl.textContent = (ins.data.required || []).map(insLabel).join(tr('listSep')) || tr('legalOk');
             badge.textContent = tr('legalOk');
             badge.className = 'ad-pill ad-pill--ok';
           }
@@ -954,11 +1224,6 @@
           badge.textContent = tr('legalUnavailable');
           badge.className = 'ad-pill';
         }
-        badge.removeAttribute('data-i18n');
-      } catch (e) {
-        badge.textContent = tr('legalUnavailable');
-        badge.className = 'ad-pill';
-        badge.removeAttribute('data-i18n');
       }
     }
 
@@ -966,8 +1231,7 @@
       const now = new Date();
       document.getElementById('attMonthPill').textContent = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       const setStat = (id, v) => { document.getElementById(id).firstChild.textContent = v; };
-      const d = now.getDate();
-      document.getElementById('row-today-date').textContent = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}（今日）`;
+      renderTodayDate();
       try {
         const res = await fetch(`${API_BASE}/workers/${encodeURIComponent(workerId)}/attendance?year=${now.getFullYear()}&month=${now.getMonth() + 1}`);
         const body = await res.json().catch(() => ({}));
@@ -981,15 +1245,23 @@
       }
     }
 
+    function renderTodayDate() {
+      const now = new Date();
+      const el = document.getElementById('row-today-date');
+      if (el) el.textContent = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}${tr('todayMark')}`;
+    }
+
+    let lastRecords = null;
     function renderRecentRecords(records) {
+      lastRecords = records;
       const done = (records || []).filter((r) => r.status === 'completed' && r.clockOutTime).slice(0, 2);
       document.getElementById('attRecent').innerHTML = done.map((r) => {
         const t = (iso) => String(iso).split('T')[1].slice(0, 5);
-        const ot = r.overtimeHours ? `・加班 ${Math.round(r.overtimeHours * 10) / 10}h` : '';
+        const ot = r.overtimeHours ? fill(tr('otShort'), { o: fmtH(r.overtimeHours) }) : '';
         return `<div class="ad-row">
           <div class="ad-row__main"><div class="ad-row__title ad-num">${r.workDate}</div><div class="ad-row__meta">${(r.location || '').replace(/ \(.*$/, '')}</div></div>
-          <div class="ad-row__aside"><div class="ad-num" style="font-weight: 600;">${t(r.clockInTime)} ~ ${t(r.clockOutTime)}（${Math.round(r.actualHours * 10) / 10}h${ot}）</div>
-          <div class="ad-caption" style="color: ${r.foremanSignature ? 'var(--ad-primary-text)' : 'var(--ad-text-3)'};">${r.foremanSignature ? '小工頭已簽核' : '待簽核'}</div></div>
+          <div class="ad-row__aside" style="flex-shrink: 1; max-width: 55%;"><div class="ad-num" style="font-weight: 600;">${fill(tr('rowShift'), { in: t(r.clockInTime), out: t(r.clockOutTime), h: fmtH(r.actualHours), ot })}</div>
+          <div class="ad-caption" style="color: ${r.foremanSignature ? 'var(--ad-primary-text)' : 'var(--ad-text-3)'};">${r.foremanSignature ? tr('signedOk') : tr('signedWait')}</div></div>
         </div>`;
       }).join('');
     }

@@ -223,7 +223,8 @@ public class LeaveService {
         Map<String, Object> p = new LinkedHashMap<>();
         p.put("leaveId", l.getId());
         p.put("status", l.getStatus());
-        p.put("leaveType", TYPE_LABELS.getOrDefault(l.getLeaveType(), l.getLeaveType()));
+        p.put("leaveType", TYPE_LABELS.getOrDefault(l.getLeaveType(), l.getLeaveType()));   // 中文假別（LINE Bot 沒有該語言翻譯時用）
+        p.put("leaveTypeCode", l.getLeaveType());                                          // LINE Bot 依代碼翻成工人的語言
         p.put("period", period(l));
         p.put("note", l.getDecisionNote() == null ? "" : l.getDecisionNote());
         notifySafely(() -> lineNotifyService.leaveDecided(l.getWorkerId(), p));

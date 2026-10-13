@@ -215,6 +215,7 @@ public class TestSimulator {
         np.put("weather", "暴雨警戒"); np.put("orders", List.of("ORD-2026-001")); np.put("date", "2026-10-03");
         np.put("place", "枋山"); np.put("indoor", true);
         np.put("month", "2026-09"); np.put("netPay", 36850); np.put("payDate", "2026-10-05");
+        np.put("leaveId", "LV-2026-001"); np.put("leaveType", "事假"); np.put("leaveTypeCode", "personal"); np.put("note", "請領班安排代班");
         for (String type : NotifyMessages.FARMER_TYPES) {
             failed += expectEq("推播 farmer " + type, String.valueOf(validMessages(NotifyMessages.render(F, type, "zh", np))), "true");
         }
@@ -228,6 +229,18 @@ public class TestSimulator {
         failed += expect("推播 定金入帳金額", NotifyMessages.render(F, "deposit_paid", "zh", np), 0, "NT$ 10,584");
         failed += expect("推播 薪資入帳實發金額", NotifyMessages.render(W, "salary_paid", "zh", np), 0, "NT$ 36,850");
         failed += expect("推播 薪資入帳（越語）", NotifyMessages.render(W, "salary_paid", "vi", np), 0, "Thông báo lương đã chuyển");
+        Map<String, Object> lp = new java.util.HashMap<>(np);
+        lp.put("status", "approved");
+        failed += expect("推播 請假核准", NotifyMessages.render(W, "leave_decided", "zh", lp), 0, "請假已核准");
+        failed += expect("推播 請假核准（假別依代碼翻越語）", NotifyMessages.render(W, "leave_decided", "vi", lp), 0, "Nghỉ việc riêng");
+        lp.put("status", "rejected"); lp.put("note", "產季人力不足");
+        failed += expect("推播 請假駁回（印尼語）", NotifyMessages.render(W, "leave_decided", "id", lp), 0, "Cuti tidak disetujui");
+        failed += expect("推播 請假駁回原因", NotifyMessages.render(W, "leave_decided", "zh", lp), 0, "原因：產季人力不足");
+        for (String lang : List.of("zh", "vi", "id")) {
+            failed += expectEq("推播 worker leave_decided rejected " + lang, String.valueOf(validMessages(NotifyMessages.render(W, "leave_decided", lang, lp))), "true");
+        }
+        lp.put("leaveTypeCode", "unknown_type"); lp.put("leaveType", "測試假別");
+        failed += expect("推播 請假未知假別退回中文名稱", NotifyMessages.render(W, "leave_decided", "vi", lp), 0, "測試假別");
         failed += workerCardChecks();
         failed += farmerCardChecks();
         failed += expectEq("工作者帳號不支援農場主通知",String.valueOf(NotifyMessages.supports(W, "order_status")), "false");

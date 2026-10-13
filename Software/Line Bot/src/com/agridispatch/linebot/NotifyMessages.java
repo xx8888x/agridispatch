@@ -13,7 +13,7 @@ public final class NotifyMessages {
     private NotifyMessages() {}
 
     public static final Set<String> FARMER_TYPES = Set.of("order_status", "deposit_paid", "weather_farmer");
-    public static final Set<String> WORKER_TYPES = Set.of("tomorrow_task", "weather_worker", "salary_paid");
+    public static final Set<String> WORKER_TYPES = Set.of("tomorrow_task", "weather_worker", "salary_paid", "leave_decided");
 
     public static boolean supports(Channel channel, String type) {
         return (channel == Channel.FARMER ? FARMER_TYPES : WORKER_TYPES).contains(type);
@@ -94,6 +94,26 @@ public final class NotifyMessages {
                 lines.add(I18n.t(lang, "notify.salary.note"));
                 return List.of(FlexMessageBuilder.notifyBubble(title + " " + s(p, "month"), "#6D28D9", "智農派工（工作者）", title, lines,
                         FlexMessageBuilder.notifyPostbackButton(I18n.t(lang, "notify.salary.button"), "a=salary")));
+            }
+            case "leave_decided": {
+                // 合作社核准／駁回請假，或取消已核准的假；假別依代碼翻譯，沒有翻譯時用後端送來的中文名稱
+                String status = s(p, "status");
+                String title = I18n.t(lang, "notify.leave.title." + status);
+                if (title.startsWith("notify.leave.")) title = I18n.t(lang, "notify.leave.title.approved");
+                String typeKey = "notify.leave.type." + s(p, "leaveTypeCode");
+                String typeName = I18n.t(lang, typeKey);
+                if (typeName.equals(typeKey)) typeName = s(p, "leaveType");
+                List<String> lines = new ArrayList<>();
+                lines.add(I18n.t(lang, "notify.leave.type") + "：" + typeName);
+                lines.add(I18n.t(lang, "notify.leave.period") + "：" + s(p, "period"));
+                if (!s(p, "note").isEmpty()) {
+                    lines.add(I18n.t(lang, "rejected".equals(status) ? "notify.leave.reason" : "notify.leave.note") + "：" + s(p, "note"));
+                }
+                String hint = I18n.t(lang, "notify.leave.hint." + status);
+                if (!hint.startsWith("notify.leave.")) lines.add(hint);
+                String color = "approved".equals(status) ? "#047857" : "#B45309";
+                return List.of(FlexMessageBuilder.notifyBubble(title + " " + s(p, "period"), color, "智農派工（工作者）", title, lines,
+                        FlexMessageBuilder.notifyPostbackButton(I18n.t(lang, "notify.leave.button"), "a=attendance")));
             }
             default:
                 return List.of();

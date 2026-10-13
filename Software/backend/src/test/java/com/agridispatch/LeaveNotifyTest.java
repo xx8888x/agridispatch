@@ -68,6 +68,7 @@ class LeaveNotifyTest extends ApiTestSupport {
         assertEquals(a, p.get("leaveId"));
         assertEquals("approved", p.get("status"));
         assertEquals("事假", p.get("leaveType"));
+        assertEquals("personal", p.get("leaveTypeCode"));
         assertEquals(d.toString(), p.get("period"));
         assertEquals("請領班安排代班", p.get("note"));
         assertEquals(W026_UID, calls.get(0).recipients().get(0).get("lineUserId"));

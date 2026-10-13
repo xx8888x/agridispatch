@@ -100,13 +100,15 @@ erDiagram
         string id PK "綠界 MerchantTradeNo（≤20 碼）"
         string orderId "→ orders.id"
         int amount
-        string provider "mock / ecpay"
+        string provider "mock / ecpay / offline"
         string paymentMethod
-        string status "PENDING / PAID / FAILED"
+        string status "PENDING / PAID / FAILED / VOID"
         string payerName
         string gatewayTradeNo
         string authCode
         string invoiceNo
+        string kind "deposit / balance"
+        string note
         datetime createdAt
         datetime paidAt
     }
@@ -356,18 +358,20 @@ erDiagram
 | `foremanName` / `foremanPhone` / `foremanNotes` | String | 現場小工頭與交辦事項 |
 | `createdAt` | String | 建立時間 |
 
-### 2.6 金流交易 `payment_transactions`
+### 2.6 金流交易 `payment_transactions`（定金＋尾款）
 | 欄位 | 型別 | 說明 |
 | :--- | :--- | :--- |
 | `id` (PK) | String(20) | 交易序號，格式 `AG` + `yyMMddHHmmss` + 6 碼隨機英數；同時作為綠界 `MerchantTradeNo` |
 | `orderId` | String(40) | → `orders.id`（必填） |
-| `amount` | int | 金額（依訂單定金，必填） |
-| `provider` | String(16) | `mock` / `ecpay` |
-| `paymentMethod` | String(32) | `credit_card` / `line_pay`（尚未串接）/ `atm_virtual` |
-| `status` | String(16) | `PENDING` / `PAID` / `FAILED`（`PAID`、`FAILED` 為終態） |
+| `amount` | int | 金額（定金依訂單定金；尾款為 admin 登錄的收款金額，必填） |
+| `provider` | String(16) | `mock` / `ecpay` / `offline`（尾款，合作社另行收款） |
+| `paymentMethod` | String(32) | 定金：`credit_card` / `line_pay`（尚未串接）/ `atm_virtual`；尾款：`bank_transfer` / `cash` / `check` / `other` |
+| `status` | String(16) | `PENDING` / `PAID` / `FAILED` / `VOID`（作廢的尾款登錄；`FAILED`、`VOID` 為終態） |
 | `payerName` | String | 付款人 |
 | `gatewayTradeNo` | String(40) | 綠界交易編號 |
-| `authCode` / `invoiceNo` | String(20) | 授權碼 / 發票號碼 |
+| `authCode` / `invoiceNo` | String(20) | 授權碼 / 發票號碼（admin 可補登，格式 `AB-12345678`） |
+| `kind` | String(16) | `deposit` 定金 / `balance` 尾款（2026-10-13 起；NULL 視同定金） |
+| `note` | String(255) | 備註：尾款登錄說明、作廢原因 |
 | `createdAt` / `paidAt` | LocalDateTime | 建立 / 付款時間 |
 
 ### 2.7 出勤打卡 `clock_ins`（實體 `Attendance`）

@@ -732,6 +732,101 @@
     });
   }
 
+  // ---------------- 付款紀錄與尾款收款登錄（移植 PaymentService.balanceOf / recordBalance / setInvoiceNo / voidBalance） ----------------
+  var PAY_STATUS_RE = /^GET \/payments\/.+\/status$/;
+  function payStatusKey(oid) { return 'GET /payments/' + encodeURIComponent(oid) + '/status'; }
+  function payStatusOf(oid) {
+    var ref = orderRef(oid);
+    if (!ref) return null;
+    var o = ref.order, e = get(payStatusKey(oid));
+    var d = (e && e.b && e.b.data) || { orderId: o.id, farmerName: o.farmerName, transactions: [] };
+    d.finalAmount = o.finalAmount;
+    d.depositAmount = o.depositAmount;
+    d.depositRequired = o.depositAmount > 0;
+    d.depositPaid = !!o.depositPaid;
+    d.orderStatus = o.status;
+    d.transactions = d.transactions || [];
+    var credit = o.depositPaid ? Math.max(0, o.depositAmount || 0) : 0;
+    var paid = d.transactions.filter(function (t) { return t.kind === 'balance' && t.status === 'PAID'; })
+      .reduce(function (s, t) { return s + (t.amount || 0); }, 0);
+    d.depositCredit = credit;
+    d.balancePaid = paid;
+    d.balanceOutstanding = Math.max(0, (o.finalAmount || 0) - credit - paid);
+    return d;
+  }
+  function savePayStatus(d) { put(payStatusKey(d.orderId), { s: 200, b: { success: true, data: d } }); }
+  function isAdminUser() { return (currentUser() || {}).role === 'admin_tech'; }
+  function balanceResult(d, tx) {
+    var r = payStatusOf(d.orderId);
+    return { orderId: r.orderId, finalAmount: r.finalAmount, depositCredit: r.depositCredit, balancePaid: r.balancePaid, balanceOutstanding: r.balanceOutstanding, transaction: tx };
+  }
+  function normInvoice(raw) {
+    var m = /^([A-Z]{2})-?(\d{8})$/.exec(String(raw || '').trim().toUpperCase());
+    return m ? m[1] + '-' + m[2] : null;
+  }
+  function localNow() {
+    var now = new Date();
+    return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 19);
+  }
+  function recordBalance(oid, b) {
+    if (!isAdminUser()) return respond(403, { success: false, error: '權限不足' });
+    var d = payStatusOf(oid);
+    if (!d) return respond(404, { success: false, error: '找不到該訂單編號: ' + oid });
+    if (d.orderStatus !== 'completed') return respond(409, { success: false, error: '訂單完工後才能登錄尾款（目前狀態：' + d.orderStatus + '）' });
+    if (d.balanceOutstanding <= 0) return respond(409, { success: false, error: '此訂單尾款已結清' });
+    var amount = b.amount == null || b.amount === '' ? d.balanceOutstanding : Math.round(+b.amount);
+    if (!(amount > 0 && amount <= d.balanceOutstanding)) return respond(400, { success: false, error: '收款金額須介於 1 ～ ' + d.balanceOutstanding + ' 元（未結清尾款）' });
+    var day = b.paidDate || localNow().slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return respond(400, { success: false, error: '收款日期 (paidDate) 格式須為 yyyy-MM-dd' });
+    if (day > localNow().slice(0, 10)) return respond(400, { success: false, error: '收款日期不可晚於今天' });
+    var method = b.paymentMethod || 'bank_transfer';
+    if (['bank_transfer', 'cash', 'check', 'other'].indexOf(method) < 0) return respond(400, { success: false, error: '收款方式須為 bank_transfer / cash / check / other' });
+    var inv = null;
+    if (b.invoiceNo) {
+      inv = normInvoice(b.invoiceNo);
+      if (!inv) return respond(400, { success: false, error: '發票號碼格式須為 2 碼英文＋8 碼數字（例：AB-12345678）' });
+    }
+    var tx = {
+      id: 'AG' + Date.now().toString().slice(-12) + 'MK', orderId: d.orderId, amount: amount, kind: 'balance', provider: 'offline',
+      paymentMethod: method, status: 'PAID', payerName: d.farmerName, invoiceNo: inv, note: b.note ? String(b.note).trim().slice(0, 255) : null,
+      createdAt: localNow(), paidAt: day + 'T00:00:00'
+    };
+    d.transactions.unshift(tx);
+    savePayStatus(d);
+    return respond(200, { success: true, data: balanceResult(d, tx), message: '已登錄尾款收款' });
+  }
+  function findTx(txId) {
+    var keys = Object.keys(state).concat(Object.keys(FIX));
+    for (var i = 0; i < keys.length; i++) {
+      if (!PAY_STATUS_RE.test(keys[i])) continue;
+      var e = get(keys[i]), list = (e && e.b && e.b.data && e.b.data.transactions) || [];
+      for (var j = 0; j < list.length; j++) if (list[j].id === txId) return { d: e.b.data, tx: list[j] };
+    }
+    return null;
+  }
+  function txAction(txId, type, b) {
+    if (!isAdminUser()) return respond(403, { success: false, error: '權限不足' });
+    var hit = findTx(txId);
+    if (!hit) return respond(404, { success: false, error: '查無此交易序號：' + txId });
+    var tx = hit.tx;
+    if (type === 'invoice') {
+      if (tx.status !== 'PAID') return respond(409, { success: false, error: '只有已付款的交易可以登錄發票號碼' });
+      if (!b.invoiceNo || !String(b.invoiceNo).trim()) return respond(400, { success: false, error: '請填寫發票號碼' });
+      var inv = normInvoice(b.invoiceNo);
+      if (!inv) return respond(400, { success: false, error: '發票號碼格式須為 2 碼英文＋8 碼數字（例：AB-12345678）' });
+      tx.invoiceNo = inv;
+    } else {
+      if (tx.kind !== 'balance') return respond(409, { success: false, error: '只有尾款登錄紀錄可以作廢；定金退款請洽金流商處理' });
+      if (tx.status !== 'PAID') return respond(409, { success: false, error: '此紀錄已作廢' });
+      if (!b.reason || !String(b.reason).trim()) return respond(400, { success: false, error: '請填寫作廢原因' });
+      var why = '作廢：' + String(b.reason).trim();
+      tx.note = tx.note ? tx.note + '／' + why : why;
+      tx.status = 'VOID';
+    }
+    savePayStatus(hit.d);
+    return respond(200, { success: true, data: balanceResult(hit.d, tx), message: type === 'invoice' ? '已登錄發票號碼' : '已作廢尾款登錄' });
+  }
+
   // ---------------- 工班合法化清冊（移植自 LegalizeService.toView / aggregate） ----------------
   function legalizeType(key) {
     return (listOf(get('GET /legalize/types')) || []).filter(function (t) { return t.key === key; })[0] || null;
@@ -1449,6 +1544,10 @@
     if (method === 'PUT' && /^\/evaluations\/attendance\/[^/]+$/.test(sp.path)) return rateShift(decodeURIComponent(seg[2]), body || {});
     if (method === 'PUT' && /^\/matching\/orders\/[^/]+$/.test(sp.path)) return saveCrew(decodeURIComponent(seg[2]), body || {});
     if (method === 'DELETE' && /^\/orders\/[^/]+$/.test(sp.path) && (currentUser() || {}).role === 'farmer') return cancelOrder(decodeURIComponent(seg[1]));
+    var payBal = /^\/payments\/([^/]+)\/balance$/.exec(sp.path);
+    if (method === 'POST' && payBal) return recordBalance(decodeURIComponent(payBal[1]), body || {});
+    var payTx = /^\/payments\/transactions\/([^/]+)\/(invoice|void)$/.exec(sp.path);
+    if (payTx && (payTx[2] === 'invoice' ? method === 'PUT' : method === 'POST')) return txAction(decodeURIComponent(payTx[1]), payTx[2], body || {});
     if (method === 'PUT' && /^\/orders\/[^/]+$/.test(sp.path)) return updateOrder(decodeURIComponent(seg[1]), body || {});
     if (method === 'PUT' && /^\/orders\/[^/]+\/status$/.test(sp.path)) return changeStatus(decodeURIComponent(seg[1]), (body || {}).status);
     if (method === 'POST' && /^\/skills\/workers\/[^/]+\/[^/]+\/restore$/.test(sp.path)) {
@@ -1542,6 +1641,11 @@
         return u ? respond(200, { success: true, user: u, data: u }) : respond(401, { success: false, error: '未登入' });
       }
       if (sp.path === '/farmers/me/farms') return farmApi('GET');
+      var payStatus = /^\/payments\/([^/]+)\/status$/.exec(sp.path);
+      if (payStatus) {
+        var pd = payStatusOf(decodeURIComponent(payStatus[1]));
+        if (pd) return respond(200, { success: true, data: pd });
+      }
       if (sp.path === '/farmers/me/past-workers') return pastWorkersApi(sp.query);
       var rg = /^\/rosters(?:\/([^/]+))?$/.exec(sp.path);
       if (rg) return rostersApi(rg[1] && decodeURIComponent(rg[1]));

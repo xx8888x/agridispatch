@@ -762,7 +762,7 @@
         const body = await res.json().catch(() => ({}));
         if (!res.ok || body.success === false) throw new Error(body.error || `HTTP ${res.status}`);
         const s = body.data || {};
-        const tx = (s.transactions || []).find((t) => t.status === 'PAID' && t.invoiceNo);
+        const tx = (s.transactions || []).find((t) => t.status === 'PAID' && t.invoiceNo && t.kind !== 'balance');   // 定金發票（尾款發票在支出明細）
         if (!tx) {
           farmerDemoNotice('電子發票尚未開立', `訂單 ${d.orderId} 的定金已收到，合作社開立電子發票後即可在這裡下載。`);
           return;

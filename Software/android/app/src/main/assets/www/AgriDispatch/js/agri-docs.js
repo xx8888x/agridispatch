@@ -38,6 +38,7 @@ const AgriDocs = (function () {
 
   // 1. 下載電子發票 (財政部電子發票載具規範)
   // 發票號碼、買受人、付款時間須由呼叫端從後端付款紀錄帶入；沒有發票號碼就不產生（不在前端編號）
+  // deposit＝這筆付款的金額；kind: 'balance' 為尾款發票（另帶 priorPaid＝先前已付的定金與尾款）
   function downloadInvoice(orderId, customOptions = {}) {
     if (!customOptions.invoiceNo) {
       notify('電子發票尚未開立', '這筆付款還沒有發票號碼，開立後即可下載。', { channel: 'system' });
@@ -53,6 +54,8 @@ const AgriDocs = (function () {
     const deposit = Number(customOptions.deposit) || 0;
     const amount = Number(customOptions.amount) || deposit;
     const depositPct = amount ? Math.round(deposit / amount * 100) : 100;
+    const isBalance = customOptions.kind === 'balance';
+    const priorPaid = Number(customOptions.priorPaid) || 0;
     const buyerName = escHtml(customOptions.buyerName || '（未提供）');
     const cropName = escHtml(customOptions.cropName || '農務派工');
     const planName = escHtml(customOptions.planName || '');
@@ -134,6 +137,19 @@ const AgriDocs = (function () {
           <td style="text-align:center;">1 式</td>
           <td style="text-align:right;">NT$ ${amount.toLocaleString()}</td>
         </tr>
+${isBalance ? `
+        <tr>
+          <td colspan="3" style="text-align:right;"><strong>先前已付（定金等）：</strong></td>
+          <td style="text-align:right;">NT$ ${priorPaid.toLocaleString()}</td>
+        </tr>
+        <tr>
+          <td colspan="3" style="text-align:right;"><strong>本次收款（尾款）：</strong></td>
+          <td style="text-align:right; color:#059669; font-weight:bold;">NT$ ${deposit.toLocaleString()}</td>
+        </tr>
+        <tr>
+          <td colspan="3" style="text-align:right;"><strong>尚未結清：</strong></td>
+          <td style="text-align:right; font-weight:bold;">NT$ ${Math.max(0, amount - priorPaid - deposit).toLocaleString()}</td>
+        </tr>` : `
         <tr>
           <td colspan="3" style="text-align:right;"><strong>履約定金 (${depositPct}% 已付)：</strong></td>
           <td style="text-align:right; color:#059669; font-weight:bold;">NT$ ${deposit.toLocaleString()}</td>
@@ -141,7 +157,7 @@ const AgriDocs = (function () {
         <tr>
           <td colspan="3" style="text-align:right;"><strong>待完工尾款 (${100 - depositPct}%)：</strong></td>
           <td style="text-align:right; font-weight:bold;">NT$ ${(amount - deposit).toLocaleString()}</td>
-        </tr>
+        </tr>`}
       </tbody>
     </table>
 

@@ -543,6 +543,7 @@
                     </span>
                   </td>
                   <td class="space-x-1" style="text-align: right;">
+                    <button type="button" @click="openPayModal(o)" class="ad-btn ad-btn--ghost ad-btn--sm" title="付款紀錄、尾款收款登錄、補登發票">收款</button>
                     <button type="button" @click="openOrderModal(o)" class="ad-btn ad-btn--ghost ad-btn--sm">改單</button>
                     <button type="button" @click="deleteOrder(o.id)" class="ad-btn ad-btn--ghost ad-btn--sm" style="color: var(--ad-danger-text);">取消</button>
                   </td>
@@ -1673,6 +1674,99 @@
       </div>
     </div>
 
+    <!-- 收款紀錄：定金（線上金流）＋尾款（合作社另行收款後登錄）；補登發票號碼、作廢尾款登錄 -->
+    <div v-if="payModal.show" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+      <div class="bg-slate-850 rounded-xl border border-slate-700 max-w-2xl w-full p-6 space-y-4" style="max-height: calc(100vh - 32px); overflow-y: auto;" role="dialog" aria-modal="true" aria-labelledby="payModalTitle">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h3 id="payModalTitle" class="font-bold text-base text-white">收款紀錄（{{ payModal.order.id }}）</h3>
+            <p class="text-[13px] text-slate-400">{{ payModal.order.farmerName }}・{{ payModal.order.cropName }}・{{ orderStatusName(payModal.order.status) }}</p>
+          </div>
+          <button type="button" @click="payModal.show = false" class="ad-btn ad-btn--ghost ad-btn--sm" aria-label="關閉">✕</button>
+        </div>
+        <p v-if="payModal.loading" class="text-[13px] text-slate-400">載入中…</p>
+        <p v-if="payModal.error" class="text-[13px] text-rose-400">{{ payModal.error }}</p>
+        <template v-if="payModal.status">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[13px]">
+            <div class="p-3 rounded-lg bg-slate-900 border border-slate-700"><div class="text-slate-400">訂單總額</div><div class="font-mono font-bold text-white">NT$ {{ Number(payModal.status.finalAmount || 0).toLocaleString() }}</div></div>
+            <div class="p-3 rounded-lg bg-slate-900 border border-slate-700"><div class="text-slate-400">已付定金</div><div class="font-mono font-bold text-white">NT$ {{ Number(payModal.status.depositCredit || 0).toLocaleString() }}</div></div>
+            <div class="p-3 rounded-lg bg-slate-900 border border-slate-700"><div class="text-slate-400">已收尾款</div><div class="font-mono font-bold text-emerald-300">NT$ {{ Number(payModal.status.balancePaid || 0).toLocaleString() }}</div></div>
+            <div class="p-3 rounded-lg bg-slate-900 border border-amber-500/40"><div class="text-slate-400">未結清</div><div class="font-mono font-bold text-amber-300">NT$ {{ Number(payModal.status.balanceOutstanding || 0).toLocaleString() }}</div></div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="ad-table" style="min-width: 560px;">
+              <thead><tr><th>類別</th><th>收款日</th><th class="ad-td-num">金額</th><th>方式</th><th>發票號碼</th><th>狀態</th><th></th></tr></thead>
+              <tbody>
+                <tr v-for="t in payModal.status.transactions" :key="t.id" :style="t.status === 'VOID' ? 'opacity: 0.55;' : ''">
+                  <td>{{ t.kind === 'balance' ? '尾款' : '定金' }}</td>
+                  <td class="font-mono">{{ String(t.paidAt || t.createdAt || '').slice(0, 10) || '—' }}</td>
+                  <td class="ad-td-num font-mono">{{ Number(t.amount || 0).toLocaleString() }}</td>
+                  <td>{{ payMethodName(t.paymentMethod) }}</td>
+                  <td class="font-mono" style="white-space: nowrap;">{{ t.invoiceNo || '—' }}</td>
+                  <td>
+                    <div>{{ payStatusName(t.status) }}</div>
+                    <div v-if="t.note" class="text-[12px] text-slate-400" style="max-width: 200px;">{{ t.note }}</div>
+                  </td>
+                  <td style="white-space: nowrap; text-align: right;">
+                    <button v-if="t.status === 'PAID'" type="button" @click="startPayAction('invoice', t)" class="ad-btn ad-btn--ghost ad-btn--sm">{{ t.invoiceNo ? '改發票' : '補發票' }}</button>
+                    <button v-if="t.status === 'PAID' && t.kind === 'balance'" type="button" @click="startPayAction('void', t)" class="ad-btn ad-btn--ghost ad-btn--sm" style="color: var(--ad-danger-text);">作廢</button>
+                  </td>
+                </tr>
+                <tr v-if="!payModal.status.transactions || !payModal.status.transactions.length">
+                  <td colspan="7" style="text-align: center; padding: 20px 12px; color: var(--ad-text-3);">尚無付款紀錄</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div v-if="payModal.action" class="p-3 rounded-xl bg-slate-900/90 border border-slate-600 space-y-2 text-[13px]">
+            <label class="text-slate-300 block" for="payActionInput">
+              {{ payModal.action.type === 'invoice' ? `交易 ${payModal.action.tx.id} 的發票號碼（2 碼英文＋8 碼數字）` : `作廢交易 ${payModal.action.tx.id}（NT$ ${Number(payModal.action.tx.amount).toLocaleString()}）的原因` }}
+            </label>
+            <input id="payActionInput" v-model="payModal.action.value" :placeholder="payModal.action.type === 'invoice' ? 'AB-12345678' : '例：金額登錄錯誤'" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white" :class="payModal.action.type === 'invoice' ? 'font-mono' : ''" maxlength="120">
+            <div class="flex justify-end gap-2">
+              <button type="button" @click="payModal.action = null" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300">取消</button>
+              <button type="button" @click="submitPayAction()" :disabled="payModal.saving" class="px-4 py-1.5 rounded-lg font-bold text-white" :class="payModal.action.type === 'void' ? 'bg-rose-600 hover:bg-rose-500' : 'bg-emerald-600 hover:bg-emerald-500'">{{ payModal.action.type === 'void' ? '確定作廢' : '儲存發票號碼' }}</button>
+            </div>
+          </div>
+          <div v-if="payModal.order.status === 'completed' && Number(payModal.status.balanceOutstanding) > 0" class="p-3 rounded-xl bg-slate-900/90 border border-emerald-500/40 space-y-3 text-[13px]">
+            <div class="font-bold text-emerald-300">登錄尾款收款（合作社已收到款項後登錄）</div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-slate-400 block mb-1" for="payDate">收款日期</label>
+                <input id="payDate" v-model="payModal.form.paidDate" type="date" :max="todayStr()" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white">
+              </div>
+              <div>
+                <label class="text-slate-400 block mb-1" for="payAmount">金額（NT$，可分次）</label>
+                <input id="payAmount" v-model="payModal.form.amount" type="number" min="1" :max="payModal.status.balanceOutstanding" step="1" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono">
+              </div>
+              <div>
+                <label class="text-slate-400 block mb-1" for="payMethod">收款方式</label>
+                <select id="payMethod" v-model="payModal.form.paymentMethod" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white">
+                  <option value="bank_transfer">轉帳</option>
+                  <option value="cash">現金</option>
+                  <option value="check">支票</option>
+                  <option value="other">其他</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-slate-400 block mb-1" for="payInvoice">發票號碼（可稍後補登）</label>
+                <input id="payInvoice" v-model="payModal.form.invoiceNo" placeholder="AB-12345678" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono" maxlength="11">
+              </div>
+              <div class="col-span-2">
+                <label class="text-slate-400 block mb-1" for="payNote">備註（選填）</label>
+                <input id="payNote" v-model="payModal.form.note" placeholder="例：轉帳末五碼 12345" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white" maxlength="255">
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <button type="button" @click="submitBalance()" :disabled="payModal.saving" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition">登錄尾款</button>
+            </div>
+          </div>
+          <p v-else-if="payModal.order.status !== 'completed'" class="text-[13px] text-slate-400">訂單完工後才能登錄尾款。</p>
+          <p v-else class="text-[13px] text-emerald-300">此訂單已全數結清。</p>
+        </template>
+      </div>
+    </div>
+
     <!-- Talent Modal -->
     <div v-if="talentModal.show" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
       <div class="bg-slate-850 rounded-xl border border-slate-700 max-w-lg w-full p-6 space-y-4">
@@ -2665,6 +2759,87 @@
           showToast(`訂單 ${id} 已取消並刪除 (本地模式)`);
         };
 
+        // 收款紀錄：GET /payments/{orderId}/status；尾款登錄 POST /payments/{orderId}/balance；
+        // 補登發票 PUT /payments/transactions/{id}/invoice；作廢尾款 POST /payments/transactions/{id}/void（皆限 admin）
+        const payModal = reactive({
+          show: false, order: {}, status: null, loading: false, error: '', saving: false, action: null,
+          form: { paidDate: '', amount: '', paymentMethod: 'bank_transfer', invoiceNo: '', note: '' }
+        });
+        const PAY_METHOD_NAME = { bank_transfer: '轉帳', cash: '現金', check: '支票', other: '其他', credit_card: '信用卡', atm_virtual: 'ATM 轉帳', line_pay: 'LINE Pay', ALL: '綠界' };
+        const payMethodName = (m) => PAY_METHOD_NAME[m] || m || '—';
+        const payStatusName = (s) => ({ PAID: '已付款', PENDING: '待付款', FAILED: '失敗', VOID: '已作廢' }[s] || s);
+        const todayStr = () => new Date().toLocaleDateString('sv-SE');
+        const payApi = async (path, method, body) => {
+          const res = await fetch(`${API_BASE}${path}`, method ? {
+            method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {})
+          } : undefined);
+          const json = plainDeep(await res.json().catch(() => ({})));
+          if (!res.ok || json.success === false) throw new Error(json.error || json.message || `HTTP ${res.status}`);
+          return json;
+        };
+        const loadPayStatus = async () => {
+          payModal.loading = true;
+          payModal.error = '';
+          try {
+            payModal.status = (await payApi(`/payments/${encodeURIComponent(payModal.order.id)}/status`)).data || null;
+            payModal.form.amount = payModal.status && payModal.status.balanceOutstanding > 0 ? payModal.status.balanceOutstanding : '';
+          } catch (e) {
+            payModal.status = null;
+            payModal.error = `收款紀錄載入失敗：${e.message}`;
+          } finally {
+            payModal.loading = false;
+          }
+        };
+        const openPayModal = (order) => {
+          payModal.order = { ...order };
+          payModal.status = null;
+          payModal.action = null;
+          payModal.form = { paidDate: todayStr(), amount: '', paymentMethod: 'bank_transfer', invoiceNo: '', note: '' };
+          payModal.show = true;
+          loadPayStatus();
+        };
+        const submitBalance = async () => {
+          const f = payModal.form;
+          payModal.saving = true;
+          try {
+            await payApi(`/payments/${encodeURIComponent(payModal.order.id)}/balance`, 'POST', {
+              amount: f.amount === '' || f.amount == null ? null : Number(f.amount),
+              paidDate: f.paidDate, paymentMethod: f.paymentMethod,
+              invoiceNo: String(f.invoiceNo || '').trim() || null, note: String(f.note || '').trim() || null
+            });
+            showToast(`已登錄 ${payModal.order.id} 尾款收款`);
+            f.invoiceNo = '';
+            f.note = '';
+            await loadPayStatus();
+          } catch (e) {
+            showToast(`尾款未登錄：${e.message}`, 'error');
+          } finally {
+            payModal.saving = false;
+          }
+        };
+        const startPayAction = (type, tx) => {
+          payModal.action = { type, tx, value: type === 'invoice' ? (tx.invoiceNo || '') : '' };
+        };
+        const submitPayAction = async () => {
+          const a = payModal.action;
+          if (!a) return;
+          payModal.saving = true;
+          try {
+            if (a.type === 'invoice') {
+              await payApi(`/payments/transactions/${encodeURIComponent(a.tx.id)}/invoice`, 'PUT', { invoiceNo: a.value });
+            } else {
+              await payApi(`/payments/transactions/${encodeURIComponent(a.tx.id)}/void`, 'POST', { reason: a.value });
+            }
+            showToast(a.type === 'invoice' ? '已登錄發票號碼' : '已作廢尾款登錄');
+            payModal.action = null;
+            await loadPayStatus();
+          } catch (e) {
+            showToast(e.message, 'error');
+          } finally {
+            payModal.saving = false;
+          }
+        };
+
         // ==========================================
         // DISPATCH & WEATHER
         // ==========================================
@@ -3492,6 +3667,14 @@
           openOrderModal,
           saveOrder,
           deleteOrder,
+          payModal,
+          openPayModal,
+          submitBalance,
+          startPayAction,
+          submitPayAction,
+          payMethodName,
+          payStatusName,
+          todayStr,
           toggleWeather,
           currentScenario,
           wx,

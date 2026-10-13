@@ -76,8 +76,7 @@ public class PaymentService {
                 throw ApiException.conflict("訂單已取消，無法付款");
             }
             if (order.isDepositPaid()) {
-                return paidResponse(order, txRepository.findFirstByOrderIdAndStatusOrderByCreatedAtDesc(order.getId(),
-                        PaymentTransaction.PAID).orElse(null), true);
+                return paidResponse(order, latestDeposit(order.getId(), PaymentTransaction.PAID), true);
             }
             if (OrderService.COMPLETED.equals(order.getStatus())) {
                 throw ApiException.conflict("訂單已完工，無需再支付定金");
@@ -88,8 +87,7 @@ public class PaymentService {
             }
 
             PaymentProvider provider = activeProvider();
-            PaymentTransaction tx = txRepository
-                    .findFirstByOrderIdAndStatusOrderByCreatedAtDesc(order.getId(), PaymentTransaction.PENDING)
+            PaymentTransaction tx = Optional.ofNullable(latestDeposit(order.getId(), PaymentTransaction.PENDING))
                     .filter(t -> t.getAmount() == amount && provider.id().equals(t.getProvider()))
                     .orElse(null);
             if (tx == null) {
@@ -274,8 +272,134 @@ public class PaymentService {
         res.put("depositRequired", order.getDepositAmount() > 0);
         res.put("depositPaid", order.isDepositPaid());
         res.put("orderStatus", order.getStatus());
-        res.put("transactions", txRepository.findByOrderIdOrderByCreatedAtDesc(order.getId()));
+        List<PaymentTransaction> txs = txRepository.findByOrderIdOrderByCreatedAtDesc(order.getId());
+        res.putAll(balanceOf(order, txs));
+        res.put("transactions", txs);
         return res;
+    }
+
+    // ------------------------------------------------------------------ 尾款收款登錄（admin）
+
+    private static final Set<String> BALANCE_METHODS = Set.of("bank_transfer", "cash", "check", "other");
+    private static final java.util.regex.Pattern INVOICE_NO = java.util.regex.Pattern.compile("^([A-Z]{2})-?(\\d{8})$");
+
+    /** 最新一筆指定狀態的定金交易（排除尾款登錄） */
+    private PaymentTransaction latestDeposit(String orderId, String status) {
+        return txRepository.findByOrderIdOrderByCreatedAtDesc(orderId).stream()
+                .filter(t -> !t.isBalance() && status.equals(t.getStatus()))
+                .findFirst().orElse(null);
+    }
+
+    /**
+     * 尾款結算：已付定金以訂單 depositPaid 為準（線上金流已核對金額）；尾款 = 總額 − 已付定金 − 已登錄尾款（作廢不計）
+     */
+    private Map<String, Object> balanceOf(Order order, List<PaymentTransaction> txs) {
+        int depositCredit = order.isDepositPaid() ? Math.max(0, order.getDepositAmount()) : 0;
+        int balancePaid = txs.stream().filter(t -> t.isBalance() && PaymentTransaction.PAID.equals(t.getStatus()))
+                .mapToInt(PaymentTransaction::getAmount).sum();
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("depositCredit", depositCredit);
+        m.put("balancePaid", balancePaid);
+        m.put("balanceOutstanding", Math.max(0, order.getFinalAmount() - depositCredit - balancePaid));
+        return m;
+    }
+
+    /**
+     * 登錄尾款收款（合作社另行收款後由 admin 登錄）：訂單須已完工；金額預設為未結清尾款，可分次登錄但不得超過未結清金額；
+     * 收款日不可晚於今天；發票號碼可稍後補登
+     */
+    public Map<String, Object> recordBalance(String orderId, Integer amount, String paidDate, String method,
+                                             String invoiceNo, String note) {
+        synchronized (lock) {
+            Order order = orderService.requireOrder(orderId);
+            if (!OrderService.COMPLETED.equals(order.getStatus())) {
+                throw ApiException.conflict("訂單完工後才能登錄尾款（目前狀態：" + order.getStatus() + "）");
+            }
+            int outstanding = (int) balanceOf(order, txRepository.findByOrderIdOrderByCreatedAtDesc(orderId)).get("balanceOutstanding");
+            if (outstanding <= 0) throw ApiException.conflict("此訂單尾款已結清");
+            int value = amount == null ? outstanding : amount;
+            if (value <= 0 || value > outstanding) {
+                throw ApiException.badRequest("收款金額須介於 1 ～ " + outstanding + " 元（未結清尾款）");
+            }
+            java.time.LocalDate day;
+            try {
+                day = paidDate == null || paidDate.isBlank() ? java.time.LocalDate.now() : java.time.LocalDate.parse(paidDate.trim());
+            } catch (java.time.format.DateTimeParseException e) {
+                throw ApiException.badRequest("收款日期 (paidDate) 格式須為 yyyy-MM-dd");
+            }
+            if (day.isAfter(java.time.LocalDate.now())) throw ApiException.badRequest("收款日期不可晚於今天");
+            String m = method == null || method.isBlank() ? "bank_transfer" : method.trim();
+            if (!BALANCE_METHODS.contains(m)) throw ApiException.badRequest("收款方式須為 bank_transfer / cash / check / other");
+
+            PaymentTransaction tx = new PaymentTransaction();
+            tx.setId(newTransactionId());
+            tx.setOrderId(order.getId());
+            tx.setKind(PaymentTransaction.KIND_BALANCE);
+            tx.setProvider(PaymentTransaction.PROVIDER_OFFLINE);
+            tx.setPaymentMethod(m);
+            tx.setAmount(value);
+            tx.setPayerName(order.getFarmerName());
+            tx.setStatus(PaymentTransaction.PAID);
+            tx.setInvoiceNo(invoiceNo == null || invoiceNo.isBlank() ? null : normalizeInvoiceNo(invoiceNo));
+            tx.setNote(checkNote(note));
+            tx.setCreatedAt(LocalDateTime.now());
+            tx.setPaidAt(day.atStartOfDay());
+            txRepository.save(tx);
+            log.info("[尾款] 訂單 {} 登錄尾款 {} 元（{}，交易 {}）", order.getId(), value, m, tx.getId());
+            return balanceResult(order, tx);
+        }
+    }
+
+    /** 補登／更正發票號碼（admin）：限已付款交易；格式為 2 碼英文＋8 碼數字 */
+    public Map<String, Object> setInvoiceNo(String txId, String invoiceNo) {
+        synchronized (lock) {
+            PaymentTransaction tx = txRepository.findById(txId)
+                    .orElseThrow(() -> ApiException.notFound("查無此交易序號：" + txId));
+            if (!PaymentTransaction.PAID.equals(tx.getStatus())) throw ApiException.conflict("只有已付款的交易可以登錄發票號碼");
+            if (invoiceNo == null || invoiceNo.isBlank()) throw ApiException.badRequest("請填寫發票號碼");
+            tx.setInvoiceNo(normalizeInvoiceNo(invoiceNo));
+            txRepository.save(tx);
+            return balanceResult(orderService.requireOrder(tx.getOrderId()), tx);
+        }
+    }
+
+    /** 作廢尾款登錄（admin，登錄錯誤時用；保留紀錄、不計入已收）：線上金流的定金交易不可作廢 */
+    public Map<String, Object> voidBalance(String txId, String reason) {
+        synchronized (lock) {
+            PaymentTransaction tx = txRepository.findById(txId)
+                    .orElseThrow(() -> ApiException.notFound("查無此交易序號：" + txId));
+            if (!tx.isBalance()) throw ApiException.conflict("只有尾款登錄紀錄可以作廢；定金退款請洽金流商處理");
+            if (!PaymentTransaction.PAID.equals(tx.getStatus())) throw ApiException.conflict("此紀錄已作廢");
+            if (reason == null || reason.isBlank()) throw ApiException.badRequest("請填寫作廢原因");
+            String why = "作廢：" + reason.trim();
+            tx.setNote(checkNote(tx.getNote() == null || tx.getNote().isBlank() ? why : tx.getNote() + "／" + why));
+            tx.setStatus(PaymentTransaction.VOID);
+            txRepository.save(tx);
+            log.info("[尾款] 交易 {}（訂單 {}）已作廢：{}", tx.getId(), tx.getOrderId(), reason.trim());
+            return balanceResult(orderService.requireOrder(tx.getOrderId()), tx);
+        }
+    }
+
+    private Map<String, Object> balanceResult(Order order, PaymentTransaction tx) {
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("orderId", order.getId());
+        res.put("finalAmount", order.getFinalAmount());
+        res.putAll(balanceOf(order, txRepository.findByOrderIdOrderByCreatedAtDesc(order.getId())));
+        res.put("transaction", tx);
+        return res;
+    }
+
+    static String normalizeInvoiceNo(String raw) {
+        java.util.regex.Matcher m = INVOICE_NO.matcher(raw.trim().toUpperCase(Locale.ROOT));
+        if (!m.matches()) throw ApiException.badRequest("發票號碼格式須為 2 碼英文＋8 碼數字（例：AB-12345678）");
+        return m.group(1) + "-" + m.group(2);
+    }
+
+    private static String checkNote(String note) {
+        if (note == null || note.isBlank()) return null;
+        String n = note.trim();
+        if (n.length() > 255) throw ApiException.badRequest("備註過長（上限 255 字）");
+        return n;
     }
 
     /**

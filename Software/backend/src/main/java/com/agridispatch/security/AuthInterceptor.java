@@ -79,6 +79,9 @@ public class AuthInterceptor implements HandlerInterceptor {
             new String[]{"*", "/api/line/notify/**"},
             new String[]{"POST", "/api/notifications/send"},
             new String[]{"PUT", "/api/orders/*/status"},
+            new String[]{"POST", "/api/payments/*/balance"},             // 尾款收款登錄
+            new String[]{"PUT", "/api/payments/transactions/*/invoice"}, // 補登發票號碼
+            new String[]{"POST", "/api/payments/transactions/*/void"},   // 作廢尾款登錄
             new String[]{"GET", "/api/legalize/summary"},        // 各農場黑轉白彙總（科技後台）
             new String[]{"POST", "/api/auth/reset-password"},
             new String[]{"GET", "/api/auth/accounts"},

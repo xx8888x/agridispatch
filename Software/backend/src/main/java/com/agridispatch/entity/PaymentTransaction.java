@@ -1,5 +1,6 @@
 package com.agridispatch.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -8,7 +9,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
 /**
- * 金流交易紀錄（定金付款）
+ * 金流交易紀錄：定金（線上金流）與尾款（合作社另行收款後由 admin 登錄，kind = balance、provider = offline）
  * status：PENDING（待付款）→ PAID（已付款）/ FAILED（失敗）
  */
 @Entity
@@ -18,6 +19,14 @@ public class PaymentTransaction {
     public static final String PENDING = "PENDING";
     public static final String PAID = "PAID";
     public static final String FAILED = "FAILED";
+    /** 作廢（僅尾款登錄紀錄；登錄錯誤時由 admin 作廢，不刪除） */
+    public static final String VOID = "VOID";
+
+    /** 款項類別：deposit 定金（線上金流）／balance 尾款（合作社另行收款後由 admin 登錄） */
+    public static final String KIND_DEPOSIT = "deposit";
+    public static final String KIND_BALANCE = "balance";
+    /** 尾款登錄的 provider（非線上金流） */
+    public static final String PROVIDER_OFFLINE = "offline";
 
     /** 交易序號（亦作為綠界 MerchantTradeNo，英數 20 碼內） */
     @Id
@@ -54,6 +63,14 @@ public class PaymentTransaction {
     @Column(length = 20)
     private String invoiceNo;
 
+    /** deposit／balance；舊資料 NULL 視同 deposit */
+    @Column(length = 16)
+    private String kind;
+
+    /** 備註（尾款登錄說明、作廢原因） */
+    @Column(length = 255)
+    private String note;
+
     private LocalDateTime createdAt;
     private LocalDateTime paidAt;
 
@@ -88,6 +105,14 @@ public class PaymentTransaction {
 
     public String getInvoiceNo() { return invoiceNo; }
     public void setInvoiceNo(String invoiceNo) { this.invoiceNo = invoiceNo; }
+
+    public String getKind() { return kind == null ? KIND_DEPOSIT : kind; }
+    public void setKind(String kind) { this.kind = kind; }
+    @JsonIgnore
+    public boolean isBalance() { return KIND_BALANCE.equals(kind); }
+
+    public String getNote() { return note; }
+    public void setNote(String note) { this.note = note; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

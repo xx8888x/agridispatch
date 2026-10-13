@@ -145,7 +145,7 @@
 
       <div class="ad-notice ad-notice--warn" style="flex-direction: column; gap: 4px;">
         <p>【待確認】合作社開立之發票種類與稅率（本頁以 5% 營業稅、含稅金額回推未稅），以及個人農民之農業所得是否課稅、勞務費可否列為費用，依財政部規定為準，請洽會計師。</p>
-        <p>【待確認】尾款於完工後結清，目前由合作社另行收款，系統尚未記錄尾款的付款與發票；完工訂單的尾款先列為「尾款待結清」。</p>
+        <p>【待確認】尾款於完工後結清，由合作社另行收款（轉帳、現金等），合作社登錄收款與發票號碼後會列在這裡；尚未登錄的完工尾款列為「尾款待結清」。</p>
         <p>只有「已開立」的款項計入本期已開立合計；「待開立」「待付定金」「尾款待結清」另列。</p>
       </div>
     </div>
@@ -166,7 +166,7 @@
     // ------------------------------------------------------------------
     // 勞務費支出明細：由後端資料彙整（GET /api/orders 本人訂單 + GET /api/payments/{orderId}/status 付款紀錄）
     // - 定金：每筆已付款交易一列（付款日期、金額、發票號碼）；需付定金但尚未付款的訂單列為「待付定金」
-    // - 尾款：系統尚無尾款付款流程，完工訂單的尾款（總額 − 已付定金）列為「尾款待結清」【待確認】
+    // - 尾款：合作社另行收款後由後台登錄（kind = balance）；完工訂單尚未結清的部分（後端 balanceOutstanding）列為「尾款待結清」
     // ------------------------------------------------------------------
     const TAX_RATE = 0.05;
     const STATUS = {
@@ -207,8 +207,10 @@
     }
     const day = (v) => (v ? String(v).replace(' ', 'T').slice(0, 10) : '');
 
-    // 一張訂單 → 支出列（定金、待付定金、尾款）
-    function rowsOf(o, paidTxs) {
+    // 一張訂單 → 支出列（定金、待付定金、已收尾款、尾款待結清）；txs 為已付款交易，balanceOutstanding 取自後端（舊資料沒有就自行計算）
+    function rowsOf(o, txs, balanceOutstanding) {
+      const paidTxs = txs.filter((t) => t.kind !== 'balance');
+      const balanceTxs = txs.filter((t) => t.kind === 'balance');
       const rows = [];
       const days = o.startDate && o.endDate ? Math.round((new Date(o.endDate) - new Date(o.startDate)) / 86400000) + 1 : 0;
       const desc = `${o.cropName || '農務派工'}（${o.area || '—'} 分地${days ? `・${days} 天` : ''}）`
@@ -231,10 +233,21 @@
       if (needDeposit && !o.depositPaid && o.status !== 'cancelled') {
         rows.push(Object.assign({}, base, { id: o.id + '-due', date: day(o.createdAt), kind: '定金', amount: Number(o.depositAmount), invoice: '', status: 'unpaid' }));
       }
-      if (o.status === 'completed' && base.finalAmount - depositPaid > 0) {
+      // 已收尾款（合作社登錄）：先前已付＝定金＋較早的尾款，供尾款發票顯示
+      let prior = depositPaid;
+      balanceTxs.slice().sort((a, b) => String(a.paidAt).localeCompare(String(b.paidAt))).forEach((t) => {
+        rows.push(Object.assign({}, base, {
+          id: t.id, date: day(t.paidAt || t.createdAt), kind: needDeposit ? '尾款' : '全額', amount: Number(t.amount) || 0,
+          invoice: t.invoiceNo || '', payer: t.payerName || '', paidAt: t.paidAt, txKind: 'balance', priorPaid: prior,
+          status: t.invoiceNo ? 'issued' : 'pending_invoice'
+        }));
+        prior += Number(t.amount) || 0;
+      });
+      const outstanding = balanceOutstanding != null ? Number(balanceOutstanding) : base.finalAmount - prior;
+      if (o.status === 'completed' && outstanding > 0) {
         rows.push(Object.assign({}, base, {
           id: o.id + '-bal', date: day(o.endDate || o.createdAt), kind: needDeposit ? '尾款' : '全額',
-          amount: base.finalAmount - depositPaid, invoice: '', status: 'balance_due'
+          amount: outstanding, invoice: '', status: 'balance_due'
         }));
       }
       return rows;
@@ -249,11 +262,13 @@
         if (ref) orders = orders.filter((o) => o.farmerId === ref);   // 正式環境後端已只回本人訂單；demo 錄製資料含他人訂單
         const lists = await Promise.all(orders.map(async (o) => {
           let txs = [];
-          if (Number(o.depositAmount) > 0 && o.depositPaid) {
+          let outstanding = null;
+          if ((Number(o.depositAmount) > 0 && o.depositPaid) || o.status === 'completed') {
             const s = (await getJson(`/payments/${encodeURIComponent(o.id)}/status`)).data || {};
-            txs = (s.transactions || []).filter((t) => t.status === 'PAID');
+            txs = (s.transactions || []).filter((t) => t.status === 'PAID');   // 作廢（VOID）的尾款登錄不列
+            if (s.balanceOutstanding != null) outstanding = s.balanceOutstanding;
           }
-          return rowsOf(o, txs);
+          return rowsOf(o, txs, outstanding);
         }));
         entries = lists.flat();
         loaded = true;
@@ -349,7 +364,8 @@
       if (!e || !e.invoice) return;
       AgriDocs.downloadInvoice(e.order, {
         invoiceNo: e.invoice, buyerName: e.payer || currentUser().name, paidAt: e.paidAt,
-        cropName: e.crop, planName: e.plan, amount: e.finalAmount, deposit: e.amount
+        cropName: e.crop, planName: e.plan, amount: e.finalAmount, deposit: e.amount,
+        kind: e.txKind, priorPaid: e.priorPaid
       });
     }
 

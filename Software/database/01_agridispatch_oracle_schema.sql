@@ -574,20 +574,26 @@ CREATE TABLE payment_transactions (
     gateway_trade_no   VARCHAR2(40 CHAR),
     auth_code          VARCHAR2(20 CHAR),
     invoice_no         VARCHAR2(20 CHAR),
+    kind               VARCHAR2(16 CHAR),
+    note               VARCHAR2(255 CHAR),
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP,
     paid_at            TIMESTAMP,
     CONSTRAINT pk_payment_transactions PRIMARY KEY (id),
     CONSTRAINT fk_payment_order FOREIGN KEY (order_id) REFERENCES orders(id),
-    CONSTRAINT chk_payment_status CHECK (status IN ('PENDING', 'PAID', 'FAILED')),
-    CONSTRAINT chk_payment_provider CHECK (provider IN ('mock', 'ecpay'))
+    CONSTRAINT chk_payment_status CHECK (status IN ('PENDING', 'PAID', 'FAILED', 'VOID')),
+    CONSTRAINT chk_payment_provider CHECK (provider IN ('mock', 'ecpay', 'offline')),
+    CONSTRAINT chk_payment_kind CHECK (kind IS NULL OR kind IN ('deposit', 'balance'))
 );
 
-COMMENT ON TABLE payment_transactions IS '定金付款交易紀錄表：綠界 ECPay 與模擬金流之完整交易流水';
+COMMENT ON TABLE payment_transactions IS '付款交易紀錄表：定金（綠界 ECPay／模擬金流）與尾款（合作社另行收款後由 admin 登錄）';
 COMMENT ON COLUMN payment_transactions.id IS '交易序號（亦作為綠界 MerchantTradeNo，英數 20 碼內）';
-COMMENT ON COLUMN payment_transactions.provider IS '金流供應商：mock (模擬) / ecpay (綠界)';
+COMMENT ON COLUMN payment_transactions.provider IS '金流供應商：mock (模擬) / ecpay (綠界) / offline (尾款，合作社另行收款)';
 COMMENT ON COLUMN payment_transactions.gateway_trade_no IS '金流商回傳之交易編號（綠界 TradeNo）';
 COMMENT ON COLUMN payment_transactions.auth_code IS '信用卡授權碼';
 COMMENT ON COLUMN payment_transactions.invoice_no IS '電子發票號碼';
+COMMENT ON COLUMN payment_transactions.kind IS '款項類別：deposit 定金 / balance 尾款；NULL 視同定金';
+COMMENT ON COLUMN payment_transactions.note IS '備註：尾款登錄說明、作廢原因';
+COMMENT ON COLUMN payment_transactions.status IS '狀態：PENDING / PAID / FAILED / VOID（作廢的尾款登錄）';
 
 -- ====================================================================
 -- 14. 系統帳號表 (USERS)

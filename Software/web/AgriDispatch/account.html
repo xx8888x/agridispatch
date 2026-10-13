@@ -65,7 +65,12 @@
     <section class="ad-card" aria-labelledby="logoutTitle">
       <div class="ad-card__head"><h2 id="logoutTitle" class="ad-heading">登出</h2></div>
       <p class="ad-caption" style="margin-bottom: 12px;">在共用的電腦或手機上用完，請記得登出。</p>
-      <button type="button" class="ad-btn ad-btn--secondary" onclick="AgriTheme.logout()"><i data-lucide="log-out" class="ad-icon ad-icon--sm"></i>登出</button>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <button type="button" class="ad-btn ad-btn--secondary" onclick="AgriTheme.logout()"><i data-lucide="log-out" class="ad-icon ad-icon--sm"></i>登出</button>
+        <button id="logoutAllBtn" type="button" class="ad-btn ad-btn--ghost" onclick="logoutAll()">登出所有裝置</button>
+      </div>
+      <p class="ad-caption" style="margin-top: 12px;">手機遺失或懷疑別人用過你的帳號時，按「登出所有裝置」：所有電腦、手機上的登入都會失效，手機 App 也不會再收到通知。密碼不會變，之後用原密碼重新登入即可；若懷疑密碼外洩，請再修改密碼。</p>
+      <div id="logoutAllMsg" role="alert" style="margin-top: 12px;" hidden></div>
     </section>
   </main>
 
@@ -119,8 +124,9 @@
       ].join('');
       if (me.demo) {
         document.getElementById('profile').insertAdjacentHTML('beforeend',
-          '<p class="ad-caption" style="margin-top: 8px;">示範帳號（免密登入），不能修改密碼。</p>');
+          '<p class="ad-caption" style="margin-top: 8px;">示範帳號（免密登入），不能修改密碼或登出所有裝置。</p>');
         document.getElementById('pwdBtn').disabled = true;
+        document.getElementById('logoutAllBtn').disabled = true;
       }
     }
 
@@ -166,6 +172,28 @@
       btn.textContent = '已更新';
       setTimeout(() => { window.location.href = login; }, 2000);
     });
+
+    // 登出所有裝置：後端讓本帳號所有已登入的裝置失效，並解除 App 推播綁定；本機也一併登出
+    async function logoutAll() {
+      const msg = document.getElementById('logoutAllMsg');
+      const show = (text, ok) => { msg.className = ok ? 'ad-notice ad-notice--ok' : 'ad-notice ad-notice--danger'; msg.textContent = text; msg.hidden = !text; };
+      if (!window.confirm('確定要登出所有裝置？所有電腦、手機上的登入都會失效。')) return;
+      const btn = document.getElementById('logoutAllBtn');
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${API}/auth/logout-all`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) throw new Error(body.error || body.message || `HTTP ${res.status}`);
+      } catch (err) {
+        btn.disabled = false;
+        show(err instanceof TypeError ? '無法連線伺服器，請稍後再試。' : `未完成：${err.message}`);
+        return;
+      }
+      const login = ROLE_LOGIN[me && me.role] || 'login.html';
+      if (window.AgriAuth) window.AgriAuth.clearSession();
+      show('已登出所有裝置，請重新登入。即將前往登入頁…', true);
+      setTimeout(() => { window.location.href = login; }, 2000);
+    }
 
     window.addEventListener('DOMContentLoaded', () => {
       if (window.lucide) lucide.createIcons();

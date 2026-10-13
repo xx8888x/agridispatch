@@ -45,11 +45,13 @@ public class AuthService {
     private final LoginRateLimiter loginRateLimiter;
     private final FarmerRepository farmerRepository;
     private final RegisterRateLimiter registerRateLimiter;
+    private final com.agridispatch.repository.PushTokenRepository pushTokenRepository;
 
     public AuthService(UserRepository userRepository, WorkerRepository workerRepository,
                        PasswordHasher passwordHasher, TokenService tokenService, AgriSettings settings,
                        LoginRateLimiter loginRateLimiter, FarmerRepository farmerRepository,
-                       RegisterRateLimiter registerRateLimiter) {
+                       RegisterRateLimiter registerRateLimiter,
+                       com.agridispatch.repository.PushTokenRepository pushTokenRepository) {
         this.userRepository = userRepository;
         this.workerRepository = workerRepository;
         this.passwordHasher = passwordHasher;
@@ -58,6 +60,7 @@ public class AuthService {
         this.loginRateLimiter = loginRateLimiter;
         this.farmerRepository = farmerRepository;
         this.registerRateLimiter = registerRateLimiter;
+        this.pushTokenRepository = pushTokenRepository;
     }
 
     // =========================================================================
@@ -233,6 +236,28 @@ public class AuthService {
         w.setPasswordHash(passwordHasher.hash(newPassword));
         w.bumpTokenVersion();
         workerRepository.save(w);
+    }
+
+    /**
+     * 登出所有裝置：token 版本 +1，本帳號已簽發的 token（含本次請求所用的）立即失效；
+     * 並解除本帳號綁定的 App 推播裝置，遺失的手機不會再收到通知。回傳解除的推播裝置數。
+     * demo-login 的示範 token 不比對版本，無法以此登出 → 400。
+     */
+    @Transactional
+    public int logoutAll(AuthContext ctx) {
+        if (ctx.demo()) throw ApiException.badRequest("示範帳號免密登入，無法登出所有裝置");
+        Optional<User> u = userRepository.findById(ctx.sub());
+        if (u.isPresent()) {
+            u.get().bumpTokenVersion();
+            userRepository.save(u.get());
+        } else {
+            Worker w = workerRepository.findById(ctx.sub()).orElseThrow(ApiException::unauthorized);
+            w.bumpTokenVersion();
+            workerRepository.save(w);
+        }
+        var tokens = pushTokenRepository.findByUsername(ctx.sub());
+        pushTokenRepository.deleteAll(tokens);
+        return tokens.size();
     }
 
     /** 管理員重設帳號（users 帳號或農工工號）密碼 */

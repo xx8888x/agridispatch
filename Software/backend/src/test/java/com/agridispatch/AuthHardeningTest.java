@@ -134,6 +134,30 @@ class AuthHardeningTest extends ApiTestSupport {
     }
 
     @Test
+    void logoutAllInvalidatesEveryDeviceAndRemovesPushTokens() throws Exception {
+        resetPassword("farmer_yilan", "Yilan#2026pw");
+        String phone = login("farmer_yilan", "Yilan#2026pw");
+        String web = login("farmer_yilan", "Yilan#2026pw");
+        assertEquals(200, call("POST", "/api/notifications/fcm/register", phone,
+                Map.of("token", "test-device-token-yilan-001", "platform", "android")).getResponse().getStatus());
+
+        assertEquals(401, call("POST", "/api/auth/logout-all", null, Map.of()).getResponse().getStatus());
+        MvcResult r = call("POST", "/api/auth/logout-all", web, Map.of());
+        assertEquals(200, r.getResponse().getStatus());
+        assertEquals(1, json(r).get("pushDevicesRemoved").asInt(), "手機的推播綁定一併解除");
+        assertEquals(401, meStatus(phone));
+        assertEquals(401, meStatus(web), "含本次請求所用的 token");
+        assertEquals(200, meStatus(adminToken), "其他帳號不受影響");
+        assertEquals(200, meStatus(login("farmer_yilan", "Yilan#2026pw")), "密碼不變，可重新登入");
+
+        // 工人帳號（workers 表）同樣適用
+        resetPassword("W006", "Worker#2026pw");
+        String w = login("W006", "Worker#2026pw");
+        assertEquals(200, call("POST", "/api/auth/logout-all", w, Map.of()).getResponse().getStatus());
+        assertEquals(401, meStatus(w));
+    }
+
+    @Test
     void accountListIsAdminOnlyAndHasNoSecrets() throws Exception {
         resetPassword("farmer", "Farmer#2026pw");
         resetPassword("W006", "Worker#2026pw");

@@ -80,6 +80,14 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("success", true, "message", "密碼已更新"));
     }
 
+    /** 登出所有裝置（本人）：本帳號所有已登入的裝置立即失效，並解除 App 推播裝置綁定 */
+    @PostMapping("/logout-all")
+    public ResponseEntity<?> logoutAll() {
+        int devices = authService.logoutAll(AuthContext.require());
+        return ResponseEntity.ok(Map.of("success", true, "pushDevicesRemoved", devices,
+                "message", "已登出所有裝置，請重新登入"));
+    }
+
     /** 管理員重設密碼：{identifier, newPassword}（授權由 AuthInterceptor 檢查 admin_tech） */
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, Object> req) {

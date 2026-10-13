@@ -26,6 +26,9 @@ import java.util.*;
  * 申請與核准時回傳 conflicts：本人已排入、工期與請假重疊的訂單或共享班表，提醒合作社改派（系統不自動移出名單）。
  *
  * 假別與給薪、天數上限依勞動基準法與勞工請假規則【待確認】，系統只記錄假別，不檢查額度、不影響薪資試算。
+ *
+ * 通知（背景送出，失敗不影響審核）：工人本人申請 → App 推播給合作社（admin_tech；後台人員不使用 LINE）；
+ * 核准、駁回、合作社取消已核准的假 → LINE 工作者帳號（三語，時段外略過）與 App 推播給工人本人。
  */
 @Service
 public class LeaveService {
@@ -64,14 +67,19 @@ public class LeaveService {
     private final WorkerService workerService;
     private final OrderRepository orderRepository;
     private final SharedRosterRepository rosterRepository;
+    private final LineNotifyService lineNotifyService;
+    private final FcmPushService pushService;
     private final Object lock = new Object();
 
     public LeaveService(WorkerLeaveRepository leaveRepository, WorkerService workerService,
-                        OrderRepository orderRepository, SharedRosterRepository rosterRepository) {
+                        OrderRepository orderRepository, SharedRosterRepository rosterRepository,
+                        LineNotifyService lineNotifyService, FcmPushService pushService) {
         this.leaveRepository = leaveRepository;
         this.workerService = workerService;
         this.orderRepository = orderRepository;
         this.rosterRepository = rosterRepository;
+        this.lineNotifyService = lineNotifyService;
+        this.pushService = pushService;
     }
 
     public List<Map<String, Object>> types() {
@@ -150,6 +158,10 @@ public class LeaveService {
             l.setId(IdGenerator.next(prefix, 3, leaveRepository.findIdsByPrefix(prefix), leaveRepository::existsById));
             leaveRepository.save(l);
         }
+        if (!ctx.isAdmin()) {
+            notifySafely(() -> pushService.send(AuthContext.ROLE_ADMIN, "新的請假申請",
+                    MatchingService.displayName(w) + "（" + w.getId() + "）" + TYPE_LABELS.get(type) + "・" + period(l) + "，請到「請假審核」處理", "dispatch"));
+        }
         return view(l, w, true);
     }
 
@@ -159,6 +171,7 @@ public class LeaveService {
         synchronized (lock) {
             WorkerLeave l = requirePending(id);
             decide(l, WorkerLeave.APPROVED, ctx, note);
+            notifyWorker(l);
             return view(l, workerService.getWorkerById(l.getWorkerId()).orElse(null), true);
         }
     }
@@ -170,6 +183,7 @@ public class LeaveService {
         synchronized (lock) {
             WorkerLeave l = requirePending(id);
             decide(l, WorkerLeave.REJECTED, ctx, note);
+            notifyWorker(l);
             return view(l, workerService.getWorkerById(l.getWorkerId()).orElse(null), false);
         }
     }
@@ -186,7 +200,10 @@ public class LeaveService {
             } else if (!WorkerLeave.PENDING.equals(l.getStatus())) {
                 throw ApiException.conflict("這筆假「" + STATUS_LABELS.get(l.getStatus()) + "」，不能取消");
             }
+            boolean wasApproved = WorkerLeave.APPROVED.equals(l.getStatus());
             decide(l, WorkerLeave.CANCELLED, ctx, note);
+            // 合作社取消已核准的假才通知（本人取消自己的假不必通知）
+            if (wasApproved && ctx.isAdmin()) notifyWorker(l);
             return view(l, workerService.getWorkerById(l.getWorkerId()).orElse(null), false);
         }
     }
@@ -199,6 +216,30 @@ public class LeaveService {
             throw ApiException.conflict("這筆假已「" + STATUS_LABELS.get(l.getStatus()) + "」，不能再審核");
         }
         return l;
+    }
+
+    /** 審核結果通知工人本人：LINE 工作者帳號（訊息由 LINE Bot 依語言產生）＋ App 推播 */
+    private void notifyWorker(WorkerLeave l) {
+        Map<String, Object> p = new LinkedHashMap<>();
+        p.put("leaveId", l.getId());
+        p.put("status", l.getStatus());
+        p.put("leaveType", TYPE_LABELS.getOrDefault(l.getLeaveType(), l.getLeaveType()));
+        p.put("period", period(l));
+        p.put("note", l.getDecisionNote() == null ? "" : l.getDecisionNote());
+        notifySafely(() -> lineNotifyService.leaveDecided(l.getWorkerId(), p));
+        String title = "請假" + STATUS_LABELS.get(l.getStatus());
+        String body = TYPE_LABELS.getOrDefault(l.getLeaveType(), l.getLeaveType()) + "・" + period(l)
+                + (l.getDecisionNote() == null ? "" : "（" + l.getDecisionNote() + "）");
+        notifySafely(() -> pushService.send(l.getWorkerId(), title, body, "dispatch"));
+    }
+
+    /** 通知失敗只記錄，不影響請假本身的操作 */
+    private static void notifySafely(Runnable r) {
+        try {
+            r.run();
+        } catch (RuntimeException e) {
+            org.slf4j.LoggerFactory.getLogger(LeaveService.class).warn("[請假] 通知失敗：{}", e.toString());
+        }
     }
 
     private void decide(WorkerLeave l, String status, AuthContext ctx, String note) {

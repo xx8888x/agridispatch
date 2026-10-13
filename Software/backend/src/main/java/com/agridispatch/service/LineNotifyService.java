@@ -256,6 +256,14 @@ public class LineNotifyService {
         return s;
     }
 
+    /**
+     * 請假審核結果（合作社核准／駁回，或取消已核准的假）→ 工作者帳號，推給請假的工人本人。
+     * params：leaveId、status（approved／rejected／cancelled）、leaveType（中文假別）、period、note（可為空字串）
+     */
+    public void leaveDecided(String workerId, Map<String, Object> params) {
+        submit(() -> sendWorker("leave_decided", params, workerRecipients(Set.of(nz(workerId)))));
+    }
+
     /** 方案行銷（科技後台手動）→ 只限農場主帳號 broadcast（規格第柒章；工作者帳號禁止 broadcast） */
     public Map<String, Object> farmerBroadcast(String text) {
         if (text == null || text.isBlank() || text.length() > 1000) {

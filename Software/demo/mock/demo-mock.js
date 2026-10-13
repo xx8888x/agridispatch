@@ -111,7 +111,7 @@
 
   // ---------------- 使用者／登入 ----------------
   var ROLE_BY_PAGE = [
-    [/^(admin|vue-crud|insurance|skills|matching)/, 'admin_tech'],
+    [/^(admin|vue-crud|insurance|skills|matching|accounts|leaves)/, 'admin_tech'],
     [/^(farmer|legalize|expenses)/, 'farmer'],
     [/^worker-foreign/, 'worker_foreign'],
     [/^worker-local|^worker-skills/, 'worker_local']
@@ -1057,7 +1057,14 @@
       workerId: w.id, teamId: w.teamId || null,
       team: mt ? { id: mt.id, name: mt.name, leader: mt.leader, leaderPhone: mt.leaderPhone, vehicle: mt.vehicle, driver: mt.driver,
         normalLocation: mt.normalLocation, normalTask: mt.normalTask, hedgeLocation: mt.hedgeLocation, hedgeTask: mt.hedgeTask } : null,
-      from: from || null, to: to || null, items: items
+      from: from || null, to: to || null, items: items,
+      // 本人待審核與已核准的請假（行事曆標示用）
+      leaves: leaveList().filter(function (x) {
+        return x.workerId === w.id && (x.status === 'pending' || x.status === 'approved') &&
+          (!from || x.endDate >= from) && (!to || x.startDate <= to);
+      }).map(function (x) {
+        return { id: x.id, leaveType: x.leaveType, leaveTypeLabel: leaveTypeLabel(x.leaveType), startDate: x.startDate, endDate: x.endDate, timeSlot: x.timeSlot, status: x.status };
+      })
     } });
   }
   // 新訂單（示範時剛下的單）沒有錄製的媒合建議：拿同派工類別的既有訂單當範本（技能需求、工班排序相同），
@@ -1273,6 +1280,91 @@
     return respond(200, { success: true, data: rec });
   }
 
+  // ---------------- 請假（移植自後端 LeaveService；資料存 localStorage，媒合排除只在真實後端）----------------
+  var LEAVE_TYPES = [['annual', '特別休假'], ['personal', '事假'], ['sick', '普通傷病假'], ['menstrual', '生理假'],
+    ['family_care', '家庭照顧假'], ['marriage', '婚假'], ['bereavement', '喪假'], ['official', '公假'], ['injury', '公傷病假'],
+    ['maternity', '產假／產檢假'], ['paternity', '陪產檢及陪產假'], ['other', '其他']];
+  var LEAVE_STATUS = { pending: '待審核', approved: '已核准', rejected: '已駁回', cancelled: '已取消' };
+  var LEAVE_KEY = 'MOCK /leaves';
+  function leaveList() { var e = get(LEAVE_KEY); return (e && e.list) || []; }
+  function saveLeaves(list) { put(LEAVE_KEY, { list: list }); }
+  function leaveTypeLabel(k) { for (var i = 0; i < LEAVE_TYPES.length; i++) if (LEAVE_TYPES[i][0] === k) return LEAVE_TYPES[i][1]; return k; }
+  function ymdToday(offset) { var d = new Date(); d.setDate(d.getDate() + (offset || 0)); return localStamp(d).slice(0, 10); }
+  function slotsClash(a, b) { return a === 'full_day' || b === 'full_day' || a === b; }
+  function periodsClash(s1, e1, t1, s2, e2, t2) { return s1 <= e2 && s2 <= e1 && slotsClash(t1 || 'full_day', t2 || 'full_day'); }
+  function leaveConflicts(l) {
+    var out = [];
+    (listOf(get('GET /orders')) || []).forEach(function (o) {
+      if (['pending', 'confirmed', 'in_progress'].indexOf(o.status) < 0 || !o.startDate || !o.endDate) return;
+      var crew = String(o.crewWorkerIds || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+      var mine = crew.indexOf(l.workerId) >= 0 || (!crew.length && o.preferredWorkerId === l.workerId);
+      if (!mine || !periodsClash(o.startDate, o.endDate, o.timeSlot, l.startDate, l.endDate, l.timeSlot)) return;
+      out.push({ kind: 'order', id: o.id, startDate: o.startDate, endDate: o.endDate, label: (o.cropName || '') + '・' + (o.farmLocation || ''), via: crew.length ? 'crew' : 'preferred' });
+    });
+    return out;
+  }
+  function leaveView(l) {
+    var w = findIn('GET /workers', l.workerId) || {};
+    var v = clone(l);
+    v.workerName = w.chineseName && w.chineseName !== w.name ? w.chineseName + ' (' + w.name + ')' : (w.name || null);
+    v.teamId = w.teamId || null;
+    v.leaveTypeLabel = leaveTypeLabel(l.leaveType);
+    v.timeSlotLabel = l.timeSlot === 'morning' ? '上午' : l.timeSlot === 'afternoon' ? '下午' : '整天';
+    v.days = l.timeSlot === 'full_day' ? Math.round((new Date(l.endDate) - new Date(l.startDate)) / 86400000) + 1 : 0.5;
+    v.statusLabel = LEAVE_STATUS[l.status] || l.status;
+    v.cancellable = l.status === 'pending' || (l.status === 'approved' && ymdToday(0) < l.startDate);
+    v.conflicts = l.status === 'pending' || l.status === 'approved' ? leaveConflicts(l) : [];
+    return v;
+  }
+  function leaveCreate(workerId, b) {
+    var type = b.leaveType, start = b.startDate, end = b.endDate || b.startDate, slot = b.timeSlot || 'full_day';
+    if (!type || !LEAVE_TYPES.some(function (t) { return t[0] === type; })) return respond(400, { success: false, error: '請選擇假別' });
+    if (!start) return respond(400, { success: false, error: '請填寫開始日 (startDate)' });
+    if (end < start) return respond(400, { success: false, error: '結束日不可早於開始日' });
+    if ((new Date(end) - new Date(start)) / 86400000 + 1 > 31) return respond(400, { success: false, error: '單次請假最多 31 天，更長的假請分次申請或聯絡合作社' });
+    if (start < ymdToday(-30)) return respond(400, { success: false, error: '只能補請 30 天內的假，更早的請聯絡合作社' });
+    if (slot !== 'full_day' && start !== end) return respond(400, { success: false, error: '半天假只能請單日' });
+    var list = leaveList();
+    var clash = list.filter(function (x) {
+      return x.workerId === workerId && (x.status === 'pending' || x.status === 'approved') &&
+        periodsClash(x.startDate, x.endDate, x.timeSlot, start, end, slot);
+    })[0];
+    if (clash) return respond(409, { success: false, error: '與已申請的假 ' + clash.id + ' 重疊' });
+    var year = new Date().getFullYear(), n = 900;
+    list.forEach(function (x) { var m = /^LV-\d+-(\d+)$/.exec(x.id); if (m) n = Math.max(n, +m[1]); });
+    var u = currentUser() || {};
+    var l = { id: 'LV-' + year + '-' + (n + 1), workerId: workerId, leaveType: type, startDate: start, endDate: end, timeSlot: slot,
+      reason: b.reason || null, status: 'pending', requestedBy: u.username || null, createdAt: localStamp(new Date()),
+      decidedAt: null, decisionNote: null };
+    list.unshift(l);
+    saveLeaves(list);
+    return respond(201, { success: true, data: leaveView(l), message: '已送出請假申請，等合作社審核' });
+  }
+  function leaveAction(id, action, b) {
+    var list = leaveList(), l = list.filter(function (x) { return x.id === id; })[0];
+    if (!l) return respond(404, { success: false, error: '查無請假紀錄：' + id });
+    var note = (b && b.note ? String(b.note).trim() : '') || null;
+    var admin = (currentUser() || {}).role === 'admin_tech';
+    if (action === 'approve' || action === 'reject') {
+      if (!admin) return respond(403, { success: false, error: 'FORBIDDEN' });
+      if (l.status !== 'pending') return respond(409, { success: false, error: '這筆假已「' + LEAVE_STATUS[l.status] + '」，不能再審核' });
+      if (action === 'reject' && !note) return respond(400, { success: false, error: '請填寫駁回原因' });
+      l.status = action === 'approve' ? 'approved' : 'rejected';
+    } else {
+      if (l.status === 'approved') {
+        if (!admin && ymdToday(0) >= l.startDate) return respond(409, { success: false, error: '假期已開始，要取消請聯絡合作社' });
+      } else if (l.status !== 'pending') {
+        return respond(409, { success: false, error: '這筆假「' + LEAVE_STATUS[l.status] + '」，不能取消' });
+      }
+      l.status = 'cancelled';
+    }
+    l.decidedAt = localStamp(new Date());
+    l.decisionNote = note;
+    saveLeaves(list);
+    var msg = { approve: '已核准請假', reject: '已駁回請假', cancel: '已取消請假' }[action];
+    return respond(200, { success: true, data: leaveView(l), message: msg });
+  }
+
   function handleWrite(method, p, bodyText) {
     var sp = splitPath(p);
     var body = null;
@@ -1301,6 +1393,11 @@
         username: phone, name: String(r.name), role: 'farmer', refId: 'F900',
         roleDesc: (r.farmName || '自助註冊') + ' 農場主' } });
     }
+
+    var lw = /^\/workers\/([^/]+)\/leaves$/.exec(sp.path);
+    if (lw && method === 'POST') return leaveCreate(decodeURIComponent(lw[1]), body || {});
+    var la = /^\/leaves\/([^/]+)\/(approve|reject|cancel)$/.exec(sp.path);
+    if (la && method === 'POST') return leaveAction(decodeURIComponent(la[1]), la[2], body || {});
 
     var rs = /^\/rosters(?:\/([^/]+)(?:\/(claims|confirm|cancel))?)?$/.exec(sp.path);
     if (rs && method === 'POST') {
@@ -1448,6 +1545,22 @@
       if (sp.path === '/farmers/me/past-workers') return pastWorkersApi(sp.query);
       var rg = /^\/rosters(?:\/([^/]+))?$/.exec(sp.path);
       if (rg) return rostersApi(rg[1] && decodeURIComponent(rg[1]));
+      if (sp.path === '/leaves/types') {
+        return respond(200, { success: true, data: LEAVE_TYPES.map(function (t) { return { key: t[0], label: t[1] }; }) });
+      }
+      if (sp.path === '/leaves') {
+        var lst = (/[?&]status=([^&]*)/.exec(sp.query) || [])[1];
+        var all = leaveList().filter(function (x) { return !lst || x.status === decodeURIComponent(lst); }).map(leaveView);
+        all.sort(function (a, b) { return (a.status !== 'pending') - (b.status !== 'pending') || String(b.startDate).localeCompare(String(a.startDate)); });
+        return respond(200, { success: true, data: all });
+      }
+      var wl = /^\/workers\/([^/]+)\/leaves$/.exec(sp.path);
+      if (wl) {
+        var lwid = decodeURIComponent(wl[1]);
+        var mine = leaveList().filter(function (x) { return x.workerId === lwid; }).map(leaveView);
+        mine.sort(function (a, b) { return String(b.startDate).localeCompare(String(a.startDate)); });
+        return respond(200, { success: true, data: mine });
+      }
       if (sp.path === '/line/config') {
         // 錄製時 LINE Bot 沒開；純前端示範的對話由頁面模擬，狀態顯示「模擬中」。金鑰等正式設定照實呈現。
         var lc = findGet(p) || { s: 200, b: { success: true } };

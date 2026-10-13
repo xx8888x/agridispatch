@@ -519,6 +519,48 @@
       <div class="ad-card" style="padding: 24px;">
         <div id="localCalendar"></div>
       </div>
+
+      <!-- 請假：送出後由合作社審核；核准的假不會再被排班（POST /workers/{id}/leaves） -->
+      <div class="ad-card" style="padding: 24px; margin-top: 20px;">
+        <div class="ad-card__head">
+          <h3 class="ad-heading">請假</h3>
+          <span class="ad-caption">合作社核准後，這段期間不會被排班</span>
+        </div>
+        <form id="leaveForm" novalidate style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px 16px;">
+          <div class="ad-field">
+            <label class="ad-label" for="leaveType">假別</label>
+            <select id="leaveType" class="ad-select" required></select>
+          </div>
+          <div class="ad-field">
+            <label class="ad-label" for="leaveStart">開始日</label>
+            <input id="leaveStart" type="date" class="ad-input" required>
+          </div>
+          <div class="ad-field">
+            <label class="ad-label" for="leaveEnd">結束日</label>
+            <input id="leaveEnd" type="date" class="ad-input">
+            <span class="ad-hint">只請一天可不填</span>
+          </div>
+          <div class="ad-field">
+            <label class="ad-label" for="leaveSlot">時段</label>
+            <select id="leaveSlot" class="ad-select">
+              <option value="full_day">整天</option>
+              <option value="morning">上午（半天）</option>
+              <option value="afternoon">下午（半天）</option>
+            </select>
+          </div>
+          <div class="ad-field" style="grid-column: 1 / -1;">
+            <label class="ad-label" for="leaveReason">事由（選填）</label>
+            <input id="leaveReason" type="text" class="ad-input" maxlength="200" placeholder="例：家中長輩看診">
+          </div>
+          <div id="leaveMsg" role="alert" style="grid-column: 1 / -1;" hidden></div>
+          <div style="grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+            <button id="leaveBtn" type="submit" class="ad-btn ad-btn--primary">送出請假</button>
+            <span class="ad-caption">病假等臨時請假可事後 30 天內補請；假別給薪與天數依勞基法規定，有疑問請洽合作社。</span>
+          </div>
+        </form>
+        <h4 class="ad-heading" style="margin: 24px 0 10px;">我的請假紀錄</h4>
+        <div id="leaveList" class="ad-list"><p class="ad-caption">讀取中…</p></div>
+      </div>
     </div>
 
     <!-- TAB 2: 薪酬與分紅 -->
@@ -708,7 +750,135 @@
     // 行事曆：與薪資同一個工人（真正登入的本國工人，或目前示範身分的帳號）
     function mountLocalCalendar() {
       if (window.ScheduleCalendar) ScheduleCalendar.mount(document.getElementById('localCalendar'), { workerId: payrollWorkerId(), lang: 'zh' });
+      loadLeaves();
     }
+
+    // ===== 請假：GET／POST /workers/{id}/leaves，取消 POST /leaves/{id}/cancel（本人；已核准的假只能在開始前取消）=====
+    const LEAVE_PILL = { pending: 'ad-pill ad-pill--warn', approved: 'ad-pill ad-pill--ok', rejected: 'ad-pill', cancelled: 'ad-pill' };
+    let leaveTypesLoaded = false;
+    let leaveSeq = 0;
+
+    function escHtml(v) {
+      return String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    async function leaveApi(path, init) {
+      const res = await fetch(`${API_BASE}${path}`, init);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body.success === false) {
+        throw new Error(res.status === 403 ? '沒有權限處理這位工人的請假' : (body.error || body.message || `HTTP ${res.status}`));
+      }
+      return body.data;
+    }
+
+    async function loadLeaveTypes() {
+      if (leaveTypesLoaded) return;
+      const sel = document.getElementById('leaveType');
+      try {
+        const types = await leaveApi('/leaves/types');
+        sel.innerHTML = types.map((t) => `<option value="${escHtml(t.key)}">${escHtml(t.label)}</option>`).join('');
+        leaveTypesLoaded = true;
+      } catch (e) {
+        sel.innerHTML = '<option value="">（讀不到假別）</option>';
+      }
+    }
+
+    async function loadLeaves() {
+      loadLeaveTypes();
+      const box = document.getElementById('leaveList');
+      if (!box) return;
+      const start = document.getElementById('leaveStart');
+      if (!start.value) start.value = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+      const seq = ++leaveSeq;
+      try {
+        const list = await leaveApi(`/workers/${encodeURIComponent(payrollWorkerId())}/leaves`);
+        if (seq !== leaveSeq) return;
+        box.innerHTML = list.length ? list.map(leaveRow).join('') : '<p class="ad-caption">還沒有請假紀錄。</p>';
+      } catch (e) {
+        if (seq !== leaveSeq) return;
+        box.innerHTML = `<div class="ad-notice ad-notice--danger" role="alert">無法讀取請假紀錄：${escHtml(e instanceof TypeError ? '無法連線伺服器' : e.message)}</div>`;
+      }
+    }
+
+    function leavePeriod(l) {
+      const p = l.startDate === l.endDate ? l.startDate : `${l.startDate}～${l.endDate}`;
+      return l.timeSlot === 'full_day' ? `${p}（${l.days} 天）` : `${p} ${l.timeSlotLabel}`;
+    }
+
+    function leaveRow(l) {
+      const conflicts = (l.conflicts || []).map((c) => c.id).join('、');
+      const note = l.status === 'rejected' && l.decisionNote ? `駁回原因：${l.decisionNote}`
+        : (l.decisionNote ? `合作社備註：${l.decisionNote}` : '');
+      return `<div class="ad-row" style="align-items: flex-start;">
+          <div class="ad-row__main">
+            <div class="ad-row__title" style="white-space: normal;">${escHtml(l.leaveTypeLabel)}・${escHtml(leavePeriod(l))}</div>
+            <div class="ad-row__meta">${escHtml(l.id)}${l.reason ? '・' + escHtml(l.reason) : ''}</div>
+            ${note ? `<div class="ad-caption" style="margin-top: 4px;">${escHtml(note)}</div>` : ''}
+            ${conflicts ? `<div class="ad-caption" style="margin-top: 4px; color: var(--ad-accent-text);">這段期間你已排入 ${escHtml(conflicts)}，合作社會協調改派。</div>` : ''}
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0;">
+            <span class="${LEAVE_PILL[l.status] || 'ad-pill'}">${escHtml(l.statusLabel)}</span>
+            ${l.cancellable ? `<button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-cancel-leave="${escHtml(l.id)}">取消</button>` : ''}
+          </div>
+        </div>`;
+    }
+
+    function showLeaveMsg(text, kind) {
+      const el = document.getElementById('leaveMsg');
+      el.className = `ad-notice ad-notice--${kind || 'danger'}`;
+      el.textContent = text;
+      el.hidden = !text;
+    }
+
+    document.getElementById('leaveForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const startDate = document.getElementById('leaveStart').value;
+      const endDate = document.getElementById('leaveEnd').value || startDate;
+      const timeSlot = document.getElementById('leaveSlot').value;
+      const leaveType = document.getElementById('leaveType').value;
+      if (!leaveType) return showLeaveMsg('請選擇假別。');
+      if (!startDate) return showLeaveMsg('請選擇開始日。');
+      if (endDate < startDate) return showLeaveMsg('結束日不可早於開始日。');
+      if (timeSlot !== 'full_day' && endDate !== startDate) return showLeaveMsg('半天假只能請單日，結束日請留空。');
+      showLeaveMsg('');
+      const btn = document.getElementById('leaveBtn');
+      btn.disabled = true;
+      btn.textContent = '送出中…';
+      try {
+        const l = await leaveApi(`/workers/${encodeURIComponent(payrollWorkerId())}/leaves`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ leaveType, startDate, endDate, timeSlot, reason: document.getElementById('leaveReason').value.trim() })
+        });
+        const conflicts = (l.conflicts || []).map((c) => c.id).join('、');
+        showLeaveMsg(`已送出（${l.id}），等合作社審核。` + (conflicts ? `這段期間你已排入 ${conflicts}，合作社會協調改派。` : ''), conflicts ? 'warn' : 'ok');
+        document.getElementById('leaveEnd').value = '';
+        document.getElementById('leaveReason').value = '';
+        loadLeaves();
+        if (window.ScheduleCalendar && ScheduleCalendar.reload) ScheduleCalendar.reload();
+      } catch (err) {
+        showLeaveMsg(`請假未送出：${err instanceof TypeError ? '無法連線伺服器，請稍後再試' : err.message}`);
+      }
+      btn.disabled = false;
+      btn.textContent = '送出請假';
+    });
+
+    document.getElementById('leaveList').addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-cancel-leave]');
+      if (!btn) return;
+      if (!window.confirm('確定取消這筆請假？')) return;
+      btn.disabled = true;
+      try {
+        await leaveApi(`/leaves/${encodeURIComponent(btn.dataset.cancelLeave)}/cancel`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+        });
+        loadLeaves();
+        if (window.ScheduleCalendar && ScheduleCalendar.reload) ScheduleCalendar.reload();
+      } catch (err) {
+        btn.disabled = false;
+        showLeaveMsg(`取消失敗：${err instanceof TypeError ? '無法連線伺服器' : err.message}`);
+      }
+    });
 
     // ===== 薪資：數字一律來自後端 /workers/{id}/payroll（與外籍工人頁同一套）=====
     // 登入的是本國工人就查本人；沒登入（demo 預設身分）時依目前頁面身分查示範帳號。

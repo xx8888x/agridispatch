@@ -40,11 +40,13 @@ public class MatchingService {
     private final RatingService ratingService;
     private final AgriSettings settings;
     private final SharedRosterRepository rosterRepository;
+    private final WorkerLeaveRepository leaveRepository;
 
     public MatchingService(OrderService orderService, OrderRepository orderRepository, DispatchTeamRepository teamRepository,
                            WorkerRepository workerRepository, InsuranceRecordRepository insuranceRecordRepository,
                            InsuranceService insuranceService, SkillService skillService, RatingService ratingService,
-                           AgriSettings settings, SharedRosterRepository rosterRepository) {
+                           AgriSettings settings, SharedRosterRepository rosterRepository,
+                           WorkerLeaveRepository leaveRepository) {
         this.orderService = orderService;
         this.orderRepository = orderRepository;
         this.teamRepository = teamRepository;
@@ -55,6 +57,7 @@ public class MatchingService {
         this.ratingService = ratingService;
         this.settings = settings;
         this.rosterRepository = rosterRepository;
+        this.leaveRepository = leaveRepository;
     }
 
     /** 可參與派工的工班成員（外籍移工功能關閉時不含外籍工人） */
@@ -338,6 +341,11 @@ public class MatchingService {
             if (!hold.overlaps(order)) continue;
             for (String id : r.crewList()) busy.putIfAbsent(id, hold);
         }
+        // 已核准的請假：請假期間（半天假只佔該時段）視同撞期
+        for (WorkerLeave l : leaveRepository.findByStatusIn(List.of(WorkerLeave.APPROVED))) {
+            Order hold = l.asHold();
+            if (hold.overlaps(order)) busy.putIfAbsent(l.getWorkerId(), hold);
+        }
         return busy;
     }
 
@@ -362,6 +370,11 @@ public class MatchingService {
     }
 
     private static String clashText(Order o) {
+        if (o.getId() != null && o.getId().startsWith("LV-")) {
+            return "請假中：" + o.getId() + "（" + md(o.getStartDate())
+                    + (o.getEndDate().equals(o.getStartDate()) ? "" : "–" + md(o.getEndDate()))
+                    + (o.isHalfDay() ? "・" + (Order.MORNING.equals(o.slot()) ? "上午" : "下午") : "") + "）";
+        }
         return "工期撞期：已排入 " + o.getId() + "（" + md(o.getStartDate()) + "–" + md(o.getEndDate())
                 + (o.isHalfDay() ? "・" + Order.slotLabel(o.slot()) : "") + "）";
     }

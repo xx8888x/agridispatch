@@ -1,6 +1,6 @@
 # 智農派工 (AgriDispatch) - Oracle Database 建置與 SQL Developer 連線指引
 
-本專案已備妥專屬之 Oracle 資料庫建庫腳本、20 張實體資料表結構（含主外鍵與完整中文註解）、20 位在籍移工與訂單初始種子資料，以及 Oracle SQL Developer 連線設定檔。
+本專案已備妥專屬之 Oracle 資料庫建庫腳本、22 張實體資料表結構（含主外鍵與完整中文註解）、20 位在籍移工與訂單初始種子資料，以及 Oracle SQL Developer 連線設定檔。
 
 ---
 
@@ -18,7 +18,7 @@ D:\派遣專案網站(農事及其它)\Software\database\
 └── README_ORACLE_SETUP.md               # 📖 操作指引與常見問題排查手冊
 ```
 
-`01_agridispatch_oracle_schema.sql` 建立的 20 張資料表（依建表順序）：`crops`、`farmers`、`farms`、`dispatch_teams`、`shared_rosters`、`orders`、`workers`、`clock_ins`、`talents`、`weather_states`、`financial_ledger`、`line_users`、`line_messages`、`brochures`、`payment_transactions`、`users`、`team_ratings`、`legalize_workers`、`insurance_records`、`skill_reviews`。新增資料表時請同步更新此處數量與清單，並在 `migrations/` 補一支增量腳本給既有資料庫套用。
+`01_agridispatch_oracle_schema.sql` 建立的 22 張資料表（依建表順序）：`crops`、`farmers`、`farms`、`dispatch_teams`、`shared_rosters`、`orders`、`workers`、`clock_ins`、`talents`、`weather_states`、`financial_ledger`、`line_users`、`line_messages`、`push_tokens`、`brochures`、`payment_transactions`、`users`、`team_ratings`、`legalize_workers`、`insurance_records`、`skill_reviews`、`worker_leaves`。新增資料表時請同步更新此處數量與清單，並在 `migrations/` 補一支增量腳本給既有資料庫套用。
 
 ---
 
@@ -63,7 +63,7 @@ D:\派遣專案網站(農事及其它)\Software\database\
   - **服務名稱 (Service Name)**：`XEPDB1` 或 `FREEPDB1` (若為舊版 SID 請選 `XE` 或 `ORCL`)
 
 ### 步驟 4：一鍵執行腳本
-點擊 SQL 編輯器工具列的 **「以指令碼執行 (Run Script)」** 按鈕（快捷鍵：`F5`），即可自動完成 20 張資料表建立與種子資料匯入！
+點擊 SQL 編輯器工具列的 **「以指令碼執行 (Run Script)」** 按鈕（快捷鍵：`F5`），即可自動完成 22 張資料表建立與種子資料匯入！
 
 > ⚠️ 注意：
 > - 腳本開頭會 **DROP 再重建** 全部資料表，既有資料會被清除。

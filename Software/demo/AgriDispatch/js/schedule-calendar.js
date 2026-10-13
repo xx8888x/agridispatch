@@ -8,6 +8,7 @@
      回傳 { items: [訂單…] }（farmer.html 用 GET /orders 的本人訂單，另補 teamName）；只有中文。
      可再給 actions(訂單) 回傳 [{ label, primary, run }]，明細卡底下會出現對應按鈕（例如前往付款、看訂單）。
    換語言 ScheduleCalendar.setLang('vi')。訂單資料（地點、作物）只有中文。
+   工人版另標示本人的請假（schedule 回傳的 leaves：待審核與已核准）；請假後呼叫 ScheduleCalendar.reload() 重讀。
    ============================================================ */
 (function () {
   'use strict';
@@ -35,7 +36,8 @@
       error: '目前讀不到排班資料，請稍後再試或洽帶隊小工頭。',
       noTeam: '你目前尚未編入工班，排班確定後會出現在這裡。',
       pendingNote: '待確認：農場主尚未付定金，工期可能調整。',
-      preferred: '農場主指名你（回頭客）'
+      preferred: '農場主指名你（回頭客）',
+      leave: '請假', leavePending: '請假（待審核）', leaveApproved: '請假（已核准）'
     },
     vi: {
       weekdays: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
@@ -55,7 +57,8 @@
       error: 'Không tải được lịch làm việc, vui lòng thử lại sau hoặc hỏi trưởng nhóm.',
       noTeam: 'Bạn chưa được xếp vào nhóm, lịch sẽ hiện ở đây khi được xếp.',
       pendingNote: 'Chờ xác nhận: chủ nông trại chưa đặt cọc, lịch có thể thay đổi.',
-      preferred: 'Chủ nông trại chỉ định bạn (khách quen)'
+      preferred: 'Chủ nông trại chỉ định bạn (khách quen)',
+      leave: 'Nghỉ phép', leavePending: 'Nghỉ phép (chờ duyệt)', leaveApproved: 'Nghỉ phép (đã duyệt)'
     },
     id: {
       weekdays: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
@@ -75,7 +78,8 @@
       error: 'Jadwal tidak dapat dimuat, coba lagi nanti atau hubungi mandor.',
       noTeam: 'Anda belum masuk tim, jadwal akan muncul di sini setelah ditetapkan.',
       pendingNote: 'Menunggu: pemilik kebun belum bayar DP, jadwal bisa berubah.',
-      preferred: 'Pemilik kebun memilih Anda (pelanggan tetap)'
+      preferred: 'Pemilik kebun memilih Anda (pelanggan tetap)',
+      leave: 'Cuti', leavePending: 'Cuti (menunggu persetujuan)', leaveApproved: 'Cuti (disetujui)'
     }
   };
 
@@ -114,6 +118,8 @@
     '.wc-chip--pending{background:var(--ad-accent-soft);color:var(--ad-accent-text)}',
     '.wc-chip--completed{background:var(--ad-surface-2);color:var(--ad-text-2)}',
     '.wc-chip--in_progress{background:var(--ad-primary);color:var(--ad-on-primary)}',
+    '.wc-chip--leave{background:var(--ad-danger-soft);color:var(--ad-danger-text)}',
+    '.wc-chip--leave-pending{background:var(--ad-danger-soft);color:var(--ad-danger-text);opacity:.65}',
     '.wc-more{font-size:11px;color:var(--ad-text-2)}',
     '.wc-legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:12px;color:var(--ad-text-2)}',
     '.wc-legend span{display:inline-flex;align-items:center;gap:6px}',
@@ -129,6 +135,7 @@
     '.wc-chip--in_progress{opacity:1}',
     '.wc-chip--pending{background:var(--ad-accent)}',
     '.wc-chip--completed{background:var(--ad-border-strong)}',
+    '.wc-chip--leave,.wc-chip--leave-pending{background:var(--ad-danger)}',
     '.wc-more{font-size:10px}',
     '.wc-title{font-size:16px;min-width:0}',
     '}'
@@ -148,7 +155,7 @@
     el: null, lang: 'zh', workerId: null, seq: 0,
     loading: false, error: null, noTeam: false,
     variant: 'worker', loader: null, actions: null, actionMap: {},
-    orders: [], team: null,
+    orders: [], leaves: [], team: null,
     view: null, selected: null
   };
 
@@ -170,6 +177,17 @@
     return state.orders.filter(function (o) {
       return o.startDate <= day && day <= (o.endDate || o.startDate);
     });
+  }
+
+  // 某天落在哪些請假內（只有工人版有）
+  function leavesOn(day) {
+    return state.leaves.filter(function (l) { return l.startDate <= day && day <= (l.endDate || l.startDate); });
+  }
+
+  function leaveText(l) {
+    var tx = t();
+    var slot = tx.slots && tx.slots[l.timeSlot] ? '・' + String(tx.slots[l.timeSlot]).split(' ')[0] : '';
+    return (l.status === 'approved' ? tx.leaveApproved : tx.leavePending) + '：' + (l.leaveTypeLabel || '') + slot;
   }
 
   async function load() {
@@ -196,10 +214,11 @@
         var pm = function (o) { return o.timeSlot === 'afternoon' ? 1 : 0; };   // 同一天：上午（含整天）在前、下午在後
         return String(a.startDate).localeCompare(String(b.startDate)) || pm(a) - pm(b) || String(a.id).localeCompare(String(b.id));
       });
-      state.noTeam = state.variant === 'worker' && !(data && data.teamId) && !state.orders.length;
+      state.leaves = state.variant === 'worker' ? ((data && data.leaves) || []) : [];
+      state.noTeam = state.variant === 'worker' && !(data && data.teamId) && !state.orders.length && !state.leaves.length;
     } catch (e) {
       if (seq !== state.seq) return;
-      state.orders = []; state.team = null; state.error = true;
+      state.orders = []; state.leaves = []; state.team = null; state.error = true;
     }
     state.loading = false;
     render();
@@ -294,11 +313,14 @@
       var day = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
       var key = ymd(day);
       var list = ordersOn(key);
+      var offs = leavesOn(key);
       var cls = 'wc-day' + (day.getMonth() !== m ? ' is-out' : '') + (key === today ? ' is-today' : '') + (key === state.selected ? ' is-sel' : '');
-      var chips = list.slice(0, 2).map(function (o) {
+      var chips = offs.slice(0, 1).map(function (l) {
+        return '<span class="wc-chip wc-chip--' + (l.status === 'approved' ? 'leave' : 'leave-pending') + '">' + esc(tx.leave) + '</span>';
+      }).join('') + list.slice(0, offs.length ? 1 : 2).map(function (o) {
         return '<span class="wc-chip wc-chip--' + esc(o.status) + '">' + esc(short(o.cropName)) + '</span>';
-      }).join('') + (list.length > 2 ? '<span class="wc-more">+' + (list.length - 2) + '</span>' : '');
-      var label = key + (list.length ? '：' + list.map(function (o) { return short(o.cropName); }).join('、') : '');
+      }).join('') + (list.length > (offs.length ? 1 : 2) ? '<span class="wc-more">+' + (list.length - (offs.length ? 1 : 2)) + '</span>' : '');
+      var label = key + (offs.length || list.length ? '：' + offs.map(leaveText).concat(list.map(function (o) { return short(o.cropName); })).join('、') : '');
       cells.push('<button type="button" class="' + cls + '" data-wc-day="' + key + '" aria-label="' + esc(label) + '"' + (key === state.selected ? ' aria-pressed="true"' : '') + '>' +
         '<span class="wc-num">' + day.getDate() + '</span>' + chips + '</button>');
     }
@@ -309,18 +331,23 @@
       '<span><i style="background:var(--ad-primary-soft);border:1px solid var(--ad-primary)"></i>' + esc(tx.status.confirmed) + '</span>' +
       '<span><i style="background:var(--ad-accent-soft);border:1px solid var(--ad-accent)"></i>' + esc(tx.status.pending) + '</span>' +
       '<span><i style="background:var(--ad-surface-2);border:1px solid var(--ad-border-strong)"></i>' + esc(tx.status.completed) + '</span>' +
+      (state.variant === 'worker' ? '<span><i style="background:var(--ad-danger-soft);border:1px solid var(--ad-danger)"></i>' + esc(tx.leave) + '</span>' : '') +
       '</div>';
 
     // 選取日的工作明細
     var sel = parse(state.selected);
     var selList = ordersOn(state.selected);
+    var selLeaves = leavesOn(state.selected);
     var dayHtml = '<div class="wc-section"><h4 class="ad-num">' + esc(tx.dayTitle(sel.getMonth() + 1, sel.getDate(), tx.weekdays[sel.getDay()])) + '</h4>' +
+      selLeaves.map(function (l) {
+        return '<div class="ad-notice ' + (l.status === 'approved' ? 'ad-notice--danger' : 'ad-notice--warn') + '" style="margin-bottom:8px;">' + esc(leaveText(l)) + '</div>';
+      }).join('') +
       (selList.length
         ? '<div class="ad-list">' + selList.map(function (o) { return orderCard(o, true); }).join('') + '</div>' +
           selList.filter(function (o) { return o.hedgeLocation; }).slice(0, 1).map(function (o) {
             return '<div class="ad-notice ad-notice--warn" style="margin-top:8px;">' + esc(tx.hedge(o.hedgeLocation)) + (o.hedgeTask ? '（' + esc(o.hedgeTask) + '）' : '') + '</div>';
           }).join('')
-        : '<p class="ad-caption">' + esc(tx.dayEmpty) + '</p>') +
+        : (selLeaves.length ? '' : '<p class="ad-caption">' + esc(tx.dayEmpty) + '</p>')) +
       '</div>';
 
     // 接下來的工作：今天之後才開工的訂單（今天進行中的已在上面當日明細）
@@ -387,6 +414,10 @@
       } else {
         render();
       }
+    },
+    // 重讀目前的排班（工人送出或取消請假後）
+    reload: function () {
+      if (state.el && (state.loader || state.workerId)) load();
     },
     setLang: function (lang) {
       state.lang = TEXT[lang] ? lang : 'zh';

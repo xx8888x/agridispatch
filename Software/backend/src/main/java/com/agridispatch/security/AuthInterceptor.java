@@ -82,6 +82,8 @@ public class AuthInterceptor implements HandlerInterceptor {
             new String[]{"GET", "/api/legalize/summary"},        // 各農場黑轉白彙總（科技後台）
             new String[]{"POST", "/api/auth/reset-password"},
             new String[]{"GET", "/api/auth/accounts"},
+            new String[]{"GET", "/api/leaves"},                                    // 全部請假（合作社審核）
+            new String[]{"POST", "/api/leaves/*/approve"}, new String[]{"POST", "/api/leaves/*/reject"},
             new String[]{"*", "/api/dev/**"}
     );
 

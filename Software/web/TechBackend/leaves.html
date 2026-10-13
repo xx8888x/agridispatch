@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 AgriDispatch - 請假審核</title>
+  <script src="js/app-config.js"></script>
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AgriAuth) window.AgriAuth.requireRole(['admin_tech'], 'admin-login.html');
+  </script>
+  <!-- 設計系統：共用 demo 模式標記、圖示、抽屜 -->
+  <script src="js/agri-theme.js"></script>
+  <script src="js/vendor/lucide.min.js"></script>
+  <link rel="stylesheet" href="css/agri.css">
+</head>
+<body class="ad-body">
+
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner" style="max-width: 1080px;">
+      <a href="admin.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">營運後台</span>
+      </a>
+      <div class="ad-header__actions">
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()" aria-label="示範導覽"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span></button>
+        <a href="admin.html" class="ad-btn ad-btn--secondary ad-btn--sm"><i data-lucide="arrow-left" class="ad-icon ad-icon--sm"></i>回後台</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="ad-container" style="width: 100%; max-width: 1080px; padding-block: 24px 40px; display: flex; flex-direction: column; gap: 20px;">
+    <div>
+      <h1 class="ad-display">請假審核</h1>
+      <p class="ad-caption" style="margin-top: 6px; max-width: 780px;">核准後，請假期間（半天假只算該時段）在派工媒合視同撞期，不會被排入出工名單、指名或共享班表。若工人已排入重疊的訂單，系統會列出來，請到「派工媒合」改派並告知農場主。</p>
+      <p class="ad-caption" style="margin-top: 6px; max-width: 780px; color: var(--ad-accent-text);">【待確認】各假別的給薪、天數上限與證明文件依勞動基準法、勞工請假規則與性別平等工作法辦理；系統只記錄假別，不檢查額度、不影響薪資試算。</p>
+    </div>
+
+    <div class="ad-card" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+      <div class="ad-field" style="flex: 0 1 200px;">
+        <label class="ad-label" for="statusFilter">狀態</label>
+        <select id="statusFilter" class="ad-select">
+          <option value="pending">待審核</option>
+          <option value="approved">已核准</option>
+          <option value="rejected">已駁回</option>
+          <option value="cancelled">已取消</option>
+          <option value="">全部</option>
+        </select>
+      </div>
+      <div class="ad-field" style="flex: 1 1 220px;">
+        <label class="ad-label" for="q">搜尋</label>
+        <input id="q" type="search" class="ad-input" placeholder="工人姓名、工號、工班" autocomplete="off">
+      </div>
+      <span id="count" class="ad-caption" style="padding-bottom: 10px;"></span>
+    </div>
+
+    <div id="loadError" class="ad-notice ad-notice--danger" role="alert" hidden></div>
+    <div id="rows" class="ad-list"><p class="ad-caption">載入中…</p></div>
+  </main>
+
+  <!-- 核准／駁回／取消對話框 -->
+  <dialog id="decideDialog" class="ad-card" style="max-width: 460px; width: calc(100vw - 32px); border: 1px solid var(--ad-border); padding: 20px;">
+    <form id="decideForm" method="dialog" style="display: flex; flex-direction: column; gap: 14px;">
+      <h2 id="decideTitle" class="ad-heading"></h2>
+      <p id="decideWho" class="ad-caption"></p>
+      <div id="decideConflicts"></div>
+      <div class="ad-field">
+        <label id="decideNoteLabel" class="ad-label" for="decideNote">備註</label>
+        <input id="decideNote" type="text" class="ad-input" maxlength="200" autocomplete="off">
+      </div>
+      <div id="decideMsg" role="alert" hidden></div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button type="button" class="ad-btn ad-btn--ghost" onclick="closeDecide()">關閉</button>
+        <button id="decideBtn" type="submit" class="ad-btn ad-btn--primary">確定</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    const API = (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+    const demoNav = window.AgriTheme ? AgriTheme.demoNav() : { open() {} };
+    const PILL = { pending: 'ad-pill ad-pill--warn', approved: 'ad-pill ad-pill--ok', rejected: 'ad-pill', cancelled: 'ad-pill' };
+    const ACTIONS = {
+      approve: { title: '核准請假', note: '備註（選填，工人看得到）', btn: '核准', cls: 'ad-btn--primary', required: false },
+      reject: { title: '駁回請假', note: '駁回原因（必填，工人看得到）', btn: '駁回', cls: 'ad-btn--danger', required: true },
+      cancel: { title: '取消請假', note: '取消原因（選填）', btn: '取消這筆假', cls: 'ad-btn--danger', required: false }
+    };
+    let leaves = [];
+    let pending = null;   // { leave, action }
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    async function api(path, init) {
+      const res = await fetch(`${API}${path}`, init);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body.success === false) {
+        throw new Error(res.status === 403 ? '只有科技後台管理員可以審核請假' : (body.error || body.message || `HTTP ${res.status}`));
+      }
+      return body;
+    }
+
+    async function load() {
+      const err = document.getElementById('loadError');
+      const status = document.getElementById('statusFilter').value;
+      try {
+        leaves = (await api(`/leaves${status ? '?status=' + encodeURIComponent(status) : ''}`)).data || [];
+        err.hidden = true;
+      } catch (e) {
+        leaves = [];
+        err.textContent = `無法載入請假清單：${e instanceof TypeError ? '無法連線伺服器' : e.message}`;
+        err.hidden = false;
+      }
+      render();
+    }
+
+    function period(l) {
+      const p = l.startDate === l.endDate ? l.startDate : `${l.startDate}～${l.endDate}`;
+      return l.timeSlot === 'full_day' ? `${p}（${l.days} 天）` : `${p} ${l.timeSlotLabel}`;
+    }
+
+    function conflictHtml(l) {
+      if (!l.conflicts || !l.conflicts.length) return '';
+      return `<div class="ad-notice ad-notice--warn" style="margin-top: 8px; flex-direction: column; align-items: flex-start; gap: 4px;">
+          <div style="font-weight: 600;">已排入重疊的工作，核准後請改派：</div>
+          ${l.conflicts.map(c => `<div>${c.kind === 'roster' ? '共享班表' : '訂單'} <a href="${c.kind === 'roster' ? 'rosters.html' : 'matching.html'}" class="ad-num">${esc(c.id)}</a>（${esc(c.startDate.slice(5))}～${esc(c.endDate.slice(5))}）${esc(c.label || '')}${c.via === 'preferred' ? '・農場主指名' : ''}</div>`).join('')}
+        </div>`;
+    }
+
+    function render() {
+      const q = document.getElementById('q').value.trim().toLowerCase();
+      const list = leaves.filter(l => !q || [l.workerName, l.workerId, l.teamId, l.id].some(v => String(v || '').toLowerCase().includes(q)));
+      document.getElementById('count').textContent = `共 ${list.length} 筆`;
+      document.getElementById('rows').innerHTML = list.length ? list.map(l => `
+        <div class="ad-row" style="align-items: flex-start;">
+          <div class="ad-row__main">
+            <div class="ad-row__title" style="white-space: normal;">${esc(l.workerName || l.workerId)}（${esc(l.workerId)}${l.teamId ? '・' + esc(l.teamId) : ''}）・${esc(l.leaveTypeLabel)}</div>
+            <div class="ad-row__meta">${esc(period(l))}・${esc(l.id)}${l.reason ? '・事由：' + esc(l.reason) : ''}</div>
+            ${l.decisionNote ? `<div class="ad-caption" style="margin-top: 4px;">備註：${esc(l.decisionNote)}</div>` : ''}
+            ${conflictHtml(l)}
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0;">
+            <span class="${PILL[l.status] || 'ad-pill'}">${esc(l.statusLabel)}</span>
+            <div style="display: flex; gap: 6px;">
+              ${l.status === 'pending' ? `<button type="button" class="ad-btn ad-btn--primary ad-btn--sm" data-act="approve" data-id="${esc(l.id)}">核准</button>
+                <button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" data-act="reject" data-id="${esc(l.id)}">駁回</button>` : ''}
+              ${l.status === 'approved' ? `<button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-act="cancel" data-id="${esc(l.id)}">取消</button>` : ''}
+            </div>
+          </div>
+        </div>`).join('') : '<p class="ad-caption">沒有符合的請假。</p>';
+    }
+
+    function showMsg(text, kind) {
+      const el = document.getElementById('decideMsg');
+      el.className = `ad-notice ad-notice--${kind || 'danger'}`;
+      el.textContent = text;
+      el.hidden = !text;
+    }
+
+    function openDecide(id, action) {
+      const leave = leaves.find(l => l.id === id);
+      if (!leave) return;
+      pending = { leave, action };
+      const a = ACTIONS[action];
+      document.getElementById('decideTitle').textContent = a.title;
+      document.getElementById('decideWho').textContent = `${leave.workerName || leave.workerId}・${leave.leaveTypeLabel}・${period(leave)}`;
+      document.getElementById('decideConflicts').innerHTML = action === 'approve' ? conflictHtml(leave) : '';
+      document.getElementById('decideNoteLabel').textContent = a.note;
+      document.getElementById('decideNote').value = '';
+      const btn = document.getElementById('decideBtn');
+      btn.className = `ad-btn ${a.cls}`;
+      btn.textContent = a.btn;
+      btn.disabled = false;
+      showMsg('');
+      document.getElementById('decideDialog').showModal();
+    }
+    function closeDecide() { document.getElementById('decideDialog').close(); }
+
+    document.getElementById('rows').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-act]');
+      if (b) openDecide(b.dataset.id, b.dataset.act);
+    });
+    document.getElementById('statusFilter').addEventListener('change', load);
+    document.getElementById('q').addEventListener('input', render);
+
+    document.getElementById('decideForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!pending) return;
+      const a = ACTIONS[pending.action];
+      const note = document.getElementById('decideNote').value.trim();
+      if (a.required && !note) return showMsg('請填寫駁回原因。');
+      const btn = document.getElementById('decideBtn');
+      btn.disabled = true;
+      try {
+        const body = await api(`/leaves/${encodeURIComponent(pending.leave.id)}/${pending.action}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note })
+        });
+        const l = body.data || {};
+        const left = (l.conflicts || []).map(c => c.id).join('、');
+        showMsg(`${body.message || '已完成'}。` + (pending.action === 'approve' && left ? `請記得改派：${left}` : ''), left && pending.action === 'approve' ? 'warn' : 'ok');
+        btn.textContent = '已完成';
+        await load();
+      } catch (err) {
+        btn.disabled = false;
+        showMsg(err instanceof TypeError ? '無法連線伺服器，未完成。' : `未完成：${err.message}`);
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+      load();
+    });
+  </script>
+</body>
+</html>

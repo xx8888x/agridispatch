@@ -4,8 +4,10 @@ import com.agridispatch.common.ApiException;
 import com.agridispatch.entity.DispatchTeam;
 import com.agridispatch.entity.Order;
 import com.agridispatch.entity.Worker;
+import com.agridispatch.entity.WorkerLeave;
 import com.agridispatch.repository.DispatchTeamRepository;
 import com.agridispatch.repository.OrderRepository;
+import com.agridispatch.repository.WorkerLeaveRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -21,6 +23,7 @@ import java.util.*;
  * 已取消、尚未排定工期（無 startDate）的訂單不列入。
  *
  * 只回現場需要的欄位：不含金額、定金、方案等計價資料，也不含農場主電話（現場聯絡一律找帶隊對口）。
+ * 另附本人待審核與已核准的請假（leaves），行事曆標示用。
  *
  * 另提供本工班名冊（GET /api/workers/{id}/team-members，領班組員簽核名冊用）：
  * 只回同工班其他成員的工號、姓名、國籍、身分別（tier）、工作型態與是否為領班，不含證號、電話、薪資與保險資料。
@@ -33,12 +36,14 @@ public class WorkerScheduleService {
     private final WorkerService workerService;
     private final OrderRepository orderRepository;
     private final DispatchTeamRepository teamRepository;
+    private final WorkerLeaveRepository leaveRepository;
 
     public WorkerScheduleService(WorkerService workerService, OrderRepository orderRepository,
-                                 DispatchTeamRepository teamRepository) {
+                                 DispatchTeamRepository teamRepository, WorkerLeaveRepository leaveRepository) {
         this.workerService = workerService;
         this.orderRepository = orderRepository;
         this.teamRepository = teamRepository;
+        this.leaveRepository = leaveRepository;
     }
 
     /**
@@ -80,6 +85,22 @@ public class WorkerScheduleService {
         data.put("from", fromDate == null ? null : fromDate.toString());
         data.put("to", toDate == null ? null : toDate.toString());
         data.put("items", items);
+        List<Map<String, Object>> leaves = new ArrayList<>();
+        for (WorkerLeave l : leaveRepository.findByWorkerIdAndStatusIn(worker.getId(), List.of(WorkerLeave.PENDING, WorkerLeave.APPROVED))) {
+            if (fromDate != null && l.getEndDate().isBefore(fromDate)) continue;
+            if (toDate != null && l.getStartDate().isAfter(toDate)) continue;
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", l.getId());
+            m.put("leaveType", l.getLeaveType());
+            m.put("leaveTypeLabel", LeaveService.TYPE_LABELS.getOrDefault(l.getLeaveType(), l.getLeaveType()));
+            m.put("startDate", l.getStartDate().toString());
+            m.put("endDate", l.getEndDate().toString());
+            m.put("timeSlot", l.getTimeSlot());
+            m.put("status", l.getStatus());
+            leaves.add(m);
+        }
+        leaves.sort(Comparator.comparing(m -> m.get("startDate").toString()));
+        data.put("leaves", leaves);
         return data;
     }
 

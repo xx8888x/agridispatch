@@ -848,12 +848,28 @@
     }
 
     async function fetchPayroll(workerId) {
+      let res;
       try {
-        const res = await fetch(`${API_BASE}/workers/${encodeURIComponent(workerId)}/payroll`);
-        const body = await res.json().catch(() => ({}));
-        if (res.ok && body.success && body.data) return body.data;
-      } catch (e) { /* 連不上後端：走離線複本 */ }
-      return localPayroll();
+        res = await fetch(`${API_BASE}/workers/${encodeURIComponent(workerId)}/payroll`);
+      } catch (e) {
+        // 連不上後端：只有 demo 離線展示用試算複本；正式版如實顯示錯誤
+        if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode === 'production') throw new Error('無法連線伺服器，請稍後再試');
+        return localPayroll();
+      }
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.success && body.data) return body.data;
+      // 403（看別人的薪資）等，如實顯示，不編數字；後端 403 只回代碼，換成看得懂的說明
+      throw new Error(res.status === 403 ? '沒有權限查看這位工人的薪資' : (body.error || `HTTP ${res.status}`));
+    }
+
+    function renderPayrollError(msg) {
+      payrollData = null;
+      const net = document.getElementById('payNet');
+      if (net) net.textContent = '—';
+      ['payEarnings', 'payDeductions', 'payHistory'].forEach((id) => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+      ['payDate', 'payBank'].forEach((id) => { const el = document.getElementById(id); if (el) el.textContent = ''; });
+      const note = document.getElementById('payNote');
+      if (note) note.textContent = `無法取得薪資資料：${msg}`;
     }
 
     function payRow(title, meta, amount, cls) {
@@ -1017,7 +1033,7 @@
       loadTaskCard(wid);
       loadAttendanceSummary(wid);
       loadLegalStatus(wid);
-      fetchPayroll(wid).then(renderPayroll);
+      fetchPayroll(wid).then(renderPayroll).catch((e) => renderPayrollError(e.message));
     });
   </script>
 </body>

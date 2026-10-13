@@ -1257,56 +1257,103 @@
       const customerLocation = document.getElementById('dmCustomerLocation').value.trim();
       const customerDate = document.getElementById('dmCustomerDate').value;
       const paymentMethodRadio = document.querySelector('input[name="dmPaymentMethod"]:checked');
-      const paymentMethod = paymentMethodRadio ? paymentMethodRadio.value : '農會專用帳號轉帳';
+      const paymentMethod = paymentMethodRadio ? paymentMethodRadio.value : '農會虛擬帳號轉帳';
 
-      const orderId = `ORD-DM-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-
-      const orderData = {
-        id: orderId,
-        farmerName: customerName,
-        farmerPhone: customerPhone,
-        farmLocation: customerLocation,
-        cropName: pkg.cropName,
-        categoryName: `${pkg.catName} (${pkg.title})`,
-        startDate: customerDate,
-        acreage: pkg.acreage,
-        finalAmount: pkg.discountPrice,
-        depositAmount: pkg.deposit,
-        foremanName: '智慧派遣調度總台 (專屬小工頭)',
-        status: 'confirmed',
-        paymentMethod: paymentMethod,
-        source: '產品文宣 DM 專案購買',
-        createdAt: new Date().toISOString().replace('T', ' ').substring(0, 16)
+      const auth = window.AgriAuth;
+      const api =(auth && auth.API_BASE) || '/api';
+      const isDemo = !auth || auth.MODE !== 'production';
+      const btn = document.getElementById('dmSubmitBtn');
+      const btnLabel = btn.textContent;
+      const fail = (msg, needLogin) => {
+        showDmPurchaseError(msg, needLogin);
+        btn.disabled = false;
+        btn.textContent = btnLabel;
       };
+      showDmPurchaseError('');
 
-      // 1. 本地儲存
-      try {
-        let orders = JSON.parse(localStorage.getItem('agri_orders') || '[]');
-        orders.unshift(orderData);
-        localStorage.setItem('agri_orders', JSON.stringify(orders));
-      } catch (e) {
-        console.warn('LocalStorage save failed', e);
+      // 下單要農場主身分：demo 模式自動換成示範農場主；正式版未登入就請他先登入，不送出
+      const isFarmer = () => !!(auth && auth.getToken() && (auth.getUser() || {}).role === 'farmer');
+      if (!isFarmer()) {
+        if (isDemo && auth) {
+          auth.clearSession();
+          await auth.ensureDemoLogin('farmer');
+        }
+        if (!isFarmer() && !isDemo) {
+          fail('請先以農場主帳號登入，再購買工時包。', true);
+          return;
+        }
       }
 
-      // 2. 後端 API
+      btn.disabled = true;
+      btn.textContent = '送出中…';
+
+      // 工時包的作物、類別、面積、價格、定金都由後端依 packageId 決定；前端只帶聯絡資料與工期
+      let saved;
       try {
-        await fetch(`${(window.AgriAuth && window.AgriAuth.API_BASE) || '/api'}/orders`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(orderData)
+        const post = async (path, body) => {
+          const res = await fetch(`${api}${path}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          const result = await res.json().catch(() => ({}));
+          if (!res.ok || result.success === false) {
+            const err = new Error(result.error || result.message || `HTTP ${res.status}`);
+            err.status = res.status;
+            throw err;
+          }
+          return result.data || {};
+        };
+        const quote = await post('/orders/calculate', { packageId: pkgId, timeSlot: 'full_day' });
+        saved = await post('/orders', {
+          packageId: pkgId,
+          farmerName: customerName,
+          phone: customerPhone,
+          farmLocation: customerLocation,
+          timeSlot: 'full_day',
+          startDate: customerDate,
+          endDate: dmEndDate(customerDate, quote.estDays),
+          foremanNotes: `產品文宣 DM 專案購買（付款方式：${paymentMethod}）`
         });
       } catch (e) {
-        console.warn('Backend API unreachable', e);
+        console.warn('DM purchase failed', e);
+        if (e.status === 401 || e.status === 403) {
+          fail('目前登入的身分不能下單，請以農場主帳號登入。', true);
+        } else if (e.status) {
+          fail(`訂單未送出：${e.message}`);
+        } else {
+          fail('無法連線伺服器，訂單未送出，請稍後再試。');
+        }
+        return;
       }
 
-      // 3. 切換至成功畫面
-      document.getElementById('dmSuccessOrderId').innerText = orderId;
+      btn.disabled = false;
+      btn.textContent = btnLabel;
+
+      // 以後端建立的訂單為準顯示編號與定金
+      const deposit = Number(saved.depositAmount) || 0;
+      document.getElementById('dmSuccessOrderId').innerText = saved.id || '—';
       document.getElementById('dmSuccessPkgTitle').innerText = pkg.title;
-      document.getElementById('dmSuccessDeposit').innerText = `NT$ ${pkg.deposit.toLocaleString()}`;
+      document.getElementById('dmSuccessDeposit').innerText = deposit > 0 ? `NT$ ${deposit.toLocaleString()}` : '免定金';
 
       document.getElementById('dmPurchaseFormContainer').classList.add('hidden');
       document.getElementById('dmPurchaseSuccessView').classList.remove('hidden');
 
+    }
+
+    // 完工日 = 開工日 + 建議天數 - 1（含開工當天），與 farmer.html 的 endDateFor 相同
+    function dmEndDate(startStr, estDays) {
+      const d = new Date(startStr + 'T00:00:00');
+      d.setDate(d.getDate() + Math.max(1, Math.ceil(estDays || 1)) - 1);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function showDmPurchaseError(msg, needLogin) {
+      const box = document.getElementById('dmPurchaseError');
+      if (!box) return;
+      box.hidden = !msg;
+      document.getElementById('dmPurchaseErrorText').textContent = msg || '';
+      document.getElementById('dmPurchaseLoginLink').hidden = !needLogin;
     }
 
     // 購買後「轉入預約表單」：預約表單已統一放在 farmer.html，這裡只做導向
@@ -1450,6 +1497,10 @@
 
             <!-- Submit CTA -->
             <div class="pt-2 space-y-2">
+              <div id="dmPurchaseError" hidden role="alert" class="p-3 rounded-xl bg-rose-950/40 border border-rose-500/50 text-rose-200 text-xs space-y-1.5">
+                <p id="dmPurchaseErrorText"></p>
+                <a id="dmPurchaseLoginLink" hidden href="farmer-login.html" class="inline-block font-bold text-amber-300 underline">前往農場主登入</a>
+              </div>
               <button type="submit" id="dmSubmitBtn" class="w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer">
                 確認購買並送出訂單（即刻鎖單）
               </button>
@@ -1484,7 +1535,9 @@
               <span class="text-slate-400">今日應繳定金 (20%)：</span>
               <span id="dmSuccessDeposit" class="font-mono font-bold text-emerald-400 text-sm">NT$ 3,780</span>
             </div>
-            <div class="pt-1 text-[11px] text-slate-300 space-y-1">
+            <p class="pt-1 text-[11px] text-slate-300">定金請到農場主頁「我的訂單」付款，付款完成才會排定出工班底。</p>
+            <!-- 示範用的虛擬帳號，正式版不顯示 -->
+            <div data-demo-only class="pt-1 text-[11px] text-slate-300 space-y-1">
               <p class="font-semibold text-amber-300">農會專屬繳費虛擬帳號：</p>
               <div class="p-2.5 rounded-xl bg-slate-900 font-mono text-emerald-400 text-xs tracking-wider flex items-center justify-between">
                 <span>95102-000-88234567</span>

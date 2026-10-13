@@ -1403,8 +1403,10 @@
     if (loose) return respond(loose.s, loose.b);
     var keys = Object.keys(FIX), prefix = method + ' ' + p + ' ';
     for (var i = 0; i < keys.length; i++) if (keys[i].indexOf(prefix) === 0) return respond(FIX[keys[i]].s, FIX[keys[i]].b);
-    // 沒錄到的動作：只回成功，不帶 data，讓頁面沿用自己的本地更新／離線 fallback
-    return respond(200, { success: true, message: '示範模式：已模擬送出' });
+    // 沒錄到的動作：只回成功，不帶 data，讓頁面沿用自己的本地更新／離線 fallback。
+    // 這類動作正式版不一定會成功（權限、欄位驗證都沒跑過），在主控台留警告方便開發時追查
+    if (window.console) console.warn('[demo-mock] 未錄製的寫入，僅模擬成功（正式版請實測）：' + method + ' ' + sp.path);
+    return respond(200, { success: true, mocked: true, message: '示範模式：已模擬送出' });
   }
 
   function handle(method, p, bodyText) {

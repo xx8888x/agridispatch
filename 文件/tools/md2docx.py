@@ -50,7 +50,7 @@ def add_inline(par, text, size=None, bold=False):
             set_font(par.add_run(part[2:-2]), size=size, bold=True)
         elif part.startswith("`") and part.endswith("`"):
             set_font(par.add_run(part[1:-1]), name=MONO, size=size, bold=bold, color="9C2F2F")
-        elif part.startswith("["):
+        elif part.startswith("[") and re.match(r"\[([^\]]+)\]\(([^)]+)\)", part):
             m = re.match(r"\[([^\]]+)\]\(([^)]+)\)", part)
             set_font(par.add_run(m.group(1)), size=size, bold=bold, color="1F5FA8")
         else:

@@ -4,11 +4,13 @@ import com.agridispatch.common.ApiException;
 import com.agridispatch.entity.LineUser;
 import com.agridispatch.entity.Order;
 import com.agridispatch.repository.OrderRepository;
+import com.agridispatch.security.AuthContext;
 import com.agridispatch.common.LaborConstants;
 import com.agridispatch.config.AgriSettings;
 import com.agridispatch.service.CalendarService;
 import com.agridispatch.service.LineBindingService;
 import com.agridispatch.service.LineBotClient;
+import com.agridispatch.service.LineWorkerQueryService;
 import com.agridispatch.service.OrderService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -33,6 +35,7 @@ public class LineController {
     private final AgriSettings settings;
     private final LineBindingService lineBindingService;
     private final LineBotClient lineBotClient;
+    private final LineWorkerQueryService workerQueryService;
 
     /** LINE Channel Secret / Access Token：由 agri.line.* 或環境變數 LINE_CHANNEL_SECRET / LINE_CHANNEL_ACCESS_TOKEN 提供，預設空值 */
     private volatile String channelSecret;
@@ -43,6 +46,7 @@ public class LineController {
                           AgriSettings settings,
                           LineBindingService lineBindingService,
                           LineBotClient lineBotClient,
+                          LineWorkerQueryService workerQueryService,
                           @Value("${agri.line.channel-secret:}") String channelSecret,
                           @Value("${agri.line.channel-access-token:}") String channelAccessToken) {
         this.orderRepository = orderRepository;
@@ -50,6 +54,7 @@ public class LineController {
         this.settings = settings;
         this.lineBindingService = lineBindingService;
         this.lineBotClient = lineBotClient;
+        this.workerQueryService = workerQueryService;
         this.channelSecret = channelSecret == null ? "" : channelSecret.trim();
         this.channelAccessToken = channelAccessToken == null ? "" : channelAccessToken.trim();
     }
@@ -102,7 +107,9 @@ public class LineController {
 
     /**
      * 依帳號與身分限制可回答的動作（規格 4.1、4.2）：
-     * 農場主帳號 orders（限已綁定、只回本人訂單）、rates、calendar；其餘與工作者帳號暫回空清單，由 LINE Bot 用本地卡片
+     * 農場主帳號 orders（限已綁定、只回本人訂單）、rates、calendar，回 messages（LINE 訊息物件）；
+     * 工作者帳號 task、weather、salary（限已綁定、只回本人），回 data（本人資料，由 LINE Bot 依語言組卡片，見 LineWorkerQueryService）；
+     * 其餘回空清單、不帶 data
      */
     @PostMapping("/internal/query")
     public ResponseEntity<?> internalQuery(@RequestHeader(value = "X-Internal-Key", required = false) String key,
@@ -131,7 +138,16 @@ public class LineController {
                 default -> { }
             }
         }
-        return ResponseEntity.ok(Map.of("success", true, "messages", messages));
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("success", true);
+        res.put("messages", messages);
+        if (LineUser.CHANNEL_WORKER.equals(channel)) {
+            lineBindingService.boundUser(channel, str(req.get("lineUserId")))
+                    .filter(u -> AuthContext.ROLE_WORKER_LOCAL.equals(u.getRole()) || AuthContext.ROLE_WORKER_FOREIGN.equals(u.getRole()))
+                    .flatMap(u -> workerQueryService.query(u.getRefId(), action))
+                    .ifPresent(d -> res.put("data", d));
+        }
+        return ResponseEntity.ok(res);
     }
 
     private void requireInternalKey(String provided) {

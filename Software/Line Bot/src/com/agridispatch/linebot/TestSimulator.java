@@ -214,6 +214,7 @@ public class TestSimulator {
         np.put("crop", "芒果"); np.put("period", "2026-10-06 ～ 2026-10-08"); np.put("amount", 10584);
         np.put("weather", "暴雨警戒"); np.put("orders", List.of("ORD-2026-001")); np.put("date", "2026-10-03");
         np.put("place", "枋山"); np.put("indoor", true);
+        np.put("month", "2026-09"); np.put("netPay", 36850); np.put("payDate", "2026-10-05");
         for (String type : NotifyMessages.FARMER_TYPES) {
             failed += expectEq("推播 farmer " + type, String.valueOf(validMessages(NotifyMessages.render(F, type, "zh", np))), "true");
         }
@@ -225,6 +226,8 @@ public class TestSimulator {
         failed += expect("推播 明日出工（越語）", NotifyMessages.render(W, "tomorrow_task", "vi", np), 0, "Thông báo đi làm ngày mai");
         failed += expect("推播 天候室內（印尼語）", NotifyMessages.render(W, "weather_worker", "id", np), 0, "dalam ruangan");
         failed += expect("推播 定金入帳金額", NotifyMessages.render(F, "deposit_paid", "zh", np), 0, "NT$ 10,584");
+        failed += expect("推播 薪資入帳實發金額", NotifyMessages.render(W, "salary_paid", "zh", np), 0, "NT$ 36,850");
+        failed += expect("推播 薪資入帳（越語）", NotifyMessages.render(W, "salary_paid", "vi", np), 0, "Thông báo lương đã chuyển");
         failed += workerCardChecks();
         failed += farmerCardChecks();
         failed += expectEq("工作者帳號不支援農場主通知",String.valueOf(NotifyMessages.supports(W, "order_status")), "false");

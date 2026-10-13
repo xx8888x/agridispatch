@@ -7,7 +7,7 @@
 > **功能下架（2026-10-12）**：外籍移工（外勞）功能暫時下架，平台先以本國勞工（正職、兼職、中高齡、打工、學生打工）為主。Line Bot 以功能開關 `FEATURE_FOREIGN_WORKERS`（環境變數；或 `config.properties` 的 `feature.foreign-workers`）處理、不刪程式，**預設 `false`**，與前端 `features.foreignWorkers` 一致。關閉時工作者帳號：綁定卡只有本國籍入口、不產生 `role=worker_foreign` 的綁定網址；不出語言選擇與三語歡迎、不辨識語言切換、不採用 LINE 介面語言，回覆與推播一律繁體中文；已綁定為 `worker_foreign` 的舊使用者只回「外籍工作者服務暫停中，請洽合作社或帶班師傅」與聯絡合作社卡，選單回帳號預設 `worker_guest`；舊選單送來 `a=lang`、`a=lang_help` 時回「目前僅提供繁體中文介面」或使用說明。圖文選單 `worker_guest` 改為中文功能格（今日任務、上下班打卡、薪資明細、帳號綁定、使用說明、聯絡合作社），`worker_main_zh` 的「語言・說明」改「使用說明」（`a=help`）。**恢復方式**：設 `FEATURE_FOREIGN_WORKERS=true`（或 `feature.foreign-workers=true`）重啟 Line Bot；圖文選單另把 `tools/make_rich_menus.py` 的 `FEATURE_FOREIGN_WORKERS` 改 `True`、重新產生並以 `RichMenuUploader` 上傳。下文第參、肆、捌、玖章所述多語與外籍流程為開關打開時的行為。後端 `worker_foreign` 角色與資料未變動。
 > **狀態（2026-10-13 對照程式更新）**：P1～P5 已實作，並以 `TestSimulator --check` 與 `tools/acceptance_mock.py`（15/15）在模擬模式驗收；01、02、03 文件與 `Software/Line Bot/README.md` 已同步。已完成：Line Bot `/callback/farmer`、`/callback/worker` 雙 webhook 與 `FarmerDispatcher`／`WorkerDispatcher`（舊 `/callback`、`/webhook` 過渡路徑仍保留）；後端 `line_users`（6.5）、`LineBindingService`、內部端點 `/api/line/internal/identity`／`follow-state`／`query`、綁定 API（6.4）、LIFF ID token 驗證；Line Bot 內部端點 `/internal/richmenu/link`、`/internal/notify`、`/internal/push`；6 份圖文選單與上傳工具；LIFF 綁定頁、科技後台 `admin-line.html`、模擬器雙帳號；推播（第柒章 7.0）；工作者語音（5.5，預設關閉）；後端舊 `POST /api/line/webhook` 已停用（回 410）。
 >
-> **尚未完成**：(1) P0 兩個官方帳號與 LINE Login／LIFF 尚未申請，實機驗收（P6、`07_` 手冊）未做；(2) 農場主 F-01 我的訂單、F-04 天候避險已改為本人資料（2026-10-13：後端 `internal/query` 回 `data`，Line Bot `FarmerCards` 組卡；訂單卡移除寫死的工班、司機電話與不存在的 GPS 網址；正式模式查不到時請農場主到網站查看，只有 Mock 模式才退回示範卡片）；科技後台 LINE 體驗頁的示範推播（`/api/line/simulate-push`）中，天候快訊、早鳥、薪資卡仍為路演用固定內容；(3) 工作者 W-01 今日任務、W-03 天候集合、W-04 薪資已改為本人資料（2026-10-13：後端 `internal/query` 回 `data`，Line Bot `WorkerCards` 依語言組卡；正式模式查不到時請使用者開工人頁，只有 Mock 模式才退回示範卡片）；W-04 為試算（勞健保概估），8,800 元就業獎勵適用對象仍【待確認】；W-02 打卡、W-05 出勤以卡片連結開啟工人頁，不在聊天室內列出；(4) 薪資入帳推播待發薪功能；(5) ~~Flex 範本檔名改為 `<功能代碼>_<lang>.json`~~ 2026-10-13 已改（`F-01_zh`、`F-03_zh`、`F-04_zh`、`W-01_{zh,vi,id}`、`W-01-machinery_zh`、`W-04_zh`；現僅作 Mock 模式示範卡片）；(6) `line_messages` 未啟用。另：黑轉白（F-02）亦有功能開關 `FEATURE_LEGALIZE`（預設 `false`，關閉時回暫停說明）。第壹章 1.1 為拆分前的問題紀錄、第拾壹章為當時規劃的變更範圍，保留供追溯。
+> **尚未完成**：(1) P0 兩個官方帳號與 LINE Login／LIFF 尚未申請，實機驗收（P6、`07_` 手冊）未做；(2) 農場主 F-01 我的訂單、F-04 天候避險已改為本人資料（2026-10-13：後端 `internal/query` 回 `data`，Line Bot `FarmerCards` 組卡；訂單卡移除寫死的工班、司機電話與不存在的 GPS 網址；正式模式查不到時請農場主到網站查看，只有 Mock 模式才退回示範卡片）；科技後台 LINE 體驗頁的示範推播（`/api/line/simulate-push`）中，天候快訊、早鳥、薪資卡仍為路演用固定內容；(3) 工作者 W-01 今日任務、W-03 天候集合、W-04 薪資已改為本人資料（2026-10-13：後端 `internal/query` 回 `data`，Line Bot `WorkerCards` 依語言組卡；正式模式查不到時請使用者開工人頁，只有 Mock 模式才退回示範卡片）；W-04 為試算（勞健保概估），8,800 元就業獎勵適用對象仍【待確認】；W-02 打卡、W-05 出勤以卡片連結開啟工人頁，不在聊天室內列出；(4) 薪資入帳推播改為後台手動發送（2026-10-13：`POST /api/line/notify/salary-paid`，金額由後台填實發數字，系統仍無發薪作業）；(5) ~~Flex 範本檔名改為 `<功能代碼>_<lang>.json`~~ 2026-10-13 已改（`F-01_zh`、`F-03_zh`、`F-04_zh`、`W-01_{zh,vi,id}`、`W-01-machinery_zh`、`W-04_zh`；現僅作 Mock 模式示範卡片）；(6) `line_messages` 未啟用。另：黑轉白（F-02）亦有功能開關 `FEATURE_LEGALIZE`（預設 `false`，關閉時回暫停說明）。第壹章 1.1 為拆分前的問題紀錄、第拾壹章為當時規劃的變更範圍，保留供追溯。
 
 ---
 
@@ -355,7 +355,7 @@ flowchart LR
 
 ## 柒、 推播規格
 
-本章定義拆帳號後的推播歸屬，已於 P5 實作（見 7.0；薪資入帳除外）。
+本章定義拆帳號後的推播歸屬，已於 P5 實作（見 7.0；薪資入帳 2026-10-13 改為後台手動觸發）。
 
 | 通知 | 帳號 | 對象 | 觸發 | 方式 |
 |---|---|---|---|---|
@@ -364,7 +364,7 @@ flowchart LR
 | 天候影響訂單 | 農場主 | 受影響訂單的農場主 | 科技後台發布天候狀態 | Multicast |
 | 明日出工通知 | 工作者 | 隔日出工名單成員 | 每日排程【待確認：時間】 | Multicast，依語言分組，每組一則 |
 | 天候集合／接駁變更 | 工作者 | 受影響訂單的出工名單成員 | 科技後台發布 | Multicast，依語言分組 |
-| 薪資入帳 | 工作者 | 本人 | 發薪作業完成 | Push |
+| 薪資入帳 | 工作者 | 本人 | 合作社撥款後由後台手動發送（系統尚無發薪作業） | Push |
 | 方案行銷（早鳥等） | 農場主 | 全部好友或分眾 | 科技後台手動 | Broadcast／Narrowcast，僅限農場主帳號 |
 
 規則：
@@ -381,7 +381,8 @@ flowchart LR
 - **觸發點**：訂單狀態 `OrderService.changeStatus`（只在狀態真的改變時）；定金 `OrderService.markDepositPaid`；天候 `DispatchController`（切換到 `warning`／`danger` 等級且情境改變時才通知；今天在工期內的已排定／施工中訂單，加上沒填工期的施工中訂單；工人依所屬工班是否改到室內分兩批）；明日出工 `@Scheduled`（`agri.line.notify.tomorrow-cron`，預設每天 18:00，同一天只自動發一次），隔天在工期內的已排定／施工中訂單。出工名單沒有時以分派工班成員代替（與派工前加保檢查相同）。
 - **時段**：`agri.line.notify.worker-hours`（預設 `07:00-20:00`，環境變數 `AGRI_LINE_WORKER_HOURS`）只限制工作者帳號，時段外略過、不補發，結果回報 `skippedQuietHours`；demo profile 設 `00:00-24:00` 方便路演。
 - **後台**：`GET /api/line/notify/status`、`POST /api/line/notify/tomorrow`、`POST /api/line/notify/farmer-broadcast`（皆僅 admin），操作介面在 `TechBackend/admin-line.html`。
-- **未做**：薪資入帳通知——系統目前沒有「發薪作業完成」事件，待發薪功能建立後掛上；推播紀錄不存表（`line_messages` 仍未啟用，見第拾肆章第 11 項）。
+- **薪資入帳通知**：系統沒有「發薪作業完成」事件（薪資只有試算），改由科技後台在合作社實際撥款後呼叫 `POST /api/line/notify/salary-paid`（僅 admin）`{month: yyyy-MM, payDate?, items: [{workerId, netPay}]}`，逐人推給本人（`salary_paid`，三語），金額一律用呼叫端提供的實發數字、不用試算值；回傳 `workerRecipients`、`skippedQuietHours`、`notReached`（未綁定／封鎖／外籍功能關閉）、`unknownWorkers`。時段外略過，可於時段內重送。日後建發薪功能時改由發薪完成事件呼叫 `LineNotifyService.salaryPaid`。後台尚無操作畫面。
+- **未做**：推播紀錄不存表（`line_messages` 仍未啟用，見第拾肆章第 11 項）。
 - 推播一律在背景執行，LINE Bot 離線或失敗不影響訂單、付款、天候操作本身。
 
 ### 7.1 推播則數估算

@@ -13,7 +13,7 @@ public final class NotifyMessages {
     private NotifyMessages() {}
 
     public static final Set<String> FARMER_TYPES = Set.of("order_status", "deposit_paid", "weather_farmer");
-    public static final Set<String> WORKER_TYPES = Set.of("tomorrow_task", "weather_worker");
+    public static final Set<String> WORKER_TYPES = Set.of("tomorrow_task", "weather_worker", "salary_paid");
 
     public static boolean supports(Channel channel, String type) {
         return (channel == Channel.FARMER ? FARMER_TYPES : WORKER_TYPES).contains(type);
@@ -83,6 +83,17 @@ public final class NotifyMessages {
                         I18n.t(lang, "notify.weather.label") + "：" + s(p, "weather"));
                 return List.of(FlexMessageBuilder.notifyBubble(title, "#1D4ED8", "智農派工（工作者）", title, lines,
                         FlexMessageBuilder.notifyPostbackButton(I18n.t(lang, "notify.weather.button"), "a=weather")));
+            }
+            case "salary_paid": {
+                // 後台在合作社實際撥款後手動發送，金額為實發數字（不是試算）
+                String title = I18n.t(lang, "notify.salary.title");
+                List<String> lines = new ArrayList<>();
+                lines.add(I18n.t(lang, "notify.salary.month") + "：" + s(p, "month"));
+                lines.add(I18n.t(lang, "notify.salary.amount") + "：NT$ " + money(p.get("netPay")));
+                if (!s(p, "payDate").isEmpty()) lines.add(I18n.t(lang, "notify.salary.paydate") + "：" + s(p, "payDate"));
+                lines.add(I18n.t(lang, "notify.salary.note"));
+                return List.of(FlexMessageBuilder.notifyBubble(title + " " + s(p, "month"), "#6D28D9", "智農派工（工作者）", title, lines,
+                        FlexMessageBuilder.notifyPostbackButton(I18n.t(lang, "notify.salary.button"), "a=salary")));
             }
             default:
                 return List.of();

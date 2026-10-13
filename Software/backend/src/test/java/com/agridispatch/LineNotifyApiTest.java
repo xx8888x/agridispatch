@@ -161,6 +161,46 @@ class LineNotifyApiTest extends ApiTestSupport {
     }
 
     @Test
+    void salaryPaidGoesToEachWorkerWithTheirOwnAmount() throws Exception {
+        String admin = login("admin_tech", "admin888");
+        Map<String, Object> body = Map.of("month", "2026-09", "payDate", "2026-10-05", "items", List.of(
+                Map.of("workerId", "W001", "netPay", 36850),
+                Map.of("workerId", "w006", "netPay", 35200),
+                Map.of("workerId", "W002", "netPay", 30000),
+                Map.of("workerId", "W999", "netPay", 30000)));
+        MvcResult r = call("POST", "/api/line/notify/salary-paid", admin, body);
+        assertEquals(200, r.getResponse().getStatus(), r.getResponse().getContentAsString());
+        JsonNode s = json(r);
+        assertEquals(2, s.get("workerRecipients").asInt());
+        assertEquals("W002", s.get("notReached").get(0).asText());
+        assertEquals("W999", s.get("unknownWorkers").get(0).asText());
+
+        // 一人一則，金額是各自的實發數字，語言依本人
+        List<RecordingLineBotClient.Call> calls = bot.of("worker", "salary_paid");
+        assertEquals(2, calls.size());
+        for (RecordingLineBotClient.Call c : calls) {
+            assertEquals(1, c.recipients().size());
+            String uid = c.recipients().get(0).get("lineUserId");
+            assertEquals(uid.equals(VN_UID) ? 36850L : 35200L, ((Number) c.params().get("netPay")).longValue());
+            assertEquals(uid.equals(VN_UID) ? "vi" : "id", c.recipients().get(0).get("lang"));
+            assertEquals("2026-09", c.params().get("month"));
+            assertEquals("2026-10-05", c.params().get("payDate"));
+        }
+
+        assertEquals(403, call("POST", "/api/line/notify/salary-paid", login("W001", "123456"), body).getResponse().getStatus());
+        for (Map<String, Object> bad : List.<Map<String, Object>>of(
+                Map.of("month", "2026-13", "items", List.of(Map.of("workerId", "W001", "netPay", 1))),
+                Map.of("month", "2026-09", "items", List.of()),
+                Map.of("month", "2026-09", "items", "W001"),
+                Map.of("month", "2026-09", "items", List.of("W001")),
+                Map.of("month", "2026-09", "items", List.of(Map.of("workerId", "W001", "netPay", -1))),
+                Map.of("month", "2026-09", "payDate", "10/05", "items", List.of(Map.of("workerId", "W001", "netPay", 1))),
+                Map.of("month", "2026-09", "items", List.of(Map.of("workerId", "W001", "netPay", 1), Map.of("workerId", "w001", "netPay", 2))))) {
+            assertEquals(400, call("POST", "/api/line/notify/salary-paid", admin, bad).getResponse().getStatus(), bad.toString());
+        }
+    }
+
+    @Test
     void notifyEndpointsAreAdminOnly() throws Exception {
         assertEquals(403, call("POST", "/api/line/notify/tomorrow", login("W001", "123456"), Map.of()).getResponse().getStatus());
         assertEquals(403, call("GET", "/api/line/notify/status", login("farmer", "123456"), null).getResponse().getStatus());

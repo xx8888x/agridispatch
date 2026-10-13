@@ -194,6 +194,68 @@ public class LineNotifyService {
         return s;
     }
 
+    /** 一次薪資入帳通知的上限人數 */
+    static final int SALARY_MAX_ITEMS = 500;
+
+    /**
+     * 薪資入帳通知（科技後台手動，規格第柒章）：合作社實際撥款後，後台帶「實發金額」逐人推給工人本人。
+     * 系統沒有發薪作業（薪資只有試算），所以金額一律由呼叫端提供，不用試算值，避免通知與實際入帳不符。
+     * items：[{workerId, netPay}]；month：yyyy-MM；payDate：可省略。時段外與外籍功能關閉的規則同其他工作者通知。
+     */
+    public Map<String, Object> salaryPaid(String month, String payDate, List<?> items) {
+        if (month == null || !month.matches("\\d{4}-(0[1-9]|1[0-2])")) {
+            throw com.agridispatch.common.ApiException.badRequest("month 格式須為 yyyy-MM");
+        }
+        if (payDate != null && !payDate.isBlank()) {
+            try {
+                LocalDate.parse(payDate.trim());
+            } catch (Exception e) {
+                throw com.agridispatch.common.ApiException.badRequest("payDate 格式須為 yyyy-MM-dd");
+            }
+        }
+        if (items == null || items.isEmpty() || items.size() > SALARY_MAX_ITEMS) {
+            throw com.agridispatch.common.ApiException.badRequest("items 須為 1～" + SALARY_MAX_ITEMS + " 筆");
+        }
+        Map<String, Double> pay = new LinkedHashMap<>();
+        for (Object o : items) {
+            Map<?, ?> it = o instanceof Map<?, ?> m ? m : Map.of();
+            String id = it.get("workerId") == null ? "" : String.valueOf(it.get("workerId")).trim().toUpperCase();
+            Object net = it.get("netPay");
+            double v;
+            try {
+                v = Double.parseDouble(String.valueOf(net));
+            } catch (Exception e) {
+                v = -1;
+            }
+            if (id.isEmpty() || v < 0 || v >= 1_000_000) {
+                throw com.agridispatch.common.ApiException.badRequest("每筆須有 workerId 與 0～999,999 的 netPay");
+            }
+            if (pay.put(id, v) != null) throw com.agridispatch.common.ApiException.badRequest("workerId 重複：" + id);
+        }
+        int recipients = 0, skipped = 0;
+        List<String> unknown = new ArrayList<>(), notReached = new ArrayList<>();
+        for (Map.Entry<String, Double> e : pay.entrySet()) {
+            if (workerRepository.findById(e.getKey()).isEmpty()) { unknown.add(e.getKey()); continue; }
+            List<Map<String, String>> to = workerRecipients(Set.of(e.getKey()));
+            if (to.isEmpty()) { notReached.add(e.getKey()); continue; }
+            Map<String, Object> p = new LinkedHashMap<>();
+            p.put("month", month);
+            p.put("netPay", Math.round(e.getValue()));
+            if (payDate != null && !payDate.isBlank()) p.put("payDate", payDate.trim());
+            Map<String, Object> r = sendWorker("salary_paid", p, to);
+            recipients += num(r.get("recipients"));
+            skipped += num(r.get("skippedQuietHours"));
+        }
+        Map<String, Object> s = summary("salary_paid", 0, 0, recipients, skipped);
+        s.remove("orders");
+        s.remove("farmerRecipients");
+        s.put("month", month);
+        s.put("workers", pay.size());
+        s.put("unknownWorkers", unknown);     // 查無此工號
+        s.put("notReached", notReached);      // 未綁定 LINE、已封鎖，或外籍功能關閉
+        return s;
+    }
+
     /** 方案行銷（科技後台手動）→ 只限農場主帳號 broadcast（規格第柒章；工作者帳號禁止 broadcast） */
     public Map<String, Object> farmerBroadcast(String text) {
         if (text == null || text.isBlank() || text.length() > 1000) {

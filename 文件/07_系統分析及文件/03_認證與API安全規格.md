@@ -24,7 +24,7 @@
 
 ## 3. 角色
 
-`admin_tech`（科技公司管理員）、`farmer`（農場主）、`worker_foreign`（外展移工）、`worker_local`（本地工 / 領班 / 機耕 / 勞務員，`subRole` 區分）。
+`admin_tech`（科技公司管理員）、`coop_admin`（合作社管理員，2026-10-15 起，詳見規格 11 與下方「後台人員」）、`farmer`（農場主）、`worker_foreign`（外展移工）、`worker_local`（本地工 / 領班 / 機耕 / 勞務員，`subRole` 區分）。
 
 ## 4. 認證端點
 
@@ -50,7 +50,8 @@
 
 - **公開（不需 token）**：`POST /api/auth/login`、`POST /api/auth/register`、`POST /api/public/account-deletion`（刪除帳號網頁申請，限次）、`POST /api/auth/demo-login`、`GET /api/public/**`、`GET /api/crops/**`、`GET /api/calendar/**`、`GET /api/brochures/**`、`GET /api/legalize/types`（黑轉白身分類型與法規參考文字）、`GET /api/payments/methods`、`GET /api/orders/categories`、`POST /api/orders/calculate`、`POST /api/talents/register`、`GET /api/dispatch/overview`、`GET /api/dispatch/weather-state`、`POST /api/payments/ecpay/notify`（以 CheckMacValue 驗證）、`POST /api/line/webhook`（已停用，一律回 410，見下方）、`POST /api/line/internal/**`（LINE Bot 內部端點，以 `X-Internal-Key` 驗證，見下方「LINE 官方帳號」）。
 - **需登入**：其餘 `/api/**`。
-- **僅 admin_tech**：crops / brochures / talents / workers 的新增修改刪除、`/api/dispatch/*` 的 POST/PUT/DELETE（含 `POST /api/dispatch/teams` 新增工班、`DELETE /api/dispatch/teams/{id}` 刪除工班）、`GET /api/line/config`（原 `POST` 執行中改金鑰已於 2026-10-13 移除，金鑰只由環境變數／LINE Bot `config.properties` 提供）、`GET /api/line/bindings`、`DELETE /api/line/bindings/{id}`、`/api/notifications/send`、`GET /api/workers`（完整名冊）、`/api/account-deletions/**`（刪除帳號申請審核，Controller 另以 `requireAdmin` 檢查）、`/api/dev/**`。
+- **僅 admin_tech**：crops / brochures / talents 的新增修改刪除、`/api/dispatch/*` 的 POST/PUT/DELETE（含 `POST /api/dispatch/teams` 新增工班、`DELETE /api/dispatch/teams/{id}` 刪除工班）、`GET /api/line/config`（原 `POST` 執行中改金鑰已於 2026-10-13 移除，金鑰只由環境變數／LINE Bot `config.properties` 提供）、`GET /api/line/bindings`、`DELETE /api/line/bindings/{id}`、`/api/notifications/send`、`PUT /api/orders/{id}/status`、代建與修改訂單、`/api/account-deletions/**`（刪除帳號申請審核，Controller 另以 `requireAdmin` 檢查）、`/api/dev/**`；工人證件完整號碼（`GET /api/workers/{id}`）。
+- **後台人員 admin_tech 或 coop_admin（2026-10-15 起，`AuthContext.isStaff()`；AuthInterceptor 的 `STAFF_ONLY`，其餘 Controller／Service 以 `requireStaff()`、`isStaff()` 檢查）**：雇主責任範圍——`GET/POST/PUT/DELETE /api/workers`（工人名冊）、`/api/payroll/**`（出勤補登／修正、月結算）、`/api/insurance/**` 的管理操作、`/api/leaves/**` 審核、`/api/matching/**`、`/api/rosters` 開班／確認／取消、`/api/skills` 複核恢復、領班評核、尾款登錄與發票（`/api/payments/*/balance`、`transactions/*/invoice|void`）、`GET /api/legalize/summary`、`POST /api/auth/reset-password`、`GET /api/auth/accounts`；另可唯讀檢視全部訂單、共享班表（含認領農戶）、工班完整資料與營收。`/api/workers/{id}/**` 的「本人或 admin」亦涵蓋後台人員。**合作社的限制**：只能重設農場主與工人的密碼（重設 `admin_tech`／`coop_admin` 回 403）、帳號清單不含後台帳號、證件號碼維持遮罩、不能做上一條「僅 admin_tech」的項目。合作社的 demo token 不視同 admin（`isAdmin()` 排除 `coop_admin`），示範時看得到限制。登入失敗鎖定的測試期開關（`login-lock-admin-only`）一併涵蓋 `coop_admin`。測試：`CoopRoleTest`。
 - **LINE 官方帳號（農場主／工作者雙帳號，規格 `05_LINE官方帳號拆分規格.md` 第伍、陸章）**：
   - 內部端點 `POST /api/line/internal/identity`、`/follow-state`、`/query` 只給 LINE Bot 呼叫：`X-Internal-Key` 須與 `AGRI_LINEBOT_INTERNAL_KEY` 相同（constant-time 比對），**未設定金鑰時整組回 403**。`query` 依帳號與身分限制：農場主帳號 `orders` 限已綁定且只回本人訂單（`orders.farmerId == line_users.ref_id`）、`rates`／`calendar` 公開；工作者帳號目前一律回空清單。不回工班名冊。
   - `POST /api/line/bind`（需登入）`{channel, idToken}`：LINE userId **只取自後端向 LINE 驗證過的 ID token**（`LINE_LOGIN_CHANNEL_ID`）；未設定時 production 回 503，demo 模式接受 `mock:U+32位十六進位` 假 token。身分須與帳號相符（farmer↔`farmer`、worker↔`worker_*`），否則 409；同一個 LINE userId 或同一人（同身分同 refId）在同一帳號只能有一筆綁定，重複 409。

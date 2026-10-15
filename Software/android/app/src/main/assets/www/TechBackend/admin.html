@@ -95,6 +95,26 @@
     .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+    /* 手機卡片列（2026-10-15 田間模式第三輪）：≤640px 時 .tb-cards 表格一列變一張卡，thead 收起、td 以 data-label 顯示欄名（上）＋值（下）；
+       短欄位兩欄並排，.tb-cards__wide 整行、.tb-cards__actions 動作鈕放卡片底部靠右；桌機維持原本表格與橫向捲動。 */
+    @media (max-width: 640px) {
+      .ad-table.tb-cards { display: block; min-width: 0 !important; white-space: normal !important; }
+      .ad-table.tb-cards thead { display: none; }
+      .ad-table.tb-cards tbody { display: block; padding: var(--ad-sp-3) 0; }
+      .ad-table.tb-cards tr {
+        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--ad-sp-3); row-gap: var(--ad-sp-2);
+        padding: var(--ad-sp-3) var(--ad-sp-4); border: 1px solid var(--ad-border); border-radius: var(--ad-radius-sm);
+      }
+      .ad-table.tb-cards tr + tr { margin-top: var(--ad-sp-3); }
+      .ad-table.tb-cards tr:has(> td[colspan]) { border: 0; padding: 0; }
+      .ad-table.tb-cards td { display: block; min-width: 0; padding: 0; border-bottom: 0; text-align: left !important; white-space: normal !important; }
+      .ad-table.tb-cards td[data-label]::before { content: attr(data-label); display: block; font-size: var(--ad-fs-caption); font-weight: 600; color: var(--ad-text-2); margin-bottom: 2px; }
+      .ad-table.tb-cards td.tb-cards__wide, .ad-table.tb-cards td[colspan] { grid-column: 1 / -1; }
+      .ad-table.tb-cards td[colspan] { text-align: center !important; }
+      .ad-table.tb-cards td.tb-cards__actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--ad-sp-2); margin-top: var(--ad-sp-1); padding-top: var(--ad-sp-3); border-top: 1px solid var(--ad-border); }
+      .ad-table.tb-cards td.tb-cards__actions:empty { display: none; }
+      .ad-table.tb-cards td .w-max { display: inline-block; width: auto; max-width: 100%; white-space: normal; } /* 膠囊在半欄塞不下時換行，不撐破卡片 */
+    }
   </style>
   <script>
     // Failsafe: Remove v-cloak if Vue takes more than 1.5s to prevent blank screen
@@ -240,7 +260,7 @@
             </div>
           </div>
           <div class="ad-card overflow-x-auto custom-scrollbar" style="padding: 0 16px;">
-            <table class="ad-table" style="min-width: 1080px; white-space: nowrap;">
+            <table class="ad-table tb-cards" style="min-width: 1080px; white-space: nowrap;">
               <thead>
                 <tr>
                   <th>鄉鎮市區</th><th>天氣</th><th>氣溫（體感）</th><th>今日高／低</th><th>降雨機率</th><th>{{ wx.provider === 'cwa' ? '雨量 24h（1h）' : '日雨量' }}</th><th>濕度</th><th>風速／陣風</th><th>紫外線</th><th>明日</th><th>作業建議</th>
@@ -250,21 +270,21 @@
                 <tr v-if="wx.loading && !wx.list.length"><td colspan="11" class="ad-caption" style="padding: 20px 0;">氣象資料載入中…</td></tr>
                 <tr v-else-if="!wxTownRows.length"><td colspan="11" class="ad-caption" style="padding: 20px 0;">{{ wx.list.length ? '沒有符合條件的鄉鎮' : '尚未取得氣象資料' }}</td></tr>
                 <tr v-for="w in wxTownRows" :key="w.key">
-                  <td>
+                  <td data-label="鄉鎮市區" class="tb-cards__wide">
                     <span class="font-bold tb-text">{{ w.town }}</span>
                     <span v-if="wxQuery" class="ad-caption" style="margin-left: 4px;">{{ w.county }}</span>
                     <span v-if="wxFarmTownKeys[w.key]" class="tb-ok text-[12px]" style="margin-left: 4px;" :title="'作業中：' + wxFarmTownKeys[w.key].join('、')">● 作業中</span>
                   </td>
-                  <td>{{ w.text }}</td>
-                  <td class="font-mono">{{ w.temp }}°<span class="tb-text-2">（{{ w.feels }}°）</span></td>
-                  <td class="font-mono">{{ w.tMax }}° / {{ w.tMin }}°</td>
-                  <td class="font-mono" :class="w.rainProb >= 60 ? 'tb-warn font-bold' : ''">{{ w.rainProb != null ? w.rainProb + '%' : '—' }}</td>
-                  <td class="font-mono" :class="w.rainSum >= 80 || w.rain1h >= 40 ? 'tb-danger font-bold' : (w.rain1h >= 1 ? 'tb-warn' : '')" :title="w.rainStation ? '雨量站：' + w.rainStation + (w.rainStations > 1 ? ' 等 ' + w.rainStations + ' 站取最大' : '') : ''">{{ w.rainSum != null ? w.rainSum + ' mm' : '—' }}<span v-if="w.rain1h != null" class="tb-text-2 text-[12px]">（{{ w.rain1h }}）</span></td>
-                  <td class="font-mono">{{ w.humidity }}%</td>
-                  <td class="font-mono" :class="wxWindPeak(w) >= 13.9 ? 'tb-warn' : ''" :title="w.gustStation ? '陣風觀測站：' + w.gustStation : (wx.provider === 'cwa' ? '附近 10 公里內沒有陣風觀測，括號為今日預報最大風速' : '')">{{ w.wind != null ? w.wind : '—' }} / <template v-if="w.gustMax != null || w.gust != null">{{ w.gustMax != null ? w.gustMax : w.gust }}</template><span v-else class="tb-text-2">—<template v-if="w.windMax != null">（{{ w.windMax }}）</template></span> m/s</td>
-                  <td :class="w.uv >= 8 ? 'tb-warn' : ''"><span class="font-mono">{{ w.uv != null ? w.uv : '—' }}</span><span v-if="w.uvLevel" class="text-[12px]" :class="w.uv >= 8 ? '' : 'tb-text-2'" style="margin-left: 4px;">{{ w.uvLevel.replace('級', '') }}</span></td>
-                  <td class="tb-text-soft">{{ w.tomorrow.text }}・{{ w.tomorrow.rainProb != null ? w.tomorrow.rainProb + '%' : '—' }}<template v-if="w.tomorrow.uv != null">・UV {{ w.tomorrow.uv }}</template></td>
-                  <td>
+                  <td data-label="天氣">{{ w.text }}</td>
+                  <td data-label="氣溫（體感）" class="font-mono">{{ w.temp }}°<span class="tb-text-2">（{{ w.feels }}°）</span></td>
+                  <td data-label="今日高／低" class="font-mono">{{ w.tMax }}° / {{ w.tMin }}°</td>
+                  <td data-label="降雨機率" class="font-mono" :class="w.rainProb >= 60 ? 'tb-warn font-bold' : ''">{{ w.rainProb != null ? w.rainProb + '%' : '—' }}</td>
+                  <td :data-label="wx.provider === 'cwa' ? '雨量 24h（1h）' : '日雨量'" class="font-mono" :class="w.rainSum >= 80 || w.rain1h >= 40 ? 'tb-danger font-bold' : (w.rain1h >= 1 ? 'tb-warn' : '')" :title="w.rainStation ? '雨量站：' + w.rainStation + (w.rainStations > 1 ? ' 等 ' + w.rainStations + ' 站取最大' : '') : ''">{{ w.rainSum != null ? w.rainSum + ' mm' : '—' }}<span v-if="w.rain1h != null" class="tb-text-2 text-[12px]">（{{ w.rain1h }}）</span></td>
+                  <td data-label="濕度" class="font-mono">{{ w.humidity }}%</td>
+                  <td data-label="風速／陣風" class="font-mono" :class="wxWindPeak(w) >= 13.9 ? 'tb-warn' : ''" :title="w.gustStation ? '陣風觀測站：' + w.gustStation : (wx.provider === 'cwa' ? '附近 10 公里內沒有陣風觀測，括號為今日預報最大風速' : '')">{{ w.wind != null ? w.wind : '—' }} / <template v-if="w.gustMax != null || w.gust != null">{{ w.gustMax != null ? w.gustMax : w.gust }}</template><span v-else class="tb-text-2">—<template v-if="w.windMax != null">（{{ w.windMax }}）</template></span> m/s</td>
+                  <td data-label="紫外線" :class="w.uv >= 8 ? 'tb-warn' : ''"><span class="font-mono">{{ w.uv != null ? w.uv : '—' }}</span><span v-if="w.uvLevel" class="text-[12px]" :class="w.uv >= 8 ? '' : 'tb-text-2'" style="margin-left: 4px;">{{ w.uvLevel.replace('級', '') }}</span></td>
+                  <td data-label="明日" class="tb-text-soft tb-cards__wide">{{ w.tomorrow.text }}・{{ w.tomorrow.rainProb != null ? w.tomorrow.rainProb + '%' : '—' }}<template v-if="w.tomorrow.uv != null">・UV {{ w.tomorrow.uv }}</template></td>
+                  <td data-label="作業建議" class="tb-cards__wide">
                     <span class="ad-pill" :class="wxLevelPill(w.assess.level)" :title="w.assess.reasons.join('、')"><span class="ad-pill__dot"></span>{{ w.assess.label }}</span>
                     <div v-if="w.assess.reasons.length" class="tb-text-2 text-[12px]" style="margin-top: 2px;">{{ w.assess.reasons.join('、') }}</div>
                   </td>
@@ -531,7 +551,7 @@
         <!-- Orders Table -->
         <div class="ad-card" style="padding: 0 16px;">
           <div class="overflow-x-auto">
-            <table class="ad-table" style="min-width: 960px;">
+            <table class="ad-table tb-cards" style="min-width: 960px;">
               <thead>
                 <tr>
                   <th>訂單編號</th>
@@ -547,8 +567,8 @@
               </thead>
               <tbody>
                 <tr v-for="o in filteredOrders" :key="o.id">
-                  <td class="font-mono font-bold tb-ok">{{ o.id }}</td>
-                  <td>
+                  <td data-label="訂單編號" class="font-mono font-bold tb-ok tb-cards__wide">{{ o.id }}</td>
+                  <td data-label="農場主 / 地點" class="tb-cards__wide">
                     <div class="font-bold tb-text">{{ o.farmerName }}</div>
                     <div v-if="o.farmName" class="text-[13px] tb-ok truncate max-w-xs">{{ o.farmName }}</div>
                     <div class="text-[13px] tb-text-2 truncate max-w-xs">{{ o.farmLocation }}</div>
@@ -563,36 +583,36 @@
                       {{ o.foremanNotes }}
                     </div>
                   </td>
-                  <td>
+                  <td data-label="作物 / 面積">
                     <div class="font-semibold tb-text">{{ o.cropName }}</div>
                     <div class="text-[13px] tb-text-2">{{ o.area }} 分地</div>
                   </td>
-                  <td>
+                  <td data-label="派工類別">
                     <span :class="categoryBadge(o.dispatchCategory)" class="px-2 py-0.5 rounded border text-[13px] font-bold inline-block">
                       {{ o.categoryName || '【採收分級】' }}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="派遣方案 / 工時">
                     <div class="tb-text font-medium">{{ o.planName }}</div>
                     <div class="text-[13px] tb-ok font-mono">{{ o.totalHours }} 小時 ({{ o.suggestedWorkers }} 人)</div>
                   </td>
-                  <td class="font-mono">
+                  <td data-label="總額 / 定金" class="font-mono">
                     <div class="tb-text font-bold">${{ o.finalAmount.toLocaleString() }}</div>
                     <div class="text-[13px]" :class="o.depositPaid ? 'tb-ok' : 'tb-warn'">
                       定金: ${{ o.depositAmount.toLocaleString() }} ({{ o.depositPaid ? '已付' : '未付' }})
                     </div>
                   </td>
-                  <td>
+                  <td data-label="指派工班">
                     <span class="px-2 py-0.5 rounded tb-surface-3 tb-text-soft font-medium">
                       {{ teamName(o.assignedTeamId) }}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="狀態">
                     <span :class="orderStatusBadge(o.status)" class="px-2.5 py-0.5 rounded-full text-[13px] font-semibold">
                       {{ orderStatusName(o.status) }}
                     </span>
                   </td>
-                  <td class="space-x-1" style="text-align: right;">
+                  <td class="space-x-1 tb-cards__actions" style="text-align: right;">
                     <button type="button" @click="openPayModal(o)" class="ad-btn ad-btn--ghost ad-btn--sm" title="付款紀錄、尾款收款登錄、補登發票">收款</button>
                     <button type="button" @click="openOrderModal(o)" class="ad-btn ad-btn--ghost ad-btn--sm">改單</button>
                     <button type="button" @click="deleteOrder(o.id)" class="ad-btn ad-btn--ghost ad-btn--sm" style="color: var(--ad-danger-text);">取消</button>
@@ -686,7 +706,7 @@
         <!-- Workers Table -->
         <div class="ad-card" style="padding: 0 16px;">
           <div class="overflow-x-auto">
-            <table class="ad-table" style="min-width: 1100px;">
+            <table class="ad-table tb-cards" style="min-width: 1100px;">
               <thead>
                 <tr>
                   <th>工號</th>
@@ -704,10 +724,10 @@
               <tbody>
                 <tr v-for="w in filteredWorkers" :key="w.id">
                   <!-- ID -->
-                  <td class="font-mono font-bold tb-ok">{{ w.id }}</td>
+                  <td data-label="工號" class="font-mono font-bold tb-ok">{{ w.id }}</td>
                   
                   <!-- Names & Leader badge -->
-                  <td>
+                  <td data-label="姓名">
                     <div class="font-bold tb-text flex items-center gap-1.5">
                       {{ w.chineseName }}
                       <span v-if="w.leader" class="px-1.5 py-0.2 rounded tb-warn-soft tb-warn border tb-border-warn text-[13px] font-bold">組長 </span>
@@ -717,7 +737,7 @@
                   </td>
 
                   <!-- Nationality & Passport -->
-                  <td>
+                  <td data-label="國籍・護照">
                     <div class="flex items-center gap-1 font-medium tb-text">
                       <span class="font-mono text-[13px] tb-text-2">{{ flagFor(w.nationality) }}</span>
                       <span>{{ w.nationality }}</span>
@@ -728,13 +748,13 @@
                   </td>
 
                   <!-- ARC & Expiry -->
-                  <td class="font-mono">
+                  <td data-label="居留證・效期" class="font-mono">
                     <div class="tb-ok font-bold text-[13px]">{{ w.arcNumber || '—' }}</div>
                     <div class="text-[13px] tb-text-2 mt-0.5">效期: {{ w.permitExpiry || '常態在職' }}</div>
                   </td>
 
                   <!-- 居留期間 -->
-                  <td>
+                  <td data-label="居留期間">
                     <div class="text-[13px] tb-text-soft font-mono">
                       <span class="tb-text-2">入台：</span>
                       {{ w.arrivalYear ? w.arrivalYear + ' 年' : '2023 年' }}
@@ -748,7 +768,7 @@
                   </td>
 
                   <!-- Team & Tier -->
-                  <td>
+                  <td data-label="工班・等級">
                     <div class="font-medium tb-text-soft">{{ teamName(w.teamId) }}</div>
                     <span :class="tierBadge(w.tier)" class="px-2 py-0.5 rounded-full text-[13px] font-semibold inline-block mt-1">
                       {{ tierName(w.tier) }}
@@ -757,7 +777,7 @@
                   </td>
 
                   <!-- Current Task & Dispatch Status -->
-                  <td>
+                  <td data-label="任務・狀態" class="tb-cards__wide">
                     <div class="flex items-center gap-1.5">
                       <span :class="w.dispatchStatus === 'hedged_indoor' ? 'tb-warn-soft tb-warn tb-border-warn' : (w.dispatchStatus === 'standby' ? 'tb-surface-3 tb-text-soft tb-border' : 'tb-ok-soft tb-ok tb-border-ok')"
                             class="px-2 py-0.5 rounded border text-[13px] font-bold">
@@ -770,20 +790,20 @@
                   </td>
 
                   <!-- Salary -->
-                  <td class="font-mono">
+                  <td data-label="薪資" class="font-mono tb-cards__wide">
                     <div class="tb-text font-semibold">${{ (w.baseSalary || 29500).toLocaleString() }}</div>
                     <div class="text-[13px] tb-ok">+獎勵 ${{ (w.agriBonus || 8800).toLocaleString() }} / 津貼 ${{ (w.transportAllowance || 1200).toLocaleString() }}</div>
                   </td>
 
                   <!-- Insurance -->
-                  <td>
+                  <td data-label="納保" class="tb-cards__wide">
                     <span class="px-2 py-0.5 rounded tb-ok-soft tb-ok border tb-border-ok text-[13px] font-medium flex items-center gap-1 w-max">
                       {{ w.insuranceStatus || '已納保' }}
                     </span>
                   </td>
 
                   <!-- Actions -->
-                  <td class="space-x-1 whitespace-nowrap" style="text-align: right;">
+                  <td class="space-x-1 whitespace-nowrap tb-cards__actions" style="text-align: right;">
                     <button type="button" @click="openWorkerModal(w)" class="ad-btn ad-btn--ghost ad-btn--sm">編輯</button>
                     <button type="button" @click="deleteWorker(w.id)" class="ad-btn ad-btn--ghost ad-btn--sm" style="color: var(--ad-danger-text);">刪除</button>
                   </td>
@@ -815,7 +835,7 @@
 
         <div class="ad-card" style="padding: 0 16px;">
           <div class="overflow-x-auto">
-            <table class="ad-table" style="min-width: 960px;">
+            <table class="ad-table tb-cards" style="min-width: 960px;">
               <thead>
                 <tr>
                   <th>代號・狀態</th>
@@ -830,29 +850,29 @@
               </thead>
               <tbody>
                 <tr v-for="t in dispatch.teams" :key="t.id">
-                  <td>
+                  <td data-label="代號・狀態">
                     <div class="font-mono font-bold tb-ok text-[13px]">{{ t.id }}</div>
                     <div class="text-[13px] px-1.5 py-0.5 rounded tb-surface-3 tb-text-soft font-semibold mt-1 w-max">{{ teamStatusName(t.status) }}</div>
                   </td>
-                  <td class="font-bold tb-text">{{ t.name }}</td>
-                  <td>
+                  <td data-label="工班" class="font-bold tb-text">{{ t.name }}</td>
+                  <td data-label="領班">
                     <div class="tb-text">{{ t.leader }}</div>
                     <div class="font-mono text-[13px] tb-text-2">{{ t.leaderPhone }}</div>
                   </td>
-                  <td>
+                  <td data-label="車輛・司機">
                     <div class="tb-text-soft">{{ t.vehicle }}</div>
                     <div class="text-[13px] tb-text-2">{{ t.driver }}</div>
                   </td>
-                  <td class="tb-text-soft max-w-xs">
+                  <td data-label="晴天作業" class="tb-text-soft max-w-xs">
                     <div>{{ t.normalLocation }}</div>
                     <div class="text-[13px] tb-text-2">{{ t.normalTask }}</div>
                   </td>
-                  <td class="tb-warn max-w-xs">
+                  <td data-label="雨天避險" class="tb-warn max-w-xs">
                     <div>{{ t.hedgeLocation }}</div>
                     <div class="text-[13px] tb-text-2">{{ t.hedgeTask }}</div>
                   </td>
-                  <td class="font-mono font-bold tb-text" style="text-align: center;">{{ teamRosterCount(t.id) }} 人</td>
-                  <td class="space-x-1" style="text-align: right; white-space: nowrap;">
+                  <td data-label="名冊" class="font-mono font-bold tb-text tb-cards__wide" style="text-align: center;">{{ teamRosterCount(t.id) }} 人</td>
+                  <td class="space-x-1 tb-cards__actions" style="text-align: right; white-space: nowrap;">
                     <button type="button" @click="openTeamModal(t)" class="ad-btn ad-btn--ghost ad-btn--sm">編輯</button>
                     <button type="button" @click="deleteTeam(t)" class="ad-btn ad-btn--ghost ad-btn--sm" style="color: var(--ad-danger-text);">刪除</button>
                   </td>
@@ -882,7 +902,7 @@
 
         <div class="ad-card" style="padding: 0 16px;">
           <div class="overflow-x-auto">
-            <table class="ad-table" style="min-width: 900px;">
+            <table class="ad-table tb-cards" style="min-width: 900px;">
               <thead>
                 <tr>
                   <th>代號・季節</th>
@@ -897,17 +917,17 @@
               </thead>
               <tbody>
                 <tr v-for="c in crops" :key="c.id">
-                  <td>
+                  <td data-label="代號・季節">
                     <div class="font-mono font-bold tb-ok text-[13px]">{{ c.id }}</div>
                     <div class="text-[13px] px-1.5 py-0.5 rounded tb-surface-3 tb-text-soft font-semibold mt-1 w-max">{{ c.season }}</div>
                   </td>
-                  <td class="font-bold tb-text">{{ c.name }}</td>
-                  <td class="font-mono font-bold tb-text" style="text-align: center;">{{ c.baseHoursPerFen }}h</td>
-                  <td class="font-mono font-bold tb-text" style="text-align: center;">{{ c.workersPerFen }}人</td>
-                  <td class="font-mono font-bold tb-ok" style="text-align: center;">${{ c.rate }}/h</td>
-                  <td class="tb-text-soft max-w-xs">{{ c.taskDescription }}</td>
-                  <td class="tb-warn max-w-xs">{{ c.indoorAlternative }}</td>
-                  <td class="space-x-1" style="text-align: right;">
+                  <td data-label="作物" class="font-bold tb-text">{{ c.name }}</td>
+                  <td data-label="每分地工時" class="font-mono font-bold tb-text" style="text-align: center;">{{ c.baseHoursPerFen }}h</td>
+                  <td data-label="建議人數" class="font-mono font-bold tb-text" style="text-align: center;">{{ c.workersPerFen }}人</td>
+                  <td data-label="牌價" class="font-mono font-bold tb-ok tb-cards__wide" style="text-align: center;">${{ c.rate }}/h</td>
+                  <td data-label="田間作業" class="tb-text-soft max-w-xs">{{ c.taskDescription }}</td>
+                  <td data-label="雨天替代" class="tb-warn max-w-xs">{{ c.indoorAlternative }}</td>
+                  <td class="space-x-1 tb-cards__actions" style="text-align: right;">
                     <button type="button" @click="openCropModal(c)" class="ad-btn ad-btn--ghost ad-btn--sm">編輯</button>
                     <button type="button" @click="deleteCrop(c.id)" class="ad-btn ad-btn--ghost ad-btn--sm" style="color: var(--ad-danger-text);">刪除</button>
                   </td>
@@ -961,7 +981,7 @@
           <!-- Harvest List Table -->
           <div class="ad-card" style="padding: 0 16px;">
           <div class="overflow-x-auto">
-            <table class="ad-table" style="min-width: 760px;">
+            <table class="ad-table tb-cards" style="min-width: 760px;">
               <thead>
                   <tr>
                     <th>倒數</th>
@@ -975,26 +995,26 @@
                 <tbody>
                   <tr v-for="h in calendarHarvests" :key="h.id"
                       :class="{ 'tb-danger-soft': h.countdownDays <= 15 }">
-                    <td>
+                    <td data-label="倒數">
                       <span :class="h.countdownDays <= 15 ? 'tb-danger-soft tb-danger tb-border-danger' : (h.countdownDays <= 45 ? 'tb-warn-soft tb-warn tb-border-warn' : 'tb-ok-soft tb-ok tb-border-ok')"
                             class="text-[13px] px-2.5 py-0.5 rounded-full border font-bold font-mono">
                         {{ h.statusLabel }} ({{ h.countdownDays }} 天)
                       </span>
                     </td>
-                    <td class="font-mono tb-text-soft">
+                    <td data-label="收穫日" class="font-mono tb-text-soft">
                       {{ h.harvestDateStr || h.period || '—' }}
                       <div class="text-[13px] tb-text-2 mt-0.5">{{ h.harvestWindow }}</div>
                     </td>
-                    <td>
+                    <td data-label="作物・產區" class="tb-cards__wide">
                       <div class="font-bold tb-text flex items-center gap-1.5">{{ h.cropName }}</div>
                       <div class="text-[13px] tb-ok mt-0.5">{{ h.region }}</div>
                     </td>
-                    <td class="tb-text-soft max-w-xs">{{ h.taskDescription }}</td>
-                    <td>
+                    <td data-label="任務" class="tb-text-soft max-w-xs tb-cards__wide">{{ h.taskDescription }}</td>
+                    <td data-label="建議工班" class="tb-cards__wide">
                       <div class="tb-ok font-semibold">{{ teamName(h.suggestedTeamId) }}</div>
                       <div class="text-[13px] tb-text-2 mt-0.5">需 {{ h.neededWorkers }} 人</div>
                     </td>
-                    <td style="text-align: right;">
+                    <td class="tb-cards__actions" style="text-align: right;">
                       <button type="button" @click="quickOrderFromHarvest(h)" class="ad-btn ad-btn--secondary ad-btn--sm" style="white-space: nowrap;">帶入下單</button>
                     </td>
                   </tr>
@@ -1083,7 +1103,7 @@
 
         <div class="ad-card" style="padding: 0 16px;">
           <div class="overflow-x-auto">
-            <table class="ad-table">
+            <table class="ad-table tb-cards">
               <thead>
                 <tr>
                   <th>編號</th>
@@ -1095,16 +1115,16 @@
               </thead>
               <tbody>
                 <tr v-for="tal in talents" :key="tal.id">
-                  <td>
+                  <td data-label="編號">
                     <div class="font-mono font-bold tb-ok text-[13px]">{{ tal.id }}</div>
                   </td>
-                  <td>
+                  <td data-label="姓名・類別">
                     <div class="font-bold text-base tb-text">{{ tal.name }}</div>
                     <div class="text-[13px] font-medium tb-warn mt-0.5">{{ tal.categoryName }}</div>
                   </td>
-                  <td class="font-mono tb-text-soft">{{ tal.phone }}</td>
-                  <td class="tb-text-soft max-w-sm">{{ tal.experience }}</td>
-                  <td class="space-x-1" style="text-align: right;">
+                  <td data-label="電話" class="font-mono tb-text-soft tb-cards__wide">{{ tal.phone }}</td>
+                  <td data-label="經歷與技能" class="tb-text-soft max-w-sm tb-cards__wide">{{ tal.experience }}</td>
+                  <td class="space-x-1 tb-cards__actions" style="text-align: right;">
                     <button type="button" @click="openTalentModal(tal)" class="ad-btn ad-btn--ghost ad-btn--sm">編輯</button>
                     <button type="button" @click="deleteTalent(tal.id)" class="ad-btn ad-btn--ghost ad-btn--sm" style="color: var(--ad-danger-text);">刪除</button>
                   </td>
@@ -1225,7 +1245,7 @@
 
             <div class="ad-card" style="padding: 0 16px;">
               <div class="overflow-x-auto">
-                <table class="ad-table" style="min-width: 960px;">
+                <table class="ad-table tb-cards" style="min-width: 960px;">
                   <thead>
                     <tr>
                       <th>農場主</th>
@@ -1242,16 +1262,16 @@
                   </thead>
                   <tbody>
                     <tr v-for="f in legalizeSummary.farms" :key="f.farmerId">
-                      <td><div style="font-weight: 600;">{{ f.farmerName }}</div><div class="ad-caption ad-num">{{ f.farmerId }}</div></td>
-                      <td class="ad-num" style="text-align: center;">{{ f.total }}</td>
-                      <td class="ad-num" style="text-align: center;">{{ f.direct }}</td>
-                      <td class="ad-num" style="text-align: center;">{{ f.conditional }}</td>
-                      <td class="ad-num" style="text-align: center;">{{ f.replace }}</td>
-                      <td class="ad-num" style="text-align: center; color: var(--ad-primary-text);">{{ f.legalized }}</td>
-                      <td class="ad-num" style="text-align: center;" :style="f.exposed ? 'color: var(--ad-danger-text); font-weight: 600;' : ''">{{ f.exposed }}</td>
-                      <td class="ad-num" style="text-align: center;" :style="f.gapOpen ? 'color: var(--ad-accent-text); font-weight: 600;' : ''">{{ f.gapOpen }}</td>
-                      <td class="ad-num">{{ f.exposed ? f.exposureMinWan + '～' + f.exposureMaxWan + ' 萬' : '—' }}</td>
-                      <td style="text-align: right;"><button v-if="f.gapOpen > 0" type="button" @click="prefillGapOrder(f)" class="ad-btn ad-btn--secondary ad-btn--sm" style="white-space: nowrap;">帶入補位訂單</button></td>
+                      <td data-label="農場主" class="tb-cards__wide"><div style="font-weight: 600;">{{ f.farmerName }}</div><div class="ad-caption ad-num">{{ f.farmerId }}</div></td>
+                      <td data-label="登錄" class="ad-num" style="text-align: center;">{{ f.total }}</td>
+                      <td data-label="可直接轉白" class="ad-num" style="text-align: center;">{{ f.direct }}</td>
+                      <td data-label="有條件" class="ad-num" style="text-align: center;">{{ f.conditional }}</td>
+                      <td data-label="不可就地轉" class="ad-num" style="text-align: center;">{{ f.replace }}</td>
+                      <td data-label="已轉白" class="ad-num" style="text-align: center; color: var(--ad-primary-text);">{{ f.legalized }}</td>
+                      <td data-label="仍在使用" class="ad-num" style="text-align: center;" :style="f.exposed ? 'color: var(--ad-danger-text); font-weight: 600;' : ''">{{ f.exposed }}</td>
+                      <td data-label="待補位" class="ad-num" style="text-align: center;" :style="f.gapOpen ? 'color: var(--ad-accent-text); font-weight: 600;' : ''">{{ f.gapOpen }}</td>
+                      <td data-label="罰鍰暴露" class="ad-num">{{ f.exposed ? f.exposureMinWan + '～' + f.exposureMaxWan + ' 萬' : '—' }}</td>
+                      <td class="tb-cards__actions" style="text-align: right;"><button v-if="f.gapOpen > 0" type="button" @click="prefillGapOrder(f)" class="ad-btn ad-btn--secondary ad-btn--sm" style="white-space: nowrap;">帶入補位訂單</button></td>
                     </tr>
                     <tr v-if="legalizeSummary.farms.length === 0">
                       <td colspan="10" style="text-align: center; padding: 32px 12px; color: var(--ad-text-3);">目前沒有農場登錄黑轉白清冊</td>
@@ -1363,7 +1383,7 @@
           </div>
 
           <div class="overflow-x-auto">
-            <table class="ad-table" style="min-width: 900px;">
+            <table class="ad-table tb-cards" style="min-width: 900px;">
               <thead>
                 <tr>
                   <th>訂單</th>
@@ -1378,32 +1398,32 @@
               </thead>
               <tbody>
                 <tr v-for="o in orders" :key="o.id">
-                  <td class="font-mono font-bold tb-ok">{{ o.id }}</td>
-                  <td>
+                  <td data-label="訂單" class="font-mono font-bold tb-ok">{{ o.id }}</td>
+                  <td data-label="農場主・產區">
                     <div class="font-bold tb-text">{{ o.farmerName }}</div>
                     <div class="text-[13px] tb-text-2">{{ o.farmLocation || o.farmName || '' }}</div>
                   </td>
-                  <td>
-                    <span :class="categoryBadge(o.dispatchCategory)" class="px-2 py-0.5 rounded text-[13px] font-semibold border">
+                  <td data-label="類別">
+                    <span :class="categoryBadge(o.dispatchCategory)" class="px-2 py-0.5 rounded text-[13px] font-semibold border inline-block">
                       {{ o.categoryName }}
                     </span>
                   </td>
-                  <td class="font-mono font-bold tb-text">
+                  <td data-label="總額" class="font-mono font-bold tb-text">
                     NT$ {{ orderAmount(o).toLocaleString() }}
                   </td>
-                  <td class="font-mono">
+                  <td :data-label="'科技公司 ' + techPct + '%'" class="font-mono">
                     <div class="tb-ok font-bold">NT$ {{ techOf(o).toLocaleString() }}</div>
                     <span class="text-[13px] tb-text-2">發票未開立</span>
                   </td>
-                  <td class="font-mono">
+                  <td :data-label="'合作社 ' + coopPct + '%'" class="font-mono">
                     <div class="tb-ok font-bold">NT$ {{ (orderAmount(o) - techOf(o)).toLocaleString() }}</div>
                     <span class="text-[13px] tb-text-2">移工法定平移款</span>
                   </td>
-                  <td class="font-mono tb-ok font-semibold">
+                  <td data-label="定金" class="font-mono tb-ok font-semibold">
                     NT$ {{ (o.depositAmount || 0).toLocaleString() }}
                     <div class="text-[13px] tb-text-2">{{ o.depositPaid ? '已收' : '未收' }}</div>
                   </td>
-                  <td>
+                  <td data-label="狀態">
                     <span class="px-2 py-0.5 rounded-full text-[13px] font-bold" :class="o.status === 'cancelled' ? 'tb-surface-2 tb-text-soft border tb-border' : (o.status === 'completed' || o.status === 'in_progress' ? 'tb-ok-soft tb-ok border tb-border-ok' : 'tb-warn-soft tb-warn border tb-border-warn')">
                       {{ settlementLabel(o) }}
                     </span>
@@ -1744,20 +1764,20 @@
             <div class="p-3 rounded-lg tb-surface border tb-border-warn"><div class="tb-text-2">未結清</div><div class="font-mono font-bold tb-warn">NT$ {{ Number(payModal.status.balanceOutstanding || 0).toLocaleString() }}</div></div>
           </div>
           <div class="overflow-x-auto">
-            <table class="ad-table" style="min-width: 560px;">
+            <table class="ad-table tb-cards" style="min-width: 560px;">
               <thead><tr><th>類別</th><th>收款日</th><th class="ad-td-num">金額</th><th>方式</th><th>發票號碼</th><th>狀態</th><th></th></tr></thead>
               <tbody>
                 <tr v-for="t in payModal.status.transactions" :key="t.id" :style="t.status === 'VOID' ? 'opacity: 0.55;' : ''">
-                  <td>{{ t.kind === 'balance' ? '尾款' : '定金' }}</td>
-                  <td class="font-mono">{{ String(t.paidAt || t.createdAt || '').slice(0, 10) || '—' }}</td>
-                  <td class="ad-td-num font-mono">{{ Number(t.amount || 0).toLocaleString() }}</td>
-                  <td>{{ payMethodName(t.paymentMethod) }}</td>
-                  <td class="font-mono" style="white-space: nowrap;">{{ t.invoiceNo || '—' }}</td>
-                  <td>
+                  <td data-label="類別">{{ t.kind === 'balance' ? '尾款' : '定金' }}</td>
+                  <td data-label="收款日" class="font-mono">{{ String(t.paidAt || t.createdAt || '').slice(0, 10) || '—' }}</td>
+                  <td data-label="金額" class="ad-td-num font-mono">{{ Number(t.amount || 0).toLocaleString() }}</td>
+                  <td data-label="方式">{{ payMethodName(t.paymentMethod) }}</td>
+                  <td data-label="發票號碼" class="font-mono" style="white-space: nowrap;">{{ t.invoiceNo || '—' }}</td>
+                  <td data-label="狀態">
                     <div>{{ payStatusName(t.status) }}</div>
                     <div v-if="t.note" class="text-[12px] tb-text-2" style="max-width: 200px;">{{ t.note }}</div>
                   </td>
-                  <td style="white-space: nowrap; text-align: right;">
+                  <td class="tb-cards__actions" style="white-space: nowrap; text-align: right;">
                     <button v-if="t.status === 'PAID'" type="button" @click="startPayAction('invoice', t)" class="ad-btn ad-btn--ghost ad-btn--sm">{{ t.invoiceNo ? '改發票' : '補發票' }}</button>
                     <button v-if="t.status === 'PAID' && t.kind === 'balance'" type="button" @click="startPayAction('void', t)" class="ad-btn ad-btn--ghost ad-btn--sm" style="color: var(--ad-danger-text);">作廢</button>
                   </td>

@@ -1669,7 +1669,7 @@
           const surcharge = calcForm.zone === 'cross_region' ? 1200 : (calcForm.zone === 'remote_mountain' ? 2400 : 0);
           const finalAmount = Math.round(standardAmount * discount) + surcharge;
           const depositAmount = calcForm.plan === 'hourly_flex' ? 0 : Math.round(finalAmount * 0.20);
-          const techFee = Math.round(finalAmount * 0.18);
+          const techFee = Math.round(finalAmount * 0.16); // 代管費率：F2 v2.4 為 16%（admin.html 的 TECH_RATE 同值）
           const coopFee = finalAmount - techFee;
           const localTeam = pickLocalTeam(calcForm.dispatchCategory);
 

@@ -1217,14 +1217,14 @@
       </section>
 
       <!-- ============================================================= -->
-      <!-- TAB 3: REVENUE (營收 - 雙軌金流 ╳ 18% 技術代管 ╳ 財務流水帳)      -->
+      <!-- TAB 3: REVENUE (營收 - 雙軌金流 ╳ 16% 技術代管 ╳ 財務流水帳)      -->
       <!-- ============================================================= -->
       <section v-if="activeTab === 'revenue'" class="space-y-6">
         <!-- Dual-Track Architecture Banner -->
         <div class="p-5 rounded-xl bg-slate-900 border border-emerald-500/40 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div class="space-y-1">
             <h2 class="ad-title">營收分流</h2>
-            <p class="ad-caption" style="margin-top: 4px;">每筆訂單：科技公司收 18% 技術代管費（開立發票），合作社收 82% 法定人力成本（工資、勞健保、勞退）。</p>
+            <p class="ad-caption" style="margin-top: 4px;">每筆訂單：科技公司收 {{ techPct }}% 技術代管費（開立發票），合作社收 {{ coopPct }}% 法定人力成本（工資、勞健保、勞退）。依財務模型 F2 v2.4，代管費率須經合作社依章程決議【待確認】。</p>
           </div>
           <div class="flex items-center gap-2 shrink-0">
             <button type="button" @click="exportRevenueCSV()" class="ad-btn ad-btn--primary">匯出對帳單 (CSV)</button>
@@ -1234,8 +1234,8 @@
         <!-- 四個數字 -->
         <div class="ad-stat-grid">
           <div class="ad-stat"><div class="ad-stat__label">累計交易額</div><div class="ad-stat__value">NT$ {{ totalGMV.toLocaleString() }}</div></div>
-          <div class="ad-stat ad-stat--primary"><div class="ad-stat__label">科技公司 18%</div><div class="ad-stat__value">NT$ {{ techShare.toLocaleString() }}</div></div>
-          <div class="ad-stat"><div class="ad-stat__label">合作社 82%</div><div class="ad-stat__value">NT$ {{ coopShare.toLocaleString() }}</div></div>
+          <div class="ad-stat ad-stat--primary"><div class="ad-stat__label">科技公司 {{ techPct }}%</div><div class="ad-stat__value">NT$ {{ techShare.toLocaleString() }}</div></div>
+          <div class="ad-stat"><div class="ad-stat__label">合作社 {{ coopPct }}%</div><div class="ad-stat__value">NT$ {{ coopShare.toLocaleString() }}</div></div>
           <div class="ad-stat ad-stat--accent"><div class="ad-stat__label">已收定金</div><div class="ad-stat__value">NT$ {{ depositTotal.toLocaleString() }}</div></div>
         </div>
 
@@ -1245,17 +1245,17 @@
           <div class="lg:col-span-6 p-5 rounded-xl bg-slate-800/70 border border-slate-700/60 space-y-4">
             <div class="flex items-center justify-between border-b border-slate-700 pb-2">
               <h3 class="ad-heading">分流結構</h3>
-              <span class="ad-caption ad-num">18% ／ 82%</span>
+              <span class="ad-caption ad-num">{{ techPct }}% ／ {{ coopPct }}%</span>
             </div>
 
             <div class="space-y-3">
               <!-- Visual Bar -->
               <div class="w-full h-8 rounded-xl bg-slate-900 overflow-hidden flex border border-slate-700 p-1">
-                <div class="h-full rounded-lg bg-emerald-600 flex items-center justify-center text-[13px] font-bold text-white" style="width: 18%">
-                  18%
+                <div class="h-full rounded-lg bg-emerald-600 flex items-center justify-center text-[13px] font-bold text-white" :style="{ width: techPct + '%' }">
+                  {{ techPct }}%
                 </div>
-                <div class="h-full rounded-lg bg-slate-600 flex items-center justify-center text-[13px] font-bold text-white ml-1" style="width: 82%">
-                  82%
+                <div class="h-full rounded-lg bg-slate-600 flex items-center justify-center text-[13px] font-bold text-white ml-1" :style="{ width: coopPct + '%' }">
+                  {{ coopPct }}%
                 </div>
               </div>
 
@@ -1263,7 +1263,7 @@
                 <div class="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 space-y-1">
                   <div class="flex items-center justify-between text-emerald-300 font-bold">
                     <span>科技公司代管費</span>
-                    <span>18%</span>
+                    <span>{{ techPct }}%</span>
                   </div>
                   <div class="text-base font-bold text-white font-mono">NT$ {{ techShare.toLocaleString() }}</div>
                   <p class="text-[13px] text-slate-400">派工系統、LINE 推播、天候避險</p>
@@ -1272,7 +1272,7 @@
                 <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-700 space-y-1">
                   <div class="flex items-center justify-between text-slate-200 font-bold">
                     <span>合作社法定成本</span>
-                    <span>82%</span>
+                    <span>{{ coopPct }}%</span>
                   </div>
                   <div class="text-base font-bold text-white font-mono">NT$ {{ coopShare.toLocaleString() }}</div>
                   <p class="text-[13px] text-slate-400">移工薪資、勞健保、宿舍、6% 勞退</p>
@@ -1308,7 +1308,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700 pb-3">
             <div>
               <h3 class="ad-heading">訂單結算明細</h3>
-              <p class="ad-caption" style="margin-top: 2px;">每筆訂單依 18%／82% 分流</p>
+              <p class="ad-caption" style="margin-top: 2px;">每筆訂單依 {{ techPct }}%／{{ coopPct }}% 分流</p>
             </div>
           </div>
 
@@ -1320,8 +1320,8 @@
                   <th>農場主・產區</th>
                   <th>類別</th>
                   <th>總額</th>
-                  <th>科技公司 18%</th>
-                  <th>合作社 82%</th>
+                  <th>科技公司 {{ techPct }}%</th>
+                  <th>合作社 {{ coopPct }}%</th>
                   <th>定金</th>
                   <th>狀態</th>
                 </tr>
@@ -2578,6 +2578,12 @@
             || String(a.id).localeCompare(String(b.id)))[0] || null;
         };
 
+        // 科技公司代管費率：財務模型 F2 v2.4 為 16%（合作社 84%；v2.3 以前是 18%／82%）。
+        // 費率須經合作社依章程決議【待確認】；要調整只改這個常數，畫面百分比與試算、CSV 都會跟著變。
+        const TECH_RATE = 0.16;
+        const techPct = Math.round(TECH_RATE * 100);
+        const coopPct = 100 - techPct;
+
         const calculateOrderLive = async () => {
           try {
             const res = await fetch(`${API_BASE}/orders/calculate`, {
@@ -2604,7 +2610,7 @@
           const surcharge = calcForm.zone === 'cross_region' ? 1200 : (calcForm.zone === 'remote_mountain' ? 2400 : 0);
           const finalAmount = Math.round(standardAmount * discount) + surcharge;
           const depositAmount = calcForm.plan === 'hourly_flex' ? 0 : Math.round(finalAmount * 0.20);
-          const techFee = Math.round(finalAmount * 0.18);
+          const techFee = Math.round(finalAmount * TECH_RATE);
           const coopFee = finalAmount - techFee;
           const localTeam = pickLocalTeam(calcForm.dispatchCategory);
 
@@ -3507,8 +3513,6 @@
         };
 
         // Revenue Computations & CSV Export for Tab 3
-        // 科技公司代管費率（畫面文字仍寫 18%；F2 定版是否改 16% 待決定，改這裡與文字即可）
-        const TECH_RATE = 0.18;
         const orderAmount = (o) => Number(o.finalAmount) || 0;
         const techOf = (o) => Math.round(orderAmount(o) * TECH_RATE);
         const billableOrders = computed(() => (orders.value || []).filter(o => o.status !== 'cancelled'));
@@ -3537,7 +3541,7 @@
             showToast('目前無訂單財務資料可匯出', 'error');
             return;
           }
-          const headers = ['訂單編號', '委任農場主', '連絡電話', '作業地點', '作物類別', '派工類別', '訂單總額(NT$)', '科技公司18%技術費(NT$)', '合作社82%移工平移款(NT$)', '定金(NT$)', '發票號碼', '撥款狀態'];
+          const headers = ['訂單編號', '委任農場主', '連絡電話', '作業地點', '作物類別', '派工類別', '訂單總額(NT$)', `科技公司${techPct}%技術費(NT$)`, `合作社${coopPct}%移工平移款(NT$)`, '定金(NT$)', '發票號碼', '撥款狀態'];
           const rows = orders.value.map(o => {
             const tot = orderAmount(o);
             const tech = techOf(o);
@@ -3596,6 +3600,8 @@
           totalGMV,
           techShare,
           coopShare,
+          techPct,
+          coopPct,
           depositTotal,
           categoryRevenue,
           orderAmount,

@@ -222,7 +222,7 @@
     btn.setAttribute('data-demo-only', '');
     btn.setAttribute('aria-label', '示範導覽');
     btn.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:60;box-shadow:0 4px 12px rgba(0,0,0,.15)';
-    btn.innerHTML = '<i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i>示範導覽';
+    btn.innerHTML = '<i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span>';
     btn.addEventListener('click', ctl.open);
     var css = document.createElement('style');
     css.textContent = '@media print { #ad-demo-fab { display: none !important; } }';
@@ -368,8 +368,67 @@
     actions.appendChild(btn);
   }
 
-  window.AgriTheme = { mode: mode, icons: icons, drawer: drawer, toast: toast, demoNav: demoNav, feature: feature,
-    employment: EMPLOYMENT, employmentLabel: employmentLabel, visibleWorkers: visibleWorkers, logout: logout };
+  // 8. 田間模式：前台（AgriDispatch/）的農場主、本國工人、登入、首頁等頁加上 html.is-field（css/agri.css 第 16 節）。
+  //    科技後台、LINE 體驗頁，以及產品介紹、DM、產地地圖、證明書等行銷／列印頁（有寫死的深色樣式）不套。
+  //    主題：手機／觸控裝置預設亮色（戶外日光下深色底看不清），桌機維持深色；頁首「切換亮色／深色」鈕，選擇記在 localStorage.agri_theme。
+  var FIELD_EXCLUDE = /^(pitch|brochure|farmers_map|farmer-certificate|legalize|coldchain|app)\.html$/;
+  var pageFile = (function () {
+    var p = window.location.pathname;
+    try { p = decodeURIComponent(p); } catch (e) {}
+    return (p.split('/').pop() || 'index.html').toLowerCase();
+  })();
+  var isField = defaultPaths().main === '' && !FIELD_EXCLUDE.test(pageFile);
+  var theme = 'dark';
 
-  document.addEventListener('DOMContentLoaded', function () { icons(); demoNavFab(); accountButton(); coopHomeLinks(); });
+  function applyTheme(t) {
+    theme = t;
+    if (t === 'light') root.setAttribute('data-theme', 'light'); else root.removeAttribute('data-theme');
+    // 手機瀏覽器的網址列顏色跟著表頭
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) { meta = document.createElement('meta'); meta.setAttribute('name', 'theme-color'); (document.head || root).appendChild(meta); }
+    meta.setAttribute('content', t === 'light' ? '#ffffff' : '#0f172a');
+  }
+  function setTheme(t) {
+    try { localStorage.setItem('agri_theme', t); } catch (e) { /* 無痕模式等 */ }
+    applyTheme(t);
+    updateThemeButton();
+  }
+  function toggleTheme() { setTheme(theme === 'light' ? 'dark' : 'light'); }
+  if (isField) {
+    root.classList.add('is-field');
+    var saved = null;
+    try { saved = localStorage.getItem('agri_theme'); } catch (e) {}
+    if (saved === 'light' || saved === 'dark') applyTheme(saved);
+    else if (root.getAttribute('data-theme') === 'light') applyTheme('light');
+    else if (window.matchMedia && (window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(max-width: 767px)').matches)) applyTheme('light');
+    else applyTheme('dark');
+  }
+  function updateThemeButton() {
+    var btn = document.getElementById('ad-theme-toggle');
+    if (!btn) return;
+    var label = theme === 'light' ? '切換深色' : '切換亮色';
+    btn.setAttribute('aria-label', label);
+    btn.title = label;
+    btn.innerHTML = '<i data-lucide="' + (theme === 'light' ? 'moon' : 'sun') + '" class="ad-icon"></i>';
+    icons(btn);
+  }
+  // 頁首右側補一顆亮／暗切換鈕（有的頁首由 Vue 掛載後才出現，所以稍後再試一次）
+  function themeButton(retried) {
+    if (!isField || document.getElementById('ad-theme-toggle')) return;
+    var actions = document.querySelector('.ad-header__actions');
+    if (!actions) { if (!retried) setTimeout(function () { themeButton(true); }, 1500); return; }
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'ad-theme-toggle';
+    btn.className = 'ad-btn ad-btn--ghost ad-btn--sm ad-btn--icon';
+    btn.addEventListener('click', toggleTheme);
+    actions.insertBefore(btn, actions.firstChild);
+    updateThemeButton();
+  }
+
+  window.AgriTheme = { mode: mode, icons: icons, drawer: drawer, toast: toast, demoNav: demoNav, feature: feature,
+    employment: EMPLOYMENT, employmentLabel: employmentLabel, visibleWorkers: visibleWorkers, logout: logout,
+    isField: isField, theme: function () { return theme; }, setTheme: setTheme, toggleTheme: toggleTheme };
+
+  document.addEventListener('DOMContentLoaded', function () { icons(); themeButton(); demoNavFab(); accountButton(); coopHomeLinks(); });
 })();

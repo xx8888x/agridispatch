@@ -3,10 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="智農派工農場主工作台：預約派工、即時報價、付定金、查看訂單與派工行事曆。">
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <title>智農派工 AgriDispatch - 農場主專屬工作台</title>
   <!-- 執行模式設定（demo / production，每份副本各自一份） -->
   <script src="js/app-config.js"></script>
@@ -71,7 +67,7 @@
       </nav>
       <div class="ad-header__actions">
         <a href="../linebot/line.html" class="ad-pill ad-pill--ok" title="派工確認、專車抵達、天候快訊都會推播到你的 LINE"><span class="ad-pill__dot"></span>LINE 已綁定</a>
-        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i>示範導覽</button>
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span></button>
         <a href="farmer-login.html" class="ad-btn ad-btn--ghost ad-btn--sm ad-btn--icon" title="切換帳號" aria-label="切換帳號"><span class="ad-avatar" id="header-avatar">龍</span></a>
       </div>
     </div>
@@ -309,6 +305,13 @@
           </ol>
 
           <div>
+            <!-- 手機：報價卡排在表單下方，看不到金額就要按送出；所以把應付總額放在按鈕正上方（桌機右欄已有報價卡，不重複） -->
+            <div class="lg:hidden">
+              <p style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 0 0 10px;">
+                <span class="ad-caption" style="display: flex; flex-direction: column;">應付總額<span id="fSubmitDeposit">—</span></span>
+                <strong id="fSubmitTotal" class="ad-price ad-price--accent ad-num" style="font-size: 1.375rem; white-space: nowrap;">—</strong>
+              </p>
+            </div>
             <button type="submit" id="fSubmitBtn" class="ad-btn ad-btn--primary ad-btn--lg ad-btn--block">送出預約</button>
             <p class="ad-caption" style="text-align: center; margin-top: 8px;">送出後保留早鳥保證出工配額，合作社 2 小時內電話確認</p>
           </div>
@@ -1420,6 +1423,8 @@
       stdEl.innerText = money(q.standardTotal);
       stdEl.classList.toggle('line-through', q.savings > 0);
       document.getElementById('fOutFinal').innerText = money(q.actualTotal);
+      document.getElementById('fSubmitTotal').innerText = money(q.actualTotal);
+      document.getElementById('fSubmitDeposit').innerText = q.deposit > 0 ? `定金 ${money(q.deposit)}` : '免定金';
       document.getElementById('fOutDeposit').innerText = q.deposit > 0 ? money(q.deposit) : '免定金';
       document.getElementById('fDepositLabel').textContent = q.deposit > 0
         ? `定金 ${Math.round((q.deposit / q.actualTotal) * 100)}%（鎖定名額）` : '定金';
@@ -1437,7 +1442,8 @@
     }
 
     function renderQuoteError(msg) {
-      ['fOutHours', 'fOutWorkers', 'fOutStandard', 'fOutFinal', 'fOutDeposit'].forEach((id) => { document.getElementById(id).innerText = '—'; });
+      ['fOutHours', 'fOutWorkers', 'fOutStandard', 'fOutFinal', 'fOutDeposit', 'fSubmitTotal'].forEach((id) => { document.getElementById(id).innerText = '—'; });
+      document.getElementById('fSubmitDeposit').innerText = '';
       document.getElementById('fQuoteNote').textContent = msg;
     }
 

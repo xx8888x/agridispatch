@@ -680,13 +680,6 @@ a.ad-row:focus-visible, button.ad-row:focus-visible { outline: none; box-shadow:
 .ad-notice--warn { border-color: var(--ad-accent); color: var(--ad-accent-text); background: var(--ad-accent-soft); }
 .ad-notice--danger { border-color: var(--ad-danger); color: var(--ad-danger-text); background: var(--ad-danger-soft); }
 
-/* 內文連結。沒載入 Tailwind（沒有 preflight）的頁面，<a> 會是瀏覽器預設深藍，在深色底對比不到 2:1（功能測試 B-06）。
-   一般底色用主色文字；放在提示框（.ad-notice）裡改用一般內文色（--ad-text）、加粗並保留底線，在警告／錯誤／成功底色上兩種主題對比都 >= 4.5:1 */
-.ad-link { color: var(--ad-primary-text); text-decoration: underline; text-underline-offset: 2px; }
-.ad-link:hover { text-decoration-thickness: 2px; }
-.ad-link:focus-visible { outline: none; box-shadow: var(--ad-ring); border-radius: 2px; }
-.ad-notice .ad-link { color: var(--ad-text); font-weight: 600; }
-
 .ad-empty {
   padding: var(--ad-sp-8) var(--ad-sp-4);
   text-align: center;
@@ -831,6 +824,18 @@ a.ad-row:focus-visible, button.ad-row:focus-visible { outline: none; box-shadow:
 .ad-stage--done .ad-stage__title { color: var(--ad-primary-text); }
 .ad-stage--now { border-color: var(--ad-primary); background: var(--ad-primary-soft); }
 .ad-stage--now .ad-stage__title { color: var(--ad-text); }
+/* 精簡版（放在卡片內，例如每張訂單）：手機也維持一列五格，只顯示進行中那格的說明 */
+.ad-stages--compact { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--ad-sp-1); margin-bottom: var(--ad-sp-4); }
+.ad-stages--compact .ad-stage { padding: var(--ad-sp-2) var(--ad-sp-1); }
+.ad-stages--compact .ad-stage__title { font-size: 12px; }
+.ad-stages--compact .ad-stage__sub { font-size: 11px; overflow-wrap: anywhere; }
+@media (max-width: 639px) {
+  .ad-stages--compact { gap: 2px; }
+  .ad-stages--compact .ad-stage { padding: 6px 2px; }
+  .ad-stages--compact .ad-stage__title { font-size: 11px; letter-spacing: 0; white-space: nowrap; }
+  .ad-stages--compact .ad-stage__sub { font-size: 10px; }
+  .ad-stages--compact .ad-stage:not(.ad-stage--now) .ad-stage__sub { display: none; }
+}
 
 /* 進度條（不用漸層） */
 .ad-progress { height: 8px; border-radius: var(--ad-radius-pill); background: var(--ad-surface-2); overflow: hidden; }
@@ -907,4 +912,101 @@ html.is-demo [data-demo-only].ad-pill { display: inline-flex !important; }
 /* 手機有底部導覽列時，toast 不要蓋住它 */
 @media (max-width: 767px) {
   .ad-has-tabbar .ad-toast { bottom: calc(72px + env(safe-area-inset-bottom)); }
+}
+
+/* ---------- 16. 田間模式（html.is-field） ----------
+   agri-theme.js 依資料夾判斷：AgriDispatch/ 的前台頁（農場主、本國工人、登入、首頁等）加上 html.is-field；
+   科技後台（TechBackend/）、LINE 體驗頁（linebot/）與產品介紹、DM、地圖等行銷頁不受影響。
+   目標：戶外日光下、單手拿手機也能一眼看懂、一指按到（Don't Make Me Think）。
+   1. 手機／觸控裝置預設亮色主題（深色底在日光下對比不足），桌機維持深色；頁首有「切換亮色／深色」鈕，選擇記在這台裝置。
+   2. 亮色主題的次要文字與框線再加深，白底上的對比 ≥ 7:1；輸入框一看就是可以填的框。
+   3. 手機字級放大一級（內文 16、說明 14），可點目標 ≥ 48px，按下去有看得見的回饋；觸控裝置不留 hover 殘影。
+   4. 內文裡的連結一律有底線，一看就知道能點。 */
+
+/* 1. 原生控制項（日期選擇器、下拉）跟著主題 */
+html.is-field[data-theme="light"] { color-scheme: light; }
+html.is-field:not([data-theme="light"]) { color-scheme: dark; }
+
+/* 2. 亮色：戶外對比 */
+html.is-field[data-theme="light"] {
+  --ad-text-2: #334155;        /* 白底 10.4:1 */
+  --ad-text-3: #475569;        /* 白底 7.6:1 */
+  --ad-border: #cbd5e1;
+  --ad-border-strong: #94a3b8;
+  --ad-primary-text: #047857;  /* 白底 5.5:1 */
+  --ad-accent-text: #92400e;   /* 白底 7.4:1 */
+  --ad-danger-text: #b91c1c;   /* 白底 5.9:1 */
+}
+html.is-field[data-theme="light"] .ad-input,
+html.is-field[data-theme="light"] .ad-select,
+html.is-field[data-theme="light"] .ad-textarea { background: #ffffff; }
+html.is-field[data-theme="light"] .ad-card--inset { background: var(--ad-surface-2); }
+
+/* 3a. 手機字級：整頁放大一級 */
+@media (max-width: 640px) {
+  html.is-field {
+    --ad-fs-title: 1.3125rem;   /* 21 */
+    --ad-fs-heading: 1.0625rem; /* 17 */
+    --ad-fs-body: 1rem;         /* 16 */
+    --ad-fs-caption: 0.875rem;  /* 14 */
+  }
+  html.is-field .ad-hint, html.is-field .ad-error { font-size: 13px; }
+  html.is-field .ad-pill { font-size: 13px; height: 28px; padding: 0 12px; }
+  html.is-field .ad-tab__count { font-size: 13px; }
+  html.is-field .ad-seg__btn, html.is-field .ad-chip, html.is-field .ad-btn--sm { font-size: 14px; }
+  html.is-field .ad-stages:not(.ad-stages--compact) .ad-stage__title { font-size: 15px; }
+  html.is-field .ad-stages:not(.ad-stages--compact) .ad-stage__sub { font-size: 13px; }
+  html.is-field .ad-toast { font-size: var(--ad-fs-body); }
+  html.is-field .ad-toast-item__title { font-size: 15px; }
+  html.is-field .ad-toast-item__msg { font-size: 14px; }
+  /* 底部導覽：文字 12、圖示 24、高 60，拇指好按 */
+  html.is-field .ad-tabbar__item { font-size: 12px; min-height: 60px; gap: 3px; }
+  html.is-field .ad-tabbar__item .ad-icon { width: 24px; height: 24px; }
+  html.is-field .ad-has-tabbar { padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
+  html.is-field .ad-has-tabbar .ad-toast { bottom: calc(60px + var(--ad-sp-4) + env(safe-area-inset-bottom)); }
+}
+
+/* 3b. 觸控裝置：可點目標放大 */
+@media (pointer: coarse) {
+  html.is-field { --ad-tap: 48px; }
+  html.is-field .ad-btn--sm { min-height: 40px; }
+  html.is-field .ad-btn--icon.ad-btn--sm { width: 40px; }
+  html.is-field .ad-btn--lg { min-height: 56px; }
+  html.is-field .ad-seg__btn { height: 40px; min-width: 44px; }
+  html.is-field .ad-chip { min-height: 40px; }
+  html.is-field .ad-nav__link { height: 44px; }
+  html.is-field .ad-tab { min-height: 48px; }
+  html.is-field .ad-row { min-height: 56px; }
+  html.is-field .ad-choice { padding-block: var(--ad-sp-4); }
+  html.is-field .ad-choice input { width: 22px; height: 22px; }
+  html.is-field .ad-table td { padding-block: var(--ad-sp-3); }
+  html.is-field #ad-account-menu a, html.is-field #ad-account-menu button { min-height: 44px; }
+}
+html.is-field input[type="checkbox"], html.is-field input[type="radio"] { accent-color: var(--ad-primary); }
+
+/* 3c. 按下去的回饋；觸控裝置不留 hover 殘影（點完變色不恢復） */
+@media (hover: none) {
+  html.is-field .ad-btn--primary:hover { background: var(--ad-primary); }
+  html.is-field .ad-btn--accent:hover { background: var(--ad-accent); }
+  html.is-field .ad-btn--secondary:hover { background: var(--ad-surface); }
+  html.is-field .ad-btn--ghost:hover { background: transparent; color: var(--ad-text-2); }
+  html.is-field .ad-btn--danger:hover { background: transparent; }
+  html.is-field .ad-btn--line:hover { background: var(--ad-line); }
+  html.is-field .ad-card--interactive:hover, html.is-field a.ad-row:hover, html.is-field button.ad-row:hover { border-color: var(--ad-border); }
+  html.is-field .ad-card--interactive.is-selected:hover { border-color: var(--ad-primary); }
+}
+html.is-field .ad-btn:active:not(:disabled):not([aria-disabled="true"]) { transform: translateY(1px); filter: brightness(.92); }
+html.is-field .ad-card--interactive:active,
+html.is-field a.ad-row:active, html.is-field button.ad-row:active,
+html.is-field .ad-choice:active,
+html.is-field .ad-tabbar__item:active, html.is-field .ad-nav__link:active, html.is-field .ad-tab:active { background: var(--ad-surface-2); }
+@media (prefers-reduced-motion: reduce) {
+  html.is-field .ad-btn:active:not(:disabled):not([aria-disabled="true"]) { transform: none; }
+}
+
+/* 4. 內文裡的連結一律有底線（按鈕、列、卡片、頁籤、導覽不算內文連結） */
+html.is-field :is(p, li, td, dd, .ad-caption, .ad-hint, .ad-notice, .ad-empty) a:not(.ad-btn):not(.ad-row):not(.ad-card--interactive):not(.ad-pill):not(.ad-tab):not(.ad-nav__link):not(.ad-tabbar__item):not(.ad-chip) {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
 }

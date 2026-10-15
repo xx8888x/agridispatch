@@ -3,10 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="智農派工本國工人工作台：今日任務、出勤打卡、行事曆、請假與薪酬。">
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <title>智農派工 AgriDispatch - 本地技術農工與專業機耕工作台</title>
   <!-- 執行模式設定（demo / production，每份副本各自一份） -->
   <script src="js/app-config.js"></script>
@@ -86,10 +82,10 @@
       <div>
         <h1 id="pageTitle" class="ad-display">今日帶隊任務</h1>
         <p class="ad-caption" style="margin-top: 6px;">
-          <span id="topBarUserName">林小祥 (帶工領班)</span> · <span id="topBarUserRole">外展帶隊小工頭 ╳ B 組 6 名組員</span>
+          <span id="topBarUserName">林小祥 (帶工領班)</span> · <span id="topBarUserRole">外展帶隊領班，B 組 6 人</span>
         </p>
       </div>
-      <p class="ad-caption" style="margin: 0;">
+      <p class="ad-caption ad-hide-sm" style="margin: 0;">
         今日職責：<strong id="headerRoleBadge" style="color: var(--ad-primary-text);">工班 B 組帶隊領班 (帶隊 6 人)</strong>
       </p>
     </div>
@@ -103,7 +99,7 @@
           <button type="button" id="btnTrackMachinery" class="ad-seg__btn" style="flex: 1;" onclick="switchLocalTrack('machinery')">機耕師</button>
           <button type="button" id="btnTrackLabor" class="ad-seg__btn" style="flex: 1;" onclick="switchLocalTrack('labor')">勞務員</button>
         </div>
-        <span id="track-status-summary" class="ad-caption">林小祥（資深小工頭 ╳ 帶領 6 名本國工班組員）</span>
+        <span id="track-status-summary" class="ad-caption ad-hide-sm">林小祥（資深小工頭，帶 6 名組員）</span>
       </div>
     </div>
 
@@ -692,9 +688,9 @@
 
     // 身分（track）與頁籤（tab）共同決定標題與可見的導覽項目
     const TRACK_META = {
-      foreman: { title: '今日帶隊任務', badge: '工班 B 組帶隊領班 (帶隊 6 人)', summary: '林小祥（資深小工頭 ╳ 帶領 6 名本國工班組員）', name: '林小祥 (帶工領班)', role: '外展帶隊小工頭 ╳ B 組 6 名組員', initial: '林' },
-      machinery: { title: '今日機耕任務', badge: '雲林彩椒溫室機耕統包中', summary: '陳建宏（資深機耕師 ╳ 曳引機與飛手）', name: '陳建宏 (資深機耕師)', role: '雙證照專業飛手 ╳ C 組組長', initial: '陳' },
-      labor: { title: '今日農務任務', badge: '農業勞務工 (今日出勤)', summary: '張志明（一般農業勞務工 ╳ 合作社在籍員工）', name: '張志明 (農業勞務工)', role: '合作社在籍農業勞務員 ╳ 屏東產區', initial: '張' }
+      foreman: { title: '今日帶隊任務', badge: '工班 B 組帶隊領班 (帶隊 6 人)', summary: '林小祥（資深小工頭，帶 6 名組員）', name: '林小祥 (帶工領班)', role: '外展帶隊領班，B 組 6 人', initial: '林' },
+      machinery: { title: '今日機耕任務', badge: '雲林彩椒溫室機耕統包中', summary: '陳建宏（資深機耕師，曳引機與飛手）', name: '陳建宏 (資深機耕師)', role: '雙證照專業飛手，C 組組長', initial: '陳' },
+      labor: { title: '今日農務任務', badge: '農業勞務工 (今日出勤)', summary: '張志明（農業勞務工，合作社在籍）', name: '張志明 (農業勞務工)', role: '合作社在籍勞務員，屏東產區', initial: '張' }
     };
 
     const ROLE_SHORT = { foreman: '帶隊領班', machinery: '機耕師', labor: '農業勞務員' };
@@ -713,8 +709,8 @@
       const { nm, team, desc, initial } = ownIdentity();
       Object.assign(TRACK_META[OWN_TRACK], {
         name: `${nm} (${ROLE_SHORT[OWN_TRACK]})`, initial,
-        summary: `${nm}（${desc}${team ? ' ╳ ' + team : ''}）`,
-        role: `${desc}${team ? ' ╳ ' + team : ''}`
+        summary: `${nm}（${desc}${team ? '，' + team : ''}）`,
+        role: `${desc}${team ? '，' + team : ''}`
       });
     }
 
@@ -1261,15 +1257,15 @@
         const team = short(fm.team.name), n = fm.members.length;
         TRACK_META.foreman.badge = `${team}帶隊領班 (帶隊 ${n} 人)`;
         TRACK_META.foreman.summary = REAL_WORKER && OWN_TRACK === 'foreman'
-          ? `${ownIdentity().nm}（帶隊領班 ╳ 帶領 ${n} 名組員）`
-          : `${PERSONA_NAME.foreman}（資深小工頭 ╳ 帶領 ${n} 名組員）`;
-        TRACK_META.foreman.role = `外展帶隊小工頭 ╳ ${team.replace('工班 ', '')} ${n} 名組員`;
+          ? `${ownIdentity().nm}（帶隊領班，帶 ${n} 名組員）`
+          : `${PERSONA_NAME.foreman}（資深小工頭，帶 ${n} 名組員）`;
+        TRACK_META.foreman.role = `外展帶隊領班，${team.replace('工班 ', '')} ${n} 人`;
         set('fm-caption-lead', `外展${team}帶隊領班，帶領 ${n} 名組員`);
         set('fm-caption-perf', `外展${team}，帶領 ${n} 名組員`);
         set('fm-pill-crew', `帶隊出勤中（${n}/${n} 到齊）`);
       }
       if (mc) TRACK_META.machinery.badge = `${short(mc.order.cropName)}・機耕作業中`;
-      if (lb && !(REAL_WORKER && OWN_TRACK === 'labor')) TRACK_META.labor.role = `合作社在籍農業勞務員 ╳ ${short(lb.team.name)}`;
+      if (lb && !(REAL_WORKER && OWN_TRACK === 'labor')) TRACK_META.labor.role = `合作社在籍勞務員，${short(lb.team.name)}`;
       const meta = TRACK_META[currentTrack];
       if (meta) {
         set('headerRoleBadge', meta.badge);

@@ -36,6 +36,21 @@
       <p class="ad-caption" style="margin-top: 6px; max-width: 760px;">使用者忘記密碼時，請先以電話或當面核對身分（姓名、手機、工號），再於此設定臨時密碼並告知本人；請本人登入後到「我的帳號」改成自己的密碼。重設後，該帳號在所有裝置上的登入都會失效。</p>
     </div>
 
+    <!-- 刪除帳號申請（App「我的帳號」或免登入網頁 account-deletion.html 送來）：核對身分後完成或不受理 -->
+    <section aria-labelledby="delTitle" style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <h2 id="delTitle" class="ad-title">刪除帳號申請 <span id="delCount" class="ad-pill ad-pill--warn" hidden></span></h2>
+        <div class="ad-tabs" role="tablist" aria-label="篩選申請">
+          <button type="button" class="ad-tab is-active" data-del-filter="pending">待處理</button>
+          <button type="button" class="ad-tab" data-del-filter="all">全部</button>
+        </div>
+      </div>
+      <p class="ad-caption">先用電話核對是本人申請（網頁申請要對姓名、電話與帳號）。完成後：無法登入、LINE 綁定解除、推播裝置刪除；農場主的姓名、電話、地址去識別化；訂單、付款、出勤、薪資紀錄依法保留。工人的聘僱資料不在這裡刪除。</p>
+      <div id="delError" class="ad-notice ad-notice--danger" role="alert" hidden></div>
+      <div id="delList" class="ad-list"></div>
+    </section>
+
+    <h2 class="ad-title">帳號與密碼</h2>
     <div class="ad-card" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
       <div class="ad-field" style="flex: 1 1 240px;">
         <label class="ad-label" for="q">搜尋</label>
@@ -87,6 +102,32 @@
       <div style="display: flex; gap: 8px; justify-content: flex-end;">
         <button type="button" class="ad-btn ad-btn--ghost" onclick="closeReset()">取消</button>
         <button id="resetBtn" type="submit" class="ad-btn ad-btn--primary">重設密碼</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 刪除帳號申請：完成／不受理 -->
+  <dialog id="delDialog" class="ad-card" style="max-width: 480px; width: calc(100vw - 32px); border: 1px solid var(--ad-border); padding: 20px;">
+    <form id="delForm" method="dialog" style="display: flex; flex-direction: column; gap: 14px;">
+      <h2 id="delDialogTitle" class="ad-heading">完成刪除</h2>
+      <p id="delWho" class="ad-caption"></p>
+      <div class="ad-field" id="delIdField">
+        <label class="ad-label" for="delIdentifier">要刪除的帳號或工號</label>
+        <input id="delIdentifier" class="ad-input" maxlength="64" autocomplete="off" spellcheck="false">
+        <span class="ad-hint">網頁申請：核對姓名、電話後填入本人的登入帳號或工號。</span>
+      </div>
+      <div class="ad-field">
+        <label class="ad-label" for="delNote" id="delNoteLabel">備註（選填）</label>
+        <textarea id="delNote" class="ad-textarea" rows="2" maxlength="500"></textarea>
+      </div>
+      <label style="display: flex; gap: 8px; align-items: flex-start;" class="ad-caption" id="delConfirmRow">
+        <input id="delConfirm" type="checkbox" style="margin-top: 3px;">
+        <span>我已用電話核對過是本人申請；刪除後無法復原。</span>
+      </label>
+      <div id="delMsg" role="alert" hidden></div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button type="button" class="ad-btn ad-btn--ghost" onclick="document.getElementById('delDialog').close()">取消</button>
+        <button id="delSubmit" type="submit" class="ad-btn ad-btn--danger">完成刪除</button>
       </div>
     </form>
   </dialog>
@@ -201,9 +242,136 @@
       btn.textContent = '已重設';
     });
 
+    // ---------------- 刪除帳號申請（GET /api/account-deletions、POST …/{id}/complete、…/{id}/reject）----------------
+    const DEL_STATUS = { pending: ['ad-pill--warn', '待處理'], completed: ['ad-pill--danger', '已刪除'], rejected: ['', '不受理'], withdrawn: ['', '已撤回'] };
+    let deletions = [];
+    let delFilter = 'pending';
+    let delTarget = null, delMode = 'complete';
+    const fmtTime = (v) => { const d = new Date(v); return isNaN(d) ? String(v || '') : d.toLocaleString('zh-TW', { hour12: false }); };
+
+    async function loadDeletions() {
+      const err = document.getElementById('delError');
+      try {
+        const res = await fetch(`${API}/account-deletions`);
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) throw new Error(body.error || `HTTP ${res.status}`);
+        deletions = body.data || [];
+        err.hidden = true;
+      } catch (e) {
+        err.textContent = `無法載入刪除帳號申請：${e instanceof TypeError ? '無法連線伺服器' : e.message}`;
+        err.hidden = false;
+        deletions = [];
+      }
+      renderDeletions();
+    }
+
+    function renderDeletions() {
+      const pending = deletions.filter(d => d.status === 'pending').length;
+      const badge = document.getElementById('delCount');
+      badge.textContent = pending;
+      badge.hidden = !pending;
+      const list = deletions.filter(d => delFilter === 'all' || d.status === 'pending');
+      document.getElementById('delList').innerHTML = list.length ? list.map(d => {
+        const st = DEL_STATUS[d.status] || ['', d.status];
+        const who = d.source === 'app'
+          ? `${esc(d.accountName || '')}（${esc(ROLE_LABEL[d.role] || d.role || '')}・帳號 ${esc(d.username || '')}）`
+          : `${esc(d.contactName || '')}・電話 ${esc(d.contactPhone || '')}${d.accountHint ? `・自填帳號 ${esc(d.accountHint)}` : ''}`
+            + (d.suggestedAccount ? `<div class="ad-caption">對應到帳號 ${esc(d.suggestedAccount)}（${esc(d.accountName || '')}），仍須核對姓名與電話</div>` : '');
+        const meta = [
+          `${esc(d.id)}・${d.source === 'app' ? 'App 申請' : '網頁申請'}・${esc(fmtTime(d.createdAt))}`,
+          d.reason ? `原因：${esc(d.reason)}` : '',
+          d.decidedAt ? (d.status === 'withdrawn' ? `${esc(fmtTime(d.decidedAt))} 本人撤回`
+            : `${esc(fmtTime(d.decidedAt))} 由 ${esc(d.decidedBy || '')} 處理${d.decisionNote ? '：' + esc(d.decisionNote) : ''}`) : '',
+          d.resultSummary ? `處理結果：${esc(d.resultSummary)}` : ''
+        ].filter(Boolean).map(t => `<div class="ad-row__meta">${t}</div>`).join('');
+        const warn = (d.warnings || []).map(w => `<div class="ad-row__meta" style="color: var(--ad-danger-text);">⚠ ${esc(w)}</div>`).join('');
+        const actions = d.status === 'pending'
+          ? `<button type="button" class="ad-btn ad-btn--danger ad-btn--sm" data-del="${esc(d.id)}" data-mode="complete">完成刪除</button>
+             <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-del="${esc(d.id)}" data-mode="reject">不受理</button>` : '';
+        return `<div class="ad-row ad-card" style="align-items: flex-start;">
+          <div class="ad-row__main"><div class="ad-row__title" style="white-space: normal;">${who} <span class="ad-pill ${st[0]}">${esc(st[1])}</span></div>${meta}${warn}</div>
+          <div class="ad-row__aside" style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;">${actions}</div>
+        </div>`;
+      }).join('') : `<div class="ad-empty">${delFilter === 'pending' ? '目前沒有待處理的申請。' : '還沒有任何申請。'}</div>`;
+    }
+
+    function showDelMsg(text, ok) {
+      const el = document.getElementById('delMsg');
+      el.className = ok ? 'ad-notice ad-notice--ok' : 'ad-notice ad-notice--danger';
+      el.textContent = text;
+      el.hidden = !text;
+    }
+
+    function openDeletion(id, mode) {
+      delTarget = deletions.find(d => d.id === id);
+      if (!delTarget) return;
+      delMode = mode;
+      const complete = mode === 'complete';
+      const web = delTarget.source === 'web';
+      document.getElementById('delDialogTitle').textContent = complete ? '完成刪除' : '不受理';
+      document.getElementById('delWho').innerHTML = delTarget.source === 'app'
+        ? `${esc(delTarget.id)}：${esc(delTarget.accountName || '')}（帳號 ${esc(delTarget.username || '')}）`
+        : `${esc(delTarget.id)}：${esc(delTarget.contactName || '')}・電話 ${esc(delTarget.contactPhone || '')}`;
+      document.getElementById('delIdField').hidden = !(complete && web);
+      document.getElementById('delIdentifier').value = web ? (delTarget.suggestedAccount || '') : '';
+      document.getElementById('delNoteLabel').textContent = complete ? '備註（選填）' : '不受理原因（會顯示給申請人）';
+      document.getElementById('delNote').value = '';
+      document.getElementById('delConfirmRow').hidden = !complete;
+      document.getElementById('delConfirm').checked = false;
+      const btn = document.getElementById('delSubmit');
+      btn.disabled = false;
+      btn.textContent = complete ? '完成刪除' : '不受理';
+      btn.className = 'ad-btn ' + (complete ? 'ad-btn--danger' : 'ad-btn--primary');
+      showDelMsg('');
+      document.getElementById('delDialog').showModal();
+    }
+
+    document.getElementById('delList').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-del]');
+      if (btn) openDeletion(btn.dataset.del, btn.dataset.mode);
+    });
+    document.querySelectorAll('[data-del-filter]').forEach(b => b.addEventListener('click', () => {
+      delFilter = b.dataset.delFilter;
+      document.querySelectorAll('[data-del-filter]').forEach(x => x.classList.toggle('is-active', x === b));
+      renderDeletions();
+    }));
+
+    document.getElementById('delForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const complete = delMode === 'complete';
+      const note = document.getElementById('delNote').value.trim();
+      const payload = { note };
+      if (complete) {
+        if (delTarget.source === 'web') {
+          payload.identifier = document.getElementById('delIdentifier').value.trim();
+          if (!payload.identifier) return showDelMsg('請填入核對過的帳號或工號。');
+        }
+        if (!document.getElementById('delConfirm').checked) return showDelMsg('請先用電話核對本人並勾選確認。');
+      } else if (!note) {
+        return showDelMsg('請填寫不受理原因。');
+      }
+      const btn = document.getElementById('delSubmit');
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${API}/account-deletions/${encodeURIComponent(delTarget.id)}/${complete ? 'complete' : 'reject'}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) throw new Error(body.error || body.message || `HTTP ${res.status}`);
+        showDelMsg(complete ? `已刪除。${(body.data && body.data.resultSummary) || ''}` : '已設為不受理。', true);
+        btn.textContent = '已完成';
+        loadDeletions();
+        if (complete) load();   // 帳號清單跟著更新
+      } catch (err) {
+        btn.disabled = false;
+        showDelMsg(err instanceof TypeError ? '無法連線伺服器，請稍後再試。' : `未完成：${err.message}`);
+      }
+    });
+
     window.addEventListener('DOMContentLoaded', () => {
       if (window.lucide) lucide.createIcons();
       load();
+      loadDeletions();
     });
   </script>
 </body>

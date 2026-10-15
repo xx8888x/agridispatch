@@ -38,6 +38,9 @@
 | POST | `/api/auth/logout-all` | 需登入（本人） | 登出所有裝置（2026-10-13 起）：token 版本 +1（本帳號所有 token 含本次立即失效），並刪除本帳號（`username`）的 App 推播裝置（`push_tokens`），回 `{success, pushDevicesRemoved}`；密碼不變。demo 免密 token 不比對版本，回 400 |
 | POST | `/api/auth/reset-password` | 僅 admin_tech | body `{identifier, newPassword}`：替使用者設定臨時密碼（忘記密碼時，合作社以電話或當面核對身分後操作，後台「帳號與密碼管理」`TechBackend/accounts.html`）；`identifier` 為 users 帳號或農工工號；該帳號 token 版本 +1。系統沒有簡訊／Email 自助重設 |
 | GET | `/api/auth/accounts` | 僅 admin_tech | 帳號清單（2026-10-13 起）：`[{identifier, name, role, refId, roleDesc, teamId?, kind: user/worker, hasPassword}]`，**不含**密碼雜湊與證號 |
+| POST／GET／DELETE | `/api/account/deletion-request` | 需登入（本人，admin_tech 除外） | 刪除帳號申請（2026-10-15 起，Google Play 規定）：POST `{reason?}` 申請（同時只能一筆待處理，重複 409）、GET 本人最近一筆、DELETE 撤回待處理。回應不含後台欄位 |
+| POST | `/api/public/account-deletion` | 公開 | 免登入網頁申請 `{name, phone, account?, reason?}`：同一 IP 每小時 5 次（429）；不查帳號是否存在、回應一律相同 |
+| GET／POST | `/api/account-deletions`、`/{id}/complete`、`/{id}/reject` | 僅 admin_tech | 申請清單（待處理附未完成訂單等提醒，網頁申請附 `suggestedAccount`）；complete `{identifier?（網頁申請必填）, note?}`、reject `{note}`（必填）。完成時的處理見 ERD 第參章第 17 點 |
 | GET | `/api/auth/quick-profiles` | **僅 demo 模式** | 示範帳號清單，**不含**密碼、居留證號、護照號；非 demo 模式回 404 |
 | GET | `/api/public/config` | 公開 | `{success:true, demoEnabled, paymentProvider}` |
 
@@ -45,9 +48,9 @@
 
 ## 5. 授權規則
 
-- **公開（不需 token）**：`POST /api/auth/login`、`POST /api/auth/register`、`POST /api/auth/demo-login`、`GET /api/public/**`、`GET /api/crops/**`、`GET /api/calendar/**`、`GET /api/brochures/**`、`GET /api/legalize/types`（黑轉白身分類型與法規參考文字）、`GET /api/payments/methods`、`GET /api/orders/categories`、`POST /api/orders/calculate`、`POST /api/talents/register`、`GET /api/dispatch/overview`、`GET /api/dispatch/weather-state`、`POST /api/payments/ecpay/notify`（以 CheckMacValue 驗證）、`POST /api/line/webhook`（已停用，一律回 410，見下方）、`POST /api/line/internal/**`（LINE Bot 內部端點，以 `X-Internal-Key` 驗證，見下方「LINE 官方帳號」）。
+- **公開（不需 token）**：`POST /api/auth/login`、`POST /api/auth/register`、`POST /api/public/account-deletion`（刪除帳號網頁申請，限次）、`POST /api/auth/demo-login`、`GET /api/public/**`、`GET /api/crops/**`、`GET /api/calendar/**`、`GET /api/brochures/**`、`GET /api/legalize/types`（黑轉白身分類型與法規參考文字）、`GET /api/payments/methods`、`GET /api/orders/categories`、`POST /api/orders/calculate`、`POST /api/talents/register`、`GET /api/dispatch/overview`、`GET /api/dispatch/weather-state`、`POST /api/payments/ecpay/notify`（以 CheckMacValue 驗證）、`POST /api/line/webhook`（已停用，一律回 410，見下方）、`POST /api/line/internal/**`（LINE Bot 內部端點，以 `X-Internal-Key` 驗證，見下方「LINE 官方帳號」）。
 - **需登入**：其餘 `/api/**`。
-- **僅 admin_tech**：crops / brochures / talents / workers 的新增修改刪除、`/api/dispatch/*` 的 POST/PUT/DELETE（含 `POST /api/dispatch/teams` 新增工班、`DELETE /api/dispatch/teams/{id}` 刪除工班）、`GET /api/line/config`（原 `POST` 執行中改金鑰已於 2026-10-13 移除，金鑰只由環境變數／LINE Bot `config.properties` 提供）、`GET /api/line/bindings`、`DELETE /api/line/bindings/{id}`、`/api/notifications/send`、`GET /api/workers`（完整名冊）、`/api/dev/**`。
+- **僅 admin_tech**：crops / brochures / talents / workers 的新增修改刪除、`/api/dispatch/*` 的 POST/PUT/DELETE（含 `POST /api/dispatch/teams` 新增工班、`DELETE /api/dispatch/teams/{id}` 刪除工班）、`GET /api/line/config`（原 `POST` 執行中改金鑰已於 2026-10-13 移除，金鑰只由環境變數／LINE Bot `config.properties` 提供）、`GET /api/line/bindings`、`DELETE /api/line/bindings/{id}`、`/api/notifications/send`、`GET /api/workers`（完整名冊）、`/api/account-deletions/**`（刪除帳號申請審核，Controller 另以 `requireAdmin` 檢查）、`/api/dev/**`。
 - **LINE 官方帳號（農場主／工作者雙帳號，規格 `05_LINE官方帳號拆分規格.md` 第伍、陸章）**：
   - 內部端點 `POST /api/line/internal/identity`、`/follow-state`、`/query` 只給 LINE Bot 呼叫：`X-Internal-Key` 須與 `AGRI_LINEBOT_INTERNAL_KEY` 相同（constant-time 比對），**未設定金鑰時整組回 403**。`query` 依帳號與身分限制：農場主帳號 `orders` 限已綁定且只回本人訂單（`orders.farmerId == line_users.ref_id`）、`rates`／`calendar` 公開；工作者帳號目前一律回空清單。不回工班名冊。
   - `POST /api/line/bind`（需登入）`{channel, idToken}`：LINE userId **只取自後端向 LINE 驗證過的 ID token**（`LINE_LOGIN_CHANNEL_ID`）；未設定時 production 回 503，demo 模式接受 `mock:U+32位十六進位` 假 token。身分須與帳號相符（farmer↔`farmer`、worker↔`worker_*`），否則 409；同一個 LINE userId 或同一人（同身分同 refId）在同一帳號只能有一筆綁定，重複 409。

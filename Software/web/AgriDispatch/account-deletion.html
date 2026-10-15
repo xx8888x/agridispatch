@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 AgriDispatch - 申請刪除帳號</title>
+  <script src="js/app-config.js"></script>
+  <script src="js/api-client.js"></script>
+  <script src="js/vendor/tailwindcss-3.4.17.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>');
+    }
+  </script>
+  <script src="js/agri-theme.js"></script>
+  <script src="js/vendor/lucide.min.js"></script>
+  <script>
+    if (typeof lucide === 'undefined') {
+      document.write('<script src="https://unpkg.com/lucide@1.47.0"><\/script>');
+    }
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/agri.css">
+</head>
+<!--
+  免登入的刪除帳號申請頁（Google Play 規定：不用裝 App 也能申請刪除帳號；此頁網址填在 Play Console）。
+  POST /api/public/account-deletion {name, phone, account?, reason?}：只建立申請，由合作社核對身分後在科技後台刪除。
+  回應不透露帳號是否存在。已登入 App 的使用者也可在「我的帳號」申請（account.html#delete）。
+-->
+<body class="ad-body min-h-screen flex flex-col">
+
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner">
+      <a href="index.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">刪除帳號</span>
+      </a>
+      <div class="ad-header__actions"></div>
+    </div>
+  </header>
+
+  <main class="flex-1 ad-container w-full" style="padding-block: 32px 40px;">
+    <div style="max-width: 520px; margin-inline: auto; display: flex; flex-direction: column; gap: 20px;">
+      <div>
+        <h1 class="ad-display">申請刪除帳號</h1>
+        <p class="ad-caption" style="margin-top: 6px;">智農派工（農場主、工作者）的帳號都可以在這裡申請刪除，不需要登入或安裝 App。還能登入的話，也可以在 App 的「我的帳號」申請。</p>
+      </div>
+
+      <section class="ad-card" aria-labelledby="howTitle">
+        <h2 id="howTitle" class="ad-heading" style="margin-bottom: 8px;">處理方式</h2>
+        <ol class="ad-caption" style="padding-left: 1.2em; list-style: decimal; display: flex; flex-direction: column; gap: 4px;">
+          <li>填寫下方表單送出。</li>
+          <li>有限責任智農農業勞務生產合作社會打電話給你，核對是本人申請。</li>
+          <li>確認後刪除帳號：無法再登入，LINE 綁定解除、App 不再收到通知；農場主的姓名、電話與農場地址會從系統移除。</li>
+        </ol>
+        <p class="ad-caption" style="margin-top: 8px;">依法須保存的紀錄（訂單與付款、出勤與薪資）會由合作社保存到法定期間屆滿後再刪除。工作者刪除 App 帳號不會終止聘僱關係，要離職請直接洽合作社。</p>
+      </section>
+
+      <form id="form" class="ad-card" novalidate style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="ad-field">
+          <label class="ad-label" for="name">姓名 *</label>
+          <input id="name" class="ad-input" maxlength="50" autocomplete="name" required>
+        </div>
+        <div class="ad-field">
+          <label class="ad-label" for="phone">聯絡電話 *</label>
+          <input id="phone" class="ad-input" type="tel" maxlength="20" autocomplete="tel" inputmode="tel" placeholder="合作社會用這支電話跟你核對身分" required>
+        </div>
+        <div class="ad-field">
+          <label class="ad-label" for="account">登入帳號、工號或手機（選填）</label>
+          <input id="account" class="ad-input" maxlength="64" autocomplete="username">
+          <span class="ad-hint">記得的話請填，方便合作社找到你的帳號。</span>
+        </div>
+        <div class="ad-field">
+          <label class="ad-label" for="reason">申請原因（選填）</label>
+          <textarea id="reason" class="ad-textarea" rows="2" maxlength="500"></textarea>
+        </div>
+        <div id="msg" role="alert" hidden></div>
+        <button id="btn" type="submit" class="ad-btn ad-btn--danger">送出刪除申請</button>
+      </form>
+
+      <p class="ad-caption" style="text-align: center;">有問題請撥合作社專線 <a href="tel:033881234" style="color: var(--ad-primary-text);">(03) 388-1234</a></p>
+    </div>
+  </main>
+
+  <footer class="ad-caption" style="padding: 20px 16px; text-align: center; border-top: 1px solid var(--ad-border);">
+    © 2026 智農派工 AgriDispatch
+  </footer>
+
+  <script>
+    (function () {
+      const API = (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+      const $ = (id) => document.getElementById(id);
+      function show(text, ok) {
+        $('msg').className = ok ? 'ad-notice ad-notice--ok' : 'ad-notice ad-notice--danger';
+        $('msg').textContent = text;
+        $('msg').hidden = !text;
+      }
+      $('form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = $('name').value.trim(), phone = $('phone').value.trim();
+        if (!name) return show('請填寫姓名。');
+        if (!/^\+?\d{8,15}$/.test(phone.replace(/[\s()-]/g, ''))) return show('請填寫可以聯絡到你的電話。');
+        show('');
+        $('btn').disabled = true;
+        try {
+          const res = await fetch(`${API}/public/account-deletion`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, phone, account: $('account').value.trim(), reason: $('reason').value.trim() })
+          });
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok || body.success === false) throw new Error(body.error || body.message || `HTTP ${res.status}`);
+          e.target.reset();
+          show(body.message || '已收到你的申請，合作社會打電話跟你核對身分。', true);
+        } catch (err) {
+          $('btn').disabled = false;
+          show(err instanceof TypeError ? '無法連線伺服器，申請未送出，請稍後再試或撥合作社專線。' : `申請未送出：${err.message}`);
+          return;
+        }
+        $('btn').textContent = '已送出';
+      });
+      if (window.lucide) lucide.createIcons();
+    })();
+  </script>
+</body>
+</html>

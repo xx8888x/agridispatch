@@ -72,6 +72,31 @@
       <p class="ad-caption" style="margin-top: 12px;">手機遺失或懷疑別人用過你的帳號時，按「登出所有裝置」：所有電腦、手機上的登入都會失效，手機 App 也不會再收到通知。密碼不會變，之後用原密碼重新登入即可；若懷疑密碼外洩，請再修改密碼。</p>
       <div id="logoutAllMsg" role="alert" style="margin-top: 12px;" hidden></div>
     </section>
+
+    <!-- 刪除帳號（Google Play 規定）：送出申請 → 合作社核對身分 → 後台完成刪除；後台帳號不顯示 -->
+    <section id="delete" class="ad-card" aria-labelledby="delTitle" hidden>
+      <div class="ad-card__head"><h2 id="delTitle" class="ad-heading">刪除帳號</h2></div>
+      <div class="ad-caption" style="display: flex; flex-direction: column; gap: 6px;">
+        <p>送出申請後，合作社會打電話跟你核對身分，確認後刪除帳號。刪除後：</p>
+        <ul style="padding-left: 1.2em; list-style: disc; display: flex; flex-direction: column; gap: 4px;">
+          <li>無法再用這個帳號登入，已登入的裝置也會登出。</li>
+          <li>LINE 官方帳號的綁定會解除，手機 App 不再收到通知。</li>
+          <li id="delFarmerNote" hidden>你的姓名、電話與農場地址會從系統移除。還沒完工的訂單要先完工或取消才能刪除。</li>
+          <li id="delWorkerNote" hidden>刪除的是 App 帳號，不會終止你和合作社的聘僱關係；要離職請直接洽合作社。</li>
+          <li id="delKeepNote">依法須保存的紀錄（訂單與付款、出勤與薪資）會由合作社保存到法定期間屆滿。</li>
+        </ul>
+      </div>
+      <div id="delStatus" role="status" style="margin-top: 12px;" hidden></div>
+      <form id="delForm" novalidate style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
+        <div class="ad-field">
+          <label class="ad-label" for="delReason">申請原因（選填）</label>
+          <textarea id="delReason" class="ad-textarea" rows="2" maxlength="500" placeholder="例如：不再使用、換了帳號"></textarea>
+        </div>
+        <label class="ad-choice" style="display: inline-flex;"><input id="delConfirm" type="checkbox"> 我了解帳號刪除後無法復原</label>
+        <div id="delMsg" role="alert" hidden></div>
+        <div><button id="delBtn" type="submit" class="ad-btn ad-btn--danger">申請刪除帳號</button></div>
+      </form>
+    </section>
   </main>
 
   <script>
@@ -195,9 +220,89 @@
       setTimeout(() => { window.location.href = login; }, 2000);
     }
 
+    // ---------------- 刪除帳號申請（POST／GET／DELETE /api/account/deletion-request）----------------
+    const DEL_STATUS = { pending: '處理中', rejected: '不受理', withdrawn: '已撤回', completed: '已刪除' };
+    const fmtDate = (v) => { const d = new Date(v); return isNaN(d) ? String(v || '') : d.toLocaleDateString('zh-TW'); };
+
+    function showDelMsg(text, ok) {
+      const el = document.getElementById('delMsg');
+      el.className = ok ? 'ad-notice ad-notice--ok' : 'ad-notice ad-notice--danger';
+      el.textContent = text;
+      el.hidden = !text;
+    }
+
+    function renderDeletion(r) {
+      const box = document.getElementById('delStatus');
+      const form = document.getElementById('delForm');
+      const pending = r && r.status === 'pending';
+      form.hidden = pending;
+      if (!r || r.status === 'withdrawn') { box.hidden = true; return; }
+      box.className = 'ad-notice ' + (pending ? 'ad-notice--warn' : 'ad-notice--danger');
+      box.innerHTML = pending
+        ? `已於 ${esc(fmtDate(r.createdAt))} 送出刪除帳號申請（${esc(r.id)}），合作社處理中，會打電話跟你核對身分。`
+          + ` <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" id="delWithdrawBtn">撤回申請</button>`
+        : `上次的申請（${esc(r.id)}）${esc(DEL_STATUS[r.status] || r.status)}${r.decisionNote ? '：' + esc(r.decisionNote) : ''}。如有需要可以重新申請。`;
+      box.hidden = false;
+      const w = document.getElementById('delWithdrawBtn');
+      if (w) w.addEventListener('click', withdrawDeletion);
+    }
+
+    async function loadDeletion() {
+      if (!me || me.role === 'admin_tech') return;
+      document.getElementById('delete').hidden = false;
+      const worker = /^worker_/.test(me.role || '');
+      document.getElementById('delFarmerNote').hidden = me.role !== 'farmer';
+      document.getElementById('delWorkerNote').hidden = !worker;
+      try {
+        const res = await fetch(`${API}/account/deletion-request`);
+        const body = await res.json().catch(() => ({}));
+        if (res.ok) renderDeletion(body.data);
+      } catch (e) { /* 讀不到狀態：照常顯示申請表單，送出時後端會擋重複申請 */ }
+    }
+
+    document.getElementById('delForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!document.getElementById('delConfirm').checked) return showDelMsg('請先勾選「我了解帳號刪除後無法復原」。');
+      if (!window.confirm('確定要申請刪除帳號？合作社核對身分後就會刪除，無法復原。')) return;
+      showDelMsg('');
+      const btn = document.getElementById('delBtn');
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${API}/account/deletion-request`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: document.getElementById('delReason').value.trim() })
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) throw new Error(body.error || body.message || `HTTP ${res.status}`);
+        e.target.reset();
+        renderDeletion(body.data);
+      } catch (err) {
+        showDelMsg(err instanceof TypeError ? '無法連線伺服器，申請未送出，請稍後再試。' : `申請未送出：${err.message}`);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    async function withdrawDeletion() {
+      if (!window.confirm('確定撤回刪除帳號申請？')) return;
+      try {
+        const res = await fetch(`${API}/account/deletion-request`, { method: 'DELETE' });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) throw new Error(body.error || body.message || `HTTP ${res.status}`);
+        renderDeletion(body.data);
+        showDelMsg('已撤回申請。', true);
+      } catch (err) {
+        showDelMsg(err instanceof TypeError ? '無法連線伺服器，請稍後再試。' : `未撤回：${err.message}`);
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       if (window.lucide) lucide.createIcons();
-      loadMe().then(() => { if (location.hash === '#password') document.getElementById('pwdOld').focus(); });
+      loadMe().then(() => {
+        loadDeletion();
+        if (location.hash === '#password') document.getElementById('pwdOld').focus();
+        if (location.hash === '#delete') document.getElementById('delete').scrollIntoView();
+      });
     });
   </script>
 </body>

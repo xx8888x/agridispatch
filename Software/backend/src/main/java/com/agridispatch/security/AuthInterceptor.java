@@ -39,6 +39,7 @@ public class AuthInterceptor implements HandlerInterceptor {
     private static final List<String[]> PUBLIC = List.of(
             new String[]{"POST", "/api/auth/login"},
             new String[]{"POST", "/api/auth/register"},       // 農場主自助註冊（RegisterRateLimiter 限次）
+            new String[]{"POST", "/api/public/account-deletion"}, // 免登入刪除帳號申請（Play 規定；AccountDeletionService 限次）
             new String[]{"POST", "/api/auth/demo-login"},
             new String[]{"GET", "/api/auth/quick-profiles"},   // 僅 demo 模式有效，非 demo 回 404
             new String[]{"GET", "/api/public/**"},
@@ -85,6 +86,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             new String[]{"POST", "/api/payments/transactions/*/void"},   // 作廢尾款登錄
             new String[]{"GET", "/api/legalize/summary"},        // 各農場黑轉白彙總（科技後台）
             new String[]{"POST", "/api/auth/reset-password"},
+            new String[]{"*", "/api/account-deletions"}, new String[]{"*", "/api/account-deletions/**"},  // 刪除帳號申請審核
             new String[]{"GET", "/api/auth/accounts"},
             new String[]{"GET", "/api/leaves"},                                    // 全部請假（合作社審核）
             new String[]{"POST", "/api/leaves/*/approve"}, new String[]{"POST", "/api/leaves/*/reject"},

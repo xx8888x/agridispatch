@@ -1,6 +1,6 @@
 # 智農派工 (AgriDispatch) - 資料庫實體關聯圖與資料字典 (ERD)
 
-> **文件版本**：v3.8.0（2026-10-13，新增工人請假 `worker_leaves`，見 2.20、第參章第 16 點）；v3.7.0（2026-10-13，新增出勤補登／修正與月結算 `attendance_corrections`、`payroll_months`、`payroll_slips`，見 2.17～2.19、第參章第 15 點）；v3.6.0（2026-10-02，新增 `legalize_workers` 工班合法化清冊，見 2.15）；v3.5.0（2026-10-02，`line_users` 改為 LINE 雙帳號結構並開始使用，見 2.14）；v3.4.0（2026-10-01，依 `Software/backend/src/main/java/com/agridispatch/entity/*.java` 實際 JPA 實體更新：新增 `team_ratings`、`insurance_records`、`skill_reviews`、`clock_ins.orderId` 與領班評核欄位、`orders.crewWorkerIds`、`orders.startDate`／`endDate`，補列 `farmers`、`financial_ledger`、`line_users`、`line_messages`；v3.0.0 為 2026-09-23）
+> **文件版本**：v3.9.0（2026-10-15，新增刪除帳號申請 `account_deletion_requests`、補 App 推播權杖 `push_tokens`，見 2.21、2.22、第參章第 17 點）；v3.8.0（2026-10-13，新增工人請假 `worker_leaves`，見 2.20、第參章第 16 點）；v3.7.0（2026-10-13，新增出勤補登／修正與月結算 `attendance_corrections`、`payroll_months`、`payroll_slips`，見 2.17～2.19、第參章第 15 點）；v3.6.0（2026-10-02，新增 `legalize_workers` 工班合法化清冊，見 2.15）；v3.5.0（2026-10-02，`line_users` 改為 LINE 雙帳號結構並開始使用，見 2.14）；v3.4.0（2026-10-01，依 `Software/backend/src/main/java/com/agridispatch/entity/*.java` 實際 JPA 實體更新：新增 `team_ratings`、`insurance_records`、`skill_reviews`、`clock_ins.orderId` 與領班評核欄位、`orders.crewWorkerIds`、`orders.startDate`／`endDate`，補列 `farmers`、`financial_ledger`、`line_users`、`line_messages`；v3.0.0 為 2026-09-23）
 > **資料庫**：H2 檔案資料庫（`Software/backend/data/agridispatch_db`），Hibernate `ddl-auto: update` 自動建表
 > **Visio 圖檔**：同資料夾的 `.vdx` / `.vsdx` 為 v2.0 舊版，**以本文件的 Mermaid 圖為準**
 
@@ -178,6 +178,20 @@ erDiagram
         string status "pending/approved/rejected/cancelled"
         string decisionNote
     }
+    push_tokens {
+        string id PK "token 的 SHA-256"
+        string token
+        string username "→ users.username 或 workers.id"
+        string refId
+        string role
+    }
+    account_deletion_requests {
+        string id PK "DR-YYYY-NNN"
+        string source "app/web"
+        string username "app：申請人；web：完成時填入"
+        string status "pending/completed/rejected/withdrawn"
+        string resultSummary
+    }
     talents {
         string id PK
         string name
@@ -318,6 +332,8 @@ erDiagram
     workers ||..o{ insurance_records : "workerId"
     workers ||..o{ skill_reviews : "workerId"
     users ||..o{ line_users : "refId（綁定）"
+    users ||..o{ push_tokens : "username（邏輯關聯）"
+    users ||..o{ account_deletion_requests : "username（邏輯關聯）"
 ```
 
 ---
@@ -607,6 +623,33 @@ erDiagram
 
 > API：`/api/workers/{id}/leaves`、`/api/leaves/**`，見第參章第 16 點與規格書 03 第 5 節。
 
+### 2.21 App 推播權杖 `push_tokens`（實體 `PushToken`，2026-10-13 起）
+| 欄位 | 型別 | 說明 |
+| :--- | :--- | :--- |
+| `id` (PK) | String(64) | FCM token 的 SHA-256（token 太長不當主鍵） |
+| `token` | String(1024) | Firebase Cloud Messaging 裝置權杖 |
+| `username` | String(64) | 最後上傳此 token 的登入者（`users.username` 或工號）；同一台裝置換人登入時改綁 |
+| `ref_id` / `role` | String(32) | 登入者 ref（F001、W001）與角色，推播依 ref、帳號或角色選取對象 |
+| `platform` | String(16) | `android` |
+| `updated_at` | LocalDateTime | 最後上傳時間 |
+
+> API：`/api/notifications/fcm/register`、`/fcm/unregister`、`/fcm/status`（admin）。登出所有裝置、刪除帳號時刪除該帳號的 token。
+
+### 2.22 刪除帳號申請 `account_deletion_requests`（實體 `AccountDeletionRequest`，2026-10-15 起）
+| 欄位 | 型別 | 說明 |
+| :--- | :--- | :--- |
+| `id` (PK) | String(32) | `DR-YYYY-NNN` |
+| `source` | String(8) | `app` App「我的帳號」申請（已登入）／`web` 免登入網頁 `account-deletion.html` 申請 |
+| `username` / `ref_id` / `role` | String(64) / String(32) / String(32) | app：申請人登入身分；web：完成時填入後台核對後實際刪除的帳號 |
+| `contact_name` / `contact_phone` / `account_hint` | String(50) / String(30) / String(64) | web：使用者自填的姓名、電話、帳號（合作社據以核對身分） |
+| `reason` | String(500) | 申請原因（選填） |
+| `status` | String(16) | `pending` 待處理 / `completed` 已刪除 / `rejected` 不受理 / `withdrawn` 本人撤回 |
+| `created_at` | LocalDateTime | 申請時間 |
+| `decided_at` / `decided_by` / `decision_note` | LocalDateTime / String(64) / String(500) | 處理時間、操作人與備註（不受理須填原因） |
+| `result_summary` | String(500) | 完成時實際做了什麼（解除 LINE 幾筆、刪除推播裝置幾台、去識別化範圍），供日後查核 |
+
+> API：`/api/account/deletion-request`（本人）、`/api/public/account-deletion`（公開）、`/api/account-deletions/**`（admin），見第參章第 17 點與規格書 03 第 5 節。
+
 ---
 
 ## 參、 商業完整性規則（程式實作）
@@ -647,6 +690,11 @@ erDiagram
    - 已核准的假在派工媒合視同撞期（`MatchingService.busyWorkers`）：出工名單、指名、共享班表一併排除，半天假只佔該時段；待審核不擋派工。申請與核准回傳本人已排入的重疊訂單／班表（`conflicts`），由合作社改派，系統不自動移出名單。
    - 通知：本人申請 → App 推播給 admin；核准、駁回、admin 取消已核准的假 → LINE 工作者帳號 `leave_decided`（三語）與 App 推播給本人。
    - 假別給薪、天數上限與證明文件依勞基法、勞工請假規則、性平法【待確認】；系統只記錄假別，不檢查額度、不影響薪資試算。
+17. **刪除帳號**（`AccountDeletionService`，2026-10-15 起；Google Play 刪除帳號規定）：
+   - 申請：已登入者每個帳號同時只能有一筆待處理（重複回 409），可撤回；後台帳號（`admin_tech`）不受理。免登入網頁申請同一 IP 每小時 5 次，回應一律相同、不透露帳號是否存在。
+   - 系統不自動刪除：合作社以電話核對本人後由 admin 完成或不受理（須填原因）；網頁申請須由 admin 指定核對過的帳號。
+   - 完成時：解除兩個 LINE 官方帳號的綁定、刪除推播權杖。農場主：刪除 `users` 帳號（既有 token 立即失效），`farmers` 與 `farms` 的姓名、電話、地址改為「（已刪除）」、統一編號清空；有 `pending`／`confirmed`／`in_progress` 訂單時回 409。工人：清除 `password_hash`、`token_version` +1；`workers` 的聘僱、保險資料是合作社（法定雇主）人事紀錄，不在此刪除。
+   - 保留：訂單、付款、出勤、工資紀錄依勞基法第 23、30 條與稅法保存（期間【待確認】）；保存期滿後的刪除尚未實作。
 
 ---
 

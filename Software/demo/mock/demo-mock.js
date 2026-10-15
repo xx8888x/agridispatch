@@ -1375,6 +1375,80 @@
     return respond(200, { success: true, data: rec });
   }
 
+  // ---------------- 刪除帳號申請（同後端 AccountDeletionService 的狀態流程；示範模式不會真的刪除示範帳號）----------------
+  var DEL_KEY = 'MOCK /account-deletions';
+  function delList() { var e = get(DEL_KEY); return (e && e.list) || []; }
+  function saveDel(list) { put(DEL_KEY, { list: list }); }
+  function delNextId() {
+    var prefix = 'DR-' + new Date().getFullYear() + '-', max = 0;
+    delList().forEach(function (r) { if (r.id.indexOf(prefix) === 0) max = Math.max(max, parseInt(r.id.slice(prefix.length), 10) || 0); });
+    return prefix + String(max + 1).padStart(3, '0');
+  }
+  function delPublic(r) {
+    return { id: r.id, source: r.source, status: r.status, createdAt: r.createdAt, decidedAt: r.decidedAt || null,
+      decisionNote: r.decisionNote || null, reason: r.reason || null };
+  }
+  function delRequest(b) {
+    var u = currentUser();
+    if (!u) return respond(401, { success: false, error: '請先登入' });
+    if (u.role === 'admin_tech') return respond(400, { success: false, error: '後台管理帳號請洽系統管理員處理' });
+    var list = delList();
+    if (list.some(function (r) { return r.username === u.username && r.status === 'pending'; })) {
+      return respond(409, { success: false, error: '您已送出刪除帳號申請，合作社處理中' });
+    }
+    var r = { id: delNextId(), source: 'app', username: u.username, refId: u.refId || null, role: u.role, accountName: u.name || '',
+      reason: blank(b.reason) ? null : String(b.reason).trim().slice(0, 500), status: 'pending', createdAt: localStamp(new Date()) };
+    list.unshift(r);
+    saveDel(list);
+    return respond(200, { success: true, data: delPublic(r), message: '已送出申請，合作社核對身分後會處理並通知您' });
+  }
+  function delMine() {
+    var u = currentUser();
+    if (!u) return respond(401, { success: false, error: '請先登入' });
+    var r = delList().filter(function (x) { return x.source === 'app' && x.username === u.username; })[0];
+    return respond(200, { success: true, data: r ? delPublic(r) : null });
+  }
+  function delWithdraw() {
+    var u = currentUser(), list = delList();
+    var r = u && list.filter(function (x) { return x.username === u.username && x.status === 'pending'; })[0];
+    if (!r) return respond(404, { success: false, error: '沒有待處理的刪除帳號申請' });
+    r.status = 'withdrawn'; r.decidedAt = localStamp(new Date()); r.decidedBy = u.username;
+    saveDel(list);
+    return respond(200, { success: true, data: delPublic(r), message: '已撤回刪除帳號申請' });
+  }
+  function delWeb(b) {
+    if (blank(b.name) || String(b.name).trim().length > 50) return respond(400, { success: false, error: '請填寫姓名（50 字以內）' });
+    var phone = String(b.phone || '').replace(/[\s()-]/g, '');
+    if (!/^\+?\d{8,15}$/.test(phone)) return respond(400, { success: false, error: '請填寫可以聯絡到您的電話' });
+    var list = delList(), hint = blank(b.account) ? null : String(b.account).trim();
+    var match = hint && ((listOf(get('GET /auth/accounts')) || []).filter(function (a) {
+      return String(a.identifier).toLowerCase() === hint.toLowerCase();
+    })[0]);
+    list.unshift({ id: delNextId(), source: 'web', contactName: String(b.name).trim(), contactPhone: phone, accountHint: hint,
+      suggestedAccount: match ? match.identifier : null, accountName: match ? match.name : null,
+      reason: blank(b.reason) ? null : String(b.reason).trim().slice(0, 500), status: 'pending', createdAt: localStamp(new Date()) });
+    saveDel(list);
+    return respond(200, { success: true, message: '已收到您的申請。合作社會以您留的電話聯絡核對身分，確認後刪除帳號。' });
+  }
+  function delDecide(id, action, b) {
+    var list = delList(), r = list.filter(function (x) { return x.id === id; })[0], me = currentUser() || {};
+    if (!r) return respond(404, { success: false, error: '查無此申請' });
+    if (r.status !== 'pending') return respond(409, { success: false, error: '此申請已處理' });
+    var note = blank(b.note) ? null : String(b.note).trim().slice(0, 500);
+    if (action === 'reject') {
+      if (!note) return respond(400, { success: false, error: '請填寫不受理原因' });
+      r.status = 'rejected';
+    } else {
+      if (r.source === 'web' && blank(b.identifier)) return respond(400, { success: false, error: '網頁申請請先核對身分，並填入要刪除的帳號或工號' });
+      if (r.source === 'web') r.username = String(b.identifier).trim();
+      r.status = 'completed';
+      r.resultSummary = '示範模式：只更新申請狀態，示範帳號不會真的刪除';
+    }
+    r.decidedAt = localStamp(new Date()); r.decidedBy = me.username || 'admin_tech'; r.decisionNote = note;
+    saveDel(list);
+    return respond(200, { success: true, data: r });
+  }
+
   // ---------------- 請假（移植自後端 LeaveService；資料存 localStorage，媒合排除只在真實後端）----------------
   var LEAVE_TYPES = [['annual', '特別休假'], ['personal', '事假'], ['sick', '普通傷病假'], ['menstrual', '生理假'],
     ['family_care', '家庭照顧假'], ['marriage', '婚假'], ['bereavement', '喪假'], ['official', '公假'], ['injury', '公傷病假'],
@@ -1766,6 +1840,13 @@
       return respond(200, { success: true, date: tmr, orders: due.length, workerRecipients: people, skippedQuietHours: 0 });
     }
     if (method === 'POST' && sp.path === '/line/notify/salary-paid') return salaryPaid(body || {});
+    if (sp.path === '/account/deletion-request') {
+      if (method === 'POST') return delRequest(body || {});
+      if (method === 'DELETE') return delWithdraw();
+    }
+    if (method === 'POST' && sp.path === '/public/account-deletion') return delWeb(body || {});
+    var dd = /^\/account-deletions\/([^/]+)\/(complete|reject)$/.exec(sp.path);
+    if (dd && method === 'POST') return delDecide(decodeURIComponent(dd[1]), dd[2], body || {});
     if (method === 'POST' && sp.path === '/line/notify/farmer-broadcast') {
       if (blank(body && body.text)) return respond(400, { success: false, error: '請輸入通知內容' });
       var farmers = (lineStore().list || []).filter(function (x) { return x.channel === 'farmer' && x.bound; }).length;
@@ -1902,6 +1983,8 @@
       });
       var pp = /^\/workers\/([^/]+)\/payroll$/.exec(sp.path);
       if (pp && findGet(p)) { var pe = paySettledSlips(findGet(p), decodeURIComponent(pp[1])); return respond(pe.s || 200, pe.b); }
+      if (sp.path === '/account/deletion-request') return delMine();
+      if (sp.path === '/account-deletions') return respond(200, { success: true, data: delList() });
       if (sp.path === '/leaves/types') {
         return respond(200, { success: true, data: LEAVE_TYPES.map(function (t) { return { key: t[0], label: t[1] }; }) });
       }

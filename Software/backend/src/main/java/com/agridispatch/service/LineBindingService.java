@@ -165,6 +165,22 @@ public class LineBindingService {
         clearBinding(u);
     }
 
+    /** 刪除帳號（AccountDeletionService）：解除該平台帳號在兩個官方帳號的綁定，回傳解除筆數 */
+    public int unbindAccount(String username, String refId, String role) {
+        int n = 0;
+        for (String ch : CHANNELS) {
+            for (LineUser u : lineUserRepository.findAllByChannelAndIsBound(ch, "Y")) {
+                boolean same = (refId != null && u.getRefId() != null && u.getRefId().equalsIgnoreCase(refId) && role != null && role.equals(u.getRole()))
+                        || (username != null && username.equals(u.getUsername()));
+                if (same) {
+                    clearBinding(u);
+                    n++;
+                }
+            }
+        }
+        return n;
+    }
+
     private void clearBinding(LineUser u) {
         u.setIsBound("N");
         u.setUsername(null);

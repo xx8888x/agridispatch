@@ -32,7 +32,7 @@ public class SkillController {
 
     @GetMapping("/api/skills/workers")
     public ResponseEntity<?> workers() {
-        AuthContext.require().requireAdmin();
+        AuthContext.require().requireStaff();
         return ResponseEntity.ok(Map.of("success", true, "data", skillService.allProfiles()));
     }
 

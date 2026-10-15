@@ -48,7 +48,7 @@ public class FcmPushService {
     static final String SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
 
     /** 推播對象中代表一群人的關鍵字；其他值視為個人（ref_id 或 username） */
-    static final Set<String> ROLE_TARGETS = Set.of("farmer", "worker_local", "worker_foreign", "admin_tech");
+    static final Set<String> ROLE_TARGETS = Set.of("farmer", "worker_local", "worker_foreign", "admin_tech", "coop_admin");
 
     private final PushTokenRepository repository;
     private final AgriSettings settings;

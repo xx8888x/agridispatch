@@ -42,7 +42,7 @@ public class EvaluationService {
 
     /** 是否為該工班的領班（admin 視同可評核所有工班） */
     public boolean canEvaluateTeam(AuthContext ctx, String teamId) {
-        if (ctx.isAdmin()) return true;
+        if (ctx.isStaff()) return true;
         if (!ctx.isWorker()) return false;
         return workerRepository.findById(ctx.ref())
                 .filter(w -> w.isLeader() && teamId != null && teamId.equals(w.getTeamId()))
@@ -81,11 +81,11 @@ public class EvaluationService {
         Worker w = workerRepository.findById(a.getWorkerId())
                 .orElseThrow(() -> ApiException.notFound("找不到工人：" + a.getWorkerId()));
         if (!canEvaluateTeam(ctx, w.getTeamId())) throw ApiException.forbidden();
-        if (!ctx.isAdmin() && w.getId().equalsIgnoreCase(ctx.ref())) {
+        if (!ctx.isStaff() && w.getId().equalsIgnoreCase(ctx.ref())) {
             throw ApiException.forbidden();
         }
         if (a.getClockOutTime() == null) throw ApiException.conflict("尚未下班簽核，無法評核");
-        if (!ctx.isAdmin() && a.getWorkDate().isBefore(LocalDate.now().minusDays(LEADER_EDIT_DAYS))) {
+        if (!ctx.isStaff() && a.getWorkDate().isBefore(LocalDate.now().minusDays(LEADER_EDIT_DAYS))) {
             throw ApiException.conflict("超過 " + LEADER_EDIT_DAYS + " 天的班次須由合作社管理員評核");
         }
         a.setForemanRating(rating);

@@ -128,7 +128,7 @@ public class PaymentController {
 
     /** AuthInterceptor 已限 admin；這裡再確認一次 */
     private static void requireAdmin() {
-        if (!AuthContext.require().isAdmin()) throw ApiException.forbidden();
+        if (!AuthContext.require().isStaff()) throw ApiException.forbidden();   // 尾款登錄屬雇主（合作社）收款
     }
 
     private static String str(Object o) {

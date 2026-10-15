@@ -124,7 +124,7 @@ public class InsuranceService {
         m.put("total", members.size());
         m.put("insured", insured);
         m.put("allInsured", insured == members.size());
-        if (ctx != null && ctx.isAdmin()) m.put("gaps", gaps);
+        if (ctx != null && ctx.isStaff()) m.put("gaps", gaps);
         return m;
     }
 

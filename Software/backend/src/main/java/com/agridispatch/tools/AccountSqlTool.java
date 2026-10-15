@@ -28,7 +28,7 @@ import java.util.Set;
  */
 public final class AccountSqlTool {
 
-    private static final Set<String> ROLES = Set.of("admin_tech", "farmer", "worker_foreign", "worker_local");
+    private static final Set<String> ROLES = Set.of("admin_tech", "coop_admin", "farmer", "worker_foreign", "worker_local");
     /** 去掉易混淆字元（0/O、1/l/I） */
     private static final String ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
     private static final SecureRandom RANDOM = new SecureRandom();

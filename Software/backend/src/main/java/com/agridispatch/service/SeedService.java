@@ -41,7 +41,7 @@ public class SeedService {
     private static final Set<String> KNOWN_DEFAULT_PASSWORDS = Set.of("123456", "admin888");
     /** 路演來賓帳號清單（含明碼，已 gitignore）；可用環境變數 AGRI_ROADSHOW_ACCOUNTS 指定其他路徑 */
     private static final String DEFAULT_ROADSHOW_ACCOUNTS = "data/roadshow-accounts.csv";
-    private static final Set<String> ROADSHOW_ROLES = Set.of("farmer", "worker_foreign", "worker_local", "admin_tech");
+    private static final Set<String> ROADSHOW_ROLES = Set.of("farmer", "worker_foreign", "worker_local", "admin_tech", "coop_admin");
 
     private final UserRepository userRepository;
     private final CropRepository cropRepository;
@@ -195,7 +195,8 @@ public class SeedService {
             new User("worker_labor", userPw, "張志明 (合作社農業勞務員)", "worker_local", "W030", AuthService.laborRoleDesc()),
             new User("farmer", userPw, "陳建龍 (阿龍班長)", "farmer", "F001", "八德有機蔬菜產銷班負責人"),
             new User("farmer_yilan", userPw, "李春發 (春發伯)", "farmer", "F002", "宜蘭三星青蔥專班負責人"),
-            new User("admin_tech", null, "智農科技調度總監", "admin_tech", "ADM01", "科技公司系統調度與數據管理員")
+            new User("admin_tech", null, "智農科技調度總監", "admin_tech", "ADM01", "科技公司系統調度與數據管理員"),
+            new User("coop_admin", userPw, "合作社管理員（示範）", "coop_admin", "COOP01", "農業勞務生產合作社（法定雇主）後台人員")
         );
         for (User u : users) {
             if (!demoData && !"admin_tech".equals(u.getRole())) continue;   // 正式環境不建示範帳號

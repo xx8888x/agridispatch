@@ -70,10 +70,6 @@ public class AuthInterceptor implements HandlerInterceptor {
             new String[]{"GET", "/api/talents"}, new String[]{"GET", "/api/talents/**"},
             new String[]{"POST", "/api/talents"},
             new String[]{"PUT", "/api/talents/**"}, new String[]{"DELETE", "/api/talents/**"},
-            new String[]{"*", "/api/payroll/**"},                // 出勤補登／修正、月結算（PayrollController）
-            new String[]{"GET", "/api/workers"},
-            new String[]{"POST", "/api/workers"},
-            new String[]{"PUT", "/api/workers/*"}, new String[]{"DELETE", "/api/workers/*"},
             new String[]{"POST", "/api/dispatch/**"}, new String[]{"PUT", "/api/dispatch/**"},
             new String[]{"DELETE", "/api/dispatch/**"},
             new String[]{"*", "/api/line/config"},
@@ -81,16 +77,24 @@ public class AuthInterceptor implements HandlerInterceptor {
             new String[]{"*", "/api/line/notify/**"},
             new String[]{"POST", "/api/notifications/send"},
             new String[]{"PUT", "/api/orders/*/status"},
+            new String[]{"*", "/api/account-deletions"}, new String[]{"*", "/api/account-deletions/**"},  // 刪除帳號申請審核
+            new String[]{"*", "/api/dev/**"}
+    );
+
+    /** admin_tech 或 coop_admin（雇主責任範圍；規格 11 §3.1）：{method("*" = 任意), pattern} */
+    private static final List<String[]> STAFF_ONLY = List.of(
+            new String[]{"*", "/api/payroll/**"},                // 出勤補登／修正、月結算（PayrollController）
+            new String[]{"GET", "/api/workers"},                 // 工人名冊
+            new String[]{"POST", "/api/workers"},
+            new String[]{"PUT", "/api/workers/*"}, new String[]{"DELETE", "/api/workers/*"},
             new String[]{"POST", "/api/payments/*/balance"},             // 尾款收款登錄
             new String[]{"PUT", "/api/payments/transactions/*/invoice"}, // 補登發票號碼
             new String[]{"POST", "/api/payments/transactions/*/void"},   // 作廢尾款登錄
-            new String[]{"GET", "/api/legalize/summary"},        // 各農場黑轉白彙總（科技後台）
-            new String[]{"POST", "/api/auth/reset-password"},
-            new String[]{"*", "/api/account-deletions"}, new String[]{"*", "/api/account-deletions/**"},  // 刪除帳號申請審核
-            new String[]{"GET", "/api/auth/accounts"},
+            new String[]{"GET", "/api/legalize/summary"},        // 各農場黑轉白彙總
+            new String[]{"POST", "/api/auth/reset-password"},    // 合作社只能重設工人與農場主（AuthService 再檢查）
+            new String[]{"GET", "/api/auth/accounts"},           // 帳號清單（合作社看不到後台帳號）
             new String[]{"GET", "/api/leaves"},                                    // 全部請假（合作社審核）
-            new String[]{"POST", "/api/leaves/*/approve"}, new String[]{"POST", "/api/leaves/*/reject"},
-            new String[]{"*", "/api/dev/**"}
+            new String[]{"POST", "/api/leaves/*/approve"}, new String[]{"POST", "/api/leaves/*/reject"}
     );
 
     private final TokenService tokenService;
@@ -131,6 +135,9 @@ public class AuthInterceptor implements HandlerInterceptor {
         AuthContext auth = ctx.get();
 
         if (matchesAny(ADMIN_ONLY, method, path) && !auth.isAdmin()) {
+            return reject(response, 403, "FORBIDDEN");
+        }
+        if (matchesAny(STAFF_ONLY, method, path) && !auth.isStaff()) {
             return reject(response, 403, "FORBIDDEN");
         }
 

@@ -219,7 +219,7 @@ public class LegalizeService {
 
     // ------------------------------------------------------------------ 彙總（科技後台）
     public Map<String, Object> summary(AuthContext ctx) {
-        if (!ctx.isAdmin() || ctx.isFarmer()) throw ApiException.forbidden();   // 彙總只給科技後台，demo 的農場主 token 也不行
+        if (!ctx.isStaff() || ctx.isFarmer()) throw ApiException.forbidden();   // 彙總只給後台人員，demo 的農場主 token 也不行
         List<LegalizeWorker> all = repository.findAllByOrderByFarmerIdAscCreatedAtAsc();
         Map<String, List<LegalizeWorker>> byFarmer = new LinkedHashMap<>();
         for (LegalizeWorker w : all) byFarmer.computeIfAbsent(w.getFarmerId(), k -> new ArrayList<>()).add(w);

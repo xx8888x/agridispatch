@@ -88,17 +88,17 @@ public class AuthController {
                 "message", "已登出所有裝置，請重新登入"));
     }
 
-    /** 管理員重設密碼：{identifier, newPassword}（授權由 AuthInterceptor 檢查 admin_tech） */
+    /** 後台人員重設密碼：{identifier, newPassword}（AuthInterceptor 檢查 admin_tech／coop_admin；合作社不可重設後台帳號） */
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, Object> req) {
-        authService.resetPassword(str(req.get("identifier")), str(req.get("newPassword")));
+        authService.resetPassword(AuthContext.require(), str(req.get("identifier")), str(req.get("newPassword")));
         return ResponseEntity.ok(Map.of("success", true, "message", "密碼已重設"));
     }
 
     /** 管理員帳號清單：{identifier, name, role, refId, roleDesc, kind, hasPassword}（授權由 AuthInterceptor 檢查 admin_tech） */
     @GetMapping("/accounts")
     public ResponseEntity<?> accounts() {
-        return ResponseEntity.ok(Map.of("success", true, "data", authService.listAccounts()));
+        return ResponseEntity.ok(Map.of("success", true, "data", authService.listAccounts(AuthContext.require())));
     }
 
     private static String str(Object o) {

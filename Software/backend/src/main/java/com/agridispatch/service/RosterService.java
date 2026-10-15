@@ -76,7 +76,7 @@ public class RosterService {
     /** admin：全部班表；farmer：開放認領與已開班的班表 */
     public List<Map<String, Object>> list(AuthContext ctx) {
         requireFarmerOrAdmin(ctx);
-        List<SharedRoster> rosters = ctx.isAdmin() ? rosterRepository.findAll()
+        List<SharedRoster> rosters = ctx.isStaff() ? rosterRepository.findAll()
                 : rosterRepository.findByStatusIn(List.of(SharedRoster.OPEN, SharedRoster.CONFIRMED));
         rosters = new ArrayList<>(rosters);
         rosters.sort(Comparator.comparing(SharedRoster::getStartDate).thenComparing(SharedRoster::getId));
@@ -88,7 +88,7 @@ public class RosterService {
     public Map<String, Object> get(AuthContext ctx, String id) {
         requireFarmerOrAdmin(ctx);
         SharedRoster r = require(id);
-        if (!ctx.isAdmin() && !r.isActive()) throw ApiException.notFound("找不到共享班表：" + id);
+        if (!ctx.isStaff() && !r.isActive()) throw ApiException.notFound("找不到共享班表：" + id);
         return view(r, ctx);
     }
 
@@ -97,7 +97,7 @@ public class RosterService {
     // =========================================================================
 
     public Map<String, Object> create(AuthContext ctx, Map<String, Object> req) {
-        ctx.requireAdmin();
+        ctx.requireStaff();
         LocalDate today = LocalDate.now();
         SharedRoster r = new SharedRoster();
         r.setTitle(text(req.get("title"), "班表名稱 (title)", 100, true));
@@ -222,7 +222,7 @@ public class RosterService {
     // =========================================================================
 
     public Map<String, Object> confirm(AuthContext ctx, String id) {
-        ctx.requireAdmin();
+        ctx.requireStaff();
         synchronized (lock) {
             SharedRoster r = require(id);
             if (!SharedRoster.OPEN.equals(r.getStatus())) throw ApiException.conflict("班表" + STATUS_LABELS.get(r.getStatus()) + "，無法開班");
@@ -237,7 +237,7 @@ public class RosterService {
     }
 
     public Map<String, Object> cancel(AuthContext ctx, String id, String reason) {
-        ctx.requireAdmin();
+        ctx.requireStaff();
         String why = reason == null || reason.isBlank() ? "合作社取消" : reason.trim();
         if (why.length() > 200) throw ApiException.badRequest("取消原因過長（上限 200 字）");
         synchronized (lock) {
@@ -334,7 +334,7 @@ public class RosterService {
     }
 
     private Map<String, Object> view(SharedRoster r, AuthContext ctx) {
-        boolean admin = ctx.isAdmin();
+        boolean admin = ctx.isStaff();
         LocalDate today = LocalDate.now();
         List<Order> claims = activeClaims(r);
         int total = r.days() * 2;
@@ -435,7 +435,7 @@ public class RosterService {
     }
 
     private static void requireFarmerOrAdmin(AuthContext ctx) {
-        if (!ctx.isAdmin() && !ctx.isFarmer()) throw ApiException.forbidden();
+        if (!ctx.isStaff() && !ctx.isFarmer()) throw ApiException.forbidden();
     }
 
     private static String str(Object o) {

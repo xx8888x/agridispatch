@@ -27,19 +27,19 @@ public class MatchingController {
 
     @GetMapping
     public ResponseEntity<?> recommend(@PathVariable String orderId) {
-        AuthContext.require().requireAdmin();
+        AuthContext.require().requireStaff();
         return ResponseEntity.ok(Map.of("success", true, "data", matchingService.recommend(orderId)));
     }
 
     @GetMapping("/crew")
     public ResponseEntity<?> crew(@PathVariable String orderId, @RequestParam String teamId) {
-        AuthContext.require().requireAdmin();
+        AuthContext.require().requireStaff();
         return ResponseEntity.ok(Map.of("success", true, "data", matchingService.crewFor(orderId, teamId)));
     }
 
     @PutMapping
     public ResponseEntity<?> assign(@PathVariable String orderId, @RequestBody Map<String, Object> req) {
-        AuthContext.require().requireAdmin();
+        AuthContext.require().requireStaff();
         Order saved = matchingService.assign(orderId, req.get("teamId"), req.get("crew"));
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("orderId", saved.getId());

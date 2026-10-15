@@ -19,7 +19,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 /**
- * 工人請假：工人本人（或合作社代為）申請 → 合作社（目前為 admin_tech）核准或駁回；
+ * 工人請假：工人本人（或合作社代為）申請 → 合作社（coop_admin，科技後台 admin_tech 亦可）核准或駁回；
  * 待審核的假可由本人或合作社取消，已核准的假在開始前本人可取消，合作社隨時可取消。
  *
  * 已核准的假在派工媒合視同撞期（MatchingService.busyWorkers），該期間不列入出工名單、指名與共享班表。
@@ -27,7 +27,7 @@ import java.util.*;
  *
  * 假別與給薪、天數上限依勞動基準法與勞工請假規則【待確認】，系統只記錄假別，不檢查額度、不影響薪資試算。
  *
- * 通知（背景送出，失敗不影響審核）：工人本人申請 → App 推播給合作社（admin_tech；後台人員不使用 LINE）；
+ * 通知（背景送出，失敗不影響審核）：工人本人申請 → App 推播給合作社與科技後台（後台人員不使用 LINE）；
  * 核准、駁回、合作社取消已核准的假 → LINE 工作者帳號（三語，時段外略過）與 App 推播給工人本人。
  */
 @Service
@@ -99,7 +99,7 @@ public class LeaveService {
 
     /** admin：全部請假，可依狀態篩選；待審核排最前，其餘依開始日新到舊 */
     public List<Map<String, Object>> listAll(AuthContext ctx, String status) {
-        ctx.requireAdmin();
+        ctx.requireStaff();
         List<WorkerLeave> leaves = status == null || status.isBlank()
                 ? leaveRepository.findAll()
                 : leaveRepository.findByStatusIn(List.of(status.trim()));
@@ -158,7 +158,9 @@ public class LeaveService {
             l.setId(IdGenerator.next(prefix, 3, leaveRepository.findIdsByPrefix(prefix), leaveRepository::existsById));
             leaveRepository.save(l);
         }
-        if (!ctx.isAdmin()) {
+        if (!ctx.isStaff()) {
+            notifySafely(() -> pushService.send(AuthContext.ROLE_COOP, "新的請假申請",
+                    MatchingService.displayName(w) + "（" + w.getId() + "）" + TYPE_LABELS.get(type) + "・" + period(l) + "，請到「請假審核」處理", "dispatch"));
             notifySafely(() -> pushService.send(AuthContext.ROLE_ADMIN, "新的請假申請",
                     MatchingService.displayName(w) + "（" + w.getId() + "）" + TYPE_LABELS.get(type) + "・" + period(l) + "，請到「請假審核」處理", "dispatch"));
         }
@@ -167,7 +169,7 @@ public class LeaveService {
 
     /** admin 核准：note 選填；回傳含 conflicts，提醒改派已排入的訂單 */
     public Map<String, Object> approve(AuthContext ctx, String id, String note) {
-        ctx.requireAdmin();
+        ctx.requireStaff();
         synchronized (lock) {
             WorkerLeave l = requirePending(id);
             decide(l, WorkerLeave.APPROVED, ctx, note);
@@ -178,7 +180,7 @@ public class LeaveService {
 
     /** admin 駁回：須填原因 */
     public Map<String, Object> reject(AuthContext ctx, String id, String note) {
-        ctx.requireAdmin();
+        ctx.requireStaff();
         if (note == null || note.isBlank()) throw ApiException.badRequest("請填寫駁回原因");
         synchronized (lock) {
             WorkerLeave l = requirePending(id);
@@ -194,7 +196,7 @@ public class LeaveService {
             WorkerLeave l = leaveRepository.findById(id).orElseThrow(() -> ApiException.notFound("查無請假紀錄：" + id));
             ctx.requireSelfOrAdmin(l.getWorkerId());
             if (WorkerLeave.APPROVED.equals(l.getStatus())) {
-                if (!ctx.isAdmin() && !LocalDate.now().isBefore(l.getStartDate())) {
+                if (!ctx.isStaff() && !LocalDate.now().isBefore(l.getStartDate())) {
                     throw ApiException.conflict("假期已開始，要取消請聯絡合作社");
                 }
             } else if (!WorkerLeave.PENDING.equals(l.getStatus())) {
@@ -203,7 +205,7 @@ public class LeaveService {
             boolean wasApproved = WorkerLeave.APPROVED.equals(l.getStatus());
             decide(l, WorkerLeave.CANCELLED, ctx, note);
             // 合作社取消已核准的假才通知（本人取消自己的假不必通知）
-            if (wasApproved && ctx.isAdmin()) notifyWorker(l);
+            if (wasApproved && ctx.isStaff()) notifyWorker(l);
             return view(l, workerService.getWorkerById(l.getWorkerId()).orElse(null), false);
         }
     }

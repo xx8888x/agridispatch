@@ -830,7 +830,7 @@ public class OrderService {
     }
 
     public void checkReadable(AuthContext ctx, Order order) {
-        if (ctx.isAdmin() || isOwner(ctx, order)) return;
+        if (ctx.isStaff() || isOwner(ctx, order)) return;
         if (ctx.isWorker() && workerCanSee(ctx, order, workerTeamId(ctx))) return;
         throw ApiException.forbidden();
     }
@@ -853,13 +853,13 @@ public class OrderService {
 
     /** 付款 / 修改 / 取消：admin 或訂單擁有者 */
     public void checkOwnerOrAdmin(AuthContext ctx, Order order) {
-        if (ctx.isAdmin() || isOwner(ctx, order)) return;
+        if (ctx.isStaff() || isOwner(ctx, order)) return;
         throw ApiException.forbidden();
     }
 
     public List<Order> getOrdersVisibleTo(AuthContext ctx) {
         List<Order> all = orderRepository.findAll();
-        if (ctx.isAdmin()) return all;
+        if (ctx.isStaff()) return all;
         if (ctx.isFarmer()) return all.stream().filter(o -> isOwner(ctx, o)).toList();
         if (ctx.isWorker()) {
             String teamId = workerTeamId(ctx);

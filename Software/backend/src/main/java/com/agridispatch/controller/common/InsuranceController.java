@@ -36,7 +36,7 @@ public class InsuranceController {
 
     @GetMapping("/workers")
     public ResponseEntity<?> workers(@RequestParam(required = false) String date) {
-        AuthContext.require().requireAdmin();
+        AuthContext.require().requireStaff();
         return ResponseEntity.ok(Map.of("success", true, "data", insuranceService.workerSummaries(dateOrToday(date))));
     }
 
@@ -48,7 +48,7 @@ public class InsuranceController {
 
     @PostMapping("/workers/{workerId}/enroll")
     public ResponseEntity<?> enroll(@PathVariable String workerId, @RequestBody Map<String, Object> req) {
-        AuthContext.require().requireAdmin();
+        AuthContext.require().requireStaff();
         InsuranceService.EnrollResult result = insuranceService.enroll(workerId, req.get("type"),
                 req.get("insuredSalary"), req.get("enrollDate"), req.get("filingRef"));
         Map<String, Object> body = new LinkedHashMap<>();
@@ -60,7 +60,7 @@ public class InsuranceController {
 
     @PostMapping("/records/{recordId}/withdraw")
     public ResponseEntity<?> withdraw(@PathVariable String recordId, @RequestBody Map<String, Object> req) {
-        AuthContext.require().requireAdmin();
+        AuthContext.require().requireStaff();
         return ResponseEntity.ok(Map.of("success", true, "data",
                 insuranceService.toView(insuranceService.withdraw(recordId, req.get("withdrawDate"), req.get("reason")), LocalDate.now()),
                 "warnings", List.of()));

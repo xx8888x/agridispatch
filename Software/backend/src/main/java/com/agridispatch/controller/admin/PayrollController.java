@@ -23,7 +23,7 @@ public class PayrollController {
 
     private static AuthContext admin() {
         AuthContext ctx = AuthContext.require();
-        ctx.requireAdmin();
+        ctx.requireStaff();
         return ctx;
     }
 

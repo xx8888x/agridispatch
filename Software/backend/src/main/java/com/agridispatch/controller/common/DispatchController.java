@@ -37,7 +37,7 @@ public class DispatchController {
 
     private static boolean isAdmin() {
         AuthContext ctx = AuthContext.current();
-        return ctx != null && ctx.isAdmin();
+        return ctx != null && ctx.isStaff();   // 工班完整資料與營收：後台人員可看（改動仍僅科技後台）
     }
 
     /** 非 admin 看到的工班：不含領班電話、司機與車輛（個資與調度資訊只給科技後台） */

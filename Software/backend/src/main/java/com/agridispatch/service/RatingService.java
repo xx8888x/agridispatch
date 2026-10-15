@@ -96,7 +96,7 @@ public class RatingService {
         Map<String, Object> m = summarize(team, list);
         List<Map<String, Object>> recent = new ArrayList<>();
         for (TeamRating r : list.subList(0, Math.min(10, list.size()))) {
-            recent.add(toView(r, ctx != null && ctx.isAdmin()));
+            recent.add(toView(r, ctx != null && ctx.isStaff()));
         }
         m.put("recent", recent);
         return m;

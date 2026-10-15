@@ -136,7 +136,7 @@ public class SkillService {
 
     /** 管理員複核後恢復標籤：此時間點之前的評價／評核不再觸發暫停 */
     public Map<String, Object> restore(AuthContext ctx, String workerId, String skillKey, Object noteRaw) {
-        ctx.requireAdmin();
+        ctx.requireStaff();
         if (!SKILL_LABELS.containsKey(skillKey)) throw ApiException.badRequest("不支援的技能：" + skillKey);
         Worker w = workerRepository.findById(workerId).orElseThrow(() -> ApiException.notFound("找不到工人：" + workerId));
         String note = noteRaw == null ? null : String.valueOf(noteRaw).replaceAll("\\p{Cntrl}", "").trim();

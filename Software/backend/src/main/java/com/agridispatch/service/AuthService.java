@@ -32,6 +32,7 @@ public class AuthService {
 
     private static final Map<String, String> DEMO_DEFAULT_REF = Map.of(
             AuthContext.ROLE_ADMIN, "ADM01",
+            AuthContext.ROLE_COOP, "COOP01",
             AuthContext.ROLE_FARMER, "F001",
             AuthContext.ROLE_WORKER_FOREIGN, "W001",
             AuthContext.ROLE_WORKER_LOCAL, "W026"
@@ -92,7 +93,7 @@ public class AuthService {
     private boolean isAdminIdentifier(String identifier) {
         if (identifier == null || identifier.isBlank()) return false;
         return userRepository.findById(identifier.trim())
-                .map(u -> AuthContext.ROLE_ADMIN.equals(u.getRole()))
+                .map(u -> AuthContext.ROLE_ADMIN.equals(u.getRole()) || AuthContext.ROLE_COOP.equals(u.getRole()))
                 .orElse(false);
     }
 
@@ -139,7 +140,7 @@ public class AuthService {
      */
     public Map<String, Object> demoLogin(String role, String refId) {
         if (role == null || !DEMO_DEFAULT_REF.containsKey(role)) {
-            throw ApiException.badRequest("role 必須為 admin_tech / farmer / worker_foreign / worker_local");
+            throw ApiException.badRequest("role 必須為 admin_tech / coop_admin / farmer / worker_foreign / worker_local");
         }
         String ref = (refId == null || refId.isBlank()) ? DEMO_DEFAULT_REF.get(role) : refId.trim();
 
@@ -260,12 +261,18 @@ public class AuthService {
         return tokens.size();
     }
 
-    /** 管理員重設帳號（users 帳號或農工工號）密碼 */
-    public void resetPassword(String identifier, String newPassword) {
+    /**
+     * 後台人員重設帳號（users 帳號或農工工號）密碼。
+     * 合作社（coop_admin）只能重設農場主與工人，不可重設後台帳號（admin_tech、coop_admin）；科技後台不限。
+     */
+    public void resetPassword(AuthContext ctx, String identifier, String newPassword) {
         if (identifier == null || identifier.isBlank()) throw ApiException.badRequest("identifier 不得為空");
         validateNewPassword(newPassword);
         String id = identifier.trim();
         Optional<User> u = userRepository.findById(id);
+        if (ctx != null && !ctx.isAdmin() && u.isPresent() && isBackOfficeRole(u.get().getRole())) {
+            throw ApiException.forbidden();
+        }
         if (u.isPresent()) {
             u.get().setPassword(passwordHasher.hash(newPassword));
             u.get().bumpTokenVersion();   // 該帳號既有 token 立即失效
@@ -283,9 +290,11 @@ public class AuthService {
      * 管理員帳號清單（帳號與密碼管理頁用）：users 帳號與農工工號。
      * 只回識別與顯示用欄位，不含密碼雜湊與證號；hasPassword=false 表示尚未設定密碼、無法登入。
      */
-    public List<Map<String, Object>> listAccounts() {
+    public List<Map<String, Object>> listAccounts(AuthContext ctx) {
+        boolean coopOnly = ctx != null && !ctx.isAdmin();   // 合作社看不到後台帳號
         List<Map<String, Object>> list = new ArrayList<>();
         userRepository.findAll().forEach(u -> {
+            if (coopOnly && isBackOfficeRole(u.getRole())) return;
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("identifier", u.getUsername());
             m.put("name", u.getName());
@@ -310,6 +319,10 @@ public class AuthService {
             list.add(m);
         });
         return list;
+    }
+
+    private static boolean isBackOfficeRole(String role) {
+        return AuthContext.ROLE_ADMIN.equals(role) || AuthContext.ROLE_COOP.equals(role);
     }
 
     private static void validateNewPassword(String pw) {

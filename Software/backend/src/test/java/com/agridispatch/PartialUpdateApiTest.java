@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * 管理端 PUT 的部分更新回歸測試：沒帶（或為 null）的欄位維持原值、基本型別不被清成 0/false、
- * 必填名稱明確傳空字串回 400、body 內的 id 不可改主鍵；送完整物件（admin.html / vue-crud.html）行為不變。
+ * 必填名稱明確傳空字串回 400、body 內的 id 不可改主鍵；送完整物件（admin.html）行為不變。
  */
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:agri_partial_update_test;DB_CLOSE_DELAY=-1",

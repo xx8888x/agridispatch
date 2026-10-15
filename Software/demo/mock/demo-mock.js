@@ -111,7 +111,7 @@
 
   // ---------------- 使用者／登入 ----------------
   var ROLE_BY_PAGE = [
-    [/^(admin|vue-crud|insurance|skills|matching|accounts|leaves|payroll)/, 'admin_tech'],
+    [/^(admin|insurance|skills|matching|accounts|leaves|payroll)/, 'admin_tech'],
     [/^(farmer|legalize|expenses)/, 'farmer'],
     [/^worker-foreign/, 'worker_foreign'],
     [/^worker-local|^worker-skills/, 'worker_local']

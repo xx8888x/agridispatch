@@ -55,7 +55,7 @@ window.AGRI_DEMO_ACCOUNTS = {
       { identifier: '0912-345-678', password: '123456', workerId: 'W030', track: 'labor', name: '張志明 (農業勞務工)', desc: '屏東枋山芒果採收，合作社在籍農業勞務員', tag: '農業勞務員' }
     ]
   },
-  // app.html / vue-crud.html（舊版全景展示頁）沿用的極簡帳密清單
+  // app.html（舊版全景展示頁）沿用的極簡帳密清單
   legacyApp: {
     farmer: { username: 'farmer', password: '123456' },
     worker_foreign: { username: 'worker_foreign', password: '123456' },

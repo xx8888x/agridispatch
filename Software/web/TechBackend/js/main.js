@@ -246,16 +246,20 @@ async function initTechCharts() {
   if (typeof Chart === 'undefined') return;
 
   try {
-    // 圖表 1: 雙軌營收利潤分流圓餅圖 (第一年 GMV 813.1 萬：科技公司 18% vs 合作社 82%，依 F2 v2.1 財務定版)
+    // 圖表 1: 雙軌營收利潤分流圓餅圖：第一年第一、二層流水 NT$ 9,057,600，科技公司代管費 16% vs 合作社 84%（F2 v2.4）。
+    // 第三層統包另計價差、不適用代管費，不在此圖；費率須經合作社依章程決議【待確認】。
     const ctx1 = document.getElementById('chart-revenue-split')?.getContext('2d');
     if (ctx1) {
       if (chartInstances.chart1) chartInstances.chart1.destroy();
+      const flowTier12 = 9057600;                      // F2 v2.4 第參章 GMV：第一層 7,257,600 ＋ 第二層 1,800,000
+      const techFee = Math.round(flowTier12 * 0.16);   // 1,449,216（F2「系統代管與調度服務費」）
+      const coopIncome = flowTier12 - techFee;         // 7,608,384（F2 第肆章「合作社收入」）
       chartInstances.chart1 = new Chart(ctx1, {
         type: 'doughnut',
         data: {
-          labels: ['科技公司技術代管費 18% (NT$ 1,463,580)', '合作社移工法定成本平移 82% (NT$ 6,667,420)'],
+          labels: [`科技公司技術代管費 16% (NT$ ${techFee.toLocaleString()})`, `合作社移工法定成本平移 84% (NT$ ${coopIncome.toLocaleString()})`],
           datasets: [{
-            data: [1463580, 6667420],
+            data: [techFee, coopIncome],
             backgroundColor: ['#10B981', '#3B82F6'],
             borderWidth: 0
           }]

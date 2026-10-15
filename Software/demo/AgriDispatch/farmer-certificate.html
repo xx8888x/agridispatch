@@ -16,7 +16,7 @@
     if (window.AgriAuth) window.AgriAuth.requireRole(['farmer', 'admin_tech'], 'farmer-login.html');
   </script>
   <script src="js/vendor/tailwindcss-3.4.17.js"></script>
-  <!-- 設計系統（操作列用；證明書本體是紙本單據，維持白底列印樣式） -->
+  <!-- 設計系統（頁面底與操作列走 token，亮／深色主題都正確；證明書本體 .sheet 是紙本單據，維持白底列印樣式） -->
   <script src="js/agri-theme.js"></script>
   <link rel="stylesheet" href="css/agri.css">
   <script>
@@ -33,22 +33,22 @@
     }
   </style>
 </head>
-<body class="bg-slate-200 text-slate-900 min-h-screen antialiased">
+<body class="ad-body min-h-screen">
 
   <header class="ad-header no-print" style="color: var(--ad-text);">
     <div class="ad-container ad-header__inner" style="max-width: 896px;">
-      <a href="farmer.html#orders" class="ad-btn ad-btn--ghost ad-btn--sm">← 回我的訂單</a>
-      <div class="ad-header__actions" style="gap: 16px;">
+      <a href="farmer.html#orders" class="ad-btn ad-btn--ghost ad-btn--sm" aria-label="回我的訂單">←<span class="ad-hide-sm">回我的訂單</span></a>
+      <div class="ad-header__actions" style="gap: 12px;">
         <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ad-text-2); cursor: pointer;">
           <input id="maskNames" type="checkbox" checked onchange="render()" style="width: 18px; height: 18px; accent-color: var(--ad-primary);">
-          <span>遮蔽工人姓名<span class="ad-hide-sm">（提供給通路時建議勾選）</span></span>
+          <span>遮蔽<span class="ad-hide-sm">工人</span>姓名<span class="ad-hide-sm">（提供給通路時建議勾選）</span></span>
         </label>
         <button id="printBtn" type="button" onclick="window.print()" class="ad-btn ad-btn--primary ad-btn--sm">列印<span class="ad-hide-sm">／存成 PDF</span></button>
       </div>
     </div>
   </header>
 
-  <div class="sheet max-w-4xl mx-auto my-6 bg-white shadow-2xl border border-slate-300 p-8 sm:p-10" id="sheet">
+  <div class="sheet max-w-4xl mx-auto my-6 bg-white text-slate-900 shadow-2xl border border-slate-300 p-8 sm:p-10" id="sheet">
     <p class="text-sm text-slate-500">載入中…</p>
   </div>
 

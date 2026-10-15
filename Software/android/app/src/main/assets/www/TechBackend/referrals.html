@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="智農派工推薦紀錄：看農場主與工人用邀請連結帶來的人，並跟進工人的意願登記。">
+  <link rel="icon" href="../AgriDispatch/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="../AgriDispatch/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../AgriDispatch/apple-touch-icon.png">
+  <title>智農派工 AgriDispatch - 推薦紀錄</title>
+  <script src="js/app-config.js"></script>
+  <script src="js/api-client.js"></script>
+  <script>
+    if (window.AgriAuth) window.AgriAuth.requireRole(['admin_tech', 'coop_admin'], 'admin-login.html');
+  </script>
+  <!-- 設計系統：共用 demo 模式標記、圖示、抽屜 -->
+  <script src="js/agri-theme.js"></script>
+  <script src="js/vendor/lucide.min.js"></script>
+  <link rel="stylesheet" href="css/agri.css">
+</head>
+<body class="ad-body">
+
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner" style="max-width: 1080px;">
+      <a href="admin.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">營運後台</span>
+      </a>
+      <div class="ad-header__actions">
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()" aria-label="示範導覽"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span></button>
+        <a href="admin.html" class="ad-btn ad-btn--secondary ad-btn--sm"><i data-lucide="arrow-left" class="ad-icon ad-icon--sm"></i>回後台</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="ad-container" style="width: 100%; max-width: 1080px; padding-block: 24px 40px; display: flex; flex-direction: column; gap: 20px;">
+    <div>
+      <h1 class="ad-display">推薦紀錄</h1>
+      <p class="ad-caption" style="margin-top: 6px; max-width: 780px;">農場主和工人可以用邀請連結（Facebook、LINE）邀請朋友。農場主經連結註冊會直接記在推薦人名下；工人不能自助註冊，會留下姓名和電話，請合作社聯絡、查驗證件後建檔，再把狀態改成「已加入」。</p>
+      <p class="ad-caption" style="margin-top: 6px; max-width: 780px; color: var(--ad-accent-text);">【待確認】推廣獎勵（現金或工時折抵）的稅務與法規認定尚未確認，系統目前只記錄推薦關係，不計算也不發放任何獎勵。</p>
+    </div>
+
+    <div id="kpi" class="ad-stat-grid"></div>
+
+    <div class="ad-card" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+      <div class="ad-field" style="flex: 0 1 200px;">
+        <label class="ad-label" for="statusFilter">狀態</label>
+        <select id="statusFilter" class="ad-select">
+          <option value="pending">待合作社聯絡</option>
+          <option value="contacted">已聯絡</option>
+          <option value="onboarded">已加入</option>
+          <option value="closed">未成行</option>
+          <option value="registered">農場主已註冊</option>
+          <option value="">全部</option>
+        </select>
+      </div>
+      <div class="ad-field" style="flex: 1 1 220px;">
+        <label class="ad-label" for="q">搜尋</label>
+        <input id="q" type="search" class="ad-input" placeholder="被邀請者、電話、推薦人" autocomplete="off">
+      </div>
+      <span id="count" class="ad-caption" style="padding-bottom: 10px;"></span>
+    </div>
+
+    <div id="loadError" class="ad-notice ad-notice--danger" role="alert" hidden></div>
+    <div id="rows" class="ad-list"><p class="ad-caption">載入中…</p></div>
+  </main>
+
+  <!-- 更新跟進狀態對話框 -->
+  <dialog id="statusDialog" class="ad-card" style="max-width: 460px; width: calc(100vw - 32px); border: 1px solid var(--ad-border); padding: 20px;">
+    <form id="statusForm" method="dialog" style="display: flex; flex-direction: column; gap: 14px;">
+      <h2 class="ad-heading">更新跟進狀態</h2>
+      <p id="statusWho" class="ad-caption"></p>
+      <div class="ad-field">
+        <label class="ad-label" for="statusSel">狀態</label>
+        <select id="statusSel" class="ad-select">
+          <option value="pending">待合作社聯絡</option>
+          <option value="contacted">已聯絡</option>
+          <option value="onboarded">已加入（已查驗證件並建檔）</option>
+          <option value="closed">未成行</option>
+        </select>
+      </div>
+      <div class="ad-field">
+        <label class="ad-label" for="statusNote">備註（只有後台看得到）</label>
+        <input id="statusNote" type="text" class="ad-input" maxlength="500" autocomplete="off">
+      </div>
+      <div id="statusMsg" role="alert" hidden></div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button type="button" class="ad-btn ad-btn--ghost" onclick="closeStatus()">關閉</button>
+        <button id="statusBtn" type="submit" class="ad-btn ad-btn--primary">儲存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    const API = (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+    const demoNav = window.AgriTheme ? AgriTheme.demoNav() : { open() {} };
+    const STATUS = {
+      registered: ['農場主已註冊', 'ad-pill ad-pill--ok'], pending: ['待合作社聯絡', 'ad-pill ad-pill--warn'],
+      contacted: ['已聯絡', 'ad-pill ad-pill--warn'], onboarded: ['已加入', 'ad-pill ad-pill--ok'], closed: ['未成行', 'ad-pill']
+    };
+    const ROLE = { farmer: '農場主', worker_local: '本國工人', worker_foreign: '外籍移工' };
+    const CHANNEL = { fb: 'Facebook', line: 'LINE', copy: '複製連結', share: '分享', other: '其他' };
+    let rows = [];
+    let editing = null;
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    async function api(path, init) {
+      const res = await fetch(`${API}${path}`, init);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body.success === false) throw new Error(body.error || body.message || `HTTP ${res.status}`);
+      return body;
+    }
+
+    async function load() {
+      const err = document.getElementById('loadError');
+      try {
+        rows = (await api('/referrals')).data || [];
+        err.hidden = true;
+      } catch (e) {
+        rows = [];
+        err.textContent = `無法載入推薦紀錄：${e instanceof TypeError ? '無法連線伺服器' : e.message}`;
+        err.hidden = false;
+      }
+      render();
+    }
+
+    function renderKpi() {
+      const n = (f) => rows.filter(f).length;
+      const tile = (cls, label, value, unit) => `<div class="ad-stat ${cls}"><div class="ad-stat__label">${label}</div><div class="ad-stat__value">${value}<small>${unit}</small></div></div>`;
+      document.getElementById('kpi').innerHTML =
+        tile('', '推薦總數', rows.length, '筆') +
+        tile('ad-stat--primary', '農場主已註冊', n(r => r.inviteeRole === 'farmer'), '人') +
+        tile('ad-stat--accent', '待合作社聯絡', n(r => r.status === 'pending'), '人') +
+        tile('', '工人已加入', n(r => r.status === 'onboarded'), '人');
+    }
+
+    function render() {
+      renderKpi();
+      const status = document.getElementById('statusFilter').value;
+      const q = document.getElementById('q').value.trim().toLowerCase();
+      const list = rows.filter(r => (!status || r.status === status) &&
+        (!q || [r.inviteeName, r.inviteePhone, r.referrerName, r.referrerUsername, r.id].some(v => String(v || '').toLowerCase().includes(q))));
+      document.getElementById('count').textContent = `共 ${list.length} 筆`;
+      document.getElementById('rows').innerHTML = list.length ? list.map(r => {
+        const st = STATUS[r.status] || [r.status, 'ad-pill'];
+        const isWorker = r.inviteeRole === 'worker';
+        return `
+        <div class="ad-row" style="align-items: flex-start;">
+          <div class="ad-row__main">
+            <div class="ad-row__title" style="white-space: normal;">${esc(r.inviteeName)}・${isWorker ? '想來上工' : '農場主'}${r.inviteePhone ? '・<span class="ad-num">' + esc(r.inviteePhone) + '</span>' : ''}</div>
+            <div class="ad-row__meta">推薦人：${esc(r.referrerName || r.referrerUsername)}（${esc(ROLE[r.referrerRole] || r.referrerRole)}）・${esc(String(r.createdAt || '').slice(0, 10))}${r.channel ? '・' + esc(CHANNEL[r.channel] || r.channel) : ''}・${esc(r.id)}${r.inviteeRefId ? '・' + esc(r.inviteeRefId) : ''}</div>
+            ${r.note ? `<div class="ad-caption" style="margin-top: 4px;">備註：${esc(r.note)}</div>` : ''}
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0;">
+            <span class="${st[1]}">${esc(st[0])}</span>
+            ${isWorker ? `<button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" data-edit="${esc(r.id)}">更新狀態</button>` : ''}
+          </div>
+        </div>`;
+      }).join('') : '<p class="ad-caption">沒有符合的推薦紀錄。</p>';
+    }
+
+    function showMsg(text, kind) {
+      const el = document.getElementById('statusMsg');
+      el.className = `ad-notice ad-notice--${kind || 'danger'}`;
+      el.textContent = text;
+      el.hidden = !text;
+    }
+    function openStatus(id) {
+      const r = rows.find(x => x.id === id);
+      if (!r) return;
+      editing = r;
+      document.getElementById('statusWho').textContent = `${r.inviteeName}・${r.inviteePhone || ''}・推薦人 ${r.referrerName || r.referrerUsername}`;
+      document.getElementById('statusSel').value = r.status;
+      document.getElementById('statusNote').value = r.note || '';
+      document.getElementById('statusBtn').disabled = false;
+      showMsg('');
+      document.getElementById('statusDialog').showModal();
+    }
+    function closeStatus() { document.getElementById('statusDialog').close(); }
+
+    document.getElementById('rows').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-edit]');
+      if (b) openStatus(b.dataset.edit);
+    });
+    document.getElementById('statusFilter').addEventListener('change', render);
+    document.getElementById('q').addEventListener('input', render);
+
+    document.getElementById('statusForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!editing) return;
+      const btn = document.getElementById('statusBtn');
+      btn.disabled = true;
+      try {
+        await api(`/referrals/${encodeURIComponent(editing.id)}/status`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: document.getElementById('statusSel').value, note: document.getElementById('statusNote').value.trim() })
+        });
+        closeStatus();
+        await load();
+      } catch (err) {
+        btn.disabled = false;
+        showMsg(err instanceof TypeError ? '無法連線伺服器，未完成。' : `未完成：${err.message}`);
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+      load();
+    });
+  </script>
+</body>
+</html>

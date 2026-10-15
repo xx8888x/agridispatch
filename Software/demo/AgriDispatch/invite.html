@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="用你的專屬邀請連結，在 Facebook、LINE 邀請其他農場主與工人加入智農派工，並查看邀請成效。">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <title>智農派工 AgriDispatch - 邀請夥伴</title>
+  <script src="js/app-config.js"></script>
+  <script src="js/api-client.js"></script>
+  <script>
+    // 農場主與工人才有邀請連結；production 未登入導向登入大廳
+    if (window.AgriAuth) window.AgriAuth.requireRole(['farmer', 'worker_local', 'worker_foreign'], 'login.html');
+  </script>
+  <!-- 設計系統 -->
+  <script src="js/agri-theme.js"></script>
+  <link rel="stylesheet" href="css/agri.css">
+  <script src="js/vendor/lucide.min.js"></script>
+  <style>
+    #content:not([hidden]) { display: flex; flex-direction: column; gap: 20px; }
+    .inv-share { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+    .inv-fb { background: #1877f2; color: #fff; border-color: #1877f2; }
+    .inv-fb:hover, .inv-fb:focus-visible { background: #1466d0; border-color: #1466d0; color: #fff; }
+    .inv-link { display: flex; gap: 8px; }
+    .inv-link .ad-input { flex: 1; min-width: 0; font-size: var(--ad-fs-caption); }
+    .inv-msg { white-space: pre-wrap; background: var(--ad-surface-2); border-radius: var(--ad-radius-sm); padding: 10px 12px; font-size: var(--ad-fs-caption); color: var(--ad-text-2); }
+  </style>
+</head>
+<body class="ad-body">
+
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner" style="max-width: 640px;">
+      <a id="backLink" href="login.html" class="ad-btn ad-btn--ghost ad-btn--sm">← 回工作台</a>
+      <div class="ad-header__actions">
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="AgriTheme.demoNav().open()" aria-label="示範導覽"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="ad-container" style="width: 100%; max-width: 640px; padding-block: 24px 40px; display: flex; flex-direction: column; gap: 20px;">
+    <div>
+      <h1 class="ad-display">邀請夥伴</h1>
+      <p class="ad-caption" style="margin-top: 6px;">把你的專屬連結分享到 Facebook 或 LINE。朋友點開連結註冊或登記，就會記在你的邀請成效裡。</p>
+    </div>
+
+    <div id="loadError" class="ad-notice ad-notice--danger" role="alert" hidden></div>
+
+    <!-- 示範模式且尚未登入：選一個示範身分 -->
+    <section id="demoPick" class="ad-card" hidden>
+      <div class="ad-card__head"><h2 class="ad-heading">選擇示範身分</h2></div>
+      <p class="ad-caption" style="margin-bottom: 12px;">邀請連結是每個人專屬的，先選一個身分來看。</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <button type="button" class="ad-btn ad-btn--secondary" data-pick="farmer">農場主</button>
+        <button type="button" class="ad-btn ad-btn--secondary" data-pick="worker_local">本國工人</button>
+        <button type="button" class="ad-btn ad-btn--secondary" data-pick="worker_foreign" id="pickForeign">外籍移工</button>
+      </div>
+    </section>
+
+    <div id="content" hidden>
+      <section class="ad-card" aria-labelledby="shareTitle">
+        <div class="ad-card__head"><h2 id="shareTitle" class="ad-heading">我的邀請連結</h2></div>
+
+        <div class="ad-seg" role="tablist" aria-label="邀請對象" style="margin-bottom: 12px;">
+          <button type="button" class="ad-seg__btn" role="tab" data-target="farmer">邀請農場主</button>
+          <button type="button" class="ad-seg__btn" role="tab" data-target="worker">邀請工人</button>
+        </div>
+        <p id="targetHint" class="ad-caption" style="margin-bottom: 12px;"></p>
+
+        <div class="inv-link">
+          <input id="linkInput" class="ad-input" type="text" readonly aria-label="邀請連結" onfocus="this.select()">
+          <button id="copyBtn" type="button" class="ad-btn ad-btn--secondary"><i data-lucide="copy" class="ad-icon ad-icon--sm"></i>複製</button>
+        </div>
+        <p class="ad-caption" style="margin-top: 6px;">推薦碼：<strong id="codeText" class="ad-num"></strong></p>
+
+        <div id="localNotice" class="ad-notice ad-notice--warn" style="margin-top: 12px;" hidden>
+          <span>目前的網址只有這台裝置打得開。正式上線後，這條連結才能傳給別人。</span>
+        </div>
+
+        <div class="inv-share" style="margin-top: 16px;">
+          <button type="button" class="ad-btn inv-fb" data-share="fb"><span aria-hidden="true" style="font-weight: 800; font-size: 1.15em; font-family: Georgia, serif;">f</span>Facebook</button>
+          <button type="button" class="ad-btn ad-btn--line" data-share="line"><i data-lucide="message-circle" class="ad-icon ad-icon--sm"></i>LINE</button>
+          <button type="button" class="ad-btn ad-btn--secondary" data-share="share" id="nativeShareBtn" hidden><i data-lucide="share-2" class="ad-icon ad-icon--sm"></i>其他 App</button>
+        </div>
+
+        <div class="ad-label" style="margin-top: 16px;">分享的文字</div>
+        <div id="msgPreview" class="inv-msg" style="margin-top: 6px;"></div>
+        <div id="shareMsg" role="status" style="margin-top: 12px;" hidden></div>
+      </section>
+
+      <section class="ad-card" aria-labelledby="statTitle">
+        <div class="ad-card__head"><h2 id="statTitle" class="ad-heading">我的邀請成效</h2></div>
+        <div class="ad-stat-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+          <div class="ad-stat"><div class="ad-stat__label">連結被開啟</div><div class="ad-stat__value" id="stOpens">0<small>次</small></div></div>
+          <div class="ad-stat ad-stat--primary"><div class="ad-stat__label">農場主已註冊</div><div class="ad-stat__value" id="stFarmers">0<small>人</small></div></div>
+          <div class="ad-stat"><div class="ad-stat__label">工人已登記</div><div class="ad-stat__value" id="stLeads">0<small>人</small></div></div>
+          <div class="ad-stat ad-stat--accent"><div class="ad-stat__label">工人已加入</div><div class="ad-stat__value" id="stOnboard">0<small>人</small></div></div>
+        </div>
+        <p class="ad-caption" style="margin-top: 12px;">工人要經合作社查驗證件、建檔後才算「已加入」，登記後合作社會打電話聯絡。</p>
+      </section>
+
+      <section class="ad-card" aria-labelledby="listTitle">
+        <div class="ad-card__head"><h2 id="listTitle" class="ad-heading">邀請紀錄</h2></div>
+        <div id="inviteeList" class="ad-list"></div>
+        <p class="ad-caption" style="margin-top: 12px;">為保護隱私，只顯示對方姓名的部分字，不顯示電話。</p>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const API = (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+    const CFG = window.AGRI_CONFIG || {};
+    const ROLE_HOME = { farmer: 'farmer.html', worker_local: 'worker-local.html', worker_foreign: 'worker-foreign.html' };
+    const STATUS = {
+      registered: ['已註冊', 'ad-pill--ok'], pending: ['等合作社聯絡', 'ad-pill--warn'], contacted: ['合作社已聯絡', 'ad-pill--warn'],
+      onboarded: ['已加入', 'ad-pill--ok'], closed: ['未成行', '']
+    };
+    const CHANNEL = { fb: 'Facebook', line: 'LINE', copy: '複製連結', share: '分享', other: '其他' };
+    // 邀請農場主／工人各一段說明與分享文字；推薦人是農場主或工人都用同一套（說的是「被邀請的人」）
+    const TARGETS = {
+      farmer: {
+        hint: '對方是農場主：點連結到註冊頁，填完資料就能預約外展農工。',
+        text: '我在用「智農派工」預約外展農工，缺工的時候找人很方便，註冊免費。用我的邀請連結加入：'
+      },
+      worker: {
+        hint: '對方想來上工：點連結留下姓名和電話，合作社會聯絡並說明要準備的證件。',
+        text: '我在「智農派工」接外展農務的工作，想來上工的話，用我的邀請連結登記，合作社會跟你聯絡：'
+      }
+    };
+
+    let me = null, data = null, target = 'farmer';
+
+    const $ = (id) => document.getElementById(id);
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function icons() { if (window.lucide && window.lucide.createIcons) window.lucide.createIcons(); }
+    function say(msg, kind) {
+      const el = $('shareMsg');
+      el.className = 'ad-notice ' + (kind === 'danger' ? 'ad-notice--danger' : 'ad-notice--ok');
+      el.innerHTML = '<span>' + esc(msg) + '</span>';
+      el.hidden = false;
+    }
+
+    // 邀請連結的網址底：optional AGRI_CONFIG.publicBase（指向 AgriDispatch 資料夾的對外網址）；
+    // 沒設時用目前頁面所在資料夾；Android App 內建頁面（appassets）改用後端網站網址
+    function baseUrl() {
+      if (CFG.publicBase) return CFG.publicBase.replace(/\/?$/, '/');
+      if (/^https?:$/.test(location.protocol) && !/appassets\.androidplatform\.net$/.test(location.hostname)) {
+        return new URL('./', location.href).href;
+      }
+      return String(CFG.apiBase || '').replace(/\/api\/?$/, '') + '/AgriDispatch/';
+    }
+    function isLocalHost() {
+      return !/^https?:\/\//.test(baseUrl()) || /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)([:/]|$)/.test(baseUrl()) || /\.(localhost|test)([:/]|$)/.test(baseUrl());
+    }
+    function inviteUrl(channel) {
+      let u;
+      try { u = new URL('join.html', baseUrl()); } catch (e) { return ''; }
+      u.searchParams.set('ref', data.code);
+      u.searchParams.set('t', target);
+      u.searchParams.set('c', channel);
+      return u.href;
+    }
+    function messageFor(channel) { return TARGETS[target].text + '\n' + inviteUrl(channel); }
+
+    function render() {
+      $('codeText').textContent = data.code;
+      document.querySelectorAll('[data-target]').forEach((b) => {
+        const on = b.dataset.target === target;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      $('targetHint').textContent = TARGETS[target].hint;
+      $('linkInput').value = inviteUrl('copy');
+      $('msgPreview').textContent = messageFor('copy');
+      $('localNotice').hidden = !isLocalHost();
+
+      const s = data.stats || {};
+      const set = (id, n, unit) => { $(id).innerHTML = (Number(n) || 0) + '<small>' + unit + '</small>'; };
+      set('stOpens', s.opens, '次'); set('stFarmers', s.farmersRegistered, '人');
+      set('stLeads', s.workerLeads, '人'); set('stOnboard', s.workersOnboarded, '人');
+
+      const list = data.invitees || [];
+      $('inviteeList').innerHTML = list.length ? list.map((r) => {
+        const st = STATUS[r.status] || [r.status, ''];
+        const day = String(r.createdAt || '').slice(0, 10);
+        return '<div class="ad-row"><div class="ad-row__main">' +
+          '<div class="ad-row__title">' + esc(r.name) + '・' + (r.role === 'farmer' ? '農場主' : '工人') + '</div>' +
+          '<div class="ad-row__meta">' + esc(day) + (r.channel ? '・' + esc(CHANNEL[r.channel] || r.channel) : '') + '</div></div>' +
+          '<div class="ad-row__aside"><span class="ad-pill ' + st[1] + '">' + esc(st[0]) + '</span></div></div>';
+      }).join('') : '<p class="ad-caption">還沒有人透過你的連結加入。分享出去試試看。</p>';
+      icons();
+    }
+
+    function openExternal(url) {
+      // Android App 的 WebView 會把外部網址交給系統開啟；網站則開新分頁
+      if (window.AgriNativeBridge) location.href = url;
+      else window.open(url, '_blank', 'noopener');
+    }
+
+    async function share(kind) {
+      if (kind === 'fb') {
+        // Facebook 分享對話框只吃網址，文字由使用者在 Facebook 內自己輸入
+        openExternal('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(inviteUrl('fb')));
+        return;
+      }
+      if (kind === 'line') {
+        openExternal('https://line.me/R/msg/text/?' + encodeURIComponent(messageFor('line')));
+        return;
+      }
+      try {
+        await navigator.share({ title: '智農派工邀請', text: TARGETS[target].text, url: inviteUrl('share') });
+      } catch (e) { /* 使用者取消 */ }
+    }
+
+    async function copyLink() {
+      const text = messageFor('copy');
+      try {
+        await navigator.clipboard.writeText(text);
+        say('已複製連結和分享文字，可以貼到任何地方。');
+      } catch (e) {
+        const input = $('linkInput');
+        input.focus(); input.select();
+        say('請長按連結選取複製。', 'danger');
+      }
+    }
+
+    async function load() {
+      const err = $('loadError');
+      err.hidden = true;
+      try {
+        const res = await fetch(API + '/referrals/me');
+        const body = await res.json().catch(() => ({}));
+        if (res.status === 401 && window.AgriAuth && window.AgriAuth.MODE === 'demo') {
+          $('demoPick').hidden = false;
+          $('pickForeign').hidden = !!(CFG.features && CFG.features.foreignWorkers === false);
+          return;
+        }
+        if (res.status === 401) throw new Error('尚未登入，請先登入。');
+        if (res.status === 403) throw new Error('只有農場主與工人有邀請連結。');
+        if (!res.ok || body.success === false) throw new Error(body.error || ('HTTP ' + res.status));
+        data = body.data;
+        $('demoPick').hidden = true;
+        $('content').hidden = false;
+        render();
+      } catch (e) {
+        err.innerHTML = '無法取得邀請連結：' + esc(e.message) + ' <a href="login.html" style="font-weight: 600;">前往登入</a>';
+        err.hidden = false;
+      }
+    }
+
+    async function init() {
+      try { me = window.AgriAuth && window.AgriAuth.getUser(); } catch (e) { me = null; }
+      if (me && ROLE_HOME[me.role]) {
+        $('backLink').href = ROLE_HOME[me.role];
+        target = me.role === 'farmer' ? 'farmer' : 'worker';   // 預設邀請同行
+      }
+      document.querySelectorAll('[data-target]').forEach((b) => b.addEventListener('click', () => { target = b.dataset.target; render(); }));
+      document.querySelectorAll('[data-share]').forEach((b) => b.addEventListener('click', () => share(b.dataset.share)));
+      document.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', async () => {
+        await window.AgriAuth.ensureDemoLogin(b.dataset.pick);
+        location.reload();
+      }));
+      $('copyBtn').addEventListener('click', copyLink);
+      if (navigator.share) $('nativeShareBtn').hidden = false;
+      icons();
+      await load();
+    }
+    init();
+  </script>
+</body>
+</html>

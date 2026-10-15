@@ -72,6 +72,16 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END;
 /
 BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE referrals CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE referral_codes CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
     EXECUTE IMMEDIATE 'DROP TABLE account_deletion_requests CASCADE CONSTRAINTS';
 EXCEPTION WHEN OTHERS THEN NULL;
 END;
@@ -563,6 +573,40 @@ CREATE TABLE account_deletion_requests (
 CREATE INDEX idx_adr_username ON account_deletion_requests (username);
 
 COMMENT ON TABLE account_deletion_requests IS '刪除帳號申請：app＝已登入者申請、web＝免登入網頁申請；完成時保留依法須保存的訂單、出勤、工資紀錄';
+
+-- 推薦裂變：農場主與工人用邀請連結（Facebook、LINE）邀請其他農場主或工人
+CREATE TABLE referral_codes (
+    code               VARCHAR2(12 CHAR)   NOT NULL,
+    owner_username     VARCHAR2(64 CHAR)   NOT NULL,
+    owner_ref_id       VARCHAR2(32 CHAR),
+    owner_role         VARCHAR2(32 CHAR)   NOT NULL,
+    click_count        NUMBER(10)          DEFAULT 0 NOT NULL,
+    created_at         TIMESTAMP           DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT pk_referral_codes PRIMARY KEY (code),
+    CONSTRAINT uk_referral_codes_owner UNIQUE (owner_username)
+);
+CREATE TABLE referrals (
+    id                 VARCHAR2(32 CHAR)   NOT NULL,
+    code               VARCHAR2(12 CHAR)   NOT NULL,
+    referrer_username  VARCHAR2(64 CHAR)   NOT NULL,
+    referrer_role      VARCHAR2(32 CHAR)   NOT NULL,
+    invitee_role       VARCHAR2(16 CHAR)   NOT NULL,
+    invitee_name       VARCHAR2(50 CHAR)   NOT NULL,
+    invitee_phone      VARCHAR2(30 CHAR),
+    invitee_ref_id     VARCHAR2(32 CHAR),
+    channel            VARCHAR2(16 CHAR),
+    status             VARCHAR2(16 CHAR)   DEFAULT 'pending' NOT NULL,
+    note               VARCHAR2(500 CHAR),
+    created_at         TIMESTAMP           DEFAULT SYSTIMESTAMP NOT NULL,
+    updated_at         TIMESTAMP,
+    CONSTRAINT pk_referrals PRIMARY KEY (id),
+    CONSTRAINT chk_ref_invitee_role CHECK (invitee_role IN ('farmer', 'worker')),
+    CONSTRAINT chk_ref_status CHECK (status IN ('registered', 'pending', 'contacted', 'onboarded', 'closed'))
+);
+CREATE INDEX idx_referrals_referrer ON referrals (referrer_username);
+
+COMMENT ON TABLE referral_codes IS '推薦碼：每個農場主／工人一組，邀請連結帶 ?ref=code；click_count 為連結開啟次數';
+COMMENT ON TABLE referrals IS '推薦紀錄：農場主經邀請連結註冊＝registered；工人意願登記由合作社跟進（pending→contacted→onboarded／closed）；不含獎勵金額';
 
 -- ====================================================================
 -- 12. 產品文宣 DM 範本表 (BROCHURES)

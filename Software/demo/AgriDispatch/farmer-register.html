@@ -3,10 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="農場主註冊智農派工：填寫手機與農場資料，立即預約合法外展農工。">
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <title>農場主註冊 - 智農派工 AgriDispatch</title>
   <!-- 執行模式設定（demo / production，每份副本各自一份） -->
   <script src="js/app-config.js"></script>
@@ -76,6 +72,10 @@
         <div class="ad-card" style="padding: 24px; margin-top: 24px;">
           <div v-if="isMock" data-demo-only class="ad-notice ad-notice--ok" style="margin-bottom: 16px;">
             <span>示範模式：註冊資料只存在這台裝置的瀏覽器，不會送出。</span>
+          </div>
+
+          <div v-if="invited" class="ad-notice ad-notice--ok" style="margin-bottom: 16px;">
+            <span>你是透過朋友的邀請連結來的，註冊後會記在邀請人名下。</span>
           </div>
 
           <div v-if="errorMsg" class="ad-notice ad-notice--danger" role="alert" style="margin-bottom: 16px;">
@@ -166,6 +166,13 @@
           name: '', phone: '', password: '', password2: '',
           farmName: '', farmType: '個人農戶', address: '', pdpaConsent: false
         });
+        // 邀請連結帶來的推薦碼：網址 ?ref= 優先，其次是 join.html 記在 sessionStorage 的（朋友先逛一圈再回來註冊）
+        const qs = new URLSearchParams(window.location.search);
+        let invite = { code: (qs.get('ref') || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12), channel: (qs.get('c') || '').trim().toLowerCase().slice(0, 16) };
+        if (!invite.code) {
+          try { const saved = JSON.parse(sessionStorage.getItem('agri_ref') || 'null'); if (saved && saved.code) invite = saved; } catch (e) { /* ignore */ }
+        }
+        const invited = ref(!!invite.code);
         const loading = ref(false);
         const errorMsg = ref('');
         const successMsg = ref('');
@@ -209,11 +216,14 @@
                 farmName: form.farmName.trim(),
                 farmType: form.farmType,
                 address: form.address.trim(),
-                pdpaConsent: form.pdpaConsent
+                pdpaConsent: form.pdpaConsent,
+                refCode: invite.code || undefined,
+                refChannel: invite.channel || undefined
               })
             });
             const data = await res.json().catch(() => null);
             if (res.ok && data && data.success && data.user) {
+              try { sessionStorage.removeItem('agri_ref'); } catch (e) { /* ignore */ }
               if (window.AgriAuth) window.AgriAuth.setSession(data.token, data.user);
               sessionStorage.setItem('farmerUser', JSON.stringify(data.user));
               successMsg.value = `註冊完成，${data.user.name}！正在開啟農場主工作台…`;
@@ -231,7 +241,7 @@
           }
         };
 
-        return { form, loading, errorMsg, successMsg, isMock, handleRegister };
+        return { form, loading, errorMsg, successMsg, isMock, invited, handleRegister };
       }
     }).mount('#app');
   </script>

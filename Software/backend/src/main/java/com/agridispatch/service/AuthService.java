@@ -47,12 +47,14 @@ public class AuthService {
     private final FarmerRepository farmerRepository;
     private final RegisterRateLimiter registerRateLimiter;
     private final com.agridispatch.repository.PushTokenRepository pushTokenRepository;
+    private final ReferralService referralService;
 
     public AuthService(UserRepository userRepository, WorkerRepository workerRepository,
                        PasswordHasher passwordHasher, TokenService tokenService, AgriSettings settings,
                        LoginRateLimiter loginRateLimiter, FarmerRepository farmerRepository,
                        RegisterRateLimiter registerRateLimiter,
-                       com.agridispatch.repository.PushTokenRepository pushTokenRepository) {
+                       com.agridispatch.repository.PushTokenRepository pushTokenRepository,
+                       ReferralService referralService) {
         this.userRepository = userRepository;
         this.workerRepository = workerRepository;
         this.passwordHasher = passwordHasher;
@@ -62,6 +64,7 @@ public class AuthService {
         this.farmerRepository = farmerRepository;
         this.registerRateLimiter = registerRateLimiter;
         this.pushTokenRepository = pushTokenRepository;
+        this.referralService = referralService;
     }
 
     // =========================================================================
@@ -174,6 +177,7 @@ public class AuthService {
      * 農場主自助註冊：建立 farmers 與 users（帳號＝手機號碼純數字、role=farmer），成功即回登入結果。
      * 必填 name、phone（台灣手機 09 開頭 10 碼）、password（8～128 字元）、address、pdpaConsent=true；
      * farmName、farmType 選填。手機已註冊 → 409。同一 IP 每小時 10 次（RegisterRateLimiter）。
+     * 經邀請連結註冊時多帶 refCode（推薦碼）、refChannel（fb/line/copy/share）：記一筆推薦；碼無效不影響註冊。
      */
     @Transactional
     public Map<String, Object> registerFarmer(Map<String, Object> req, String clientIp) {
@@ -208,6 +212,7 @@ public class AuthService {
         User user = new User(mobile, passwordHasher.hash(password), name, AuthContext.ROLE_FARMER, farmerId,
                 (farmName != null ? farmName : "自助註冊") + " 農場主");
         userRepository.save(user);
+        referralService.recordFarmerRegistration(trimmed(req.get("refCode")), trimmed(req.get("refChannel")), farmerId, name, mobile);
         return buildLoginResponse(fromUser(user), false);
     }
 

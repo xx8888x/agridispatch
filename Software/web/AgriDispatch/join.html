@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="朋友邀請你加入智農派工：農場主免費註冊就能預約合法外展農工，想來上工的人可以登記，由合作社聯絡。">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="智農派工｜朋友邀請你加入">
+  <meta property="og:description" content="農場主免費註冊就能預約合法外展農工；想來上工的人留下聯絡方式，由合作社與你聯絡。">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <title>朋友邀請你加入 - 智農派工 AgriDispatch</title>
+  <script src="js/app-config.js"></script>
+  <script src="js/api-client.js"></script>
+  <script src="js/agri-theme.js"></script>
+  <link rel="stylesheet" href="css/agri.css">
+  <script src="js/vendor/lucide.min.js"></script>
+</head>
+<body class="ad-body min-h-screen" style="min-height: 100vh; display: flex; flex-direction: column;">
+
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner">
+      <a href="index.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+      </a>
+      <div class="ad-header__actions">
+        <a href="login.html" class="ad-btn ad-btn--ghost ad-btn--sm"><i data-lucide="log-in" class="ad-icon ad-icon--sm"></i>登入</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="ad-container" style="width: 100%; flex: 1; padding-block: 32px 40px;">
+    <div style="max-width: 440px; margin-inline: auto; display: flex; flex-direction: column; gap: 20px;">
+
+      <div>
+        <h1 class="ad-display">加入智農派工</h1>
+        <p id="inviterLine" class="ad-caption" style="margin-top: 6px;">載入邀請中…</p>
+      </div>
+
+      <div id="invalid" class="ad-notice ad-notice--warn" role="status" hidden>
+        <span>這個邀請連結看不出來是誰傳的，不過你還是可以直接加入。</span>
+      </div>
+
+      <!-- 選擇身分：連結已指定對象（?t=）時只顯示那一個 -->
+      <section id="pick" class="ad-card" hidden>
+        <div class="ad-card__head"><h2 class="ad-heading">你是哪一種？</h2></div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <button type="button" class="ad-btn ad-btn--primary ad-btn--lg ad-btn--block" data-go="farmer">我是農場主，想預約農工</button>
+          <button type="button" class="ad-btn ad-btn--secondary ad-btn--lg ad-btn--block" data-go="worker">我想來上工</button>
+        </div>
+      </section>
+
+      <!-- 農場主：帶推薦碼前往註冊頁 -->
+      <section id="farmerBox" class="ad-card" hidden>
+        <div class="ad-card__head"><h2 class="ad-heading">農場主：免費註冊</h2></div>
+        <p class="ad-caption" style="margin-bottom: 16px;">缺工的時候，在手機上預約合法的外展農工，由合作社派工、投保與管理。註冊只要幾分鐘。</p>
+        <a id="farmerGo" href="farmer-register.html" class="ad-btn ad-btn--primary ad-btn--lg ad-btn--block">前往註冊</a>
+        <p class="ad-caption" style="margin-top: 12px; text-align: center;">已經有帳號？<a href="farmer-login.html" style="color: var(--ad-primary-text);">農場主登入</a></p>
+      </section>
+
+      <!-- 工人：意願登記（工人須由合作社查驗證件後建檔，不能自己註冊） -->
+      <section id="workerBox" class="ad-card" hidden>
+        <div class="ad-card__head"><h2 class="ad-heading">想來上工：留下聯絡方式</h2></div>
+        <p class="ad-caption" style="margin-bottom: 16px;">工作者要由合作社查驗證件後才能建立帳號。留下姓名和電話，合作社會聯絡你，說明要準備什麼。</p>
+
+        <div id="okBox" class="ad-notice ad-notice--ok" role="status" hidden></div>
+        <div id="errBox" class="ad-notice ad-notice--danger" role="alert" style="margin-bottom: 16px;" hidden></div>
+
+        <form id="leadForm" novalidate style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="ad-field">
+            <label class="ad-label" for="leadName">姓名 <span style="color: var(--ad-danger-text);">*</span></label>
+            <input id="leadName" class="ad-input" type="text" autocomplete="name" maxlength="50">
+          </div>
+          <div class="ad-field">
+            <label class="ad-label" for="leadPhone">聯絡電話 <span style="color: var(--ad-danger-text);">*</span></label>
+            <input id="leadPhone" class="ad-input" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="09xxxxxxxx">
+          </div>
+          <label style="display: flex; gap: 10px; align-items: flex-start; cursor: pointer;">
+            <input id="leadConsent" type="checkbox" style="margin-top: 3px; width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--ad-primary);">
+            <span class="ad-caption">我同意智農派工與合作社依個人資料保護法，蒐集上面填寫的姓名與電話，用於聯絡我說明報名流程。</span>
+          </label>
+          <button id="leadBtn" type="submit" class="ad-btn ad-btn--primary ad-btn--lg ad-btn--block">送出登記</button>
+        </form>
+        <p data-demo-only class="ad-caption" style="margin-top: 12px;">示範模式：登記資料只存在這台裝置的瀏覽器，不會送出。</p>
+      </section>
+
+      <p id="switchLine" class="ad-caption" style="text-align: center;" hidden></p>
+    </div>
+  </main>
+
+  <footer class="ad-caption" style="padding: 20px 16px; text-align: center; border-top: 1px solid var(--ad-border);">
+    © 2026 智農派工 AgriDispatch
+  </footer>
+
+  <script>
+    const API = (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+    const params = new URLSearchParams(location.search);
+    const ref = (params.get('ref') || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+    const channel = (params.get('c') || '').trim().toLowerCase().slice(0, 16);
+    const fixedTarget = ['farmer', 'worker'].indexOf(params.get('t')) >= 0 ? params.get('t') : '';
+    const $ = (id) => document.getElementById(id);
+    function icons() { if (window.lucide && window.lucide.createIcons) window.lucide.createIcons(); }
+
+    // 邀請碼與管道也記在瀏覽器：邀請連結點開後，朋友可能先逛一圈、晚點才回來註冊
+    try {
+      if (ref) { sessionStorage.setItem('agri_ref', JSON.stringify({ code: ref, channel: channel })); }
+    } catch (e) { /* 無痕模式等，忽略 */ }
+
+    function show(target) {
+      $('pick').hidden = true;
+      $('farmerBox').hidden = target !== 'farmer';
+      $('workerBox').hidden = target !== 'worker';
+      const other = target === 'farmer' ? 'worker' : 'farmer';
+      const line = $('switchLine');
+      line.hidden = false;
+      line.innerHTML = (target === 'farmer' ? '不是農場主？' : '你是農場主？') +
+        '<a href="#" id="switchLink" style="color: var(--ad-primary-text);">' + (target === 'farmer' ? '我想來上工' : '改為農場主註冊') + '</a>';
+      $('switchLink').addEventListener('click', (e) => { e.preventDefault(); show(other); });
+      const q = new URLSearchParams();
+      if (ref) q.set('ref', ref);
+      if (channel) q.set('c', channel);
+      $('farmerGo').href = 'farmer-register.html' + (q.toString() ? '?' + q.toString() : '');
+    }
+
+    async function loadInviter() {
+      const line = $('inviterLine');
+      if (!ref) {
+        line.textContent = '免費註冊，開始使用。';
+        $('invalid').hidden = true;
+        return;
+      }
+      try {
+        const res = await fetch(API + '/public/referral/' + encodeURIComponent(ref));
+        const body = await res.json().catch(() => ({}));
+        if (res.ok && body.valid) {
+          line.textContent = body.inviterName + ' 邀請你加入智農派工。';
+          return;
+        }
+      } catch (e) { /* 連不上後端：照樣讓人往下走 */ }
+      line.textContent = '歡迎加入智農派工。';
+      $('invalid').hidden = false;
+    }
+
+    async function submitLead(e) {
+      e.preventDefault();
+      const err = $('errBox'), ok = $('okBox');
+      err.hidden = true;
+      const name = $('leadName').value.trim();
+      const phone = $('leadPhone').value.replace(/[\s()-]/g, '');
+      if (!name) { err.textContent = '請填寫姓名'; err.hidden = false; return; }
+      if (!/^\+?\d{8,15}$/.test(phone)) { err.textContent = '請填寫可以聯絡到你的電話'; err.hidden = false; return; }
+      if (!$('leadConsent').checked) { err.textContent = '請先勾選同意個人資料蒐集'; err.hidden = false; return; }
+      $('leadBtn').disabled = true;
+      try {
+        const res = await fetch(API + '/public/referral/lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: ref, name: name, phone: phone, pdpaConsent: true, channel: channel })
+        });
+        const body = await res.json().catch(() => ({}));
+        if (res.ok && body.success) {
+          $('leadForm').hidden = true;
+          ok.textContent = body.message || '已收到你的登記，合作社會與你聯絡。';
+          ok.hidden = false;
+        } else {
+          err.textContent = body.error || '登記失敗，請稍後再試';
+          err.hidden = false;
+        }
+      } catch (e2) {
+        err.textContent = '無法連線到伺服器，請稍後再試';
+        err.hidden = false;
+      } finally {
+        $('leadBtn').disabled = false;
+      }
+    }
+
+    document.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => show(b.dataset.go)));
+    $('leadForm').addEventListener('submit', submitLead);
+    if (fixedTarget) show(fixedTarget); else $('pick').hidden = false;
+    // 沒有邀請碼（直接開這頁）不能登記工人：登記要記在邀請人名下
+    if (!ref) {
+      $('leadForm').hidden = true;
+      $('errBox').textContent = '要用朋友傳給你的邀請連結才能登記。也可以直接聯絡合作社。';
+      $('errBox').hidden = false;
+    }
+    icons();
+    loadInviter();
+  </script>
+</body>
+</html>

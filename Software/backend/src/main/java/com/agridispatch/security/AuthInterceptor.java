@@ -40,6 +40,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             new String[]{"POST", "/api/auth/login"},
             new String[]{"POST", "/api/auth/register"},       // 農場主自助註冊（RegisterRateLimiter 限次）
             new String[]{"POST", "/api/public/account-deletion"}, // 免登入刪除帳號申請（Play 規定；AccountDeletionService 限次）
+            new String[]{"POST", "/api/public/referral/lead"},    // 邀請連結：工人意願登記（ReferralService 限次）
             new String[]{"POST", "/api/auth/demo-login"},
             new String[]{"GET", "/api/auth/quick-profiles"},   // 僅 demo 模式有效，非 demo 回 404
             new String[]{"GET", "/api/public/**"},
@@ -84,6 +85,8 @@ public class AuthInterceptor implements HandlerInterceptor {
     /** admin_tech 或 coop_admin（雇主責任範圍；規格 11 §3.1）：{method("*" = 任意), pattern} */
     private static final List<String[]> STAFF_ONLY = List.of(
             new String[]{"*", "/api/payroll/**"},                // 出勤補登／修正、月結算（PayrollController）
+            new String[]{"GET", "/api/referrals"},               // 推薦紀錄（含被邀請者電話）；GET /api/referrals/me 為本人，不在此列
+            new String[]{"POST", "/api/referrals/*/status"},     // 工人意願登記的跟進狀態
             new String[]{"GET", "/api/workers"},                 // 工人名冊
             new String[]{"POST", "/api/workers"},
             new String[]{"PUT", "/api/workers/*"}, new String[]{"DELETE", "/api/workers/*"},

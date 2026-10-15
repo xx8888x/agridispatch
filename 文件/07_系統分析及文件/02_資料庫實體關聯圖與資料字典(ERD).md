@@ -192,6 +192,19 @@ erDiagram
         string status "pending/completed/rejected/withdrawn"
         string resultSummary
     }
+    referral_codes {
+        string code PK "8 碼推薦碼"
+        string ownerUsername UK "推薦人帳號"
+        string ownerRole
+        int clickCount "連結開啟次數"
+    }
+    referrals {
+        string id PK "RF-YYYY-NNN"
+        string code FK
+        string referrerUsername
+        string inviteeRole "farmer/worker"
+        string status "registered/pending/contacted/onboarded/closed"
+    }
     talents {
         string id PK
         string name
@@ -333,6 +346,8 @@ erDiagram
     workers ||..o{ skill_reviews : "workerId"
     users ||..o{ line_users : "refId（綁定）"
     users ||..o{ push_tokens : "username（邏輯關聯）"
+    referral_codes ||--o{ referrals : "code"
+    users ||..o| referral_codes : "ownerUsername（邏輯關聯）"
     users ||..o{ account_deletion_requests : "username（邏輯關聯）"
 ```
 
@@ -649,6 +664,34 @@ erDiagram
 | `result_summary` | String(500) | 完成時實際做了什麼（解除 LINE 幾筆、刪除推播裝置幾台、去識別化範圍），供日後查核 |
 
 > API：`/api/account/deletion-request`（本人）、`/api/public/account-deletion`（公開）、`/api/account-deletions/**`（admin），見第參章第 17 點與規格書 03 第 5 節。
+
+### 2.23 推薦碼 `referral_codes` 與推薦紀錄 `referrals`（實體 `ReferralCode`、`Referral`，2026-10-15 起）
+`referral_codes`：每個農場主／工人一組推薦碼，邀請連結帶 `?ref=code`。
+
+| 欄位 | 型別 | 說明 |
+| :--- | :--- | :--- |
+| `code` (PK) | String(12) | 推薦碼，8 碼大寫英數（去掉 I O 0 1） |
+| `owner_username` (UK) | String(64) | 推薦人帳號（users 帳號或工號），一人一組 |
+| `owner_ref_id` / `owner_role` | String(32) | 推薦人的 refId 與角色（farmer／worker_local／worker_foreign） |
+| `click_count` | Integer | 邀請連結被開啟的次數 |
+| `created_at` | LocalDateTime | 建立時間 |
+
+`referrals`：被邀請者一筆。農場主經連結註冊 → `registered`；工人不能自助註冊，改為意願登記 `pending`，合作社聯絡、查驗證件、建檔後改 `onboarded`。
+
+| 欄位 | 型別 | 說明 |
+| :--- | :--- | :--- |
+| `id` (PK) | String(32) | `RF-YYYY-NNN` |
+| `code` | String(12) | 使用的推薦碼 |
+| `referrer_username` / `referrer_role` | String(64) / String(32) | 推薦人（冗餘存放，推薦人帳號刪除後紀錄仍在） |
+| `invitee_role` | String(16) | `farmer` 農場主／`worker` 想來上工的工人 |
+| `invitee_name` / `invitee_phone` | String(50) / String(30) | 被邀請者自填的姓名與電話（個資，只有後台看得到完整電話；保存期限【待確認】） |
+| `invitee_ref_id` | String(32) | 農場主註冊成功後的 farmers.id |
+| `channel` | String(16) | 分享管道：`fb`／`line`／`copy`／`share`／`other` |
+| `status` | String(16) | `registered`／`pending`／`contacted`／`onboarded`／`closed` |
+| `note` | String(500) | 合作社跟進備註（推薦人看不到） |
+| `created_at` / `updated_at` | LocalDateTime | 建立與最後跟進時間 |
+
+> 不記錄任何獎勵金額：推廣獎勵（現金或工時折抵）的稅務與法規認定【待確認】。API 見規格書 03 第 4 節；Oracle 建表見 `database/migrations/2026-10-15_referrals.sql`。
 
 ---
 

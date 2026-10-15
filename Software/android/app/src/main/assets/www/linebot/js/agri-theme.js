@@ -128,6 +128,7 @@
       { root: 'tech', href: 'admin-line.html', title: 'LINE 官方帳號', meta: '兩帳號狀態、帳號綁定' },
       { root: 'tech', href: 'accounts.html', title: '帳號與密碼管理', meta: '忘記密碼時重設臨時密碼' },
       { root: 'tech', href: 'leaves.html', title: '請假審核', meta: '工人請假核准、撞期改派' },
+      { root: 'tech', href: 'referrals.html', title: '推薦紀錄', meta: '邀請連結帶來的農場主、工人意願登記跟進' },
       { root: 'tech', href: 'payroll.html', title: '出勤補登與月結算', meta: '漏打卡補登、薪資結算鎖定' }
     ] },
     { group: '介紹與工具', items: [
@@ -138,6 +139,7 @@
       { root: 'main', href: 'coldchain.html', title: '冷鏈與物流', meta: '雨天改派與預冷場' },
       { root: 'main', href: 'legalize.html', title: '法規與合規', meta: '外展農務制度與雙軌架構', feature: 'legalize' },
       { root: 'line', href: 'line.html', title: 'LINE Bot', meta: '圖文選單與對話模擬' },
+      { root: 'main', href: 'invite.html', title: '邀請夥伴', meta: '推廣連結：Facebook、LINE 邀請農場主與工人' },
       { root: 'main', href: 'login.html', title: '登入大廳', meta: '農場主、本國工人入口' }
     ] }
   ];
@@ -237,13 +239,13 @@
   // 選單文字依頁面語言（<html lang>，外勞頁 setLang 會更新）；「我的帳號」頁本身目前只有中文
   var AM_TEXT = {
     zh: { roles: { farmer: '農場主', worker_local: '本國工人', worker_foreign: '外籍移工', admin_tech: '科技後台管理員', coop_admin: '合作社管理員' },
-      account: '帳號 ', mine: '我的帳號', password: '修改密碼', manage: '帳號與密碼管理', switchAcct: '切換帳號',
+      account: '帳號 ', invite: '邀請夥伴', mine: '我的帳號', password: '修改密碼', manage: '帳號與密碼管理', switchAcct: '切換帳號',
       logout: '登出', guest: '尚未登入', login: '登入', menu: '帳號選單' },
     vi: { roles: { farmer: 'Chủ nông trại', worker_local: 'Lao động Đài Loan', worker_foreign: 'Lao động nước ngoài', admin_tech: 'Quản trị viên', coop_admin: 'Quản trị hợp tác xã' },
-      account: 'Tài khoản ', mine: 'Tài khoản của tôi', password: 'Đổi mật khẩu', manage: 'Quản lý tài khoản', switchAcct: 'Đổi tài khoản',
+      account: 'Tài khoản ', invite: 'Mời bạn bè', mine: 'Tài khoản của tôi', password: 'Đổi mật khẩu', manage: 'Quản lý tài khoản', switchAcct: 'Đổi tài khoản',
       logout: 'Đăng xuất', guest: 'Chưa đăng nhập', login: 'Đăng nhập', menu: 'Menu tài khoản' },
     id: { roles: { farmer: 'Pemilik kebun', worker_local: 'Pekerja Taiwan', worker_foreign: 'Pekerja migran', admin_tech: 'Administrator', coop_admin: 'Admin koperasi' },
-      account: 'Akun ', mine: 'Akun saya', password: 'Ganti sandi', manage: 'Kelola akun', switchAcct: 'Ganti akun',
+      account: 'Akun ', invite: 'Undang teman', mine: 'Akun saya', password: 'Ganti sandi', manage: 'Kelola akun', switchAcct: 'Ganti akun',
       logout: 'Keluar', guest: 'Belum masuk', login: 'Masuk', menu: 'Menu akun' }
   };
   function amText() {
@@ -301,6 +303,7 @@
         '<div class="ad-caption">' + escapeHtml(T.roles[user.role] || user.role || '') + '・' + escapeHtml(T.account + (user.username || '')) + '</div></div>' +
         '<a role="menuitem" href="' + escapeHtml(p.main + 'account.html') + '"><i data-lucide="user-round" class="ad-icon ad-icon--sm"></i>' + escapeHtml(T.mine) + '</a>' +
         '<a role="menuitem" href="' + escapeHtml(p.main + 'account.html#password') + '"><i data-lucide="key-round" class="ad-icon ad-icon--sm"></i>' + escapeHtml(T.password) + '</a>' +
+        ((user.role === 'farmer' || user.role === 'worker_local' || user.role === 'worker_foreign') ? '<a role="menuitem" href="' + escapeHtml(p.main + 'invite.html') + '"><i data-lucide="user-plus" class="ad-icon ad-icon--sm"></i>' + escapeHtml(T.invite) + '</a>' : '') +
         ((user.role === 'admin_tech' || user.role === 'coop_admin') ? '<a role="menuitem" href="' + escapeHtml(p.tech + 'accounts.html') + '"><i data-lucide="users" class="ad-icon ad-icon--sm"></i>' + escapeHtml(T.manage) + '</a>' : '') +
         '<a role="menuitem" href="' + escapeHtml(switchHref) + '"><i data-lucide="repeat" class="ad-icon ad-icon--sm"></i>' + escapeHtml(T.switchAcct) + '</a>' +
         '<button type="button" role="menuitem" class="am-danger" data-am-logout><i data-lucide="log-out" class="ad-icon ad-icon--sm"></i>' + escapeHtml(T.logout) + '</button>';

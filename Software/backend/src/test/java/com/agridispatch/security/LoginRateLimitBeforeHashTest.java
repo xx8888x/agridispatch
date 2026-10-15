@@ -62,7 +62,7 @@ class LoginRateLimitBeforeHashTest {
         AuthService auth = new AuthService(recordingRepo(UserRepository.class, repoCalls),
                 recordingRepo(WorkerRepository.class, repoCalls), hasher, new TokenService(settings()), settings(), limiter,
                 recordingRepo(FarmerRepository.class, repoCalls), new RegisterRateLimiter(10, 60),
-                recordingRepo(com.agridispatch.repository.PushTokenRepository.class, repoCalls));
+                recordingRepo(com.agridispatch.repository.PushTokenRepository.class, repoCalls), null);   // 只測登入，不會用到推薦服務
 
         for (int i = 0; i < 5; i++) limiter.recordFailure("farmer", "10.1.1.1");
 
@@ -85,7 +85,7 @@ class LoginRateLimitBeforeHashTest {
         AuthService auth = new AuthService(recordingRepo(UserRepository.class, repoCalls),
                 recordingRepo(WorkerRepository.class, repoCalls), hasher, new TokenService(settings()), settings(), limiter,
                 recordingRepo(FarmerRepository.class, repoCalls), new RegisterRateLimiter(10, 60),
-                recordingRepo(com.agridispatch.repository.PushTokenRepository.class, repoCalls));
+                recordingRepo(com.agridispatch.repository.PushTokenRepository.class, repoCalls), null);   // 只測登入，不會用到推薦服務
 
         for (int i = 0; i < 5; i++) assertTrue(auth.login("nobody", "pw", "10.1.1.3").isEmpty());
         assertEquals(5, hasher.calls.get(), "查無帳號時仍以 burnTime 消耗等量時間");

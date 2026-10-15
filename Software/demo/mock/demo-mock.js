@@ -112,7 +112,7 @@
   // ---------------- 使用者／登入 ----------------
   var ROLE_BY_PAGE = [
     [/^coop/, 'coop_admin'],
-    [/^(admin|insurance|skills|matching|accounts|leaves|payroll)/, 'admin_tech'],
+    [/^(admin|insurance|skills|matching|accounts|leaves|payroll|referrals)/, 'admin_tech'],
     [/^(farmer|legalize|expenses)/, 'farmer'],
     [/^worker-foreign/, 'worker_foreign'],
     [/^worker-local|^worker-skills/, 'worker_local']
@@ -1456,6 +1456,120 @@
     return respond(200, { success: true, data: r });
   }
 
+  // ---------------- 推薦裂變（同後端 ReferralService；碼、點擊數、推薦紀錄存 localStorage）----------------
+  var REF_KEY = 'MOCK /referrals';
+  var REF_STATUS = ['pending', 'contacted', 'onboarded', 'closed'];
+  function refStore() {
+    var e = get(REF_KEY);
+    if (e && e.codes) return e;
+    // 第一次：放幾筆示範資料，後台與推薦人的畫面才看得出效果
+    var d0 = function (n) { var d = new Date(); d.setDate(d.getDate() - n); return localStamp(d); };
+    var yr = 'RF-' + new Date().getFullYear() + '-';
+    return { codes: { farmer: { code: 'DEMOF001', name: '陳建龍', role: 'farmer', refId: 'F001' }, W026: { code: 'DEMOW026', name: '林小祥', role: 'worker_local', refId: 'W026' } },
+      opens: { DEMOF001: 14, DEMOW026: 9 },
+      list: [
+        { id: yr + '003', code: 'DEMOF001', referrerUsername: 'farmer', referrerRole: 'farmer', inviteeRole: 'worker', inviteeName: '黃志豪', inviteePhone: '0912345678', channel: 'line', status: 'pending', createdAt: d0(1) },
+        { id: yr + '002', code: 'DEMOF001', referrerUsername: 'farmer', referrerRole: 'farmer', inviteeRole: 'worker', inviteeName: '吳美玲', inviteePhone: '0987654321', channel: 'fb', status: 'onboarded', note: '已查驗身分證件並建檔', createdAt: d0(6) },
+        { id: yr + '001', code: 'DEMOW026', referrerUsername: 'W026', referrerRole: 'worker_local', inviteeRole: 'farmer', inviteeName: '李春生', inviteePhone: '0933222111', inviteeRefId: 'F003', channel: 'line', status: 'registered', createdAt: d0(9) }
+      ] };
+  }
+  function refSave(st) { put(REF_KEY, st); }
+  function refMask(n) {
+    n = String(n || '').trim();
+    var a = Array.from(n);
+    if (a.length <= 1) return n;
+    if (a.length === 2) return a[0] + '○';
+    if (/[\u0000-⹿]/.test(n)) return a[0] + '○○';
+    return a[0] + '○' + a[a.length - 1];
+  }
+  function refChannel(c) { c = String(c || '').toLowerCase(); return ['fb', 'line', 'copy', 'share', 'other'].indexOf(c) >= 0 ? c : 'other'; }
+  function refFindCode(st, raw) {
+    raw = String(raw || '').trim().toUpperCase();
+    var hit = null;
+    Object.keys(st.codes).forEach(function (k) { if (st.codes[k].code === raw) hit = { username: k, info: st.codes[k] }; });
+    return hit;
+  }
+  function refNextId(st) {
+    var prefix = 'RF-' + new Date().getFullYear() + '-', max = 0;
+    st.list.forEach(function (r) { if (r.id.indexOf(prefix) === 0) max = Math.max(max, parseInt(r.id.slice(prefix.length), 10) || 0); });
+    return prefix + String(max + 1).padStart(3, '0');
+  }
+  function refAdd(st, owner, role, name, extra) {
+    var r = Object.assign({ id: refNextId(st), code: owner.info.code, referrerUsername: owner.username, referrerRole: owner.info.role,
+      inviteeRole: role, inviteeName: String(name).trim().slice(0, 50), createdAt: localStamp(new Date()) }, extra);
+    st.list.unshift(r);
+    return r;
+  }
+  function refMe() {
+    var u = currentUser();
+    if (!u) return respond(401, { success: false, error: 'UNAUTHORIZED' });
+    if (['farmer', 'worker_local', 'worker_foreign'].indexOf(u.role) < 0) return respond(403, { success: false, error: 'FORBIDDEN' });
+    var st = refStore();
+    if (!st.codes[u.username]) {
+      var c = '', al = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      for (var i = 0; i < 8; i++) c += al.charAt(Math.floor(Math.random() * al.length));
+      st.codes[u.username] = { code: c, name: u.name || u.username, role: u.role, refId: u.refId || null };
+    }
+    refSave(st);
+    var mine = st.list.filter(function (r) { return r.referrerUsername === u.username; });
+    return respond(200, { success: true, data: {
+      code: st.codes[u.username].code, role: u.role,
+      stats: {
+        opens: st.opens[st.codes[u.username].code] || 0,
+        farmersRegistered: mine.filter(function (r) { return r.inviteeRole === 'farmer'; }).length,
+        workerLeads: mine.filter(function (r) { return r.inviteeRole === 'worker'; }).length,
+        workersOnboarded: mine.filter(function (r) { return r.status === 'onboarded'; }).length
+      },
+      invitees: mine.map(function (r) { return { role: r.inviteeRole, name: refMask(r.inviteeName), status: r.status, channel: r.channel, createdAt: r.createdAt }; })
+    } });
+  }
+  function refOpen(code) {
+    var st = refStore(), hit = refFindCode(st, code);
+    if (!hit) return respond(200, { success: true, valid: false });
+    st.opens[hit.info.code] = (st.opens[hit.info.code] || 0) + 1;
+    refSave(st);
+    return respond(200, { success: true, valid: true, inviterName: refMask(hit.info.name), inviterRole: hit.info.role });
+  }
+  function refLead(b) {
+    var st = refStore(), hit = refFindCode(st, b.code);
+    if (!hit) return respond(400, { success: false, error: '邀請連結無效或已失效' });
+    if (blank(b.name) || String(b.name).trim().length > 50) return respond(400, { success: false, error: '請填寫姓名（50 字以內）' });
+    var phone = String(b.phone || '').replace(/[\s()-]/g, '');
+    if (!/^\+?\d{8,15}$/.test(phone)) return respond(400, { success: false, error: '請填寫可以聯絡到您的電話' });
+    if (b.pdpaConsent !== true) return respond(400, { success: false, error: '請先閱讀並同意個人資料蒐集告知事項' });
+    if (phone === hit.username) return respond(400, { success: false, error: '不能用自己的電話登記' });
+    var dup = st.list.some(function (r) { return r.code === hit.info.code && r.inviteePhone === phone; });
+    if (!dup) { refAdd(st, hit, 'worker', b.name, { inviteePhone: phone, channel: refChannel(b.channel), status: 'pending' }); refSave(st); }
+    return respond(200, { success: true, message: '已收到您的登記。合作社會以您留的電話聯絡，並說明需要準備的證件。' });
+  }
+  function refRecordFarmer(b, phone) {
+    if (blank(b.refCode)) return;
+    var st = refStore(), hit = refFindCode(st, b.refCode);
+    if (!hit || hit.username === phone) return;
+    refAdd(st, hit, 'farmer', b.name, { inviteePhone: phone, inviteeRefId: 'F900', channel: refChannel(b.refChannel), status: 'registered' });
+    refSave(st);
+  }
+  function refList() {
+    var u = currentUser();
+    if (!u || (u.role !== 'admin_tech' && u.role !== 'coop_admin')) return respond(403, { success: false, error: 'FORBIDDEN' });
+    var st = refStore();
+    return respond(200, { success: true, data: st.list.map(function (r) {
+      var o = st.codes[r.referrerUsername] || {};
+      return Object.assign({ referrerName: o.name || r.referrerUsername }, r);
+    }) });
+  }
+  function refStatus(id, b) {
+    var st = refStore(), r = st.list.filter(function (x) { return x.id === id; })[0];
+    if (!r) return respond(404, { success: false, error: '查無推薦紀錄：' + id });
+    if (r.inviteeRole !== 'worker') return respond(400, { success: false, error: '農場主註冊的推薦紀錄不需跟進' });
+    if (REF_STATUS.indexOf(b.status) < 0) return respond(400, { success: false, error: 'status 必須為 pending / contacted / onboarded / closed' });
+    r.status = b.status;
+    if (!blank(b.note)) r.note = String(b.note).trim().slice(0, 500);
+    r.updatedAt = localStamp(new Date());
+    refSave(st);
+    return respond(200, { success: true, data: { id: r.id, status: r.status } });
+  }
+
   // ---------------- 請假（移植自後端 LeaveService；資料存 localStorage，媒合排除只在真實後端）----------------
   var LEAVE_TYPES = [['annual', '特別休假'], ['personal', '事假'], ['sick', '普通傷病假'], ['menstrual', '生理假'],
     ['family_care', '家庭照顧假'], ['marriage', '婚假'], ['bereavement', '喪假'], ['official', '公假'], ['injury', '公傷病假'],
@@ -1796,6 +1910,7 @@
       if (!r.name || !/^09\d{8}$/.test(phone) || !r.password || String(r.password).length < 8 || !r.address || r.pdpaConsent !== true) {
         return respond(400, { success: false, error: '請確認姓名、手機、密碼（至少 8 字元）、農地地址與個資同意都已填寫' });
       }
+      refRecordFarmer(r, phone);
       return respond(200, { success: true, token: 'mock.farmer.F900', user: {
         username: phone, name: String(r.name), role: 'farmer', refId: 'F900',
         roleDesc: (r.farmName || '自助註冊') + ' 農場主' } });
@@ -1852,6 +1967,9 @@
       if (method === 'DELETE') return delWithdraw();
     }
     if (method === 'POST' && sp.path === '/public/account-deletion') return delWeb(body || {});
+    if (method === 'POST' && sp.path === '/public/referral/lead') return refLead(body || {});
+    var rf = /^\/referrals\/([^/]+)\/status$/.exec(sp.path);
+    if (rf && method === 'POST') return refStatus(decodeURIComponent(rf[1]), body || {});
     var dd = /^\/account-deletions\/([^/]+)\/(complete|reject)$/.exec(sp.path);
     if (dd && method === 'POST') return delDecide(decodeURIComponent(dd[1]), dd[2], body || {});
     if (method === 'POST' && sp.path === '/line/notify/farmer-broadcast') {
@@ -1991,6 +2109,10 @@
       var pp = /^\/workers\/([^/]+)\/payroll$/.exec(sp.path);
       if (pp && findGet(p)) { var pe = paySettledSlips(findGet(p), decodeURIComponent(pp[1])); return respond(pe.s || 200, pe.b); }
       if (sp.path === '/account/deletion-request') return delMine();
+      if (sp.path === '/referrals/me') return refMe();
+      if (sp.path === '/referrals') return refList();
+      var ro = /^\/public\/referral\/([^/]+)$/.exec(sp.path);
+      if (ro) return refOpen(decodeURIComponent(ro[1]));
       if (sp.path === '/account-deletions') return respond(200, { success: true, data: delList() });
       if (sp.path === '/leaves/types') {
         return respond(200, { success: true, data: LEAVE_TYPES.map(function (t) { return { key: t[0], label: t[1] }; }) });

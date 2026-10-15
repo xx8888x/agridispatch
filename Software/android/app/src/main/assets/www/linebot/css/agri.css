@@ -680,6 +680,13 @@ a.ad-row:focus-visible, button.ad-row:focus-visible { outline: none; box-shadow:
 .ad-notice--warn { border-color: var(--ad-accent); color: var(--ad-accent-text); background: var(--ad-accent-soft); }
 .ad-notice--danger { border-color: var(--ad-danger); color: var(--ad-danger-text); background: var(--ad-danger-soft); }
 
+/* 內文連結。沒載入 Tailwind（沒有 preflight）的頁面，<a> 會是瀏覽器預設深藍，在深色底對比不到 2:1（功能測試 B-06）。
+   一般底色用主色文字；放在提示框（.ad-notice）裡改用一般內文色（--ad-text）、加粗並保留底線，在警告／錯誤／成功底色上兩種主題對比都 >= 4.5:1 */
+.ad-link { color: var(--ad-primary-text); text-decoration: underline; text-underline-offset: 2px; }
+.ad-link:hover { text-decoration-thickness: 2px; }
+.ad-link:focus-visible { outline: none; box-shadow: var(--ad-ring); border-radius: 2px; }
+.ad-notice .ad-link { color: var(--ad-text); font-weight: 600; }
+
 .ad-empty {
   padding: var(--ad-sp-8) var(--ad-sp-4);
   text-align: center;

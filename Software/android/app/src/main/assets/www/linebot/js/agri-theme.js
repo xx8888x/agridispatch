@@ -380,7 +380,9 @@
     try { p = decodeURIComponent(p); } catch (e) {}
     return (p.split('/').pop() || 'index.html').toLowerCase();
   })();
-  var isField = defaultPaths().main === '' && !FIELD_EXCLUDE.test(pageFile);
+  var fieldPaths = defaultPaths();
+  // 科技後台（TechBackend/）也納入：合作社與調度人員在田間用手機看後台；admin.html 的色票已改走 token，亮色不破版
+  var isField = (fieldPaths.main === '' || fieldPaths.tech === '') && !FIELD_EXCLUDE.test(pageFile);
   var theme = 'dark';
 
   function applyTheme(t) {
@@ -433,5 +435,9 @@
     employment: EMPLOYMENT, employmentLabel: employmentLabel, visibleWorkers: visibleWorkers, logout: logout,
     isField: isField, theme: function () { return theme; }, setTheme: setTheme, toggleTheme: toggleTheme };
 
-  document.addEventListener('DOMContentLoaded', function () { icons(); themeButton(); demoNavFab(); accountButton(); coopHomeLinks(); });
+  document.addEventListener('DOMContentLoaded', function () {
+    icons(); themeButton(); demoNavFab(); accountButton(); coopHomeLinks();
+    // 頁首由 Vue 管理的頁（admin.html）掛載後會重畫表頭，亮暗鈕可能被換掉：稍後再補一次
+    setTimeout(function () { themeButton(true); }, 1500);
+  });
 })();

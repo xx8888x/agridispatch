@@ -47,6 +47,51 @@
   <link rel="stylesheet" href="css/agri.css">
   <style>
     [v-cloak] { display: none; }
+    /* 後台色票改走設計系統 token（2026-10-15 田間模式第二輪）：深色值與原本 Tailwind slate／emerald／amber／rose 相同，
+       亮色跟著 <html data-theme="light"> 切換；新寫的元素請直接用 .ad-* 元件或下面的 .tb-* class，不要再寫 text-slate-400 之類。 */
+    :root { --tb-surface-3: #334155; --tb-text-soft: #cbd5e1; --tb-border: #334155; --tb-border-soft: #1e293b;
+      --tb-ok-soft: rgba(16, 185, 129, .2); --tb-ok-soft-strong: rgba(2, 44, 34, .6); --tb-warn-soft: rgba(245, 158, 11, .2); --tb-danger-soft: rgba(244, 63, 94, .2);
+      --tb-ok-border: rgba(16, 185, 129, .4); --tb-warn-border: rgba(245, 158, 11, .4); --tb-danger-border: rgba(244, 63, 94, .5); }
+    :root[data-theme="light"] { --tb-surface-3: #e2e8f0; --tb-text-soft: #334155; --tb-border: #cbd5e1; --tb-border-soft: #e2e8f0;
+      --tb-ok-soft: rgba(5, 150, 105, .12); --tb-ok-soft-strong: rgba(5, 150, 105, .16); --tb-warn-soft: rgba(217, 119, 6, .14); --tb-danger-soft: rgba(220, 38, 38, .1);
+      --tb-ok-border: rgba(5, 150, 105, .45); --tb-warn-border: rgba(217, 119, 6, .5); --tb-danger-border: rgba(220, 38, 38, .45); }
+    .tb-bg { background-color: var(--ad-bg); }
+    .tb-surface { background-color: var(--ad-surface); }
+    .tb-surface-2 { background-color: var(--ad-surface-2); }
+    .tb-surface-3 { background-color: var(--tb-surface-3); }
+    .tb-text { color: var(--ad-text); }
+    .tb-text-soft { color: var(--tb-text-soft); }
+    .tb-text-2 { color: var(--ad-text-2); }
+    .tb-text-3 { color: var(--ad-text-3); }
+    .tb-on-accent { color: var(--ad-on-accent); }
+    .tb-ok { color: var(--ad-primary-text); }
+    .tb-warn { color: var(--ad-accent-text); }
+    .tb-danger { color: var(--ad-danger-text); }
+    .tb-ok-soft { background-color: var(--tb-ok-soft); }
+    .tb-ok-soft-strong { background-color: var(--tb-ok-soft-strong); }
+    .tb-warn-soft { background-color: var(--tb-warn-soft); }
+    .tb-danger-soft { background-color: var(--tb-danger-soft); }
+    .tb-primary { background-color: var(--ad-primary); }
+    .tb-accent { background-color: var(--ad-accent); }
+    .tb-danger-bg { background-color: var(--ad-danger); }
+    .tb-border { border-color: var(--tb-border); }
+    .tb-border-soft { border-color: var(--tb-border-soft); }
+    .tb-border-ok { border-color: var(--tb-ok-border); }
+    .tb-border-ok-solid { border-color: var(--ad-primary); }
+    .tb-border-warn { border-color: var(--tb-warn-border); }
+    .tb-border-warn-solid { border-color: var(--ad-accent); }
+    .tb-border-danger { border-color: var(--tb-danger-border); }
+    .tb-border-danger-solid { border-color: var(--ad-danger); }
+    .tb-placeholder::placeholder { color: var(--ad-text-3); }
+    .tb-focus-border-ok-solid:focus { border-color: var(--ad-primary); }
+    .tb-focus-border-warn-solid:focus { border-color: var(--ad-accent); }
+    .tb-hover-border-ok:hover { border-color: var(--tb-ok-border); }
+    .tb-hover-danger-bg:hover { background-color: var(--ad-danger); }
+    .tb-hover-ok-soft-strong:hover { background-color: var(--tb-ok-soft-strong); }
+    .tb-hover-primary:hover { background-color: var(--ad-primary-hover); }
+    .tb-hover-surface-3:hover { background-color: var(--tb-surface-3); }
+    .tb-hover-text:hover { color: var(--ad-text); }
+    .tb-hover-warn-soft:hover { background-color: var(--tb-warn-soft); }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
@@ -99,7 +144,7 @@
 
     <!-- Toast Notification Banner -->
     <div v-if="toast.show" class="fixed top-20 right-4 z-50 transition-all duration-300 transform translate-y-0 max-w-md">
-      <div :class="toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'" class="px-4 py-3 rounded-xl flex items-center gap-3 border border-white/20">
+      <div :class="toast.type === 'success' ? 'tb-primary tb-text' : 'tb-danger-bg tb-text'" class="px-4 py-3 rounded-xl flex items-center gap-3 border tb-border">
         <span class="text-xl">{{ toast.type === 'success' ? '' : '' }}</span>
         <div class="text-[13px] font-medium">{{ toast.message }}</div>
       </div>
@@ -121,7 +166,7 @@
       <!-- ============================================================= -->
       <section v-if="activeTab === 'weather'" class="space-y-6">
         <!-- 戰情總覽 -->
-        <div class="p-5 rounded-xl bg-slate-900 border" :class="dispatch.isRainMode ? 'border-rose-500/50' : 'border-slate-700/70'">
+        <div class="p-5 rounded-xl tb-surface border" :class="dispatch.isRainMode ? 'tb-border-danger' : 'tb-border'">
           <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
             <div>
               <div class="flex flex-wrap items-center gap-2">
@@ -130,7 +175,7 @@
               </div>
               <p class="ad-caption" style="margin-top: 4px;">
                 <template v-if="wx.loading">氣象資料載入中…</template>
-                <template v-else-if="wx.at">22 縣市・{{ wx.list.length }} 鄉鎮市區・{{ wx.provider === 'cwa' ? '預報時段' : '觀測時間' }} {{ wxObsTime }}・資料來源 {{ wx.source }}<span v-if="wx.sample" class="text-amber-400">（無法取得即時氣象，目前顯示示範用錄製資料；按「重新整理」會再試）</span><span v-else-if="wx.stale" class="text-amber-400">（氣象署暫時無法連線，顯示上次資料）</span></template>
+                <template v-else-if="wx.at">22 縣市・{{ wx.list.length }} 鄉鎮市區・{{ wx.provider === 'cwa' ? '預報時段' : '觀測時間' }} {{ wxObsTime }}・資料來源 {{ wx.source }}<span v-if="wx.sample" class="tb-warn">（無法取得即時氣象，目前顯示示範用錄製資料；按「重新整理」會再試）</span><span v-else-if="wx.stale" class="tb-warn">（氣象署暫時無法連線，顯示上次資料）</span></template>
                 <template v-else>尚未取得氣象資料</template>
               </p>
             </div>
@@ -166,16 +211,16 @@
                     class="ad-card ad-card--interactive" :class="{ 'is-selected': wxCounty === c.county && !wxQuery }"
                     style="padding: 10px 12px;" :aria-pressed="wxCounty === c.county && !wxQuery">
               <div class="flex items-center justify-between gap-1">
-                <span class="font-bold text-white">{{ c.county }}</span>
-                <span v-if="c.farms" class="text-emerald-400 text-[12px]" :title="c.farms + ' 場作業中'">● {{ c.farms }}</span>
+                <span class="font-bold tb-text">{{ c.county }}</span>
+                <span v-if="c.farms" class="tb-ok text-[12px]" :title="c.farms + ' 場作業中'">● {{ c.farms }}</span>
               </div>
-              <div class="font-mono text-slate-200" style="margin-top: 4px;">{{ c.tMin != null ? (c.tMin === c.tMax ? c.tMin + '°' : c.tMin + '–' + c.tMax + '°') : '—' }}</div>
-              <div class="text-slate-400 text-[12px]">降雨 {{ c.rainMax != null ? c.rainMax + '%' : '—' }}</div>
+              <div class="font-mono tb-text" style="margin-top: 4px;">{{ c.tMin != null ? (c.tMin === c.tMax ? c.tMin + '°' : c.tMin + '–' + c.tMax + '°') : '—' }}</div>
+              <div class="tb-text-2 text-[12px]">降雨 {{ c.rainMax != null ? c.rainMax + '%' : '—' }}</div>
               <div class="text-[12px]" style="margin-top: 2px;">
-                <span v-if="c.stop" class="text-rose-400 font-bold">避險 {{ c.stop }}</span>
-                <span v-if="c.stop && c.caution" class="text-slate-500">・</span>
-                <span v-if="c.caution" class="text-amber-400">注意 {{ c.caution }}</span>
-                <span v-if="!c.stop && !c.caution" class="text-slate-500">{{ c.n ? '全區適合作業' : '' }}</span>
+                <span v-if="c.stop" class="tb-danger font-bold">避險 {{ c.stop }}</span>
+                <span v-if="c.stop && c.caution" class="tb-text-3">・</span>
+                <span v-if="c.caution" class="tb-warn">注意 {{ c.caution }}</span>
+                <span v-if="!c.stop && !c.caution" class="tb-text-3">{{ c.n ? '全區適合作業' : '' }}</span>
               </div>
             </button>
           </div>
@@ -206,22 +251,22 @@
                 <tr v-else-if="!wxTownRows.length"><td colspan="11" class="ad-caption" style="padding: 20px 0;">{{ wx.list.length ? '沒有符合條件的鄉鎮' : '尚未取得氣象資料' }}</td></tr>
                 <tr v-for="w in wxTownRows" :key="w.key">
                   <td>
-                    <span class="font-bold text-white">{{ w.town }}</span>
+                    <span class="font-bold tb-text">{{ w.town }}</span>
                     <span v-if="wxQuery" class="ad-caption" style="margin-left: 4px;">{{ w.county }}</span>
-                    <span v-if="wxFarmTownKeys[w.key]" class="text-emerald-400 text-[12px]" style="margin-left: 4px;" :title="'作業中：' + wxFarmTownKeys[w.key].join('、')">● 作業中</span>
+                    <span v-if="wxFarmTownKeys[w.key]" class="tb-ok text-[12px]" style="margin-left: 4px;" :title="'作業中：' + wxFarmTownKeys[w.key].join('、')">● 作業中</span>
                   </td>
                   <td>{{ w.text }}</td>
-                  <td class="font-mono">{{ w.temp }}°<span class="text-slate-400">（{{ w.feels }}°）</span></td>
+                  <td class="font-mono">{{ w.temp }}°<span class="tb-text-2">（{{ w.feels }}°）</span></td>
                   <td class="font-mono">{{ w.tMax }}° / {{ w.tMin }}°</td>
-                  <td class="font-mono" :class="w.rainProb >= 60 ? 'text-amber-400 font-bold' : ''">{{ w.rainProb != null ? w.rainProb + '%' : '—' }}</td>
-                  <td class="font-mono" :class="w.rainSum >= 80 || w.rain1h >= 40 ? 'text-rose-400 font-bold' : (w.rain1h >= 1 ? 'text-amber-400' : '')" :title="w.rainStation ? '雨量站：' + w.rainStation + (w.rainStations > 1 ? ' 等 ' + w.rainStations + ' 站取最大' : '') : ''">{{ w.rainSum != null ? w.rainSum + ' mm' : '—' }}<span v-if="w.rain1h != null" class="text-slate-400 text-[12px]">（{{ w.rain1h }}）</span></td>
+                  <td class="font-mono" :class="w.rainProb >= 60 ? 'tb-warn font-bold' : ''">{{ w.rainProb != null ? w.rainProb + '%' : '—' }}</td>
+                  <td class="font-mono" :class="w.rainSum >= 80 || w.rain1h >= 40 ? 'tb-danger font-bold' : (w.rain1h >= 1 ? 'tb-warn' : '')" :title="w.rainStation ? '雨量站：' + w.rainStation + (w.rainStations > 1 ? ' 等 ' + w.rainStations + ' 站取最大' : '') : ''">{{ w.rainSum != null ? w.rainSum + ' mm' : '—' }}<span v-if="w.rain1h != null" class="tb-text-2 text-[12px]">（{{ w.rain1h }}）</span></td>
                   <td class="font-mono">{{ w.humidity }}%</td>
-                  <td class="font-mono" :class="wxWindPeak(w) >= 13.9 ? 'text-amber-400' : ''" :title="w.gustStation ? '陣風觀測站：' + w.gustStation : (wx.provider === 'cwa' ? '附近 10 公里內沒有陣風觀測，括號為今日預報最大風速' : '')">{{ w.wind != null ? w.wind : '—' }} / <template v-if="w.gustMax != null || w.gust != null">{{ w.gustMax != null ? w.gustMax : w.gust }}</template><span v-else class="text-slate-400">—<template v-if="w.windMax != null">（{{ w.windMax }}）</template></span> m/s</td>
-                  <td :class="w.uv >= 8 ? 'text-amber-400' : ''"><span class="font-mono">{{ w.uv != null ? w.uv : '—' }}</span><span v-if="w.uvLevel" class="text-[12px]" :class="w.uv >= 8 ? '' : 'text-slate-400'" style="margin-left: 4px;">{{ w.uvLevel.replace('級', '') }}</span></td>
-                  <td class="text-slate-300">{{ w.tomorrow.text }}・{{ w.tomorrow.rainProb != null ? w.tomorrow.rainProb + '%' : '—' }}<template v-if="w.tomorrow.uv != null">・UV {{ w.tomorrow.uv }}</template></td>
+                  <td class="font-mono" :class="wxWindPeak(w) >= 13.9 ? 'tb-warn' : ''" :title="w.gustStation ? '陣風觀測站：' + w.gustStation : (wx.provider === 'cwa' ? '附近 10 公里內沒有陣風觀測，括號為今日預報最大風速' : '')">{{ w.wind != null ? w.wind : '—' }} / <template v-if="w.gustMax != null || w.gust != null">{{ w.gustMax != null ? w.gustMax : w.gust }}</template><span v-else class="tb-text-2">—<template v-if="w.windMax != null">（{{ w.windMax }}）</template></span> m/s</td>
+                  <td :class="w.uv >= 8 ? 'tb-warn' : ''"><span class="font-mono">{{ w.uv != null ? w.uv : '—' }}</span><span v-if="w.uvLevel" class="text-[12px]" :class="w.uv >= 8 ? '' : 'tb-text-2'" style="margin-left: 4px;">{{ w.uvLevel.replace('級', '') }}</span></td>
+                  <td class="tb-text-soft">{{ w.tomorrow.text }}・{{ w.tomorrow.rainProb != null ? w.tomorrow.rainProb + '%' : '—' }}<template v-if="w.tomorrow.uv != null">・UV {{ w.tomorrow.uv }}</template></td>
                   <td>
                     <span class="ad-pill" :class="wxLevelPill(w.assess.level)" :title="w.assess.reasons.join('、')"><span class="ad-pill__dot"></span>{{ w.assess.label }}</span>
-                    <div v-if="w.assess.reasons.length" class="text-slate-400 text-[12px]" style="margin-top: 2px;">{{ w.assess.reasons.join('、') }}</div>
+                    <div v-if="w.assess.reasons.length" class="tb-text-2 text-[12px]" style="margin-top: 2px;">{{ w.assess.reasons.join('、') }}</div>
                   </td>
                 </tr>
               </tbody>
@@ -245,8 +290,8 @@
               <!-- 農場 -->
               <div class="flex items-start justify-between gap-3">
                 <div style="min-width: 0;">
-                  <div class="font-bold text-white text-[15px]">{{ a.order.farmerName }}</div>
-                  <div class="text-slate-300 text-[13px]">{{ a.order.farmLocation }}</div>
+                  <div class="font-bold tb-text text-[15px]">{{ a.order.farmerName }}</div>
+                  <div class="tb-text-soft text-[13px]">{{ a.order.farmLocation }}</div>
                   <div class="ad-caption" style="margin-top: 2px;">{{ a.order.cropName }}・{{ a.order.categoryName }}<template v-if="a.order.startDate">・{{ a.order.startDate }} ～ {{ a.order.endDate }}</template></div>
                 </div>
                 <span class="ad-pill shrink-0" :class="a.order.status === 'in_progress' ? 'ad-pill--ok' : ''"><span class="ad-pill__dot"></span>{{ orderStatusName(a.order.status) }}</span>
@@ -254,40 +299,40 @@
 
               <!-- 該地天氣 -->
               <button v-if="a.loc" type="button" @click="wxCounty = a.loc.county; wxQuery = ''; wxFilter = 'all'"
-                      class="w-full text-left p-3 rounded-xl bg-slate-900/60 border border-slate-700/50 hover:border-emerald-500/60 transition text-[13px]" title="查看該縣市各鄉鎮">
+                      class="w-full text-left p-3 rounded-xl tb-surface border tb-border tb-hover-border-ok transition text-[13px]" title="查看該縣市各鄉鎮">
                 <div class="flex items-center justify-between gap-2">
-                  <span class="text-slate-400">{{ a.loc.county }}{{ a.loc.town }}</span>
+                  <span class="tb-text-2">{{ a.loc.county }}{{ a.loc.town }}</span>
                   <span v-if="a.wx" class="ad-pill" :class="wxLevelPill(a.wx.assess.level)"><span class="ad-pill__dot"></span>{{ a.wx.assess.label }}</span>
                 </div>
                 <div v-if="a.wx" class="flex flex-wrap items-baseline gap-x-3 gap-y-1" style="margin-top: 4px;">
-                  <span class="text-[1.5rem] font-bold text-white font-mono">{{ a.wx.temp }}°C</span>
-                  <span class="text-slate-200">{{ a.wx.text }}</span>
-                  <span class="text-slate-400">降雨 <b class="font-mono" :class="a.wx.rainProb >= 60 ? 'text-amber-400' : 'text-slate-200'">{{ a.wx.rainProb }}%</b></span>
-                  <span class="text-slate-400">{{ a.wx.gustMax != null || a.wx.gust != null ? '陣風' : '最大風速' }} <b class="font-mono text-slate-200">{{ wxWindPeak(a.wx) }} m/s</b></span>
-                  <span v-if="a.wx.rainSum != null" class="text-slate-400">雨量 <b class="font-mono" :class="a.wx.rainSum >= 80 || a.wx.rain1h >= 40 ? 'text-rose-400' : (a.wx.rain1h >= 1 ? 'text-amber-400' : 'text-slate-200')">{{ a.wx.rainSum }} mm</b><template v-if="a.wx.rain1h != null">（近 1 小時 {{ a.wx.rain1h }}）</template></span>
-                  <span v-if="a.wx.uv != null" class="text-slate-400">紫外線 <b class="font-mono" :class="a.wx.uv >= 8 ? 'text-amber-400' : 'text-slate-200'">{{ a.wx.uv }}</b> {{ a.wx.uvLevel }}</span>
-                  <span class="text-slate-400">明日 {{ a.wx.tomorrow.text }} {{ a.wx.tomorrow.rainProb }}%<template v-if="a.wx.tomorrow.uv != null">・UV {{ a.wx.tomorrow.uv }}</template></span>
+                  <span class="text-[1.5rem] font-bold tb-text font-mono">{{ a.wx.temp }}°C</span>
+                  <span class="tb-text">{{ a.wx.text }}</span>
+                  <span class="tb-text-2">降雨 <b class="font-mono" :class="a.wx.rainProb >= 60 ? 'tb-warn' : 'tb-text'">{{ a.wx.rainProb }}%</b></span>
+                  <span class="tb-text-2">{{ a.wx.gustMax != null || a.wx.gust != null ? '陣風' : '最大風速' }} <b class="font-mono tb-text">{{ wxWindPeak(a.wx) }} m/s</b></span>
+                  <span v-if="a.wx.rainSum != null" class="tb-text-2">雨量 <b class="font-mono" :class="a.wx.rainSum >= 80 || a.wx.rain1h >= 40 ? 'tb-danger' : (a.wx.rain1h >= 1 ? 'tb-warn' : 'tb-text')">{{ a.wx.rainSum }} mm</b><template v-if="a.wx.rain1h != null">（近 1 小時 {{ a.wx.rain1h }}）</template></span>
+                  <span v-if="a.wx.uv != null" class="tb-text-2">紫外線 <b class="font-mono" :class="a.wx.uv >= 8 ? 'tb-warn' : 'tb-text'">{{ a.wx.uv }}</b> {{ a.wx.uvLevel }}</span>
+                  <span class="tb-text-2">明日 {{ a.wx.tomorrow.text }} {{ a.wx.tomorrow.rainProb }}%<template v-if="a.wx.tomorrow.uv != null">・UV {{ a.wx.tomorrow.uv }}</template></span>
                 </div>
                 <div v-else class="ad-caption" style="margin-top: 4px;">{{ wx.loading ? '氣象載入中…' : '暫無氣象資料' }}</div>
-                <div v-if="a.wx && a.wx.assess.reasons.length" class="text-[12px]" :class="a.wx.assess.level === 'stop' ? 'text-rose-300' : 'text-amber-300'" style="margin-top: 4px;">{{ a.wx.assess.reasons.join('、') }}</div>
+                <div v-if="a.wx && a.wx.assess.reasons.length" class="text-[12px]" :class="a.wx.assess.level === 'stop' ? 'tb-danger' : 'tb-warn'" style="margin-top: 4px;">{{ a.wx.assess.reasons.join('、') }}</div>
               </button>
-              <div v-else class="p-3 rounded-xl bg-slate-900/60 border border-slate-700/50 ad-caption">無法從地址判讀鄉鎮，未對應氣象。</div>
+              <div v-else class="p-3 rounded-xl tb-surface border tb-border ad-caption">無法從地址判讀鄉鎮，未對應氣象。</div>
 
               <!-- 工班 -->
               <div v-if="a.team" class="text-[13px] space-y-2">
                 <div class="flex items-center justify-between gap-2">
-                  <span class="font-bold text-white">{{ a.team.name }}</span>
+                  <span class="font-bold tb-text">{{ a.team.name }}</span>
                   <span :class="teamStatusBadge(a.team.status)" class="px-2 py-0.5 rounded-full text-[12px] font-bold">{{ teamStatusName(a.team.status) }}</span>
                 </div>
-                <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-slate-300">
-                  <div><span class="text-slate-400">領班：</span>{{ a.team.leader || '—' }}</div>
-                  <div><span class="text-slate-400">人數：</span><span class="font-mono">{{ a.crew.length || a.team.count || '—' }}</span> 人</div>
-                  <div class="col-span-2"><span class="text-slate-400">專車：</span>{{ a.team.vehicle || '—' }}<template v-if="a.team.driver">（{{ a.team.driver }}）</template></div>
-                  <div class="col-span-2"><span class="text-slate-400">{{ a.team.status === 'hedged_indoor' ? '避險地點：' : '作業：' }}</span>{{ a.team.status === 'hedged_indoor' ? a.team.hedgeLocation : (a.team.task || a.order.categoryName) }}</div>
+                <div class="grid grid-cols-2 gap-x-3 gap-y-1 tb-text-soft">
+                  <div><span class="tb-text-2">領班：</span>{{ a.team.leader || '—' }}</div>
+                  <div><span class="tb-text-2">人數：</span><span class="font-mono">{{ a.crew.length || a.team.count || '—' }}</span> 人</div>
+                  <div class="col-span-2"><span class="tb-text-2">專車：</span>{{ a.team.vehicle || '—' }}<template v-if="a.team.driver">（{{ a.team.driver }}）</template></div>
+                  <div class="col-span-2"><span class="tb-text-2">{{ a.team.status === 'hedged_indoor' ? '避險地點：' : '作業：' }}</span>{{ a.team.status === 'hedged_indoor' ? a.team.hedgeLocation : (a.team.task || a.order.categoryName) }}</div>
                 </div>
                 <div v-if="a.crew.length" class="flex flex-wrap gap-1.5">
-                  <span v-for="w in a.crew" :key="w.id" class="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-200 text-[12px]" :title="(w.nationality || '') + (w.leader ? '・領班' : '')">
-                    {{ w.chineseName || w.name }}<span v-if="w.leader" class="text-emerald-400">・領班</span>
+                  <span v-for="w in a.crew" :key="w.id" class="px-2 py-0.5 rounded-full tb-surface-2 border tb-border tb-text text-[12px]" :title="(w.nationality || '') + (w.leader ? '・領班' : '')">
+                    {{ w.chineseName || w.name }}<span v-if="w.leader" class="tb-ok">・領班</span>
                   </span>
                 </div>
               </div>
@@ -297,8 +342,8 @@
 
           <!-- 待命工班 -->
           <div v-if="idleTeams.length" class="ad-card text-[13px]" style="padding: 12px 16px;">
-            <span class="text-slate-400">待命工班：</span>
-            <span v-for="(t, i) in idleTeams" :key="t.id"><span v-if="i">、</span><b class="text-white">{{ t.name }}</b>（{{ t.leader || '—' }}，{{ t.count || 0 }} 人）</span>
+            <span class="tb-text-2">待命工班：</span>
+            <span v-for="(t, i) in idleTeams" :key="t.id"><span v-if="i">、</span><b class="tb-text">{{ t.name }}</b>（{{ t.leader || '—' }}，{{ t.count || 0 }} 人）</span>
           </div>
         </div>
       </section>
@@ -333,7 +378,7 @@
         </div>
 
         <!-- Interactive Order Calculator (Collapsible) -->
-        <div v-if="showOrderCalc" class="bg-slate-800 p-5 rounded-xl border border-emerald-500/40 space-y-4">
+        <div v-if="showOrderCalc" class="tb-surface-2 p-5 rounded-xl border tb-border-ok space-y-4">
           <div class="ad-card__head" style="margin-bottom: 0;">
             <h3 class="ad-heading">新增訂單</h3>
             <span class="ad-caption">金額由系統依作物與面積試算</span>
@@ -342,17 +387,17 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-[13px]">
             <div>
               <label class="ad-label" style="display: block; margin-bottom: 4px;">作物</label>
-              <select v-model="calcForm.cropId" @change="calculateOrderLive()" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+              <select v-model="calcForm.cropId" @change="calculateOrderLive()" class="w-full px-3 py-2 rounded-xl tb-surface border tb-border tb-text focus:outline-none tb-focus-border-ok-solid">
                 <option v-for="c in crops" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
             </div>
             <div>
               <label class="ad-label" style="display: block; margin-bottom: 4px;">面積（分地）</label>
-              <input v-model.number="calcForm.area" @input="calculateOrderLive()" type="number" step="0.5" min="0.5" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+              <input v-model.number="calcForm.area" @input="calculateOrderLive()" type="number" step="0.5" min="0.5" class="w-full px-3 py-2 rounded-xl tb-surface border tb-border tb-text focus:outline-none tb-focus-border-ok-solid">
             </div>
             <div>
               <label class="ad-label" style="display: block; margin-bottom: 4px;">派工類別</label>
-              <select v-model="calcForm.dispatchCategory" @change="calculateOrderLive()" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-emerald-500/50 text-emerald-300 font-semibold focus:outline-none focus:border-emerald-500">
+              <select v-model="calcForm.dispatchCategory" @change="calculateOrderLive()" class="w-full px-3 py-2 rounded-xl tb-surface border tb-border-ok tb-ok font-semibold focus:outline-none tb-focus-border-ok-solid">
                 <option value="harvest_grading">【採收分級】田間採收與外銷分級</option>
                 <option value="tillage_planting">【整地種植】曳引機深耕與定植</option>
                 <option value="pruning_bagging">【田間管理】修枝疏果與引蔓套袋</option>
@@ -363,7 +408,7 @@
             </div>
             <div>
               <label class="ad-label" style="display: block; margin-bottom: 4px;">計價方案</label>
-              <select v-model="calcForm.plan" @change="calculateOrderLive()" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+              <select v-model="calcForm.plan" @change="calculateOrderLive()" class="w-full px-3 py-2 rounded-xl tb-surface border tb-border tb-text focus:outline-none tb-focus-border-ok-solid">
                 <option value="early_bird">早鳥工時包（315 元/hr・20% 定金）</option>
                 <option value="hourly_flex">彈性計時（310 元/hr・免定金）</option>
                 <option value="turnkey">成果統包（95 折・驗收付款）</option>
@@ -371,7 +416,7 @@
             </div>
             <div>
               <label class="ad-label" style="display: block; margin-bottom: 4px;">接送距離</label>
-              <select v-model="calcForm.zone" @change="calculateOrderLive()" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+              <select v-model="calcForm.zone" @change="calculateOrderLive()" class="w-full px-3 py-2 rounded-xl tb-surface border tb-border tb-text focus:outline-none tb-focus-border-ok-solid">
                 <option value="core_35km">35 公里內（不加價）</option>
                 <option value="cross_region">跨區（+1,200 元／趟）</option>
               </select>
@@ -379,29 +424,29 @@
           </div>
 
           <!-- Calculation Preview Box -->
-          <div v-if="calcResult" class="bg-slate-900/80 p-4 rounded-xl border border-slate-700/60 grid grid-cols-2 sm:grid-cols-5 gap-3 text-[13px]">
+          <div v-if="calcResult" class="tb-surface p-4 rounded-xl border tb-border grid grid-cols-2 sm:grid-cols-5 gap-3 text-[13px]">
             <div>
               <div class="ad-stat__label">類別／建議工班</div>
-              <div class="text-[13px] font-bold text-emerald-300 mt-1 flex flex-col gap-0.5">
+              <div class="text-[13px] font-bold tb-ok mt-1 flex flex-col gap-0.5">
                 <span>{{ calcResult.categoryName }}</span>
-                <span class="text-slate-400 font-normal">{{ calcResult.suggestedTeamName }}</span>
+                <span class="tb-text-2 font-normal">{{ calcResult.suggestedTeamName }}</span>
               </div>
             </div>
             <div>
               <div class="ad-stat__label">工時／人數</div>
-              <div class="text-base font-bold text-white mt-1">{{ calcResult.totalHours }} 小時 <span class="text-emerald-400 text-[13px]">({{ calcResult.suggestedWorkers }} 人 / {{ calcResult.estDays }} 天)</span></div>
+              <div class="text-base font-bold tb-text mt-1">{{ calcResult.totalHours }} 小時 <span class="tb-ok text-[13px]">({{ calcResult.suggestedWorkers }} 人 / {{ calcResult.estDays }} 天)</span></div>
             </div>
             <div>
               <div class="ad-stat__label">牌價</div>
-              <div class="text-base font-bold text-slate-300 line-through mt-1">${{ calcResult.standardTotal.toLocaleString() }}</div>
+              <div class="text-base font-bold tb-text-soft line-through mt-1">${{ calcResult.standardTotal.toLocaleString() }}</div>
             </div>
             <div>
               <div class="ad-stat__label">應付總額</div>
-              <div class="text-xl font-bold text-emerald-400 mt-1">${{ calcResult.actualTotal.toLocaleString() }}</div>
+              <div class="text-xl font-bold tb-ok mt-1">${{ calcResult.actualTotal.toLocaleString() }}</div>
             </div>
             <div>
               <div class="ad-stat__label">定金</div>
-              <div class="text-base font-bold text-amber-300 mt-1">${{ calcResult.deposit.toLocaleString() }}</div>
+              <div class="text-base font-bold tb-warn mt-1">${{ calcResult.deposit.toLocaleString() }}</div>
             </div>
           </div>
 
@@ -410,20 +455,20 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label class="ad-label" style="display: block; margin-bottom: 4px;">農場主姓名</label>
-                <input v-model="orderForm.farmerName" placeholder="如: 陳建龍 (阿龍班長)" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+                <input v-model="orderForm.farmerName" placeholder="如: 陳建龍 (阿龍班長)" class="w-full px-3 py-2 rounded-xl tb-surface border tb-border tb-text focus:outline-none tb-focus-border-ok-solid">
               </div>
               <div>
                 <label class="ad-label" style="display: block; margin-bottom: 4px;">聯絡電話</label>
-                <input v-model="orderForm.phone" placeholder="如: 0912-345-678" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+                <input v-model="orderForm.phone" placeholder="如: 0912-345-678" class="w-full px-3 py-2 rounded-xl tb-surface border tb-border tb-text focus:outline-none tb-focus-border-ok-solid">
               </div>
               <div>
                 <label class="ad-label" style="display: block; margin-bottom: 4px;">作業地點／地號</label>
-                <input v-model="orderForm.farmLocation" placeholder="如: 桃園市八德區興豐路有機專區" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
+                <input v-model="orderForm.farmLocation" placeholder="如: 桃園市八德區興豐路有機專區" class="w-full px-3 py-2 rounded-xl tb-surface border tb-border tb-text focus:outline-none tb-focus-border-ok-solid">
               </div>
             </div>
 
             <!-- Field Sub-Foreman (現場派工小工頭 / 帶隊窗口) -->
-            <div class="p-3.5 rounded-xl bg-slate-900/90 border border-amber-500/40 space-y-2.5">
+            <div class="p-3.5 rounded-xl tb-surface border tb-border-warn space-y-2.5">
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
                   <div>
@@ -439,15 +484,15 @@
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[13px]">
                 <div>
                   <label class="ad-label" style="display: block; margin-bottom: 4px;">姓名</label>
-                  <input v-model="orderForm.foremanName" placeholder="如: 廖國安 (三號棚領班) 或 同業主" class="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-amber-500 text-[13px]">
+                  <input v-model="orderForm.foremanName" placeholder="如: 廖國安 (三號棚領班) 或 同業主" class="w-full px-3 py-1.5 rounded-xl tb-bg border tb-border tb-text focus:outline-none tb-focus-border-warn-solid text-[13px]">
                 </div>
                 <div>
                   <label class="ad-label" style="display: block; margin-bottom: 4px;">電話／LINE</label>
-                  <input v-model="orderForm.foremanPhone" placeholder="如: 0932-111-222" class="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-amber-500 font-mono text-[13px]">
+                  <input v-model="orderForm.foremanPhone" placeholder="如: 0932-111-222" class="w-full px-3 py-1.5 rounded-xl tb-bg border tb-border tb-text focus:outline-none tb-focus-border-warn-solid font-mono text-[13px]">
                 </div>
                 <div>
                   <label class="ad-label" style="display: block; margin-bottom: 4px;">報到須知</label>
-                  <input v-model="orderForm.foremanNotes" placeholder="如: 請先至 3 號棚工具室報到，由領班分派菜畦" class="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-amber-500 text-[13px]">
+                  <input v-model="orderForm.foremanNotes" placeholder="如: 請先至 3 號棚工具室報到，由領班分派菜畦" class="w-full px-3 py-1.5 rounded-xl tb-bg border tb-border tb-text focus:outline-none tb-focus-border-warn-solid text-[13px]">
                 </div>
               </div>
             </div>
@@ -502,25 +547,25 @@
               </thead>
               <tbody>
                 <tr v-for="o in filteredOrders" :key="o.id">
-                  <td class="font-mono font-bold text-emerald-400">{{ o.id }}</td>
+                  <td class="font-mono font-bold tb-ok">{{ o.id }}</td>
                   <td>
-                    <div class="font-bold text-white">{{ o.farmerName }}</div>
-                    <div v-if="o.farmName" class="text-[13px] text-emerald-300 truncate max-w-xs">{{ o.farmName }}</div>
-                    <div class="text-[13px] text-slate-400 truncate max-w-xs">{{ o.farmLocation }}</div>
-                    <div class="text-[13px] text-slate-500">{{ o.phone }}</div>
+                    <div class="font-bold tb-text">{{ o.farmerName }}</div>
+                    <div v-if="o.farmName" class="text-[13px] tb-ok truncate max-w-xs">{{ o.farmName }}</div>
+                    <div class="text-[13px] tb-text-2 truncate max-w-xs">{{ o.farmLocation }}</div>
+                    <div class="text-[13px] tb-text-3">{{ o.phone }}</div>
                     <div v-if="o.foremanName" class="mt-1 flex items-center gap-1 flex-wrap">
-                      <span class="px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[13px] font-medium inline-flex items-center gap-1">
+                      <span class="px-1.5 py-0.5 rounded tb-warn-soft border tb-border-warn tb-warn text-[13px] font-medium inline-flex items-center gap-1">
                         工頭: {{ o.foremanName }}
                       </span>
-                      <span v-if="o.foremanPhone" class="text-slate-400 font-mono text-[13px]">({{ o.foremanPhone }})</span>
+                      <span v-if="o.foremanPhone" class="tb-text-2 font-mono text-[13px]">({{ o.foremanPhone }})</span>
                     </div>
-                    <div v-if="o.foremanNotes" class="text-[13px] text-slate-400 truncate max-w-xs mt-0.5" :title="o.foremanNotes">
+                    <div v-if="o.foremanNotes" class="text-[13px] tb-text-2 truncate max-w-xs mt-0.5" :title="o.foremanNotes">
                       {{ o.foremanNotes }}
                     </div>
                   </td>
                   <td>
-                    <div class="font-semibold text-slate-200">{{ o.cropName }}</div>
-                    <div class="text-[13px] text-slate-400">{{ o.area }} 分地</div>
+                    <div class="font-semibold tb-text">{{ o.cropName }}</div>
+                    <div class="text-[13px] tb-text-2">{{ o.area }} 分地</div>
                   </td>
                   <td>
                     <span :class="categoryBadge(o.dispatchCategory)" class="px-2 py-0.5 rounded border text-[13px] font-bold inline-block">
@@ -528,17 +573,17 @@
                     </span>
                   </td>
                   <td>
-                    <div class="text-white font-medium">{{ o.planName }}</div>
-                    <div class="text-[13px] text-emerald-400 font-mono">{{ o.totalHours }} 小時 ({{ o.suggestedWorkers }} 人)</div>
+                    <div class="tb-text font-medium">{{ o.planName }}</div>
+                    <div class="text-[13px] tb-ok font-mono">{{ o.totalHours }} 小時 ({{ o.suggestedWorkers }} 人)</div>
                   </td>
                   <td class="font-mono">
-                    <div class="text-white font-bold">${{ o.finalAmount.toLocaleString() }}</div>
-                    <div class="text-[13px]" :class="o.depositPaid ? 'text-emerald-400' : 'text-amber-400'">
+                    <div class="tb-text font-bold">${{ o.finalAmount.toLocaleString() }}</div>
+                    <div class="text-[13px]" :class="o.depositPaid ? 'tb-ok' : 'tb-warn'">
                       定金: ${{ o.depositAmount.toLocaleString() }} ({{ o.depositPaid ? '已付' : '未付' }})
                     </div>
                   </td>
                   <td>
-                    <span class="px-2 py-0.5 rounded bg-slate-700 text-slate-300 font-medium">
+                    <span class="px-2 py-0.5 rounded tb-surface-3 tb-text-soft font-medium">
                       {{ teamName(o.assignedTeamId) }}
                     </span>
                   </td>
@@ -659,52 +704,52 @@
               <tbody>
                 <tr v-for="w in filteredWorkers" :key="w.id">
                   <!-- ID -->
-                  <td class="font-mono font-bold text-emerald-400">{{ w.id }}</td>
+                  <td class="font-mono font-bold tb-ok">{{ w.id }}</td>
                   
                   <!-- Names & Leader badge -->
                   <td>
-                    <div class="font-bold text-white flex items-center gap-1.5">
+                    <div class="font-bold tb-text flex items-center gap-1.5">
                       {{ w.chineseName }}
-                      <span v-if="w.leader" class="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[13px] font-bold">組長 </span>
+                      <span v-if="w.leader" class="px-1.5 py-0.2 rounded tb-warn-soft tb-warn border tb-border-warn text-[13px] font-bold">組長 </span>
                     </div>
-                    <div class="text-[13px] text-slate-400 font-sans">{{ w.name }}</div>
-                    <div v-if="w.phone" class="text-[13px] text-slate-500 font-mono mt-0.5">{{ w.phone }}</div>
+                    <div class="text-[13px] tb-text-2 font-sans">{{ w.name }}</div>
+                    <div v-if="w.phone" class="text-[13px] tb-text-3 font-mono mt-0.5">{{ w.phone }}</div>
                   </td>
 
                   <!-- Nationality & Passport -->
                   <td>
-                    <div class="flex items-center gap-1 font-medium text-slate-200">
-                      <span class="font-mono text-[13px] text-slate-400">{{ flagFor(w.nationality) }}</span>
+                    <div class="flex items-center gap-1 font-medium tb-text">
+                      <span class="font-mono text-[13px] tb-text-2">{{ flagFor(w.nationality) }}</span>
                       <span>{{ w.nationality }}</span>
                     </div>
-                    <div class="text-[13px] text-slate-400 font-mono mt-0.5">
+                    <div class="text-[13px] tb-text-2 font-mono mt-0.5">
                       護照: {{ w.passportNumber || '—' }}
                     </div>
                   </td>
 
                   <!-- ARC & Expiry -->
                   <td class="font-mono">
-                    <div class="text-emerald-300 font-bold text-[13px]">{{ w.arcNumber || '—' }}</div>
-                    <div class="text-[13px] text-slate-400 mt-0.5">效期: {{ w.permitExpiry || '常態在職' }}</div>
+                    <div class="tb-ok font-bold text-[13px]">{{ w.arcNumber || '—' }}</div>
+                    <div class="text-[13px] tb-text-2 mt-0.5">效期: {{ w.permitExpiry || '常態在職' }}</div>
                   </td>
 
                   <!-- 居留期間 -->
                   <td>
-                    <div class="text-[13px] text-slate-300 font-mono">
-                      <span class="text-slate-400">入台：</span>
+                    <div class="text-[13px] tb-text-soft font-mono">
+                      <span class="tb-text-2">入台：</span>
                       {{ w.arrivalYear ? w.arrivalYear + ' 年' : '2023 年' }}
                     </div>
                     <div class="text-[13px] font-mono mt-0.5">
-                      <span v-if="w.permitExpiry" :class="(() => { const d = new Date(w.permitExpiry) - new Date(); const days = Math.floor(d/86400000); return days < 90 ? 'text-rose-400 font-bold' : days < 180 ? 'text-amber-400' : 'text-emerald-400'; })()">
+                      <span v-if="w.permitExpiry" :class="(() => { const d = new Date(w.permitExpiry) - new Date(); const days = Math.floor(d/86400000); return days < 90 ? 'tb-danger font-bold' : days < 180 ? 'tb-warn' : 'tb-ok'; })()">
                         剩餘 {{ (() => { if(!w.permitExpiry) return '—'; const d = new Date(w.permitExpiry) - new Date(); return Math.max(0, Math.floor(d/86400000)) + ' 天'; })() }}
                       </span>
-                      <span v-else class="text-slate-400">長期在職</span>
+                      <span v-else class="tb-text-2">長期在職</span>
                     </div>
                   </td>
 
                   <!-- Team & Tier -->
                   <td>
-                    <div class="font-medium text-slate-300">{{ teamName(w.teamId) }}</div>
+                    <div class="font-medium tb-text-soft">{{ teamName(w.teamId) }}</div>
                     <span :class="tierBadge(w.tier)" class="px-2 py-0.5 rounded-full text-[13px] font-semibold inline-block mt-1">
                       {{ tierName(w.tier) }}
                     </span>
@@ -714,25 +759,25 @@
                   <!-- Current Task & Dispatch Status -->
                   <td>
                     <div class="flex items-center gap-1.5">
-                      <span :class="w.dispatchStatus === 'hedged_indoor' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : (w.dispatchStatus === 'standby' ? 'bg-slate-700 text-slate-300 border-slate-600' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40')"
+                      <span :class="w.dispatchStatus === 'hedged_indoor' ? 'tb-warn-soft tb-warn tb-border-warn' : (w.dispatchStatus === 'standby' ? 'tb-surface-3 tb-text-soft tb-border' : 'tb-ok-soft tb-ok tb-border-ok')"
                             class="px-2 py-0.5 rounded border text-[13px] font-bold">
                         {{ w.dispatchStatus === 'hedged_indoor' ? '室內冷鏈' : (w.dispatchStatus === 'standby' ? '待命' : '田間作業') }}
                       </span>
                     </div>
-                    <div class="text-[13px] text-slate-300 mt-1 max-w-xs truncate" :title="w.currentTask">
+                    <div class="text-[13px] tb-text-soft mt-1 max-w-xs truncate" :title="w.currentTask">
                       {{ w.currentTask || '依工班指派調度' }}
                     </div>
                   </td>
 
                   <!-- Salary -->
                   <td class="font-mono">
-                    <div class="text-white font-semibold">${{ (w.baseSalary || 29500).toLocaleString() }}</div>
-                    <div class="text-[13px] text-emerald-400">+獎勵 ${{ (w.agriBonus || 8800).toLocaleString() }} / 津貼 ${{ (w.transportAllowance || 1200).toLocaleString() }}</div>
+                    <div class="tb-text font-semibold">${{ (w.baseSalary || 29500).toLocaleString() }}</div>
+                    <div class="text-[13px] tb-ok">+獎勵 ${{ (w.agriBonus || 8800).toLocaleString() }} / 津貼 ${{ (w.transportAllowance || 1200).toLocaleString() }}</div>
                   </td>
 
                   <!-- Insurance -->
                   <td>
-                    <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[13px] font-medium flex items-center gap-1 w-max">
+                    <span class="px-2 py-0.5 rounded tb-ok-soft tb-ok border tb-border-ok text-[13px] font-medium flex items-center gap-1 w-max">
                       {{ w.insuranceStatus || '已納保' }}
                     </span>
                   </td>
@@ -786,27 +831,27 @@
               <tbody>
                 <tr v-for="t in dispatch.teams" :key="t.id">
                   <td>
-                    <div class="font-mono font-bold text-emerald-400 text-[13px]">{{ t.id }}</div>
-                    <div class="text-[13px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 font-semibold mt-1 w-max">{{ teamStatusName(t.status) }}</div>
+                    <div class="font-mono font-bold tb-ok text-[13px]">{{ t.id }}</div>
+                    <div class="text-[13px] px-1.5 py-0.5 rounded tb-surface-3 tb-text-soft font-semibold mt-1 w-max">{{ teamStatusName(t.status) }}</div>
                   </td>
-                  <td class="font-bold text-white">{{ t.name }}</td>
+                  <td class="font-bold tb-text">{{ t.name }}</td>
                   <td>
-                    <div class="text-white">{{ t.leader }}</div>
-                    <div class="font-mono text-[13px] text-slate-400">{{ t.leaderPhone }}</div>
+                    <div class="tb-text">{{ t.leader }}</div>
+                    <div class="font-mono text-[13px] tb-text-2">{{ t.leaderPhone }}</div>
                   </td>
                   <td>
-                    <div class="text-slate-300">{{ t.vehicle }}</div>
-                    <div class="text-[13px] text-slate-400">{{ t.driver }}</div>
+                    <div class="tb-text-soft">{{ t.vehicle }}</div>
+                    <div class="text-[13px] tb-text-2">{{ t.driver }}</div>
                   </td>
-                  <td class="text-slate-300 max-w-xs">
+                  <td class="tb-text-soft max-w-xs">
                     <div>{{ t.normalLocation }}</div>
-                    <div class="text-[13px] text-slate-400">{{ t.normalTask }}</div>
+                    <div class="text-[13px] tb-text-2">{{ t.normalTask }}</div>
                   </td>
-                  <td class="text-amber-300 max-w-xs">
+                  <td class="tb-warn max-w-xs">
                     <div>{{ t.hedgeLocation }}</div>
-                    <div class="text-[13px] text-slate-400">{{ t.hedgeTask }}</div>
+                    <div class="text-[13px] tb-text-2">{{ t.hedgeTask }}</div>
                   </td>
-                  <td class="font-mono font-bold text-white" style="text-align: center;">{{ teamRosterCount(t.id) }} 人</td>
+                  <td class="font-mono font-bold tb-text" style="text-align: center;">{{ teamRosterCount(t.id) }} 人</td>
                   <td class="space-x-1" style="text-align: right; white-space: nowrap;">
                     <button type="button" @click="openTeamModal(t)" class="ad-btn ad-btn--ghost ad-btn--sm">編輯</button>
                     <button type="button" @click="deleteTeam(t)" class="ad-btn ad-btn--ghost ad-btn--sm" style="color: var(--ad-danger-text);">刪除</button>
@@ -853,15 +898,15 @@
               <tbody>
                 <tr v-for="c in crops" :key="c.id">
                   <td>
-                    <div class="font-mono font-bold text-emerald-400 text-[13px]">{{ c.id }}</div>
-                    <div class="text-[13px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 font-semibold mt-1 w-max">{{ c.season }}</div>
+                    <div class="font-mono font-bold tb-ok text-[13px]">{{ c.id }}</div>
+                    <div class="text-[13px] px-1.5 py-0.5 rounded tb-surface-3 tb-text-soft font-semibold mt-1 w-max">{{ c.season }}</div>
                   </td>
-                  <td class="font-bold text-white">{{ c.name }}</td>
-                  <td class="font-mono font-bold text-white" style="text-align: center;">{{ c.baseHoursPerFen }}h</td>
-                  <td class="font-mono font-bold text-white" style="text-align: center;">{{ c.workersPerFen }}人</td>
-                  <td class="font-mono font-bold text-emerald-400" style="text-align: center;">${{ c.rate }}/h</td>
-                  <td class="text-slate-300 max-w-xs">{{ c.taskDescription }}</td>
-                  <td class="text-amber-300 max-w-xs">{{ c.indoorAlternative }}</td>
+                  <td class="font-bold tb-text">{{ c.name }}</td>
+                  <td class="font-mono font-bold tb-text" style="text-align: center;">{{ c.baseHoursPerFen }}h</td>
+                  <td class="font-mono font-bold tb-text" style="text-align: center;">{{ c.workersPerFen }}人</td>
+                  <td class="font-mono font-bold tb-ok" style="text-align: center;">${{ c.rate }}/h</td>
+                  <td class="tb-text-soft max-w-xs">{{ c.taskDescription }}</td>
+                  <td class="tb-warn max-w-xs">{{ c.indoorAlternative }}</td>
                   <td class="space-x-1" style="text-align: right;">
                     <button type="button" @click="openCropModal(c)" class="ad-btn ad-btn--ghost ad-btn--sm">編輯</button>
                     <button type="button" @click="deleteCrop(c.id)" class="ad-btn ad-btn--ghost ad-btn--sm" style="color: var(--ad-danger-text);">刪除</button>
@@ -929,25 +974,25 @@
                 </thead>
                 <tbody>
                   <tr v-for="h in calendarHarvests" :key="h.id"
-                      :class="{ 'bg-rose-950/20': h.countdownDays <= 15 }">
+                      :class="{ 'tb-danger-soft': h.countdownDays <= 15 }">
                     <td>
-                      <span :class="h.countdownDays <= 15 ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : (h.countdownDays <= 45 ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30')"
+                      <span :class="h.countdownDays <= 15 ? 'tb-danger-soft tb-danger tb-border-danger' : (h.countdownDays <= 45 ? 'tb-warn-soft tb-warn tb-border-warn' : 'tb-ok-soft tb-ok tb-border-ok')"
                             class="text-[13px] px-2.5 py-0.5 rounded-full border font-bold font-mono">
                         {{ h.statusLabel }} ({{ h.countdownDays }} 天)
                       </span>
                     </td>
-                    <td class="font-mono text-slate-300">
+                    <td class="font-mono tb-text-soft">
                       {{ h.harvestDateStr || h.period || '—' }}
-                      <div class="text-[13px] text-slate-400 mt-0.5">{{ h.harvestWindow }}</div>
+                      <div class="text-[13px] tb-text-2 mt-0.5">{{ h.harvestWindow }}</div>
                     </td>
                     <td>
-                      <div class="font-bold text-white flex items-center gap-1.5">{{ h.cropName }}</div>
-                      <div class="text-[13px] text-emerald-400 mt-0.5">{{ h.region }}</div>
+                      <div class="font-bold tb-text flex items-center gap-1.5">{{ h.cropName }}</div>
+                      <div class="text-[13px] tb-ok mt-0.5">{{ h.region }}</div>
                     </td>
-                    <td class="text-slate-300 max-w-xs">{{ h.taskDescription }}</td>
+                    <td class="tb-text-soft max-w-xs">{{ h.taskDescription }}</td>
                     <td>
-                      <div class="text-emerald-300 font-semibold">{{ teamName(h.suggestedTeamId) }}</div>
-                      <div class="text-[13px] text-slate-400 mt-0.5">需 {{ h.neededWorkers }} 人</div>
+                      <div class="tb-ok font-semibold">{{ teamName(h.suggestedTeamId) }}</div>
+                      <div class="text-[13px] tb-text-2 mt-0.5">需 {{ h.neededWorkers }} 人</div>
                     </td>
                     <td style="text-align: right;">
                       <button type="button" @click="quickOrderFromHarvest(h)" class="ad-btn ad-btn--secondary ad-btn--sm" style="white-space: nowrap;">帶入下單</button>
@@ -963,20 +1008,20 @@
         </div>
 
         <!-- 4 Quarters Overview Cards -->
-        <div class="space-y-3 pt-4 border-t border-slate-800">
+        <div class="space-y-3 pt-4 border-t tb-border-soft">
           <h3 class="ad-heading">四季出工率</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div v-for="q in calendarQuarters" :key="q.quarter" class="bg-slate-800/70 p-5 rounded-xl border border-slate-700/60 space-y-3 flex flex-col justify-between hover:border-emerald-500/40 transition">
+            <div v-for="q in calendarQuarters" :key="q.quarter" class="tb-surface-2 p-5 rounded-xl border tb-border space-y-3 flex flex-col justify-between tb-hover-border-ok transition">
               <div class="space-y-2">
                 <div class="flex items-center justify-between">
-                  <span class="text-[13px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">{{ q.quarter }} ({{ q.months }})</span>
-                  <span class="font-mono text-[13px] text-emerald-400 font-bold">出工率 {{ q.utilizationRate }}</span>
+                  <span class="text-[13px] font-bold px-2 py-0.5 rounded tb-ok-soft tb-ok font-mono">{{ q.quarter }} ({{ q.months }})</span>
+                  <span class="font-mono text-[13px] tb-ok font-bold">出工率 {{ q.utilizationRate }}</span>
                 </div>
-                <h3 class="font-bold text-[15px] text-white">{{ q.name }}</h3>
-                <p class="text-[13px] text-slate-300 bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/40">{{ q.climateContext }}</p>
+                <h3 class="font-bold text-[15px] tb-text">{{ q.name }}</h3>
+                <p class="text-[13px] tb-text-soft tb-surface p-2.5 rounded-xl border tb-border">{{ q.climateContext }}</p>
                 <div class="text-[13px] space-y-1">
-                  <div class="text-slate-400 font-medium">主要產區：<span class="text-slate-200">{{ q.primaryRegions }}</span></div>
-                  <div class="text-emerald-400 font-medium text-[13px]">策略：{{ q.dispatchStrategy }}</div>
+                  <div class="tb-text-2 font-medium">主要產區：<span class="tb-text">{{ q.primaryRegions }}</span></div>
+                  <div class="tb-ok font-medium text-[13px]">策略：{{ q.dispatchStrategy }}</div>
                 </div>
               </div>
             </div>
@@ -984,38 +1029,38 @@
         </div>
 
         <!-- 12 Months Detail Cards Grid -->
-        <div class="space-y-3 pt-4 border-t border-slate-800">
+        <div class="space-y-3 pt-4 border-t tb-border-soft">
           <h3 class="ad-heading">十二個月產曆</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div v-for="m in calendarMonths" :key="m.month"
-                 :class="calendarMonth === m.month ? 'border-emerald-500 ring-1 ring-emerald-500/50 bg-slate-800/90' : 'border-slate-700/60 bg-slate-800/70'"
-                 class="p-5 rounded-xl border space-y-3 flex flex-col justify-between hover:border-emerald-500/40 transition">
+                 :class="calendarMonth === m.month ? 'tb-border-ok-solid ring-1 ring-emerald-500/50 tb-surface-2' : 'tb-border tb-surface-2'"
+                 class="p-5 rounded-xl border space-y-3 flex flex-col justify-between tb-hover-border-ok transition">
               <div class="space-y-2">
                 <div class="flex items-center justify-between">
-                  <span :class="calendarMonth === m.month ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-700 text-slate-300'"
+                  <span :class="calendarMonth === m.month ? 'tb-primary tb-text font-bold' : 'tb-surface-3 tb-text'"
                         class="text-[13px] px-2.5 py-1 rounded-lg font-mono">
                     {{ m.monthLabel }}
                   </span>
-                  <span class="text-[13px] px-2 py-0.5 rounded bg-slate-700 text-slate-300 font-mono font-semibold">{{ m.quarter }} 檔期</span>
+                  <span class="text-[13px] px-2 py-0.5 rounded tb-surface-3 tb-text-soft font-mono font-semibold">{{ m.quarter }} 檔期</span>
                 </div>
-                <h4 class="font-bold text-[15px] text-white">{{ m.title }}</h4>
-                <div class="text-[13px] space-y-1 bg-slate-900/60 p-3 rounded-xl border border-slate-700/40">
+                <h4 class="font-bold text-[15px] tb-text">{{ m.title }}</h4>
+                <div class="text-[13px] space-y-1 tb-surface p-3 rounded-xl border tb-border">
                   <div>
-                    <span class="text-slate-400">主要產區：</span>
-                    <span class="text-slate-300">{{ m.regions }}</span>
+                    <span class="tb-text-2">主要產區：</span>
+                    <span class="tb-text-soft">{{ m.regions }}</span>
                   </div>
                   <div>
-                    <span class="text-amber-400 font-semibold">盛產作物：</span>
-                    <span class="text-slate-200 font-bold">{{ m.crops }}</span>
+                    <span class="tb-warn font-semibold">盛產作物：</span>
+                    <span class="tb-text font-bold">{{ m.crops }}</span>
                   </div>
                   <div>
-                    <span class="text-emerald-400 font-semibold">建議工班：</span>
-                    <span class="text-slate-300">{{ m.suggestedTeam }}</span>
+                    <span class="tb-ok font-semibold">建議工班：</span>
+                    <span class="tb-text-soft">{{ m.suggestedTeam }}</span>
                   </div>
                 </div>
               </div>
 
-              <div class="pt-2 border-t border-slate-700/50 flex justify-end">
+              <div class="pt-2 border-t tb-border flex justify-end">
                 <button type="button" @click="quickOrderFromCalendar(m)" class="ad-btn ad-btn--secondary ad-btn--sm ad-btn--block">依此月份下單</button>
               </div>
             </div>
@@ -1051,14 +1096,14 @@
               <tbody>
                 <tr v-for="tal in talents" :key="tal.id">
                   <td>
-                    <div class="font-mono font-bold text-emerald-400 text-[13px]">{{ tal.id }}</div>
+                    <div class="font-mono font-bold tb-ok text-[13px]">{{ tal.id }}</div>
                   </td>
                   <td>
-                    <div class="font-bold text-base text-white">{{ tal.name }}</div>
-                    <div class="text-[13px] font-medium text-amber-300 mt-0.5">{{ tal.categoryName }}</div>
+                    <div class="font-bold text-base tb-text">{{ tal.name }}</div>
+                    <div class="text-[13px] font-medium tb-warn mt-0.5">{{ tal.categoryName }}</div>
                   </td>
-                  <td class="font-mono text-slate-300">{{ tal.phone }}</td>
-                  <td class="text-slate-300 max-w-sm">{{ tal.experience }}</td>
+                  <td class="font-mono tb-text-soft">{{ tal.phone }}</td>
+                  <td class="tb-text-soft max-w-sm">{{ tal.experience }}</td>
                   <td class="space-x-1" style="text-align: right;">
                     <button type="button" @click="openTalentModal(tal)" class="ad-btn ad-btn--ghost ad-btn--sm">編輯</button>
                     <button type="button" @click="deleteTalent(tal.id)" class="ad-btn ad-btn--ghost ad-btn--sm" style="color: var(--ad-danger-text);">刪除</button>
@@ -1089,50 +1134,50 @@
 
           <!-- DM Grid Cards -->
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4">
-            <div v-for="dm in brochures" :key="dm.id" class="p-5 rounded-xl bg-slate-800/80 border border-slate-700/70 hover:border-emerald-500/50 transition-all flex flex-col justify-between space-y-4 group">
+            <div v-for="dm in brochures" :key="dm.id" class="p-5 rounded-xl tb-surface-2 border tb-border tb-hover-border-ok transition-all flex flex-col justify-between space-y-4 group">
               <div class="space-y-3">
                 <!-- Cover Image Preview or Gradient Banner -->
-                <div class="relative h-36 rounded-xl overflow-hidden bg-slate-900 border border-slate-700/60 flex items-center justify-center">
+                <div class="relative h-36 rounded-xl overflow-hidden tb-surface border tb-border flex items-center justify-center">
                   <img v-if="dm.coverImage" :src="dm.coverImage" :alt="dm.title" class="w-full h-full object-cover transition duration-300">
-                  <div v-else class="w-full h-full flex flex-col items-center justify-center bg-slate-900">
-                    <span class="text-[13px] text-slate-400 font-mono">{{ dm.id }}</span>
+                  <div v-else class="w-full h-full flex flex-col items-center justify-center tb-surface">
+                    <span class="text-[13px] tb-text-2 font-mono">{{ dm.id }}</span>
                   </div>
-                  <span class="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[13px] font-bold uppercase tracking-wider bg-slate-950/80 border border-white/20 text-white">
+                  <span class="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[13px] font-bold uppercase tracking-wider tb-bg border tb-border tb-text">
                     {{ dm.category || '農務專案' }}
                   </span>
-                  <span class="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[13px] font-bold" :class="dm.status === 'active' ? 'bg-emerald-500 text-slate-950' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'">
+                  <span class="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[13px] font-bold" :class="dm.status === 'active' ? 'tb-primary tb-on-accent' : 'tb-warn-soft tb-warn border tb-border-warn'">
                     {{ dm.status === 'active' ? '上架中' : '草稿' }}
                   </span>
                 </div>
 
                 <!-- Info -->
                 <div class="space-y-1">
-                  <div class="flex items-center gap-1.5 text-[13px] text-emerald-400 font-medium">
+                  <div class="flex items-center gap-1.5 text-[13px] tb-ok font-medium">
                     <span>{{ dm.crop }} ｜ {{ dm.region }}</span>
                   </div>
-                  <h3 class="font-bold text-[15px] text-white line-clamp-2 leading-snug">
+                  <h3 class="font-bold text-[15px] tb-text line-clamp-2 leading-snug">
                     {{ dm.title }}
                   </h3>
-                  <p class="text-[13px] text-slate-400 line-clamp-2 leading-relaxed">
+                  <p class="text-[13px] tb-text-2 line-clamp-2 leading-relaxed">
                     {{ dm.subtitle || dm.description }}
                   </p>
                 </div>
 
                 <!-- Metrics & Price -->
-                <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-700/60 space-y-1.5 text-[13px]">
-                  <div class="flex items-center justify-between text-slate-400 text-[13px]">
+                <div class="p-3 rounded-xl tb-surface border tb-border space-y-1.5 text-[13px]">
+                  <div class="flex items-center justify-between tb-text-2 text-[13px]">
                     <span>規格</span>
-                    <span class="font-mono text-slate-200">{{ dm.hours }} 工時 ｜ {{ dm.workers }} 人 ｜ {{ dm.days }} 天</span>
+                    <span class="font-mono tb-text">{{ dm.hours }} 工時 ｜ {{ dm.workers }} 人 ｜ {{ dm.days }} 天</span>
                   </div>
                   <div class="flex items-center justify-between">
-                    <span class="text-slate-400 text-[13px]">價格</span>
-                    <span class="font-bold text-amber-400 font-mono text-[15px]">
+                    <span class="tb-text-2 text-[13px]">價格</span>
+                    <span class="font-bold tb-warn font-mono text-[15px]">
                       NT$ {{ (dm.discountPrice || 0).toLocaleString() }}
                     </span>
                   </div>
-                  <div class="flex items-center justify-between text-[13px] pt-1 border-t border-slate-800">
-                    <span class="text-slate-500">定金</span>
-                    <span class="font-mono text-emerald-400 font-bold">
+                  <div class="flex items-center justify-between text-[13px] pt-1 border-t tb-border-soft">
+                    <span class="tb-text-3">定金</span>
+                    <span class="font-mono tb-ok font-bold">
                       NT$ {{ (dm.depositAmount || Math.round((dm.discountPrice || 0) * 0.2)).toLocaleString() }}
                     </span>
                   </div>
@@ -1140,7 +1185,7 @@
               </div>
 
               <!-- Action Buttons -->
-              <div class="pt-2 border-t border-slate-700 flex items-center justify-between gap-1 text-[13px]">
+              <div class="pt-2 border-t tb-border flex items-center justify-between gap-1 text-[13px]">
                 <a :href="'../AgriDispatch/brochure.html?id=' + dm.id" target="_blank" class="ad-btn ad-btn--ghost ad-btn--sm">預覽</a>
                 <button type="button" @click="openBrochureModal(dm)" class="ad-btn ad-btn--secondary ad-btn--sm">編輯</button>
                 <button type="button" @click="toggleBrochureStatus(dm)" class="ad-btn ad-btn--ghost ad-btn--sm" :title="dm.status === 'active' ? '轉為草稿' : '立即上架'">{{ dm.status === 'active' ? '下架' : '上架' }}</button>
@@ -1226,7 +1271,7 @@
       <!-- ============================================================= -->
       <section v-if="activeTab === 'revenue'" class="space-y-6">
         <!-- Dual-Track Architecture Banner -->
-        <div class="p-5 rounded-xl bg-slate-900 border border-emerald-500/40 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="p-5 rounded-xl tb-surface border tb-border-ok flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div class="space-y-1">
             <h2 class="ad-title">營收分流</h2>
             <p class="ad-caption" style="margin-top: 4px;">每筆訂單：科技公司收 {{ techPct }}% 技術代管費（開立發票），合作社收 {{ coopPct }}% 法定人力成本（工資、勞健保、勞退）。依財務模型 F2 v2.4，代管費率須經合作社依章程決議【待確認】。</p>
@@ -1247,48 +1292,48 @@
         <!-- Revenue Visual Split Bar & Category Contributions -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <!-- Dual-Track Visual Bar (6 cols) -->
-          <div class="lg:col-span-6 p-5 rounded-xl bg-slate-800/70 border border-slate-700/60 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+          <div class="lg:col-span-6 p-5 rounded-xl tb-surface-2 border tb-border space-y-4">
+            <div class="flex items-center justify-between border-b tb-border pb-2">
               <h3 class="ad-heading">分流結構</h3>
               <span class="ad-caption ad-num">{{ techPct }}% ／ {{ coopPct }}%</span>
             </div>
 
             <div class="space-y-3">
               <!-- Visual Bar -->
-              <div class="w-full h-8 rounded-xl bg-slate-900 overflow-hidden flex border border-slate-700 p-1">
-                <div class="h-full rounded-lg bg-emerald-600 flex items-center justify-center text-[13px] font-bold text-white" :style="{ width: techPct + '%' }">
+              <div class="w-full h-8 rounded-xl tb-surface overflow-hidden flex border tb-border p-1">
+                <div class="h-full rounded-lg tb-primary flex items-center justify-center text-[13px] font-bold text-white" :style="{ width: techPct + '%' }">
                   {{ techPct }}%
                 </div>
-                <div class="h-full rounded-lg bg-slate-600 flex items-center justify-center text-[13px] font-bold text-white ml-1" :style="{ width: coopPct + '%' }">
+                <div class="h-full rounded-lg tb-surface-3 flex items-center justify-center text-[13px] font-bold tb-text ml-1" :style="{ width: coopPct + '%' }">
                   {{ coopPct }}%
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-3 text-[13px] pt-1">
-                <div class="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 space-y-1">
-                  <div class="flex items-center justify-between text-emerald-300 font-bold">
+                <div class="p-3 rounded-xl tb-ok-soft-strong border tb-border-ok space-y-1">
+                  <div class="flex items-center justify-between tb-ok font-bold">
                     <span>科技公司代管費</span>
                     <span>{{ techPct }}%</span>
                   </div>
-                  <div class="text-base font-bold text-white font-mono">NT$ {{ techShare.toLocaleString() }}</div>
-                  <p class="text-[13px] text-slate-400">派工系統、LINE 推播、天候避險</p>
+                  <div class="text-base font-bold tb-text font-mono">NT$ {{ techShare.toLocaleString() }}</div>
+                  <p class="text-[13px] tb-text-2">派工系統、LINE 推播、天候避險</p>
                 </div>
 
-                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-700 space-y-1">
-                  <div class="flex items-center justify-between text-slate-200 font-bold">
+                <div class="p-3 rounded-xl tb-surface border tb-border space-y-1">
+                  <div class="flex items-center justify-between tb-text font-bold">
                     <span>合作社法定成本</span>
                     <span>{{ coopPct }}%</span>
                   </div>
-                  <div class="text-base font-bold text-white font-mono">NT$ {{ coopShare.toLocaleString() }}</div>
-                  <p class="text-[13px] text-slate-400">移工薪資、勞健保、宿舍、6% 勞退</p>
+                  <div class="text-base font-bold tb-text font-mono">NT$ {{ coopShare.toLocaleString() }}</div>
+                  <p class="text-[13px] tb-text-2">移工薪資、勞健保、宿舍、6% 勞退</p>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Category Revenue Contributions (6 cols) -->
-          <div class="lg:col-span-6 p-5 rounded-xl bg-slate-800/70 border border-slate-700/60 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+          <div class="lg:col-span-6 p-5 rounded-xl tb-surface-2 border tb-border space-y-4">
+            <div class="flex items-center justify-between border-b tb-border pb-2">
               <h3 class="ad-heading">各類別營收</h3>
               <span class="ad-caption">依訂單即時計算（不含已取消）</span>
             </div>
@@ -1297,11 +1342,11 @@
               <p v-if="categoryRevenue.length === 0" class="ad-caption">尚無訂單</p>
               <div v-for="c in categoryRevenue" :key="c.name">
                 <div class="flex items-center justify-between mb-1">
-                  <span class="text-slate-300 font-semibold">{{ c.name }}</span>
-                  <span class="font-mono text-emerald-400 font-bold">{{ c.pct }}% (NT$ {{ c.amount.toLocaleString() }})</span>
+                  <span class="tb-text-soft font-semibold">{{ c.name }}</span>
+                  <span class="font-mono tb-ok font-bold">{{ c.pct }}% (NT$ {{ c.amount.toLocaleString() }})</span>
                 </div>
-                <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
-                  <div class="h-full bg-emerald-500 rounded-full" :style="{ width: c.pct + '%' }"></div>
+                <div class="w-full h-2 rounded-full tb-surface overflow-hidden">
+                  <div class="h-full tb-primary rounded-full" :style="{ width: c.pct + '%' }"></div>
                 </div>
               </div>
             </div>
@@ -1310,7 +1355,7 @@
 
         <!-- Orders Financial Ledger Table -->
         <div class="ad-card" style="display: flex; flex-direction: column; gap: 12px;">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700 pb-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b tb-border pb-3">
             <div>
               <h3 class="ad-heading">訂單結算明細</h3>
               <p class="ad-caption" style="margin-top: 2px;">每筆訂單依 {{ techPct }}%／{{ coopPct }}% 分流</p>
@@ -1333,33 +1378,33 @@
               </thead>
               <tbody>
                 <tr v-for="o in orders" :key="o.id">
-                  <td class="font-mono font-bold text-emerald-400">{{ o.id }}</td>
+                  <td class="font-mono font-bold tb-ok">{{ o.id }}</td>
                   <td>
-                    <div class="font-bold text-white">{{ o.farmerName }}</div>
-                    <div class="text-[13px] text-slate-400">{{ o.farmLocation || o.farmName || '' }}</div>
+                    <div class="font-bold tb-text">{{ o.farmerName }}</div>
+                    <div class="text-[13px] tb-text-2">{{ o.farmLocation || o.farmName || '' }}</div>
                   </td>
                   <td>
                     <span :class="categoryBadge(o.dispatchCategory)" class="px-2 py-0.5 rounded text-[13px] font-semibold border">
                       {{ o.categoryName }}
                     </span>
                   </td>
-                  <td class="font-mono font-bold text-white">
+                  <td class="font-mono font-bold tb-text">
                     NT$ {{ orderAmount(o).toLocaleString() }}
                   </td>
                   <td class="font-mono">
-                    <div class="text-emerald-300 font-bold">NT$ {{ techOf(o).toLocaleString() }}</div>
-                    <span class="text-[13px] text-slate-400">發票未開立</span>
+                    <div class="tb-ok font-bold">NT$ {{ techOf(o).toLocaleString() }}</div>
+                    <span class="text-[13px] tb-text-2">發票未開立</span>
                   </td>
                   <td class="font-mono">
-                    <div class="text-emerald-400 font-bold">NT$ {{ (orderAmount(o) - techOf(o)).toLocaleString() }}</div>
-                    <span class="text-[13px] text-slate-400">移工法定平移款</span>
+                    <div class="tb-ok font-bold">NT$ {{ (orderAmount(o) - techOf(o)).toLocaleString() }}</div>
+                    <span class="text-[13px] tb-text-2">移工法定平移款</span>
                   </td>
-                  <td class="font-mono text-emerald-300 font-semibold">
+                  <td class="font-mono tb-ok font-semibold">
                     NT$ {{ (o.depositAmount || 0).toLocaleString() }}
-                    <div class="text-[13px] text-slate-400">{{ o.depositPaid ? '已收' : '未收' }}</div>
+                    <div class="text-[13px] tb-text-2">{{ o.depositPaid ? '已收' : '未收' }}</div>
                   </td>
                   <td>
-                    <span class="px-2 py-0.5 rounded-full text-[13px] font-bold" :class="o.status === 'cancelled' ? 'bg-slate-500/20 text-slate-300 border border-slate-500/30' : (o.status === 'completed' || o.status === 'in_progress' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30')">
+                    <span class="px-2 py-0.5 rounded-full text-[13px] font-bold" :class="o.status === 'cancelled' ? 'tb-surface-2 tb-text-soft border tb-border' : (o.status === 'completed' || o.status === 'in_progress' ? 'tb-ok-soft tb-ok border tb-border-ok' : 'tb-warn-soft tb-warn border tb-border-warn')">
                       {{ settlementLabel(o) }}
                     </span>
                   </td>
@@ -1378,26 +1423,26 @@
 
     <!-- Worker Modal -->
     <div v-if="workerModal.show" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-      <div class="bg-slate-850 rounded-xl border border-slate-700 max-w-lg w-full p-6 space-y-4">
-        <h3 class="font-bold text-base text-white flex items-center gap-2">
+      <div class="bg-slate-850 rounded-xl border tb-border max-w-lg w-full p-6 space-y-4">
+        <h3 class="font-bold text-base tb-text flex items-center gap-2">
           {{ workerModal.isEdit ? '編輯農工資料' : '新增農工' }}
         </h3>
         <div class="grid grid-cols-2 gap-3 text-[13px] max-h-[70vh] overflow-y-auto custom-scrollbar pr-1">
           <div>
-            <label class="text-slate-400 block mb-1">農工編號 (ID)</label>
-            <input v-model="workerModal.form.id" :disabled="workerModal.isEdit" placeholder="留空自動編號" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white disabled:opacity-50">
+            <label class="tb-text-2 block mb-1">農工編號 (ID)</label>
+            <input v-model="workerModal.form.id" :disabled="workerModal.isEdit" placeholder="留空自動編號" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text disabled:opacity-50">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">中文通稱</label>
-            <input v-model="workerModal.form.chineseName" placeholder="例如 王秀英" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">中文通稱</label>
+            <input v-model="workerModal.form.chineseName" placeholder="例如 王秀英" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">原籍/外語姓名</label>
-            <input v-model="workerModal.form.name" placeholder="例如 Nguyễn Văn Hùng" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">原籍/外語姓名</label>
+            <input v-model="workerModal.form.name" placeholder="例如 Nguyễn Văn Hùng" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">國籍</label>
-            <select v-model="workerModal.form.nationality" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">國籍</label>
+            <select v-model="workerModal.form.nationality" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
               <option v-if="foreignOn || workerModal.form.nationality === '越南'" value="越南">越南 </option>
               <option v-if="foreignOn || workerModal.form.nationality === '印尼'" value="印尼">印尼 </option>
               <option v-if="foreignOn || workerModal.form.nationality === '泰國'" value="泰國">泰國 </option>
@@ -1406,207 +1451,207 @@
             </select>
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">居留證號 (ARC)</label>
-            <input v-model="workerModal.form.arcNumber" placeholder="例如 A801234567" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono">
+            <label class="tb-text-2 block mb-1">居留證號 (ARC)</label>
+            <input v-model="workerModal.form.arcNumber" placeholder="例如 A801234567" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text font-mono">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">護照號碼</label>
-            <input v-model="workerModal.form.passportNumber" placeholder="例如 C1234567" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono">
+            <label class="tb-text-2 block mb-1">護照號碼</label>
+            <input v-model="workerModal.form.passportNumber" placeholder="例如 C1234567" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text font-mono">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">聘僱許可效期</label>
-            <input v-model="workerModal.form.permitExpiry" placeholder="例如 2027-12-31" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono">
+            <label class="tb-text-2 block mb-1">聘僱許可效期</label>
+            <input v-model="workerModal.form.permitExpiry" placeholder="例如 2027-12-31" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text font-mono">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">聯絡電話</label>
-            <input v-model="workerModal.form.phone" placeholder="例如 0988-111-222" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono">
+            <label class="tb-text-2 block mb-1">聯絡電話</label>
+            <input v-model="workerModal.form.phone" placeholder="例如 0988-111-222" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text font-mono">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">所屬工班</label>
-            <select v-model="workerModal.form.teamId" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">所屬工班</label>
+            <select v-model="workerModal.form.teamId" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
               <option v-if="dispatch.teams.length === 0" value="" disabled>請先到「工班」新增工班</option>
               <option v-for="t in dispatch.teams" :key="t.id" :value="t.id">{{ t.name }}</option>
             </select>
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">三層等級</label>
-            <select v-model="workerModal.form.tier" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">三層等級</label>
+            <select v-model="workerModal.form.tier" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
               <option v-if="foreignOn || workerModal.form.tier === 'tier1_foreign'" value="tier1_foreign">【Tier 1】外籍外展農工</option>
               <option value="tier2_local_flex">【Tier 2】本國帶隊領班 / 彈性工</option>
               <option value="tier3_turnkey">【Tier 3】本國專業機耕師</option>
             </select>
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">工作型態</label>
-            <select v-model="workerModal.form.employmentType" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">工作型態</label>
+            <select v-model="workerModal.form.employmentType" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
               <option value="">未設定（外籍免填）</option>
               <option v-for="(label, code) in EMPLOYMENT" :key="code" :value="code">{{ label }}</option>
             </select>
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">目前派遣狀態</label>
-            <select v-model="workerModal.form.dispatchStatus" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">目前派遣狀態</label>
+            <select v-model="workerModal.form.dispatchStatus" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
               <option value="dispatched_field">田間作業 (dispatched_field)</option>
               <option value="hedged_indoor">室內冷鏈避險 (hedged_indoor)</option>
               <option value="standby">待命 (standby)</option>
             </select>
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">納保狀態</label>
-            <input v-model="workerModal.form.insuranceStatus" placeholder="已納保 (勞/健/職災)" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">納保狀態</label>
+            <input v-model="workerModal.form.insuranceStatus" placeholder="已納保 (勞/健/職災)" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div class="col-span-2">
-            <label class="text-slate-400 block mb-1">目前派遣作業內容</label>
-            <input v-model="workerModal.form.currentTask" placeholder="例如 八德有機溫室葉菜採收與精細挑選" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">目前派遣作業內容</label>
+            <input v-model="workerModal.form.currentTask" placeholder="例如 八德有機溫室葉菜採收與精細挑選" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">基本底薪 (NT$)</label>
-            <input v-model.number="workerModal.form.baseSalary" type="number" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">基本底薪 (NT$)</label>
+            <input v-model.number="workerModal.form.baseSalary" type="number" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">農業部就業獎勵 (NT$)</label>
-            <input v-model.number="workerModal.form.agriBonus" type="number" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">農業部就業獎勵 (NT$)</label>
+            <input v-model.number="workerModal.form.agriBonus" type="number" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">交通/偏遠津貼 (NT$)</label>
-            <input v-model.number="workerModal.form.transportAllowance" type="number" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">交通/偏遠津貼 (NT$)</label>
+            <input v-model.number="workerModal.form.transportAllowance" type="number" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div class="flex items-center gap-2 pt-5">
-            <input v-model="workerModal.form.leader" type="checkbox" id="chk-leader" class="rounded bg-slate-900 border-slate-700 text-emerald-500">
-            <label for="chk-leader" class="text-slate-300 font-semibold cursor-pointer">擔任工班帶隊組長 (Leader)</label>
+            <input v-model="workerModal.form.leader" type="checkbox" id="chk-leader" class="rounded tb-surface tb-border tb-ok">
+            <label for="chk-leader" class="tb-text-soft font-semibold cursor-pointer">擔任工班帶隊組長 (Leader)</label>
           </div>
         </div>
-        <div class="flex justify-end gap-2 pt-3 border-t border-slate-700 text-[13px]">
-          <button @click="workerModal.show = false" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 transition">取消</button>
-          <button @click="saveWorker()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition">儲存</button>
+        <div class="flex justify-end gap-2 pt-3 border-t tb-border text-[13px]">
+          <button @click="workerModal.show = false" class="px-4 py-2 rounded-xl tb-surface-3 tb-hover-surface-3 tb-text-soft transition">取消</button>
+          <button @click="saveWorker()" class="px-5 py-2 rounded-xl tb-primary tb-hover-primary text-white font-bold transition">儲存</button>
         </div>
       </div>
     </div>
 
     <!-- Crop Modal -->
     <div v-if="cropModal.show" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-      <div class="bg-slate-850 rounded-xl border border-slate-700 max-w-lg w-full p-6 space-y-4">
-        <h3 class="font-bold text-base text-white flex items-center gap-2">
+      <div class="bg-slate-850 rounded-xl border tb-border max-w-lg w-full p-6 space-y-4">
+        <h3 class="font-bold text-base tb-text flex items-center gap-2">
           {{ cropModal.isEdit ? '編輯作物基準' : '新增作物基準' }}
         </h3>
         <div class="grid grid-cols-2 gap-3 text-[13px]">
           <div>
-            <label class="text-slate-400 block mb-1">作物代碼 (ID)</label>
-            <input v-model="cropModal.form.id" :disabled="cropModal.isEdit" placeholder="例如 taoyuan_veg" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white disabled:opacity-50">
+            <label class="tb-text-2 block mb-1">作物代碼 (ID)</label>
+            <input v-model="cropModal.form.id" :disabled="cropModal.isEdit" placeholder="例如 taoyuan_veg" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text disabled:opacity-50">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">作物名稱與產區</label>
-            <input v-model="cropModal.form.name" placeholder="例如 桃園溫室有機蔬菜" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">作物名稱與產區</label>
+            <input v-model="cropModal.form.name" placeholder="例如 桃園溫室有機蔬菜" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">每分地基準工時 (h)</label>
-            <input v-model.number="cropModal.form.baseHoursPerFen" type="number" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">每分地基準工時 (h)</label>
+            <input v-model.number="cropModal.form.baseHoursPerFen" type="number" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">每分地建議人數</label>
-            <input v-model.number="cropModal.form.workersPerFen" type="number" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">每分地建議人數</label>
+            <input v-model.number="cropModal.form.workersPerFen" type="number" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">每工時標準牌價 (NT$)</label>
-            <input v-model.number="cropModal.form.rate" type="number" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">每工時標準牌價 (NT$)</label>
+            <input v-model.number="cropModal.form.rate" type="number" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">盛產產季週期</label>
-            <input v-model="cropModal.form.season" placeholder="例如 全年溫室 或 6月~10月" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">盛產產季週期</label>
+            <input v-model="cropModal.form.season" placeholder="例如 全年溫室 或 6月~10月" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div class="col-span-2">
-            <label class="text-slate-400 block mb-1">標準田間作業SOP</label>
-            <input v-model="cropModal.form.taskDescription" placeholder="採收、精緻挑菜、田間分級" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">標準田間作業SOP</label>
+            <input v-model="cropModal.form.taskDescription" placeholder="採收、精緻挑菜、田間分級" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div class="col-span-2">
-            <label class="text-slate-400 block mb-1">雨天室內冷鏈替代作業</label>
-            <input v-model="cropModal.form.indoorAlternative" placeholder="八德蔬果預冷冷鏈包裝中心" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">雨天室內冷鏈替代作業</label>
+            <input v-model="cropModal.form.indoorAlternative" placeholder="八德蔬果預冷冷鏈包裝中心" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
         </div>
-        <div class="flex justify-end gap-2 pt-3 border-t border-slate-700 text-[13px]">
-          <button @click="cropModal.show = false" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 transition">取消</button>
-          <button @click="saveCrop()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition">儲存</button>
+        <div class="flex justify-end gap-2 pt-3 border-t tb-border text-[13px]">
+          <button @click="cropModal.show = false" class="px-4 py-2 rounded-xl tb-surface-3 tb-hover-surface-3 tb-text-soft transition">取消</button>
+          <button @click="saveCrop()" class="px-5 py-2 rounded-xl tb-primary tb-hover-primary text-white font-bold transition">儲存</button>
         </div>
       </div>
     </div>
 
     <!-- Team Edit Modal -->
     <div v-if="teamModal.show" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-      <div class="bg-slate-850 rounded-xl border border-slate-700 max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-        <h3 class="font-bold text-base text-white flex items-center gap-2">
+      <div class="bg-slate-850 rounded-xl border tb-border max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+        <h3 class="font-bold text-base tb-text flex items-center gap-2">
           {{ teamModal.isEdit ? '編輯工班' : '新增工班' }}
         </h3>
         <div class="grid grid-cols-2 gap-3 text-[13px]">
           <div>
-            <label class="text-slate-400 block mb-1" for="teamFormId">工班代號</label>
-            <input id="teamFormId" v-model="teamModal.form.id" :disabled="teamModal.isEdit" placeholder="留空自動編號" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white disabled:opacity-50">
+            <label class="tb-text-2 block mb-1" for="teamFormId">工班代號</label>
+            <input id="teamFormId" v-model="teamModal.form.id" :disabled="teamModal.isEdit" placeholder="留空自動編號" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text disabled:opacity-50">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1" for="teamFormName">工班名稱 *</label>
-            <input id="teamFormName" v-model="teamModal.form.name" maxlength="50" placeholder="例如 工班 E 組 (新竹芎林)" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1" for="teamFormName">工班名稱 *</label>
+            <input id="teamFormName" v-model="teamModal.form.name" maxlength="50" placeholder="例如 工班 E 組 (新竹芎林)" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1" for="teamFormLeader">領班姓名 *</label>
-            <input id="teamFormLeader" v-model="teamModal.form.leader" maxlength="50" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1" for="teamFormLeader">領班姓名 *</label>
+            <input id="teamFormLeader" v-model="teamModal.form.leader" maxlength="50" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1" for="teamFormPhone">領班電話 *</label>
-            <input id="teamFormPhone" v-model="teamModal.form.leaderPhone" maxlength="30" inputmode="tel" placeholder="0912-345-678" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1" for="teamFormPhone">領班電話 *</label>
+            <input id="teamFormPhone" v-model="teamModal.form.leaderPhone" maxlength="30" inputmode="tel" placeholder="0912-345-678" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1" for="teamFormVehicle">接送車輛</label>
-            <input id="teamFormVehicle" v-model="teamModal.form.vehicle" maxlength="100" placeholder="未填存「待安排」" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1" for="teamFormVehicle">接送車輛</label>
+            <input id="teamFormVehicle" v-model="teamModal.form.vehicle" maxlength="100" placeholder="未填存「待安排」" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1" for="teamFormDriver">司機</label>
-            <input id="teamFormDriver" v-model="teamModal.form.driver" maxlength="50" placeholder="未填存「待安排」" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1" for="teamFormDriver">司機</label>
+            <input id="teamFormDriver" v-model="teamModal.form.driver" maxlength="50" placeholder="未填存「待安排」" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1" for="teamFormCount">編制人數</label>
-            <input id="teamFormCount" v-model.number="teamModal.form.workerCount" type="number" min="0" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1" for="teamFormCount">編制人數</label>
+            <input id="teamFormCount" v-model.number="teamModal.form.workerCount" type="number" min="0" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1" for="teamFormStatus">狀態</label>
-            <select id="teamFormStatus" v-model="teamModal.form.status" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1" for="teamFormStatus">狀態</label>
+            <select id="teamFormStatus" v-model="teamModal.form.status" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
               <option value="active_field">田間作業</option>
               <option value="hedged_indoor">室內避險</option>
               <option value="standby">待命</option>
             </select>
           </div>
           <div class="col-span-2">
-            <label class="text-slate-400 block mb-1" for="teamFormNormalLoc">晴天作業地點</label>
-            <input id="teamFormNormalLoc" v-model="teamModal.form.normalLocation" maxlength="255" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1" for="teamFormNormalLoc">晴天作業地點</label>
+            <input id="teamFormNormalLoc" v-model="teamModal.form.normalLocation" maxlength="255" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div class="col-span-2">
-            <label class="text-slate-400 block mb-1" for="teamFormNormalTask">晴天作業內容</label>
-            <input id="teamFormNormalTask" v-model="teamModal.form.normalTask" maxlength="255" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1" for="teamFormNormalTask">晴天作業內容</label>
+            <input id="teamFormNormalTask" v-model="teamModal.form.normalTask" maxlength="255" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div class="col-span-2">
-            <label class="text-slate-400 block mb-1" for="teamFormHedgeLoc">雨天避險地點</label>
-            <input id="teamFormHedgeLoc" v-model="teamModal.form.hedgeLocation" maxlength="255" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1" for="teamFormHedgeLoc">雨天避險地點</label>
+            <input id="teamFormHedgeLoc" v-model="teamModal.form.hedgeLocation" maxlength="255" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div class="col-span-2">
-            <label class="text-slate-400 block mb-1" for="teamFormHedgeTask">雨天避險內容</label>
-            <input id="teamFormHedgeTask" v-model="teamModal.form.hedgeTask" maxlength="255" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1" for="teamFormHedgeTask">雨天避險內容</label>
+            <input id="teamFormHedgeTask" v-model="teamModal.form.hedgeTask" maxlength="255" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
         </div>
-        <div class="flex justify-end gap-2 pt-3 border-t border-slate-700 text-[13px]">
-          <button @click="teamModal.show = false" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 transition">取消</button>
-          <button @click="saveTeam()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition">儲存</button>
+        <div class="flex justify-end gap-2 pt-3 border-t tb-border text-[13px]">
+          <button @click="teamModal.show = false" class="px-4 py-2 rounded-xl tb-surface-3 tb-hover-surface-3 tb-text-soft transition">取消</button>
+          <button @click="saveTeam()" class="px-5 py-2 rounded-xl tb-primary tb-hover-primary text-white font-bold transition">儲存</button>
         </div>
       </div>
     </div>
 
     <!-- Order Edit Modal -->
     <div v-if="orderModal.show" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-      <div class="bg-slate-850 rounded-xl border border-slate-700 max-w-lg w-full p-6 space-y-4">
-        <h3 class="font-bold text-base text-white flex items-center gap-2">
+      <div class="bg-slate-850 rounded-xl border tb-border max-w-lg w-full p-6 space-y-4">
+        <h3 class="font-bold text-base tb-text flex items-center gap-2">
           編輯訂單 ({{ orderModal.form.id }})
         </h3>
         <div class="grid grid-cols-2 gap-3 text-[13px]">
           <div>
-            <label class="text-slate-400 block mb-1">訂單狀態</label>
-            <select v-model="orderModal.form.status" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">訂單狀態</label>
+            <select v-model="orderModal.form.status" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
               <option value="pending">待付定金 (Pending)</option>
               <option value="confirmed">已排定 (Confirmed)</option>
               <option value="in_progress">履約中 (In Progress)</option>
@@ -1615,26 +1660,26 @@
             </select>
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">指派調度工班</label>
-            <select v-model="orderModal.form.assignedTeamId" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">指派調度工班</label>
+            <select v-model="orderModal.form.assignedTeamId" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
               <option v-for="t in dispatch.teams" :key="t.id" :value="t.id">{{ t.name }}</option>
             </select>
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">農場主姓名</label>
-            <input v-model="orderModal.form.farmerName" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">農場主姓名</label>
+            <input v-model="orderModal.form.farmerName" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">聯絡電話</label>
-            <input v-model="orderModal.form.phone" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">聯絡電話</label>
+            <input v-model="orderModal.form.phone" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div class="col-span-2">
-            <label class="text-slate-400 block mb-1">作業場域地址</label>
-            <input v-model="orderModal.form.farmLocation" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">作業場域地址</label>
+            <input v-model="orderModal.form.farmLocation" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">農事派工類別</label>
-            <select v-model="orderModal.form.dispatchCategory" @change="onOrderCategoryChange()" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">農事派工類別</label>
+            <select v-model="orderModal.form.dispatchCategory" @change="onOrderCategoryChange()" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
               <option value="harvest_grading">【採收分級】田間採收與外銷分級</option>
               <option value="tillage_planting">【整地種植】曳引機深耕與定植</option>
               <option value="pruning_bagging">【田間管理】修枝疏果與引蔓套袋</option>
@@ -1643,60 +1688,60 @@
               <option value="typhoon_emergency">【緊急救火】防颱搶收 24H 馳援</option>
             </select>
           </div>
-          <div class="col-span-2 p-3 rounded-xl bg-slate-900/90 border border-amber-500/40 space-y-2">
+          <div class="col-span-2 p-3 rounded-xl tb-surface border tb-border-warn space-y-2">
             <div class="flex items-center justify-between">
-              <span class="font-bold text-amber-300 text-[13px] flex items-center gap-1">
+              <span class="font-bold tb-warn text-[13px] flex items-center gap-1">
                 現場派工小工頭（現場帶工窗口）
               </span>
-              <button type="button" @click="syncModalForemanAsFarmer()" class="px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[13px] font-semibold transition">
+              <button type="button" @click="syncModalForemanAsFarmer()" class="px-2 py-0.5 rounded tb-warn-soft tb-hover-warn-soft tb-warn border tb-border-warn text-[13px] font-semibold transition">
                 同農場主本人帶隊
               </button>
             </div>
             <div class="grid grid-cols-2 gap-2 text-[13px]">
               <div>
-                <label class="text-slate-400 block mb-1 text-[13px]">小工頭姓名</label>
-                <input v-model="orderModal.form.foremanName" placeholder="如: 廖國安 (三號棚領班)" class="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white">
+                <label class="tb-text-2 block mb-1 text-[13px]">小工頭姓名</label>
+                <input v-model="orderModal.form.foremanName" placeholder="如: 廖國安 (三號棚領班)" class="w-full px-3 py-1.5 rounded-lg tb-bg border tb-border tb-text">
               </div>
               <div>
-                <label class="text-slate-400 block mb-1 text-[13px]">小工頭電話 / LINE</label>
-                <input v-model="orderModal.form.foremanPhone" placeholder="如: 0932-111-222" class="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono">
+                <label class="tb-text-2 block mb-1 text-[13px]">小工頭電話 / LINE</label>
+                <input v-model="orderModal.form.foremanPhone" placeholder="如: 0932-111-222" class="w-full px-3 py-1.5 rounded-lg tb-bg border tb-border tb-text font-mono">
               </div>
               <div class="col-span-2">
-                <label class="text-slate-400 block mb-1 text-[13px]">現場交辦指示 / 報到須知</label>
-                <input v-model="orderModal.form.foremanNotes" placeholder="如: 請先至 3 號棚工具室報到，由領班分派菜畦" class="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white">
+                <label class="tb-text-2 block mb-1 text-[13px]">現場交辦指示 / 報到須知</label>
+                <input v-model="orderModal.form.foremanNotes" placeholder="如: 請先至 3 號棚工具室報到，由領班分派菜畦" class="w-full px-3 py-1.5 rounded-lg tb-bg border tb-border tb-text">
               </div>
             </div>
           </div>
           <div class="col-span-2 flex items-center gap-2">
-            <input v-model="orderModal.form.depositPaid" type="checkbox" id="chk-deposit" class="rounded bg-slate-900 border-slate-700 text-emerald-500">
-            <label for="chk-deposit" class="text-slate-300 font-semibold">早鳥鎖約定金已確認入帳</label>
+            <input v-model="orderModal.form.depositPaid" type="checkbox" id="chk-deposit" class="rounded tb-surface tb-border tb-ok">
+            <label for="chk-deposit" class="tb-text-soft font-semibold">早鳥鎖約定金已確認入帳</label>
           </div>
         </div>
-        <div class="flex justify-end gap-2 pt-3 border-t border-slate-700 text-[13px]">
-          <button @click="orderModal.show = false" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 transition">取消</button>
-          <button @click="saveOrder()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition">儲存變更</button>
+        <div class="flex justify-end gap-2 pt-3 border-t tb-border text-[13px]">
+          <button @click="orderModal.show = false" class="px-4 py-2 rounded-xl tb-surface-3 tb-hover-surface-3 tb-text-soft transition">取消</button>
+          <button @click="saveOrder()" class="px-5 py-2 rounded-xl tb-primary tb-hover-primary text-white font-bold transition">儲存變更</button>
         </div>
       </div>
     </div>
 
     <!-- 收款紀錄：定金（線上金流）＋尾款（合作社另行收款後登錄）；補登發票號碼、作廢尾款登錄 -->
     <div v-if="payModal.show" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-      <div class="bg-slate-850 rounded-xl border border-slate-700 max-w-2xl w-full p-6 space-y-4" style="max-height: calc(100vh - 32px); overflow-y: auto;" role="dialog" aria-modal="true" aria-labelledby="payModalTitle">
+      <div class="bg-slate-850 rounded-xl border tb-border max-w-2xl w-full p-6 space-y-4" style="max-height: calc(100vh - 32px); overflow-y: auto;" role="dialog" aria-modal="true" aria-labelledby="payModalTitle">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <h3 id="payModalTitle" class="font-bold text-base text-white">收款紀錄（{{ payModal.order.id }}）</h3>
-            <p class="text-[13px] text-slate-400">{{ payModal.order.farmerName }}・{{ payModal.order.cropName }}・{{ orderStatusName(payModal.order.status) }}</p>
+            <h3 id="payModalTitle" class="font-bold text-base tb-text">收款紀錄（{{ payModal.order.id }}）</h3>
+            <p class="text-[13px] tb-text-2">{{ payModal.order.farmerName }}・{{ payModal.order.cropName }}・{{ orderStatusName(payModal.order.status) }}</p>
           </div>
           <button type="button" @click="payModal.show = false" class="ad-btn ad-btn--ghost ad-btn--sm" aria-label="關閉">✕</button>
         </div>
-        <p v-if="payModal.loading" class="text-[13px] text-slate-400">載入中…</p>
-        <p v-if="payModal.error" class="text-[13px] text-rose-400">{{ payModal.error }}</p>
+        <p v-if="payModal.loading" class="text-[13px] tb-text-2">載入中…</p>
+        <p v-if="payModal.error" class="text-[13px] tb-danger">{{ payModal.error }}</p>
         <template v-if="payModal.status">
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[13px]">
-            <div class="p-3 rounded-lg bg-slate-900 border border-slate-700"><div class="text-slate-400">訂單總額</div><div class="font-mono font-bold text-white">NT$ {{ Number(payModal.status.finalAmount || 0).toLocaleString() }}</div></div>
-            <div class="p-3 rounded-lg bg-slate-900 border border-slate-700"><div class="text-slate-400">已付定金</div><div class="font-mono font-bold text-white">NT$ {{ Number(payModal.status.depositCredit || 0).toLocaleString() }}</div></div>
-            <div class="p-3 rounded-lg bg-slate-900 border border-slate-700"><div class="text-slate-400">已收尾款</div><div class="font-mono font-bold text-emerald-300">NT$ {{ Number(payModal.status.balancePaid || 0).toLocaleString() }}</div></div>
-            <div class="p-3 rounded-lg bg-slate-900 border border-amber-500/40"><div class="text-slate-400">未結清</div><div class="font-mono font-bold text-amber-300">NT$ {{ Number(payModal.status.balanceOutstanding || 0).toLocaleString() }}</div></div>
+            <div class="p-3 rounded-lg tb-surface border tb-border"><div class="tb-text-2">訂單總額</div><div class="font-mono font-bold tb-text">NT$ {{ Number(payModal.status.finalAmount || 0).toLocaleString() }}</div></div>
+            <div class="p-3 rounded-lg tb-surface border tb-border"><div class="tb-text-2">已付定金</div><div class="font-mono font-bold tb-text">NT$ {{ Number(payModal.status.depositCredit || 0).toLocaleString() }}</div></div>
+            <div class="p-3 rounded-lg tb-surface border tb-border"><div class="tb-text-2">已收尾款</div><div class="font-mono font-bold tb-ok">NT$ {{ Number(payModal.status.balancePaid || 0).toLocaleString() }}</div></div>
+            <div class="p-3 rounded-lg tb-surface border tb-border-warn"><div class="tb-text-2">未結清</div><div class="font-mono font-bold tb-warn">NT$ {{ Number(payModal.status.balanceOutstanding || 0).toLocaleString() }}</div></div>
           </div>
           <div class="overflow-x-auto">
             <table class="ad-table" style="min-width: 560px;">
@@ -1710,7 +1755,7 @@
                   <td class="font-mono" style="white-space: nowrap;">{{ t.invoiceNo || '—' }}</td>
                   <td>
                     <div>{{ payStatusName(t.status) }}</div>
-                    <div v-if="t.note" class="text-[12px] text-slate-400" style="max-width: 200px;">{{ t.note }}</div>
+                    <div v-if="t.note" class="text-[12px] tb-text-2" style="max-width: 200px;">{{ t.note }}</div>
                   </td>
                   <td style="white-space: nowrap; text-align: right;">
                     <button v-if="t.status === 'PAID'" type="button" @click="startPayAction('invoice', t)" class="ad-btn ad-btn--ghost ad-btn--sm">{{ t.invoiceNo ? '改發票' : '補發票' }}</button>
@@ -1723,30 +1768,30 @@
               </tbody>
             </table>
           </div>
-          <div v-if="payModal.action" class="p-3 rounded-xl bg-slate-900/90 border border-slate-600 space-y-2 text-[13px]">
-            <label class="text-slate-300 block" for="payActionInput">
+          <div v-if="payModal.action" class="p-3 rounded-xl tb-surface border tb-border space-y-2 text-[13px]">
+            <label class="tb-text-soft block" for="payActionInput">
               {{ payModal.action.type === 'invoice' ? `交易 ${payModal.action.tx.id} 的發票號碼（2 碼英文＋8 碼數字）` : `作廢交易 ${payModal.action.tx.id}（NT$ ${Number(payModal.action.tx.amount).toLocaleString()}）的原因` }}
             </label>
-            <input id="payActionInput" v-model="payModal.action.value" :placeholder="payModal.action.type === 'invoice' ? 'AB-12345678' : '例：金額登錄錯誤'" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white" :class="payModal.action.type === 'invoice' ? 'font-mono' : ''" maxlength="120">
+            <input id="payActionInput" v-model="payModal.action.value" :placeholder="payModal.action.type === 'invoice' ? 'AB-12345678' : '例：金額登錄錯誤'" class="w-full px-3 py-2 rounded-lg tb-bg border tb-border tb-text" :class="payModal.action.type === 'invoice' ? 'font-mono' : ''" maxlength="120">
             <div class="flex justify-end gap-2">
-              <button type="button" @click="payModal.action = null" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300">取消</button>
-              <button type="button" @click="submitPayAction()" :disabled="payModal.saving" class="px-4 py-1.5 rounded-lg font-bold text-white" :class="payModal.action.type === 'void' ? 'bg-rose-600 hover:bg-rose-500' : 'bg-emerald-600 hover:bg-emerald-500'">{{ payModal.action.type === 'void' ? '確定作廢' : '儲存發票號碼' }}</button>
+              <button type="button" @click="payModal.action = null" class="px-3 py-1.5 rounded-lg tb-surface-3 tb-hover-surface-3 tb-text-soft">取消</button>
+              <button type="button" @click="submitPayAction()" :disabled="payModal.saving" class="px-4 py-1.5 rounded-lg font-bold tb-text" :class="payModal.action.type === 'void' ? 'tb-danger-bg tb-hover-danger-bg' : 'tb-primary tb-hover-primary'">{{ payModal.action.type === 'void' ? '確定作廢' : '儲存發票號碼' }}</button>
             </div>
           </div>
-          <div v-if="payModal.order.status === 'completed' && Number(payModal.status.balanceOutstanding) > 0" class="p-3 rounded-xl bg-slate-900/90 border border-emerald-500/40 space-y-3 text-[13px]">
-            <div class="font-bold text-emerald-300">登錄尾款收款（合作社已收到款項後登錄）</div>
+          <div v-if="payModal.order.status === 'completed' && Number(payModal.status.balanceOutstanding) > 0" class="p-3 rounded-xl tb-surface border tb-border-ok space-y-3 text-[13px]">
+            <div class="font-bold tb-ok">登錄尾款收款（合作社已收到款項後登錄）</div>
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="text-slate-400 block mb-1" for="payDate">收款日期</label>
-                <input id="payDate" v-model="payModal.form.paidDate" type="date" :max="todayStr()" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white">
+                <label class="tb-text-2 block mb-1" for="payDate">收款日期</label>
+                <input id="payDate" v-model="payModal.form.paidDate" type="date" :max="todayStr()" class="w-full px-3 py-2 rounded-lg tb-bg border tb-border tb-text">
               </div>
               <div>
-                <label class="text-slate-400 block mb-1" for="payAmount">金額（NT$，可分次）</label>
-                <input id="payAmount" v-model="payModal.form.amount" type="number" min="1" :max="payModal.status.balanceOutstanding" step="1" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono">
+                <label class="tb-text-2 block mb-1" for="payAmount">金額（NT$，可分次）</label>
+                <input id="payAmount" v-model="payModal.form.amount" type="number" min="1" :max="payModal.status.balanceOutstanding" step="1" class="w-full px-3 py-2 rounded-lg tb-bg border tb-border tb-text font-mono">
               </div>
               <div>
-                <label class="text-slate-400 block mb-1" for="payMethod">收款方式</label>
-                <select id="payMethod" v-model="payModal.form.paymentMethod" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white">
+                <label class="tb-text-2 block mb-1" for="payMethod">收款方式</label>
+                <select id="payMethod" v-model="payModal.form.paymentMethod" class="w-full px-3 py-2 rounded-lg tb-bg border tb-border tb-text">
                   <option value="bank_transfer">轉帳</option>
                   <option value="cash">現金</option>
                   <option value="check">支票</option>
@@ -1754,42 +1799,42 @@
                 </select>
               </div>
               <div>
-                <label class="text-slate-400 block mb-1" for="payInvoice">發票號碼（可稍後補登）</label>
-                <input id="payInvoice" v-model="payModal.form.invoiceNo" placeholder="AB-12345678" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono" maxlength="11">
+                <label class="tb-text-2 block mb-1" for="payInvoice">發票號碼（可稍後補登）</label>
+                <input id="payInvoice" v-model="payModal.form.invoiceNo" placeholder="AB-12345678" class="w-full px-3 py-2 rounded-lg tb-bg border tb-border tb-text font-mono" maxlength="11">
               </div>
               <div class="col-span-2">
-                <label class="text-slate-400 block mb-1" for="payNote">備註（選填）</label>
-                <input id="payNote" v-model="payModal.form.note" placeholder="例：轉帳末五碼 12345" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white" maxlength="255">
+                <label class="tb-text-2 block mb-1" for="payNote">備註（選填）</label>
+                <input id="payNote" v-model="payModal.form.note" placeholder="例：轉帳末五碼 12345" class="w-full px-3 py-2 rounded-lg tb-bg border tb-border tb-text" maxlength="255">
               </div>
             </div>
             <div class="flex justify-end">
-              <button type="button" @click="submitBalance()" :disabled="payModal.saving" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition">登錄尾款</button>
+              <button type="button" @click="submitBalance()" :disabled="payModal.saving" class="px-5 py-2 rounded-xl tb-primary tb-hover-primary text-white font-bold transition">登錄尾款</button>
             </div>
           </div>
-          <p v-else-if="payModal.order.status !== 'completed'" class="text-[13px] text-slate-400">訂單完工後才能登錄尾款。</p>
-          <p v-else class="text-[13px] text-emerald-300">此訂單已全數結清。</p>
+          <p v-else-if="payModal.order.status !== 'completed'" class="text-[13px] tb-text-2">訂單完工後才能登錄尾款。</p>
+          <p v-else class="text-[13px] tb-ok">此訂單已全數結清。</p>
         </template>
       </div>
     </div>
 
     <!-- Talent Modal -->
     <div v-if="talentModal.show" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-      <div class="bg-slate-850 rounded-xl border border-slate-700 max-w-lg w-full p-6 space-y-4">
-        <h3 class="font-bold text-base text-white flex items-center gap-2">
+      <div class="bg-slate-850 rounded-xl border tb-border max-w-lg w-full p-6 space-y-4">
+        <h3 class="font-bold text-base tb-text flex items-center gap-2">
           {{ talentModal.isEdit ? '編輯人才資料' : '登錄新人才' }}
         </h3>
         <div class="grid grid-cols-2 gap-3 text-[13px]">
           <div>
-            <label class="text-slate-400 block mb-1">姓名</label>
-            <input v-model="talentModal.form.name" placeholder="例如 陳文義" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">姓名</label>
+            <input v-model="talentModal.form.name" placeholder="例如 陳文義" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div>
-            <label class="text-slate-400 block mb-1">聯絡電話 / LINE</label>
-            <input v-model="talentModal.form.phone" placeholder="例如 0933-222-111" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">聯絡電話 / LINE</label>
+            <input v-model="talentModal.form.phone" placeholder="例如 0933-222-111" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
           <div class="col-span-2">
-            <label class="text-slate-400 block mb-1">專長與身分類別</label>
-            <select v-model="talentModal.form.category" @change="onTalentCategoryChange()" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+            <label class="tb-text-2 block mb-1">專長與身分類別</label>
+            <select v-model="talentModal.form.category" @change="onTalentCategoryChange()" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
               <option value="local_driver">本國大型農機/曳引機駕駛員 (Tier 3)</option>
               <option value="drone_pilot">本國專業植保機/無人機手 (Tier 3)</option>
               <option value="transfer_worker">合法期滿中途轉出外展移工 (Tier 1)</option>
@@ -1797,63 +1842,63 @@
             </select>
           </div>
           <div class="col-span-2">
-            <label class="text-slate-400 block mb-1">耕作經驗與專長機具簡述</label>
-            <textarea v-model="talentModal.form.experience" rows="3" placeholder="例如: 具備 80 馬力曳引機 5 年耕作經驗..." class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white"></textarea>
+            <label class="tb-text-2 block mb-1">耕作經驗與專長機具簡述</label>
+            <textarea v-model="talentModal.form.experience" rows="3" placeholder="例如: 具備 80 馬力曳引機 5 年耕作經驗..." class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text"></textarea>
           </div>
           <div class="col-span-2 flex items-center gap-2">
-            <input v-model="talentModal.form.pdpaConsent" type="checkbox" id="chk-pdpa" class="rounded bg-slate-900 border-slate-700 text-emerald-500">
-            <label for="chk-pdpa" class="text-slate-300 font-semibold">同意個資法第 19 條人才媒合利用授權</label>
+            <input v-model="talentModal.form.pdpaConsent" type="checkbox" id="chk-pdpa" class="rounded tb-surface tb-border tb-ok">
+            <label for="chk-pdpa" class="tb-text-soft font-semibold">同意個資法第 19 條人才媒合利用授權</label>
           </div>
         </div>
-        <div class="flex justify-end gap-2 pt-3 border-t border-slate-700 text-[13px]">
-          <button @click="talentModal.show = false" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 transition">取消</button>
-          <button @click="saveTalent()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition">儲存</button>
+        <div class="flex justify-end gap-2 pt-3 border-t tb-border text-[13px]">
+          <button @click="talentModal.show = false" class="px-4 py-2 rounded-xl tb-surface-3 tb-hover-surface-3 tb-text-soft transition">取消</button>
+          <button @click="saveTalent()" class="px-5 py-2 rounded-xl tb-primary tb-hover-primary text-white font-bold transition">儲存</button>
         </div>
       </div>
     </div>
 
     <!-- Brochure Upload & Edit Modal -->
     <div v-if="brochureModal.show" class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-      <div class="bg-slate-850 rounded-xl border border-slate-700 max-w-3xl w-full p-6 sm:p-7 space-y-5 max-h-[90vh] flex flex-col">
-        <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+      <div class="bg-slate-850 rounded-xl border tb-border max-w-3xl w-full p-6 sm:p-7 space-y-5 max-h-[90vh] flex flex-col">
+        <div class="flex items-center justify-between border-b tb-border pb-3">
           <div class="flex items-center gap-2.5">
             <div>
-              <h3 class="font-bold text-base text-white">
+              <h3 class="font-bold text-base tb-text">
                 {{ brochureModal.isEdit ? '編輯產品文宣 DM' : '上傳 / 新增產品文宣 DM' }}
               </h3>
-              <p class="text-[13px] text-slate-400">儲存後即時同步更新至前台展示館，支援 A4 格式直接列印</p>
+              <p class="text-[13px] tb-text-2">儲存後即時同步更新至前台展示館，支援 A4 格式直接列印</p>
             </div>
           </div>
-          <button @click="brochureModal.show = false" class="text-slate-400 hover:text-white text-xl font-bold">✕</button>
+          <button @click="brochureModal.show = false" class="tb-text-2 tb-hover-text text-xl font-bold">✕</button>
         </div>
 
         <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4 text-[13px]">
           <!-- Preset Cover Quick Selectors -->
-          <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-700 space-y-2">
-            <span class="text-slate-300 font-bold block">快速選用精選農事專案預設封面與色調：</span>
+          <div class="p-3.5 rounded-xl tb-surface border tb-border space-y-2">
+            <span class="tb-text-soft font-bold block">快速選用精選農事專案預設封面與色調：</span>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <button type="button" @click="selectBrochurePreset('mango')" class="p-2 rounded-xl bg-slate-800 hover:bg-emerald-950/60 border border-emerald-500/40 text-left transition flex items-center gap-2 cursor-pointer">
+              <button type="button" @click="selectBrochurePreset('mango')" class="p-2 rounded-xl tb-surface-2 tb-hover-ok-soft-strong border tb-border-ok text-left transition flex items-center gap-2 cursor-pointer">
                 <div>
-                  <strong class="text-emerald-300 block text-[13px]">愛文芒果採收</strong>
-                  <span class="text-[13px] text-slate-400">綠金翡翠調</span>
+                  <strong class="tb-ok block text-[13px]">愛文芒果採收</strong>
+                  <span class="text-[13px] tb-text-2">綠金翡翠調</span>
                 </div>
               </button>
-              <button type="button" @click="selectBrochurePreset('greenhouse')" class="p-2 rounded-xl bg-slate-800 hover:bg-emerald-950/60 border border-emerald-500/40 text-left transition flex items-center gap-2 cursor-pointer">
+              <button type="button" @click="selectBrochurePreset('greenhouse')" class="p-2 rounded-xl tb-surface-2 tb-hover-ok-soft-strong border tb-border-ok text-left transition flex items-center gap-2 cursor-pointer">
                 <div>
-                  <strong class="text-emerald-300 block text-[13px]">設施有機溫室</strong>
-                  <span class="text-[13px] text-slate-400">嫩綠常態調</span>
+                  <strong class="tb-ok block text-[13px]">設施有機溫室</strong>
+                  <span class="text-[13px] tb-text-2">嫩綠常態調</span>
                 </div>
               </button>
-              <button type="button" @click="selectBrochurePreset('drone')" class="p-2 rounded-xl bg-slate-800 hover:bg-emerald-950/60 border border-emerald-500/40 text-left transition flex items-center gap-2 cursor-pointer">
+              <button type="button" @click="selectBrochurePreset('drone')" class="p-2 rounded-xl tb-surface-2 tb-hover-ok-soft-strong border tb-border-ok text-left transition flex items-center gap-2 cursor-pointer">
                 <div>
-                  <strong class="text-emerald-300 block text-[13px]">T50 植保無人機</strong>
-                  <span class="text-[13px] text-slate-400">科技藍靛調</span>
+                  <strong class="tb-ok block text-[13px]">T50 植保無人機</strong>
+                  <span class="text-[13px] tb-text-2">科技藍靛調</span>
                 </div>
               </button>
-              <button type="button" @click="selectBrochurePreset('coldchain')" class="p-2 rounded-xl bg-slate-800 hover:bg-emerald-950/60 border border-emerald-500/40 text-left transition flex items-center gap-2 cursor-pointer">
+              <button type="button" @click="selectBrochurePreset('coldchain')" class="p-2 rounded-xl tb-surface-2 tb-hover-ok-soft-strong border tb-border-ok text-left transition flex items-center gap-2 cursor-pointer">
                 <div>
-                  <strong class="text-emerald-300 block text-[13px]">採後冷鏈物流</strong>
-                  <span class="text-[13px] text-slate-400">冰晶青藍調</span>
+                  <strong class="tb-ok block text-[13px]">採後冷鏈物流</strong>
+                  <span class="text-[13px] tb-text-2">冰晶青藍調</span>
                 </div>
               </button>
             </div>
@@ -1862,20 +1907,20 @@
           <!-- Section 1: Basic Info -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label class="text-slate-400 block mb-1">DM 代碼 (ID) <span class="text-rose-400">*</span></label>
-              <input v-model="brochureModal.form.id" :disabled="brochureModal.isEdit" placeholder="例如: dm-custom-2026" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white disabled:opacity-50 font-mono">
+              <label class="tb-text-2 block mb-1">DM 代碼 (ID) <span class="tb-danger">*</span></label>
+              <input v-model="brochureModal.form.id" :disabled="brochureModal.isEdit" placeholder="例如: dm-custom-2026" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text disabled:opacity-50 font-mono">
             </div>
             <div class="sm:col-span-2">
-              <label class="text-slate-400 block mb-1">DM 專案大標題 <span class="text-rose-400">*</span></label>
-              <input v-model="brochureModal.form.title" placeholder="例如: 【屏東枋山外銷愛文芒果】產季早鳥保證出工 60 工時包" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <label class="tb-text-2 block mb-1">DM 專案大標題 <span class="tb-danger">*</span></label>
+              <input v-model="brochureModal.form.title" placeholder="例如: 【屏東枋山外銷愛文芒果】產季早鳥保證出工 60 工時包" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
             </div>
             <div class="sm:col-span-3">
-              <label class="text-slate-400 block mb-1">副標題 / 核心 Slogan</label>
-              <input v-model="brochureModal.form.subtitle" placeholder="例如: 告別產季搶工被放鳥！合法外展工班 ╳ 產季保證出工 ╳ 梅雨冷鏈避險" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <label class="tb-text-2 block mb-1">副標題 / 核心 Slogan</label>
+              <input v-model="brochureModal.form.subtitle" placeholder="例如: 告別產季搶工被放鳥！合法外展工班 ╳ 產季保證出工 ╳ 梅雨冷鏈避險" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
             </div>
             <div>
-              <label class="text-slate-400 block mb-1">文宣類別</label>
-              <select v-model="brochureModal.form.category" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <label class="tb-text-2 block mb-1">文宣類別</label>
+              <select v-model="brochureModal.form.category" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
                 <option value="採收早鳥">採收早鳥</option>
                 <option value="設施溫室">設施溫室</option>
                 <option value="智慧機耕">智慧機耕</option>
@@ -1885,20 +1930,20 @@
               </select>
             </div>
             <div>
-              <label class="text-slate-400 block mb-1">主要作物</label>
-              <input v-model="brochureModal.form.crop" placeholder="例如: 愛文芒果" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <label class="tb-text-2 block mb-1">主要作物</label>
+              <input v-model="brochureModal.form.crop" placeholder="例如: 愛文芒果" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
             </div>
             <div>
-              <label class="text-slate-400 block mb-1">適用產區</label>
-              <input v-model="brochureModal.form.region" placeholder="例如: 屏東枋山、台南玉井" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <label class="tb-text-2 block mb-1">適用產區</label>
+              <input v-model="brochureModal.form.region" placeholder="例如: 屏東枋山、台南玉井" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
             </div>
             <div>
-              <label class="text-slate-400 block mb-1">圖標 Emoji</label>
-              <input v-model="brochureModal.form.icon" placeholder="選填" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <label class="tb-text-2 block mb-1">圖標 Emoji</label>
+              <input v-model="brochureModal.form.icon" placeholder="選填" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
             </div>
             <div>
-              <label class="text-slate-400 block mb-1">主題色調</label>
-              <select v-model="brochureModal.form.themeColor" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <label class="tb-text-2 block mb-1">主題色調</label>
+              <select v-model="brochureModal.form.themeColor" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
                 <option value="emerald">綠金 (Emerald)</option>
                 <option value="lime">嫩綠 (Lime)</option>
                 <option value="indigo">科技藍 (Indigo)</option>
@@ -1906,72 +1951,72 @@
               </select>
             </div>
             <div>
-              <label class="text-slate-400 block mb-1">推薦標籤 / 徽章</label>
-              <input v-model="brochureModal.form.badge" placeholder="例如: ★ 產銷班長指名推薦款" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <label class="tb-text-2 block mb-1">推薦標籤 / 徽章</label>
+              <input v-model="brochureModal.form.badge" placeholder="例如: ★ 產銷班長指名推薦款" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
             </div>
           </div>
 
           <!-- Section 2: Image Upload (支援本地圖檔上傳) -->
-          <div class="p-4 rounded-xl bg-slate-900 border border-slate-700 space-y-3">
+          <div class="p-4 rounded-xl tb-surface border tb-border space-y-3">
             <div class="flex items-center justify-between">
-              <span class="text-slate-200 font-bold flex items-center gap-1.5">
+              <span class="tb-text font-bold flex items-center gap-1.5">
                 上傳封面圖片 / 宣傳海報底圖
               </span>
-              <span class="text-[13px] text-slate-400">支援本地圖檔 (PNG, JPG, WebP) 自動轉存或填入 URL</span>
+              <span class="text-[13px] tb-text-2">支援本地圖檔 (PNG, JPG, WebP) 自動轉存或填入 URL</span>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
               <div class="sm:col-span-8 space-y-2">
-                <input type="file" accept="image/*" @change="handleBrochureFileChange($event)" class="w-full text-[13px] text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[13px] file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-500 cursor-pointer">
+                <input type="file" accept="image/*" @change="handleBrochureFileChange($event)" class="w-full text-[13px] tb-text-soft file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[13px] file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-500 cursor-pointer">
                 <div>
-                  <label class="text-slate-500 block text-[13px] mb-0.5">或直接輸入圖片 URL：</label>
-                  <input v-model="brochureModal.form.coverImage" placeholder="https://..." class="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white text-[13px]">
+                  <label class="tb-text-3 block text-[13px] mb-0.5">或直接輸入圖片 URL：</label>
+                  <input v-model="brochureModal.form.coverImage" placeholder="https://..." class="w-full px-3 py-1.5 rounded-lg tb-bg border tb-border tb-text text-[13px]">
                 </div>
               </div>
               <div class="sm:col-span-4 flex items-center justify-center">
-                <div class="w-28 h-20 rounded-xl overflow-hidden bg-slate-950 border border-slate-700 flex items-center justify-center">
+                <div class="w-28 h-20 rounded-xl overflow-hidden tb-bg border tb-border flex items-center justify-center">
                   <img v-if="brochureModal.form.coverImage" :src="brochureModal.form.coverImage" alt="Preview" class="w-full h-full object-cover">
-                  <span v-else class="text-slate-500 text-[13px]">圖檔預覽區</span>
+                  <span v-else class="tb-text-3 text-[13px]">圖檔預覽區</span>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Section 3: Pricing & Package Specs -->
-          <div class="p-4 rounded-xl bg-slate-900 border border-slate-700 space-y-3">
-            <span class="text-slate-200 font-bold block">工時包規格與早鳥牌價設定</span>
+          <div class="p-4 rounded-xl tb-surface border tb-border space-y-3">
+            <span class="tb-text font-bold block">工時包規格與早鳥牌價設定</span>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
-                <label class="text-slate-400 block mb-1">標準牌告總價 (NT$)</label>
-                <input v-model.number="brochureModal.form.originalPrice" type="number" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono">
+                <label class="tb-text-2 block mb-1">標準牌告總價 (NT$)</label>
+                <input v-model.number="brochureModal.form.originalPrice" type="number" class="w-full px-3 py-2 rounded-lg tb-bg border tb-border tb-text font-mono">
               </div>
               <div>
-                <label class="text-slate-400 block mb-1">早鳥實收總價 (NT$)</label>
-                <input v-model.number="brochureModal.form.discountPrice" @input="calcBrochureDeposit()" type="number" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-emerald-400 font-mono font-bold">
+                <label class="tb-text-2 block mb-1">早鳥實收總價 (NT$)</label>
+                <input v-model.number="brochureModal.form.discountPrice" @input="calcBrochureDeposit()" type="number" class="w-full px-3 py-2 rounded-lg tb-bg border tb-border tb-ok font-mono font-bold">
               </div>
               <div>
-                <label class="text-slate-400 block mb-1">鎖約定金比例 (%)</label>
-                <input v-model.number="brochureModal.form.depositRate" @input="calcBrochureDeposit()" type="number" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono">
+                <label class="tb-text-2 block mb-1">鎖約定金比例 (%)</label>
+                <input v-model.number="brochureModal.form.depositRate" @input="calcBrochureDeposit()" type="number" class="w-full px-3 py-2 rounded-lg tb-bg border tb-border tb-text font-mono">
               </div>
               <div>
-                <label class="text-slate-400 block mb-1">應付定金額 (NT$)</label>
-                <input v-model.number="brochureModal.form.depositAmount" type="number" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-amber-400 font-mono font-bold">
+                <label class="tb-text-2 block mb-1">應付定金額 (NT$)</label>
+                <input v-model.number="brochureModal.form.depositAmount" type="number" class="w-full px-3 py-2 rounded-lg tb-bg border tb-border tb-warn font-mono font-bold">
               </div>
               <div>
-                <label class="text-slate-400 block mb-1">標準總工時 (h)</label>
-                <input v-model.number="brochureModal.form.hours" type="number" placeholder="60" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono">
+                <label class="tb-text-2 block mb-1">標準總工時 (h)</label>
+                <input v-model.number="brochureModal.form.hours" type="number" placeholder="60" class="w-full px-3 py-2 rounded-lg tb-bg border tb-border tb-text font-mono">
               </div>
               <div>
-                <label class="text-slate-400 block mb-1">建議出勤人數</label>
-                <input v-model.number="brochureModal.form.workers" type="number" placeholder="4" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono">
+                <label class="tb-text-2 block mb-1">建議出勤人數</label>
+                <input v-model.number="brochureModal.form.workers" type="number" placeholder="4" class="w-full px-3 py-2 rounded-lg tb-bg border tb-border tb-text font-mono">
               </div>
               <div>
-                <label class="text-slate-400 block mb-1">預估出勤天數</label>
-                <input v-model.number="brochureModal.form.days" type="number" placeholder="2" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono">
+                <label class="tb-text-2 block mb-1">預估出勤天數</label>
+                <input v-model.number="brochureModal.form.days" type="number" placeholder="2" class="w-full px-3 py-2 rounded-lg tb-bg border tb-border tb-text font-mono">
               </div>
               <div>
-                <label class="text-slate-400 block mb-1">上架狀態</label>
-                <select v-model="brochureModal.form.status" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white">
+                <label class="tb-text-2 block mb-1">上架狀態</label>
+                <select v-model="brochureModal.form.status" class="w-full px-3 py-2 rounded-lg tb-bg border tb-border tb-text">
                   <option value="active">正式上架 (Active)</option>
                   <option value="draft">暫存草稿 (Draft)</option>
                 </select>
@@ -1982,39 +2027,39 @@
           <!-- Section 4: Description & Testimonial -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="sm:col-span-2">
-              <label class="text-slate-400 block mb-1">專案核心說明 / 簡介內文</label>
-              <textarea v-model="brochureModal.form.description" rows="2" placeholder="詳細說明此專案工時包之服務內容、適合對象與優勢..." class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white"></textarea>
+              <label class="tb-text-2 block mb-1">專案核心說明 / 簡介內文</label>
+              <textarea v-model="brochureModal.form.description" rows="2" placeholder="詳細說明此專案工時包之服務內容、適合對象與優勢..." class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text"></textarea>
             </div>
             <div>
-              <label class="text-slate-400 block mb-1">農友見證人姓名</label>
-              <input v-model="brochureModal.form.testimonialName" placeholder="例如: 陳建龍（阿龍班長）" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <label class="tb-text-2 block mb-1">農友見證人姓名</label>
+              <input v-model="brochureModal.form.testimonialName" placeholder="例如: 陳建龍（阿龍班長）" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
             </div>
             <div>
-              <label class="text-slate-400 block mb-1">見證人產銷班 / 職銜</label>
-              <input v-model="brochureModal.form.testimonialTitle" placeholder="例如: 枋山愛文芒果產銷班第 7 班 班長" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <label class="tb-text-2 block mb-1">見證人產銷班 / 職銜</label>
+              <input v-model="brochureModal.form.testimonialTitle" placeholder="例如: 枋山愛文芒果產銷班第 7 班 班長" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
             </div>
             <div class="sm:col-span-2">
-              <label class="text-slate-400 block mb-1">見證引言內容</label>
-              <textarea v-model="brochureModal.form.testimonialQuote" rows="2" placeholder="農友真心推薦見證..." class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white"></textarea>
+              <label class="tb-text-2 block mb-1">見證引言內容</label>
+              <textarea v-model="brochureModal.form.testimonialQuote" rows="2" placeholder="農友真心推薦見證..." class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text"></textarea>
             </div>
             <div>
-              <label class="text-slate-400 block mb-1">產區預約專線電話</label>
-              <input v-model="brochureModal.form.phone" placeholder="08-876-1234 / 0912-345-678" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono">
+              <label class="tb-text-2 block mb-1">產區預約專線電話</label>
+              <input v-model="brochureModal.form.phone" placeholder="08-876-1234 / 0912-345-678" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text font-mono">
             </div>
             <div>
-              <label class="text-slate-400 block mb-1">產區營運服務處地址</label>
-              <input v-model="brochureModal.form.serviceOffice" placeholder="例如: 屏東縣枋山鄉加祿路 128 號" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white">
+              <label class="tb-text-2 block mb-1">產區營運服務處地址</label>
+              <input v-model="brochureModal.form.serviceOffice" placeholder="例如: 屏東縣枋山鄉加祿路 128 號" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
             </div>
           </div>
         </div>
 
-        <div class="flex items-center justify-between pt-3 border-t border-slate-700 text-[13px]">
-          <div class="text-[13px] text-slate-400">
+        <div class="flex items-center justify-between pt-3 border-t tb-border text-[13px]">
+          <div class="text-[13px] tb-text-2">
             點擊儲存後將同步送出至後端資料庫並立即可在前台展示
           </div>
           <div class="flex items-center gap-2">
-            <button @click="brochureModal.show = false" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 transition cursor-pointer">取消</button>
-            <button @click="saveBrochure()" class="px-6 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition cursor-pointer">
+            <button @click="brochureModal.show = false" class="px-4 py-2 rounded-xl tb-surface-3 tb-hover-surface-3 tb-text-soft transition cursor-pointer">取消</button>
+            <button @click="saveBrochure()" class="px-6 py-2 rounded-xl tb-primary tb-hover-primary text-white font-bold transition cursor-pointer">
               儲存並發布至前台
             </button>
           </div>
@@ -3384,9 +3429,9 @@
         };
 
         const tierBadge = (tier) => {
-          if (tier === 'tier1_foreign') return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
-          if (tier === 'tier2_local_flex') return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
-          return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+          if (tier === 'tier1_foreign') return 'tb-ok-soft tb-ok border tb-border-ok';
+          if (tier === 'tier2_local_flex') return 'tb-ok-soft tb-ok border tb-border-ok';
+          return 'tb-ok-soft tb-ok border tb-border-ok';
         };
 
         const flagFor = (nationality) => {
@@ -3439,13 +3484,13 @@
 
         const orderStatusBadge = (status) => {
           const m = {
-            pending: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
-            confirmed: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
-            in_progress: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
-            completed: 'bg-slate-700 text-slate-300',
-            cancelled: 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+            pending: 'tb-warn-soft tb-warn border tb-border-warn',
+            confirmed: 'tb-ok-soft tb-ok border tb-border-ok',
+            in_progress: 'tb-ok-soft tb-ok border tb-border-ok',
+            completed: 'tb-surface-3 tb-text-soft',
+            cancelled: 'tb-danger-soft tb-danger border tb-border-danger'
           };
-          return m[status] || 'bg-slate-700 text-slate-300';
+          return m[status] || 'tb-surface-3 tb-text-soft';
         };
 
         const orderStatusName = (status) => {
@@ -3461,8 +3506,8 @@
 
         const teamStatusBadge = (status) => {
           return status === 'hedged_indoor'
-            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-            : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+            ? 'tb-warn-soft tb-warn border tb-border-warn'
+            : 'tb-ok-soft tb-ok border tb-border-ok';
         };
 
         const teamStatusName = (status) => {
@@ -3471,14 +3516,14 @@
 
         const categoryBadge = (cat) => {
           const m = {
-            harvest_grading: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-            tillage_planting: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-            pruning_bagging: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-            drone_pest_control: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-            cold_chain_pack: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-            typhoon_emergency: 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+            harvest_grading: 'tb-ok-soft tb-ok tb-border-ok',
+            tillage_planting: 'tb-ok-soft tb-ok tb-border-ok',
+            pruning_bagging: 'tb-warn-soft tb-warn tb-border-warn',
+            drone_pest_control: 'tb-ok-soft tb-ok tb-border-ok',
+            cold_chain_pack: 'tb-ok-soft tb-ok tb-border-ok',
+            typhoon_emergency: 'tb-danger-soft tb-danger tb-border-danger'
           };
-          return m[cat] || 'bg-slate-700 text-slate-300 border-slate-600';
+          return m[cat] || 'tb-surface-3 tb-text-soft tb-border';
         };
 
         const onOrderCategoryChange = () => {

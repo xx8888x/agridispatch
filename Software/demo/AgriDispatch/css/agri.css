@@ -1017,3 +1017,37 @@ html.is-field :is(p, li, td, dd, .ad-caption, .ad-hint, .ad-notice, .ad-empty) a
   text-underline-offset: 3px;
   text-decoration-thickness: 1.5px;
 }
+
+/* 16b. 田間模式補充（科技後台一併納入） */
+@media (max-width: 640px) {
+  /* 頁籤超過一列時換行全部露出，不用左右滑才找得到（後台派工調度有 8 個子頁籤） */
+  html.is-field .ad-tabs { flex-wrap: wrap; overflow-x: visible; }
+  /* 還在用 Tailwind 字級的頁（admin.html 等）：最小兩級跟著放大 */
+  html.is-field .text-xs { font-size: 0.8125rem; line-height: 1.4; }
+  html.is-field .text-sm { font-size: 0.9375rem; line-height: 1.5; }
+  html.is-field .text-\[10px\], html.is-field .text-\[11px\] { font-size: 0.75rem; }
+}
+
+/* ---------- 17. 展開說明 ----------
+   <details class="ad-details"><summary>更多說明</summary><p>…</p></details>
+   頁面說明只留第一句，其餘收在這裡：想看的人點一下，不想看的人不用讀（Don't Make Me Think）。 */
+.ad-details { font-size: var(--ad-fs-caption); color: var(--ad-text-2); line-height: 1.6; }
+.ad-details > summary {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  cursor: pointer;
+  color: var(--ad-primary-text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  -webkit-tap-highlight-color: transparent;
+}
+.ad-details > summary::-webkit-details-marker { display: none; }
+.ad-details > summary::after { content: '\25BE'; font-size: 12px; }
+.ad-details[open] > summary::after { content: '\25B4'; }
+.ad-details > summary:focus-visible { outline: none; box-shadow: var(--ad-ring); border-radius: 4px; }
+.ad-details > :not(summary) { margin: 4px 0 0; }
+.ad-details > p + p { margin-top: 8px; }

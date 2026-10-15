@@ -30,6 +30,39 @@
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/agri.css">
+  <style>
+    /* 本頁顏色一律走設計系統 token（css/agri.css），亮色／深色主題都正確；版面仍用 Tailwind 工具類 */
+    .pg-band { background: var(--ad-surface); }
+    .pg-bg { background: var(--ad-bg); }
+    .pg-surface { background: var(--ad-surface); }
+    .pg-surface-2 { background: var(--ad-surface-2); }
+    .pg-card { background: var(--ad-surface); border: 1px solid var(--ad-border); }
+    .pg-inset { background: var(--ad-surface-2); border: 1px solid var(--ad-border); }
+    .pg-hover:hover { border-color: var(--ad-primary); }
+    .pg-text { color: var(--ad-text); }
+    .pg-ok { color: var(--ad-primary-text); }
+    .pg-warn { color: var(--ad-accent-text); }
+    .pg-danger { color: var(--ad-danger-text); }
+    .pg-soft-ok { background: var(--ad-primary-soft); }
+    .pg-soft-warn { background: var(--ad-accent-soft); }
+    .pg-soft-danger { background: var(--ad-danger-soft); }
+    .pg-border { border-color: var(--ad-border); }
+    .pg-border-ok { border-color: var(--ad-primary); }
+    .pg-border-warn { border-color: var(--ad-accent); }
+    .pg-border-danger { border-color: var(--ad-danger); }
+    .pg-backdrop { background: rgba(2, 6, 23, 0.72); }
+    /* 長文字的標籤可換行（.ad-pill 預設不換行，手機會被截斷） */
+    .ad-pill.pg-wrap { white-space: normal; height: auto; min-height: 24px; padding-block: 3px; line-height: 1.4; }
+    /* 季度卡：點選後主色框 */
+    .pg-qcard { background: var(--ad-surface); border: 1px solid var(--ad-border); }
+    .pg-qcard:hover { border-color: var(--ad-primary); }
+    .pg-qcard.is-active { border-color: var(--ad-primary); box-shadow: var(--ad-ring); }
+    /* 月份：現實本月加外框 */
+    .month-btn.is-now { box-shadow: var(--ad-ring); }
+    /* DM 旋轉木馬的頁點 */
+    .pg-dot { background: var(--ad-border-strong); }
+    .pg-dot.is-active { background: var(--ad-accent); }
+  </style>
 </head>
 <body class="ad-body">
 
@@ -55,37 +88,37 @@
   </header>
 
   <!-- Hero Section -->
-  <section class="relative overflow-hidden pt-16 pb-24 lg:pt-28 lg:pb-36 border-b border-slate-900">
+  <section class="relative overflow-hidden pt-16 pb-24 lg:pt-28 lg:pb-36 border-b pg-border">
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
       
       <!-- Top Badge -->
-      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 live-pulse"></span>
+      <div class="ad-pill ad-pill--ok pg-wrap">
+        <span class="ad-pill__dot ad-live"></span>
         打破藍領移工派遣禁令・依外展農務制度申請中之合規路徑
       </div>
 
       <!-- Main Headline -->
-      <h1 class="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight leading-tight">
+      <h1 class="text-4xl sm:text-6xl lg:text-7xl font-black pg-text tracking-tight leading-tight">
         告別農村缺工搶工<br/>
-        <span class="text-emerald-400">
+        <span class="pg-ok">
           合法外展移工 ╳ 智慧農事調度大腦
         </span>
       </h1>
 
-      <p class="max-w-3xl mx-auto text-base sm:text-lg text-slate-400 leading-relaxed">
+      <p class="max-w-3xl mx-auto text-base sm:text-lg ad-text-2 leading-relaxed">
         透過「外展農業合作社」擔任移工法定雇主，結合「農事科技公司」演算法調度，提供小農產季早鳥預購、突發天候冷鏈避險，以及本國專業機耕隊統包。
       </p>
 
       <!-- CTA Buttons -->
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-        <a href="farmer.html" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-lg transition transform hover:-translate-y-1 flex items-center justify-center gap-2">
+        <a href="farmer.html" class="w-full sm:w-auto ad-btn ad-btn--primary ad-btn--lg">
           線上派工預約
         </a>
-        <a href="login.html" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-black text-lg transition transform hover:-translate-y-1 flex items-center justify-center gap-2">
+        <a href="login.html" class="w-full sm:w-auto ad-btn ad-btn--secondary ad-btn--lg">
           四大身分登入門戶
         </a>
-        <a href="../TechBackend/admin.html" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-black text-lg transition transform hover:-translate-y-1 flex items-center justify-center gap-2">
+        <a href="../TechBackend/admin.html" class="w-full sm:w-auto ad-btn ad-btn--secondary ad-btn--lg">
           科技營運後台
         </a>
       </div>
@@ -94,31 +127,31 @@
       <div class="space-y-4 max-w-7xl mx-auto pt-6 text-left">
 
         <!-- Featured Product Brochures DM Carousel (4大專案DM旋轉木馬展示館) -->
-        <div id="dmCarouselSection" class="mt-6 p-6 sm:p-7 rounded-3xl bg-slate-900/95 border border-amber-500/40 shadow-2xl space-y-4">
+        <div id="dmCarouselSection" class="mt-6 p-6 sm:p-7 rounded-3xl pg-surface border pg-border-warn space-y-4">
           <!-- Carousel Top Header with Nav Controls -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pg-border pb-3">
             <div>
               <div class="flex items-center gap-2">
-                <h3 class="text-base sm:text-lg font-extrabold text-white">熱門產品文宣 DM 精選（全台 4 大主力農務保證工時包）</h3>
-                <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-1">
-                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span> 旋轉木馬即時選購
+                <h3 class="text-base sm:text-lg font-extrabold pg-text">熱門產品文宣 DM 精選（全台 4 大主力農務保證工時包）</h3>
+                <span class="ad-pill ad-pill--warn">
+                  <span class="ad-pill__dot ad-live"></span> 旋轉木馬即時選購
                 </span>
               </div>
-              <p class="text-xs text-slate-400 mt-0.5">合法外展工班 ╳ 產季保證出工 ╳ 梅雨冷鏈避險 ╳ 點擊任一 DM 卡片即可直接預購結帳或自訂派工</p>
+              <p class="text-xs ad-text-2 mt-0.5">合法外展工班 ╳ 產季保證出工 ╳ 梅雨冷鏈避險 ╳ 點擊任一 DM 卡片即可直接預購結帳或自訂派工</p>
             </div>
 
             <!-- Controls: Prev, Dots, Next, Full DM Link -->
             <div class="flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
-              <div class="flex items-center gap-1.5 bg-slate-800/90 p-1 rounded-2xl border border-slate-700/80">
-                <button type="button" onclick="prevDmSlide()" aria-label="上一項 DM" class="w-8 h-8 rounded-xl bg-slate-700/70 hover:bg-amber-500 hover:text-slate-950 text-slate-300 transition flex items-center justify-center font-bold text-xs shadow cursor-pointer">
+              <div class="flex items-center gap-1.5 pg-surface-2 p-1 rounded-2xl border pg-border">
+                <button type="button" onclick="prevDmSlide()" aria-label="上一項 DM" class="ad-btn ad-btn--secondary ad-btn--sm ad-btn--icon">
                   ❮
                 </button>
                 <div id="dmCarouselDots" class="flex items-center gap-1.5 px-2"></div>
-                <button type="button" onclick="nextDmSlide()" aria-label="下一項 DM" class="w-8 h-8 rounded-xl bg-slate-700/70 hover:bg-amber-500 hover:text-slate-950 text-slate-300 transition flex items-center justify-center font-bold text-xs shadow cursor-pointer">
+                <button type="button" onclick="nextDmSlide()" aria-label="下一項 DM" class="ad-btn ad-btn--secondary ad-btn--sm ad-btn--icon">
                   ❯
                 </button>
               </div>
-              <a href="brochure.html" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition flex items-center gap-1">
+              <a href="brochure.html" class="ad-btn ad-btn--accent ad-btn--sm">
                 完整館 ➔
               </a>
             </div>
@@ -130,39 +163,39 @@
               
               <!-- Slide 1: 芒果 -->
               <div class="w-full md:w-1/2 xl:w-1/3 shrink-0 p-2">
-                <div onclick="openDmPurchase('dm-mango-2026')" class="h-full p-4 sm:p-5 rounded-2xl bg-slate-800/85 hover:bg-slate-800 border border-emerald-500/40 hover:border-emerald-400 hover:shadow-xl hover:shadow-emerald-500/15 transition-all duration-300 flex flex-col justify-between space-y-3 group cursor-pointer relative overflow-hidden">
+                <div onclick="openDmPurchase('dm-mango-2026')" class="h-full p-4 sm:p-5 rounded-2xl pg-surface-2 border pg-border-ok pg-hover transition-all duration-300 flex flex-col justify-between space-y-3 group cursor-pointer relative overflow-hidden">
                   <div class="space-y-2">
                     <div class="flex items-center justify-between">
                       <div class="flex items-center gap-1.5">
-                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">採收早鳥・315/hr</span>
+                        <span class="ad-pill ad-pill--ok">採收早鳥・315/hr</span>
                       </div>
-                      <span class="text-[10px] text-slate-400 font-mono">屏東枋山/玉井</span>
+                      <span class="text-[10px] ad-text-2 font-mono">屏東枋山/玉井</span>
                     </div>
-                    <h4 class="font-extrabold text-white text-base group-hover:text-emerald-300 transition">枋山愛文芒果 60 工時早鳥包</h4>
-                    <p class="text-xs text-slate-300 leading-relaxed">4位熟練農工出勤2天・外銷日韓留蒂 0.5cm・遇暴雨自動轉接屏南冷鏈預冷場。</p>
-                    <div class="grid grid-cols-2 gap-1 pt-1.5 text-[11px] text-slate-300">
-                      <span class="flex items-center gap-1"><span class="text-emerald-400">✔</span> 保證出工違約雙賠</span>
-                      <span class="flex items-center gap-1"><span class="text-emerald-400">✔</span> 日韓外銷標準手路</span>
-                      <span class="flex items-center gap-1"><span class="text-emerald-400">✔</span> 雨天轉冷鏈零損失</span>
-                      <span class="flex items-center gap-1"><span class="text-emerald-400">✔</span> 合法發票100%抵稅</span>
+                    <h4 class="font-extrabold pg-text text-base transition">枋山愛文芒果 60 工時早鳥包</h4>
+                    <p class="text-xs pg-text leading-relaxed">4位熟練農工出勤2天・外銷日韓留蒂 0.5cm・遇暴雨自動轉接屏南冷鏈預冷場。</p>
+                    <div class="grid grid-cols-2 gap-1 pt-1.5 text-[11px] pg-text">
+                      <span class="flex items-center gap-1"><span class="pg-ok">✔</span> 保證出工違約雙賠</span>
+                      <span class="flex items-center gap-1"><span class="pg-ok">✔</span> 日韓外銷標準手路</span>
+                      <span class="flex items-center gap-1"><span class="pg-ok">✔</span> 雨天轉冷鏈零損失</span>
+                      <span class="flex items-center gap-1"><span class="pg-ok">✔</span> 合法發票100%抵稅</span>
                     </div>
                   </div>
-                  <div class="pt-3 border-t border-slate-700/70">
+                  <div class="pt-3 border-t pg-border">
                     <div class="flex items-end justify-between mb-2.5">
                       <div>
-                        <span class="text-[10px] text-slate-400 block">60 工時 × NT$ 315</span>
-                        <span class="text-amber-400 font-black font-mono text-base sm:text-lg">NT$ 18,900</span>
+                        <span class="text-[10px] ad-text-2 block">60 工時 × NT$ 315</span>
+                        <span class="pg-warn font-black font-mono text-base sm:text-lg">NT$ 18,900</span>
                       </div>
                       <div class="text-right">
-                        <span class="text-[10px] text-slate-400 block">今日鎖單預付 20%</span>
-                        <span class="text-xs font-bold text-emerald-400 font-mono">定金 NT$ 3,780</span>
+                        <span class="text-[10px] ad-text-2 block">今日鎖單預付 20%</span>
+                        <span class="text-xs font-bold pg-ok font-mono">定金 NT$ 3,780</span>
                       </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2" onclick="event.stopPropagation()">
-                      <button type="button" onclick="openDmPurchase('dm-mango-2026')" class="w-full py-2 px-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-1 cursor-pointer">
+                      <button type="button" onclick="openDmPurchase('dm-mango-2026')" class="ad-btn ad-btn--accent ad-btn--sm ad-btn--block">
                         點擊購買
                       </button>
-                      <a href="brochure.html?id=dm-mango-2026" class="w-full py-2 px-2 rounded-xl bg-slate-700/70 hover:bg-slate-700 text-slate-200 border border-slate-600/80 font-bold text-xs transition flex items-center justify-center gap-1">
+                      <a href="brochure.html?id=dm-mango-2026" class="ad-btn ad-btn--secondary ad-btn--sm ad-btn--block">
                         看完整 DM
                       </a>
                     </div>
@@ -172,39 +205,39 @@
 
               <!-- Slide 2: 溫室 -->
               <div class="w-full md:w-1/2 xl:w-1/3 shrink-0 p-2">
-                <div onclick="openDmPurchase('dm-greenhouse-2026')" class="h-full p-4 sm:p-5 rounded-2xl bg-slate-800/85 hover:bg-slate-800 border border-lime-500/40 hover:border-lime-400 hover:shadow-xl hover:shadow-lime-500/15 transition-all duration-300 flex flex-col justify-between space-y-3 group cursor-pointer relative overflow-hidden">
+                <div onclick="openDmPurchase('dm-greenhouse-2026')" class="h-full p-4 sm:p-5 rounded-2xl pg-surface-2 border pg-border-ok pg-hover transition-all duration-300 flex flex-col justify-between space-y-3 group cursor-pointer relative overflow-hidden">
                   <div class="space-y-2">
                     <div class="flex items-center justify-between">
                       <div class="flex items-center gap-1.5">
-                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-lime-500/20 text-lime-300 border border-lime-500/40 font-bold">設施溫室・315/hr</span>
+                        <span class="ad-pill ad-pill--ok">設施溫室・315/hr</span>
                       </div>
-                      <span class="text-[10px] text-slate-400 font-mono">桃園八德/雲林西螺</span>
+                      <span class="text-[10px] ad-text-2 font-mono">桃園八德/雲林西螺</span>
                     </div>
-                    <h4 class="font-extrabold text-white text-base group-hover:text-lime-300 transition">八德設施有機溫室 120 工時包</h4>
-                    <p class="text-xs text-slate-300 leading-relaxed">6位常駐工班出勤4天・365天穩定班底・定植採收分級・供全聯學校午餐零脫班。</p>
-                    <div class="grid grid-cols-2 gap-1 pt-1.5 text-[11px] text-slate-300">
-                      <span class="flex items-center gap-1"><span class="text-lime-400">✔</span> 固定班底免天天培訓</span>
-                      <span class="flex items-center gap-1"><span class="text-lime-400">✔</span> 符合有機衛生防護</span>
-                      <span class="flex items-center gap-1"><span class="text-lime-400">✔</span> 15°C採後預冷截切</span>
-                      <span class="flex items-center gap-1"><span class="text-lime-400">✔</span> 月結發票完整抵稅</span>
+                    <h4 class="font-extrabold pg-text text-base transition">八德設施有機溫室 120 工時包</h4>
+                    <p class="text-xs pg-text leading-relaxed">6位常駐工班出勤4天・365天穩定班底・定植採收分級・供全聯學校午餐零脫班。</p>
+                    <div class="grid grid-cols-2 gap-1 pt-1.5 text-[11px] pg-text">
+                      <span class="flex items-center gap-1"><span class="pg-ok">✔</span> 固定班底免天天培訓</span>
+                      <span class="flex items-center gap-1"><span class="pg-ok">✔</span> 符合有機衛生防護</span>
+                      <span class="flex items-center gap-1"><span class="pg-ok">✔</span> 15°C採後預冷截切</span>
+                      <span class="flex items-center gap-1"><span class="pg-ok">✔</span> 月結發票完整抵稅</span>
                     </div>
                   </div>
-                  <div class="pt-3 border-t border-slate-700/70">
+                  <div class="pt-3 border-t pg-border">
                     <div class="flex items-end justify-between mb-2.5">
                       <div>
-                        <span class="text-[10px] text-slate-400 block">120 工時 × NT$ 315</span>
-                        <span class="text-amber-400 font-black font-mono text-base sm:text-lg">NT$ 37,800</span>
+                        <span class="text-[10px] ad-text-2 block">120 工時 × NT$ 315</span>
+                        <span class="pg-warn font-black font-mono text-base sm:text-lg">NT$ 37,800</span>
                       </div>
                       <div class="text-right">
-                        <span class="text-[10px] text-slate-400 block">今日鎖單預付 20%</span>
-                        <span class="text-xs font-bold text-lime-400 font-mono">定金 NT$ 7,560</span>
+                        <span class="text-[10px] ad-text-2 block">今日鎖單預付 20%</span>
+                        <span class="text-xs font-bold pg-ok font-mono">定金 NT$ 7,560</span>
                       </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2" onclick="event.stopPropagation()">
-                      <button type="button" onclick="openDmPurchase('dm-greenhouse-2026')" class="w-full py-2 px-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-1 cursor-pointer">
+                      <button type="button" onclick="openDmPurchase('dm-greenhouse-2026')" class="ad-btn ad-btn--accent ad-btn--sm ad-btn--block">
                         點擊購買
                       </button>
-                      <a href="brochure.html?id=dm-greenhouse-2026" class="w-full py-2 px-2 rounded-xl bg-slate-700/70 hover:bg-slate-700 text-slate-200 border border-slate-600/80 font-bold text-xs transition flex items-center justify-center gap-1">
+                      <a href="brochure.html?id=dm-greenhouse-2026" class="ad-btn ad-btn--secondary ad-btn--sm ad-btn--block">
                         看完整 DM
                       </a>
                     </div>
@@ -214,39 +247,39 @@
 
               <!-- Slide 3: 機耕 -->
               <div class="w-full md:w-1/2 xl:w-1/3 shrink-0 p-2">
-                <div onclick="openDmPurchase('dm-drone-2026')" class="h-full p-4 sm:p-5 rounded-2xl bg-slate-800/85 hover:bg-slate-800 border border-indigo-500/40 hover:border-indigo-400 hover:shadow-xl hover:shadow-indigo-500/15 transition-all duration-300 flex flex-col justify-between space-y-3 group cursor-pointer relative overflow-hidden">
+                <div onclick="openDmPurchase('dm-drone-2026')" class="h-full p-4 sm:p-5 rounded-2xl pg-surface-2 border pg-border-ok pg-hover transition-all duration-300 flex flex-col justify-between space-y-3 group cursor-pointer relative overflow-hidden">
                   <div class="space-y-2">
                     <div class="flex items-center justify-between">
                       <div class="flex items-center gap-1.5">
-                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold">智慧機耕 88 折</span>
+                        <span class="ad-pill ad-pill--ok">智慧機耕 88 折</span>
                       </div>
-                      <span class="text-[10px] text-slate-400 font-mono">嘉南平原/雲嘉南</span>
+                      <span class="text-[10px] ad-text-2 font-mono">嘉南平原/雲嘉南</span>
                     </div>
-                    <h4 class="font-extrabold text-white text-base group-hover:text-indigo-300 transition">T50 無人機與機耕深耕包</h4>
-                    <p class="text-xs text-slate-300 leading-relaxed">大疆T50植保無人機 ╳ 久保田80hp曳引機・雙飛手專業證照・附飛行航跡圖資。</p>
-                    <div class="grid grid-cols-2 gap-1 pt-1.5 text-[11px] text-slate-300">
-                      <span class="flex items-center gap-1"><span class="text-indigo-400">✔</span> RTK公分級精準避障</span>
-                      <span class="flex items-center gap-1"><span class="text-indigo-400">✔</span> 雙超音波大噴量</span>
-                      <span class="flex items-center gap-1"><span class="text-indigo-400">✔</span> 附民航局完整航跡</span>
-                      <span class="flex items-center gap-1"><span class="text-indigo-400">✔</span> 代噴良率達標保證</span>
+                    <h4 class="font-extrabold pg-text text-base transition">T50 無人機與機耕深耕包</h4>
+                    <p class="text-xs pg-text leading-relaxed">大疆T50植保無人機 ╳ 久保田80hp曳引機・雙飛手專業證照・附飛行航跡圖資。</p>
+                    <div class="grid grid-cols-2 gap-1 pt-1.5 text-[11px] pg-text">
+                      <span class="flex items-center gap-1"><span class="pg-ok">✔</span> RTK公分級精準避障</span>
+                      <span class="flex items-center gap-1"><span class="pg-ok">✔</span> 雙超音波大噴量</span>
+                      <span class="flex items-center gap-1"><span class="pg-ok">✔</span> 附民航局完整航跡</span>
+                      <span class="flex items-center gap-1"><span class="pg-ok">✔</span> 代噴良率達標保證</span>
                     </div>
                   </div>
-                  <div class="pt-3 border-t border-slate-700/70">
+                  <div class="pt-3 border-t pg-border">
                     <div class="flex items-end justify-between mb-2.5">
                       <div>
-                        <span class="text-[10px] text-slate-400 block line-through">原價 NT$ 28,800</span>
-                        <span class="text-amber-400 font-black font-mono text-base sm:text-lg">NT$ 25,200</span>
+                        <span class="text-[10px] ad-text-2 block line-through">原價 NT$ 28,800</span>
+                        <span class="pg-warn font-black font-mono text-base sm:text-lg">NT$ 25,200</span>
                       </div>
                       <div class="text-right">
-                        <span class="text-[10px] text-slate-400 block">今日鎖單預付 20%</span>
-                        <span class="text-xs font-bold text-indigo-400 font-mono">定金 NT$ 5,040</span>
+                        <span class="text-[10px] ad-text-2 block">今日鎖單預付 20%</span>
+                        <span class="text-xs font-bold pg-ok font-mono">定金 NT$ 5,040</span>
                       </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2" onclick="event.stopPropagation()">
-                      <button type="button" onclick="openDmPurchase('dm-drone-2026')" class="w-full py-2 px-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-1 cursor-pointer">
+                      <button type="button" onclick="openDmPurchase('dm-drone-2026')" class="ad-btn ad-btn--accent ad-btn--sm ad-btn--block">
                         點擊購買
                       </button>
-                      <a href="brochure.html?id=dm-drone-2026" class="w-full py-2 px-2 rounded-xl bg-slate-700/70 hover:bg-slate-700 text-slate-200 border border-slate-600/80 font-bold text-xs transition flex items-center justify-center gap-1">
+                      <a href="brochure.html?id=dm-drone-2026" class="ad-btn ad-btn--secondary ad-btn--sm ad-btn--block">
                         看完整 DM
                       </a>
                     </div>
@@ -256,39 +289,39 @@
 
               <!-- Slide 4: 冷鏈 -->
               <div class="w-full md:w-1/2 xl:w-1/3 shrink-0 p-2">
-                <div onclick="openDmPurchase('dm-coldchain-2026')" class="h-full p-4 sm:p-5 rounded-2xl bg-slate-800/85 hover:bg-slate-800 border border-cyan-500/40 hover:border-cyan-400 hover:shadow-xl hover:shadow-cyan-500/15 transition-all duration-300 flex flex-col justify-between space-y-3 group cursor-pointer relative overflow-hidden">
+                <div onclick="openDmPurchase('dm-coldchain-2026')" class="h-full p-4 sm:p-5 rounded-2xl pg-surface-2 border pg-border-ok pg-hover transition-all duration-300 flex flex-col justify-between space-y-3 group cursor-pointer relative overflow-hidden">
                   <div class="space-y-2">
                     <div class="flex items-center justify-between">
                       <div class="flex items-center gap-1.5">
-                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold">冷鏈防汛・315/hr</span>
+                        <span class="ad-pill ad-pill--ok">冷鏈防汛・315/hr</span>
                       </div>
-                      <span class="text-[10px] text-slate-400 font-mono">高雄旗山/屏東高樹</span>
+                      <span class="text-[10px] ad-text-2 font-mono">高雄旗山/屏東高樹</span>
                     </div>
-                    <h4 class="font-extrabold text-white text-base group-hover:text-cyan-300 transition">旗山高樹採後冷鏈 80 工時包</h4>
-                    <p class="text-xs text-slate-300 leading-relaxed">4位冷鏈技術工・鳳梨香蕉防颱搶收 24H 快速馳援・差壓預冷急速降溫出口不爛果。</p>
-                    <div class="grid grid-cols-2 gap-1 pt-1.5 text-[11px] text-slate-300">
-                      <span class="flex items-center gap-1"><span class="text-cyan-400">✔</span> 防颱防汛24H馳援</span>
-                      <span class="flex items-center gap-1"><span class="text-cyan-400">✔</span> 差壓預冷急速降溫</span>
-                      <span class="flex items-center gap-1"><span class="text-cyan-400">✔</span> 日韓外銷標準包裝</span>
-                      <span class="flex items-center gap-1"><span class="text-cyan-400">✔</span> 保證出工無懼風雨</span>
+                    <h4 class="font-extrabold pg-text text-base transition">旗山高樹採後冷鏈 80 工時包</h4>
+                    <p class="text-xs pg-text leading-relaxed">4位冷鏈技術工・鳳梨香蕉防颱搶收 24H 快速馳援・差壓預冷急速降溫出口不爛果。</p>
+                    <div class="grid grid-cols-2 gap-1 pt-1.5 text-[11px] pg-text">
+                      <span class="flex items-center gap-1"><span class="pg-ok">✔</span> 防颱防汛24H馳援</span>
+                      <span class="flex items-center gap-1"><span class="pg-ok">✔</span> 差壓預冷急速降溫</span>
+                      <span class="flex items-center gap-1"><span class="pg-ok">✔</span> 日韓外銷標準包裝</span>
+                      <span class="flex items-center gap-1"><span class="pg-ok">✔</span> 保證出工無懼風雨</span>
                     </div>
                   </div>
-                  <div class="pt-3 border-t border-slate-700/70">
+                  <div class="pt-3 border-t pg-border">
                     <div class="flex items-end justify-between mb-2.5">
                       <div>
-                        <span class="text-[10px] text-slate-400 block">80 工時 × NT$ 315</span>
-                        <span class="text-amber-400 font-black font-mono text-base sm:text-lg">NT$ 25,200</span>
+                        <span class="text-[10px] ad-text-2 block">80 工時 × NT$ 315</span>
+                        <span class="pg-warn font-black font-mono text-base sm:text-lg">NT$ 25,200</span>
                       </div>
                       <div class="text-right">
-                        <span class="text-[10px] text-slate-400 block">今日鎖單預付 20%</span>
-                        <span class="text-xs font-bold text-cyan-400 font-mono">定金 NT$ 5,040</span>
+                        <span class="text-[10px] ad-text-2 block">今日鎖單預付 20%</span>
+                        <span class="text-xs font-bold pg-ok font-mono">定金 NT$ 5,040</span>
                       </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2" onclick="event.stopPropagation()">
-                      <button type="button" onclick="openDmPurchase('dm-coldchain-2026')" class="w-full py-2 px-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-1 cursor-pointer">
+                      <button type="button" onclick="openDmPurchase('dm-coldchain-2026')" class="ad-btn ad-btn--accent ad-btn--sm ad-btn--block">
                         點擊購買
                       </button>
-                      <a href="brochure.html?id=dm-coldchain-2026" class="w-full py-2 px-2 rounded-xl bg-slate-700/70 hover:bg-slate-700 text-slate-200 border border-slate-600/80 font-bold text-xs transition flex items-center justify-center gap-1">
+                      <a href="brochure.html?id=dm-coldchain-2026" class="ad-btn ad-btn--secondary ad-btn--sm ad-btn--block">
                         看完整 DM
                       </a>
                     </div>
@@ -300,13 +333,13 @@
           </div>
 
           <!-- Bottom Assurance Bar -->
-          <div class="flex flex-wrap items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/80 gap-2">
+          <div class="flex flex-wrap items-center justify-between text-xs ad-text-2 pt-2 border-t pg-border gap-2">
             <div class="flex items-center gap-2">
-              <span class="text-emerald-400 font-bold flex items-center gap-1">點擊任一卡片或「購買」鈕立即開啟快速下單結帳</span>
-              <span class="text-slate-600 hidden sm:inline">•</span>
-              <span class="text-slate-400 hidden sm:inline">可直接自動轉入下方派工表單預填</span>
+              <span class="pg-ok font-bold flex items-center gap-1">點擊任一卡片或「購買」鈕立即開啟快速下單結帳</span>
+              <span class="ad-text-3 hidden sm:inline">•</span>
+              <span class="ad-text-2 hidden sm:inline">可直接自動轉入下方派工表單預填</span>
             </div>
-            <div class="text-[11px] text-slate-500">
+            <div class="text-[11px] ad-text-3">
               全台外展依法調度 ╳ 預付 20% 定金 ╳ 違約加倍賠償承諾
             </div>
           </div>
@@ -316,25 +349,25 @@
 
       <!-- Key Trust Metrics -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto pt-12 text-left">
-        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <span class="text-xs text-slate-400 block">私聘黑工違法風險</span>
-          <span class="text-xl font-extrabold text-red-400">0 罰款</span>
-          <p class="text-[11px] text-slate-500 mt-1">合作社依法投保</p>
+        <div class="ad-stat ad-stat--danger">
+          <div class="ad-stat__label">私聘黑工違法風險</div>
+          <div class="ad-stat__value">0 罰款</div>
+          <p class="ad-caption" style="margin-top: 4px;">合作社依法投保</p>
         </div>
-        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <span class="text-xs text-slate-400 block">產季早鳥工時包</span>
-          <span class="text-xl font-extrabold text-amber-400">鎖定名額</span>
-          <p class="text-[11px] text-slate-500 mt-1">315 元/hr 不打折・20% 定金優先排班</p>
+        <div class="ad-stat ad-stat--accent">
+          <div class="ad-stat__label">產季早鳥工時包</div>
+          <div class="ad-stat__value">鎖定名額</div>
+          <p class="ad-caption" style="margin-top: 4px;">315 元/hr 不打折・20% 定金優先排班</p>
         </div>
-        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <span class="text-xs text-slate-400 block">天候突發暴雨避險</span>
-          <span class="text-xl font-extrabold text-emerald-400">100% 出勤</span>
-          <p class="text-[11px] text-slate-500 mt-1">自動改派室內蔬果冷鏈包裝線</p>
+        <div class="ad-stat ad-stat--primary">
+          <div class="ad-stat__label">天候突發暴雨避險</div>
+          <div class="ad-stat__value">100% 出勤</div>
+          <p class="ad-caption" style="margin-top: 4px;">自動改派室內蔬果冷鏈包裝線</p>
         </div>
-        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <span class="text-xs text-slate-400 block">政府中央就業獎勵</span>
-          <span class="text-xl font-extrabold text-blue-400">+ 8,800/月</span>
-          <p class="text-[11px] text-slate-500 mt-1">農業人力團補貼大幅引流招募</p>
+        <div class="ad-stat ad-stat--primary">
+          <div class="ad-stat__label">政府中央就業獎勵</div>
+          <div class="ad-stat__value">+ 8,800/月</div>
+          <p class="ad-caption" style="margin-top: 4px;">農業人力團補貼大幅引流招募</p>
         </div>
       </div>
 
@@ -342,50 +375,50 @@
   </section>
 
   <!-- Section 1: Three Core Pain Points & Solutions -->
-  <section id="solutions" class="py-20 border-b border-slate-900 bg-slate-900/40">
+  <section id="solutions" class="pg-band py-20 border-b pg-border">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
       <div class="text-center max-w-2xl mx-auto space-y-3">
-        <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">打破產業沉痾</span>
-        <h2 class="text-3xl sm:text-4xl font-black text-white">台灣農業派工的三大痛點與解法</h2>
+        <span class="text-xs font-bold uppercase tracking-wider pg-ok">打破產業沉痾</span>
+        <h2 class="text-3xl sm:text-4xl font-black pg-text">台灣農業派工的三大痛點與解法</h2>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <!-- Card 1 -->
-        <div class="p-8 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4 hover:border-emerald-500/50 transition">
-          <div class="w-12 h-12 rounded-2xl bg-slate-800 text-slate-300 flex items-center justify-center text-xl font-bold">1</div>
-          <h3 class="text-xl font-bold text-white">痛點一：私僱黑工面臨 75 萬重罰</h3>
-          <p class="text-sm text-slate-400 leading-relaxed">
+        <div class="p-8 rounded-3xl pg-surface border pg-border space-y-4 pg-hover transition">
+          <div class="ad-icon-box ad-icon-box--neutral text-xl font-bold">1</div>
+          <h3 class="text-xl font-bold pg-text">痛點一：私僱黑工面臨 75 萬重罰</h3>
+          <p class="text-sm ad-text-2 leading-relaxed">
             農忙找不到工，不少農民冒險任用地下販仔或逃逸移工，遭勞工局查獲每案重罰 15～75 萬元，甚至面臨刑事起訴。
           </p>
-          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-emerald-400 font-semibold space-y-1">
+          <div class="p-4 rounded-xl pg-inset text-xs pg-ok font-semibold space-y-1">
             <strong>智農解法：</strong>
-            <p class="text-slate-300 font-normal">成立「外展農業合作社」依法申請外展移工配額，勞健退全保，農友要派安心無憂。</p>
+            <p class="pg-text font-normal">成立「外展農業合作社」依法申請外展移工配額，勞健退全保，農友要派安心無憂。</p>
           </div>
         </div>
 
         <!-- Card 2 -->
-        <div class="p-8 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4 hover:border-emerald-500/50 transition">
-          <div class="w-12 h-12 rounded-2xl bg-slate-800 text-slate-300 flex items-center justify-center text-xl font-bold">2</div>
-          <h3 class="text-xl font-bold text-white">痛點二：梅雨降雨移工閒置底薪赤字</h3>
-          <p class="text-sm text-slate-400 leading-relaxed">
+        <div class="p-8 rounded-3xl pg-surface border pg-border space-y-4 pg-hover transition">
+          <div class="ad-icon-box ad-icon-box--neutral text-xl font-bold">2</div>
+          <h3 class="text-xl font-bold pg-text">痛點二：梅雨降雨移工閒置底薪赤字</h3>
+          <p class="text-sm ad-text-2 leading-relaxed">
             傳統雇主僱用外展移工需支付按月基本工資，遇到雨季連日無法下田，造成嚴重空轉赤字。
           </p>
-          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-emerald-400 font-semibold space-y-1">
+          <div class="p-4 rounded-xl pg-inset text-xs pg-ok font-semibold space-y-1">
             <strong>智農解法：</strong>
-            <p class="text-slate-300 font-normal">雨天啟動演算法天候避險，即時轉派室內蔬果冷鏈預冷包裝線，維持 100% 出勤率。</p>
+            <p class="pg-text font-normal">雨天啟動演算法天候避險，即時轉派室內蔬果冷鏈預冷包裝線，維持 100% 出勤率。</p>
           </div>
         </div>
 
         <!-- Card 3 -->
-        <div class="p-8 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4 hover:border-emerald-500/50 transition">
-          <div class="w-12 h-12 rounded-2xl bg-slate-800 text-slate-300 flex items-center justify-center text-xl font-bold">3</div>
-          <h3 class="text-xl font-bold text-white">痛點三：旺季搶工撞期・被加價截工</h3>
-          <p class="text-sm text-slate-400 leading-relaxed">
+        <div class="p-8 rounded-3xl pg-surface border pg-border space-y-4 pg-hover transition">
+          <div class="ad-icon-box ad-icon-box--neutral text-xl font-bold">3</div>
+          <h3 class="text-xl font-bold pg-text">痛點三：旺季搶工撞期・被加價截工</h3>
+          <p class="text-sm ad-text-2 leading-relaxed">
             產季集中時工頭常被鄰近農場加價放鳥，造成熟果過熟腐爛，損失慘重。
           </p>
-          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-emerald-400 font-semibold space-y-1">
+          <div class="p-4 rounded-xl pg-inset text-xs pg-ok font-semibold space-y-1">
             <strong>智農解法：</strong>
-            <p class="text-slate-300 font-normal">產季前推出「早鳥保證工時包」，每小時 315 元不打折，20% 定金鎖定產季名額、優先排班，遲到免單、放鳥雙倍賠。</p>
+            <p class="pg-text font-normal">產季前推出「早鳥保證工時包」，每小時 315 元不打折，20% 定金鎖定產季名額、優先排班，遲到免單、放鳥雙倍賠。</p>
           </div>
         </div>
       </div>
@@ -393,56 +426,56 @@
   </section>
 
   <!-- Section 2: Dual-Track Architecture -->
-  <section id="dual-track" class="py-20 border-b border-slate-900">
+  <section id="dual-track" class="py-20 border-b pg-border">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
       <div class="text-center max-w-3xl mx-auto space-y-3">
-        <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">合規商業護城河</span>
-        <h2 class="text-3xl sm:text-4xl font-black text-white">民營科技公司 ╳ 外展農業合作社「雙軌架構」</h2>
-        <p class="text-slate-400 text-sm">兼顧法規外展要求與創業者實質商業控制權，打造不可撼動的法律與運營護城河</p>
+        <span class="text-xs font-bold uppercase tracking-wider pg-ok">合規商業護城河</span>
+        <h2 class="text-3xl sm:text-4xl font-black pg-text">民營科技公司 ╳ 外展農業合作社「雙軌架構」</h2>
+        <p class="ad-text-2 text-sm">兼顧法規外展要求與創業者實質商業控制權，打造不可撼動的法律與運營護城河</p>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-        <div class="p-8 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-6">
+        <div class="p-8 rounded-3xl pg-surface border pg-border space-y-6">
           <div class="flex items-center gap-3">
             <div>
-              <h3 class="text-xl font-bold text-white">有限責任智農農業勞務生產合作社</h3>
-              <span class="text-xs text-emerald-400 font-medium">外展法人主體・合法外展機構</span>
+              <h3 class="text-xl font-bold pg-text">有限責任智農農業勞務生產合作社</h3>
+              <span class="text-xs pg-ok font-medium">外展法人主體・合法外展機構</span>
             </div>
           </div>
-          <ul class="space-y-3 text-sm text-slate-300">
+          <ul class="space-y-3 text-sm pg-text">
             <li class="flex items-start gap-2.5">
-              <span class="text-emerald-400 mt-1">✓</span>
+              <span class="pg-ok mt-1">✓</span>
               <span>依據農業部《外展農務試辦計畫》具備法定雇主身分，合法申請藍領移工配額。</span>
             </li>
             <li class="flex items-start gap-2.5">
-              <span class="text-emerald-400 mt-1">✓</span>
+              <span class="pg-ok mt-1">✓</span>
               <span>負責為移工依法投保勞工保險、全民健康保險與職災保險，開立合法扣抵發票。</span>
             </li>
             <li class="flex items-start gap-2.5">
-              <span class="text-emerald-400 mt-1">✓</span>
+              <span class="pg-ok mt-1">✓</span>
               <span>申領中央農業人力團每人每月最高 NT$ 8,800 就業獎勵金。</span>
             </li>
           </ul>
         </div>
 
-        <div class="p-8 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-6">
+        <div class="p-8 rounded-3xl pg-surface border pg-border space-y-6">
           <div class="flex items-center gap-3">
             <div>
-              <h3 class="text-xl font-bold text-white">智農科技有限公司</h3>
-              <span class="text-xs text-brand-400 font-medium">創業者 100% 控股・核心技術代管</span>
+              <h3 class="text-xl font-bold pg-text">智農科技有限公司</h3>
+              <span class="text-xs pg-ok font-medium">創業者 100% 控股・核心技術代管</span>
             </div>
           </div>
-          <ul class="space-y-3 text-sm text-slate-300">
+          <ul class="space-y-3 text-sm pg-text">
             <li class="flex items-start gap-2.5">
-              <span class="text-brand-400 mt-1">✓</span>
+              <span class="pg-ok mt-1">✓</span>
               <span>擁有自研派工演算法、跨縣市調度大腦、三語人機介面與私域合規人才庫之 100% 智慧財產權。</span>
             </li>
             <li class="flex items-start gap-2.5">
-              <span class="text-brand-400 mt-1">✓</span>
+              <span class="pg-ok mt-1">✓</span>
               <span>與合作社簽訂 5 年排他獨家《營運委託暨技術代管協議》，收取合理系統授權費與調度服務費。</span>
             </li>
             <li class="flex items-start gap-2.5">
-              <span class="text-brand-400 mt-1">✓</span>
+              <span class="pg-ok mt-1">✓</span>
               <span>掌控核心客源與大數據，確保創業者控制權與高毛利留存。</span>
             </li>
           </ul>
@@ -452,14 +485,14 @@
   </section>
 
   <!-- Section 2.5: 6 Standard Dispatch Categories & Custom Field Sub-Foreman -->
-  <section id="categories" class="py-20 border-b border-slate-900 bg-slate-900/80">
+  <section id="categories" class="pg-band py-20 border-b pg-border">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
       <div class="text-center max-w-3xl mx-auto space-y-3">
-        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+        <div class="ad-pill ad-pill--ok pg-wrap">
           農場主多元派工服務 ╳ 現場帶隊精準對接
         </div>
-        <h2 class="text-3xl sm:text-4xl font-black text-white">六大標準農事派工類別 ╳ 自訂現場派工小工頭</h2>
-        <p class="text-slate-400 text-sm leading-relaxed">
+        <h2 class="text-3xl sm:text-4xl font-black pg-text">六大標準農事派工類別 ╳ 自訂現場派工小工頭</h2>
+        <p class="ad-text-2 text-sm leading-relaxed">
           針對台灣現代精緻農業、機耕代耕、無人機植保與天候緊急搶收，提供 6 大標準化派工服務。農場主可自由指派現場小工頭或班長，外展移工進場立即無縫帶工！
         </p>
       </div>
@@ -467,114 +500,114 @@
       <!-- 6 Categories Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <!-- Cat 1 -->
-        <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 transition space-y-4 shadow-xl">
+        <div class="p-6 rounded-3xl pg-surface border pg-border pg-hover transition space-y-4">
           <div class="flex items-center justify-between">
-            <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">工班 A/B 熟手採收</span>
+            <span class="ad-pill ad-pill--ok">工班 A/B 熟手採收</span>
           </div>
-          <h3 class="text-lg font-extrabold text-white">【採收分級】田間採收與外銷分級</h3>
-          <p class="text-xs text-slate-400 leading-relaxed">
+          <h3 class="text-lg font-extrabold pg-text">【採收分級】田間採收與外銷分級</h3>
+          <p class="text-xs ad-text-2 leading-relaxed">
             專門針對有機溫室葉菜、洋香瓜、高接梨與青蔥。熟手採摘、修剪老葉、精細分級、外銷規格貼標裝箱。
           </p>
-          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
-            <span class="text-slate-400">計費牌價：</span>
-            <span class="text-emerald-400 font-bold font-mono">早鳥 $315/hr (鎖定名額・優先排班)</span>
+          <div class="p-3 rounded-xl pg-inset text-[11px] pg-text flex items-center justify-between">
+            <span class="ad-text-2">計費牌價：</span>
+            <span class="pg-ok font-bold font-mono">早鳥 $315/hr (鎖定名額・優先排班)</span>
           </div>
         </div>
 
         <!-- Cat 2 -->
-        <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 transition space-y-4 shadow-xl">
+        <div class="p-6 rounded-3xl pg-surface border pg-border pg-hover transition space-y-4">
           <div class="flex items-center justify-between">
-            <span class="text-xs px-2.5 py-1 rounded-full bg-lime-500/20 text-lime-300 font-semibold border border-lime-500/30">工班 C 組 (機耕隊)</span>
+            <span class="ad-pill ad-pill--ok">工班 C 組 (機耕隊)</span>
           </div>
-          <h3 class="text-lg font-extrabold text-white">【整地種植】曳引機深耕與定植</h3>
-          <p class="text-xs text-slate-400 leading-relaxed">
+          <h3 class="text-lg font-extrabold pg-text">【整地種植】曳引機深耕與定植</h3>
+          <p class="text-xs ad-text-2 leading-relaxed">
             配置 80 馬力大型曳引機翻耕、作畦、雷射整平、乘坐式插秧機、蔬菜穴盤苗機械定植與鋪設滴灌管路。
           </p>
-          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
-            <span class="text-slate-400">計費牌價：</span>
-            <span class="text-lime-400 font-bold font-mono">專業機耕牌價 ($310/hr)</span>
+          <div class="p-3 rounded-xl pg-inset text-[11px] pg-text flex items-center justify-between">
+            <span class="ad-text-2">計費牌價：</span>
+            <span class="pg-ok font-bold font-mono">專業機耕牌價 ($310/hr)</span>
           </div>
         </div>
 
         <!-- Cat 3 -->
-        <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 transition space-y-4 shadow-xl">
+        <div class="p-6 rounded-3xl pg-surface border pg-border pg-hover transition space-y-4">
           <div class="flex items-center justify-between">
-            <span class="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30">工班 B 組 (跨區專線)</span>
+            <span class="ad-pill ad-pill--warn">工班 B 組 (跨區專線)</span>
           </div>
-          <h3 class="text-lg font-extrabold text-white">【田間管理】修枝疏果與引蔓套袋</h3>
-          <p class="text-xs text-slate-400 leading-relaxed">
+          <h3 class="text-lg font-extrabold pg-text">【田間管理】修枝疏果與引蔓套袋</h3>
+          <p class="text-xs ad-text-2 leading-relaxed">
             果樹疏花疏果、夏季強剪、立架引蔓綁枝、防菌防蟲果實套袋、落果清除與雜草割除管理。
           </p>
-          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
-            <span class="text-slate-400">計費牌價：</span>
-            <span class="text-amber-400 font-bold font-mono">熟手技術工時牌價</span>
+          <div class="p-3 rounded-xl pg-inset text-[11px] pg-text flex items-center justify-between">
+            <span class="ad-text-2">計費牌價：</span>
+            <span class="pg-warn font-bold font-mono">熟手技術工時牌價</span>
           </div>
         </div>
 
         <!-- Cat 4 -->
-        <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 transition space-y-4 shadow-xl">
+        <div class="p-6 rounded-3xl pg-surface border pg-border pg-hover transition space-y-4">
           <div class="flex items-center justify-between">
-            <span class="text-xs px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-300 font-semibold border border-purple-500/30">工班 C 組 (大疆 T50)</span>
+            <span class="ad-pill ad-pill--ok">工班 C 組 (大疆 T50)</span>
           </div>
-          <h3 class="text-lg font-extrabold text-white">【科技植保】無人機精準噴藥施肥</h3>
-          <p class="text-xs text-slate-400 leading-relaxed">
+          <h3 class="text-lg font-extrabold pg-text">【科技植保】無人機精準噴藥施肥</h3>
+          <p class="text-xs ad-text-2 leading-relaxed">
             民航局持證飛手操作大疆 T50 植保機，全區 RTK/GPS 航線規劃，精準代噴病蟲害防治藥劑與微量液態葉面肥。
           </p>
-          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
-            <span class="text-slate-400">計費牌價：</span>
-            <span class="text-purple-400 font-bold font-mono">專案代噴 ($800/公頃)</span>
+          <div class="p-3 rounded-xl pg-inset text-[11px] pg-text flex items-center justify-between">
+            <span class="ad-text-2">計費牌價：</span>
+            <span class="pg-ok font-bold font-mono">專案代噴 ($800/公頃)</span>
           </div>
         </div>
 
         <!-- Cat 5 -->
-        <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 transition space-y-4 shadow-xl">
+        <div class="p-6 rounded-3xl pg-surface border pg-border pg-hover transition space-y-4">
           <div class="flex items-center justify-between">
-            <span class="text-xs px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/30">工班 D 組 (冷鏈常態)</span>
+            <span class="ad-pill ad-pill--ok">工班 D 組 (冷鏈常態)</span>
           </div>
-          <h3 class="text-lg font-extrabold text-white">【冷鏈包裝】室內預冷與生鮮截切</h3>
-          <p class="text-xs text-slate-400 leading-relaxed">
+          <h3 class="text-lg font-extrabold pg-text">【冷鏈包裝】室內預冷與生鮮截切</h3>
+          <p class="text-xs ad-text-2 leading-relaxed">
             蔬果採後真空預冷降溫、室內截切清洗、光波選果機精密秤重、氣調保鮮外銷封箱裝櫃，天候不佳零停工。
           </p>
-          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
-            <span class="text-slate-400">計費牌價：</span>
-            <span class="text-cyan-400 font-bold font-mono">天候避險常態專案</span>
+          <div class="p-3 rounded-xl pg-inset text-[11px] pg-text flex items-center justify-between">
+            <span class="ad-text-2">計費牌價：</span>
+            <span class="pg-ok font-bold font-mono">天候避險常態專案</span>
           </div>
         </div>
 
         <!-- Cat 6 -->
-        <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 transition space-y-4 shadow-xl">
+        <div class="p-6 rounded-3xl pg-surface border pg-border pg-hover transition space-y-4">
           <div class="flex items-center justify-between">
-            <span class="text-xs px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-300 font-semibold border border-rose-500/30 animate-pulse">全工班跨區馳援</span>
+            <span class="ad-pill ad-pill--danger">全工班跨區馳援</span>
           </div>
-          <h3 class="text-lg font-extrabold text-white">【緊急救火】防颱搶收 24H 馳援</h3>
-          <p class="text-xs text-slate-400 leading-relaxed">
+          <h3 class="text-lg font-extrabold pg-text">【緊急救火】防颱搶收 24H 馳援</h3>
+          <p class="text-xs ad-text-2 leading-relaxed">
             氣象局發布海上陸上颱風警報時，24 小時快速集結跨區馳援搶收，搭設防風網與排水防澇搶救農產。
           </p>
-          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
-            <span class="text-slate-400">計費牌價：</span>
-            <span class="text-rose-400 font-bold font-mono">緊急搶收加乘 ($360/hr)</span>
+          <div class="p-3 rounded-xl pg-inset text-[11px] pg-text flex items-center justify-between">
+            <span class="ad-text-2">計費牌價：</span>
+            <span class="pg-danger font-bold font-mono">緊急搶收加乘 ($360/hr)</span>
           </div>
         </div>
       </div>
 
       <!-- Field Sub-Foreman Showcase Banner -->
-      <div class="p-8 rounded-3xl bg-slate-900 border border-amber-500/40 shadow-2xl space-y-6">
+      <div class="p-8 rounded-3xl pg-surface border pg-border-warn space-y-6">
         <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div class="space-y-3 max-w-2xl">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold">
+            <div class="ad-pill ad-pill--warn">
               農事現場無縫銜接關鍵
             </div>
-            <h3 class="text-2xl font-black text-white">農場主可自訂「現場派工小工頭」</h3>
-            <p class="text-xs text-slate-300 leading-relaxed">
+            <h3 class="text-2xl font-black pg-text">農場主可自訂「現場派工小工頭」</h3>
+            <p class="text-xs pg-text leading-relaxed">
               解決傳統派遣「工人到了現場不知道找誰、田間指示不清」的痛點。農場主於下單時可自訂指派現場領班、溫室組長或家族成員，並留下直接電話與交辦事項；若本人親自帶工，一鍵即可同步「同農場主本人帶隊」。
             </p>
           </div>
 
           <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-            <a href="farmer-login.html" class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition flex items-center justify-center gap-2">
+            <a href="farmer-login.html" class="ad-btn ad-btn--primary ad-btn--sm">
               農場主立即下單
             </a>
-            <a href="../TechBackend/admin.html" class="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs transition flex items-center justify-center gap-2">
+            <a href="../TechBackend/admin.html" class="ad-btn ad-btn--secondary ad-btn--sm">
               派工總台管理訂單
             </a>
           </div>
@@ -586,15 +619,15 @@
 
 
   <!-- Section 3: Nationwide 52-Week Crop Calendar & Dynamic Dispatch Brain -->
-  <section id="calendar" class="py-20 border-b border-slate-900 bg-slate-900/60">
+  <section id="calendar" class="pg-band py-20 border-b pg-border">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
       <!-- Section Header -->
       <div class="text-center max-w-3xl mx-auto space-y-3">
-        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+        <div class="ad-pill ad-pill--ok pg-wrap">
           全台 52 週動態農產曆 ╳ 跨產區平滑化輪轉大腦
         </div>
-        <h2 class="text-3xl sm:text-4xl font-black text-white">掌握全台 64 處產區時序・達成移工與在地勞工 95% 全年在工率</h2>
-        <p class="text-slate-400 text-sm leading-relaxed">
+        <h2 class="text-3xl sm:text-4xl font-black pg-text">掌握全台 64 處產區時序・達成移工與在地勞工 95% 全年在工率</h2>
+        <p class="ad-text-2 text-sm leading-relaxed">
           徹底打破傳統外展「產季結束移工在宿舍吃老本」的虧損困境。依據台灣緯度與海拔氣候梯隊，從冬春蜜棗草莓、初夏芒果玉荷包、盛夏梨桃文旦，到秋冬冬茶柿餅，打造無縫接力的派遣調度大腦。
         </p>
       </div>
@@ -602,87 +635,87 @@
       <!-- Quarter Metrics Banner -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Q1 -->
-        <div onclick="selectQuarter('Q1')" id="qcard-Q1" class="cursor-pointer p-5 rounded-2xl bg-slate-900/90 border border-emerald-500/40 shadow-lg hover:border-emerald-400 transition space-y-3">
+        <div onclick="selectQuarter('Q1')" id="qcard-Q1" class="pg-qcard is-active cursor-pointer p-5 rounded-2xl transition space-y-3">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Q1 (1~3月)</span>
-            <span class="font-mono text-xs text-emerald-400 font-extrabold">出工率 92.0%</span>
+            <span class="ad-pill ad-pill--ok">Q1 (1~3月)</span>
+            <span class="font-mono text-xs pg-ok font-extrabold">出工率 92.0%</span>
           </div>
-          <h4 class="font-black text-white text-base">冬春高價蔬果與春節檔</h4>
-          <p class="text-xs text-slate-400">燕巢蜜棗、大湖草莓、枋寮蓮霧、車城洋蔥、關廟鳳梨。南部旱季氣候宜人。</p>
-          <div class="text-[11px] text-emerald-400/80 font-medium">投入：工班 B 組 (跨區專線) + A 組</div>
+          <h4 class="font-black pg-text text-base">冬春高價蔬果與春節檔</h4>
+          <p class="text-xs ad-text-2">燕巢蜜棗、大湖草莓、枋寮蓮霧、車城洋蔥、關廟鳳梨。南部旱季氣候宜人。</p>
+          <div class="text-[11px] pg-ok font-medium">投入：工班 B 組 (跨區專線) + A 組</div>
         </div>
 
         <!-- Q2 -->
-        <div onclick="selectQuarter('Q2')" id="qcard-Q2" class="cursor-pointer p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-emerald-400 transition space-y-3">
+        <div onclick="selectQuarter('Q2')" id="qcard-Q2" class="pg-qcard cursor-pointer p-5 rounded-2xl transition space-y-3">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">Q2 (4~6月)</span>
-            <span class="font-mono text-xs text-amber-400 font-extrabold">出工率 98.5%</span>
+            <span class="ad-pill ad-pill--warn">Q2 (4~6月)</span>
+            <span class="font-mono text-xs pg-warn font-extrabold">出工率 98.5%</span>
           </div>
-          <h4 class="font-black text-white text-base">春茶、玉荷包與芒果爆發</h4>
-          <p class="text-xs text-slate-400">高山春茶搶收、枋山愛文芒果日韓外銷、大樹玉荷包荔枝 3 週黃金搶收。</p>
-          <div class="text-[11px] text-amber-400/80 font-medium">投入：全體工班 100% 滿載 + C 組代噴</div>
+          <h4 class="font-black pg-text text-base">春茶、玉荷包與芒果爆發</h4>
+          <p class="text-xs ad-text-2">高山春茶搶收、枋山愛文芒果日韓外銷、大樹玉荷包荔枝 3 週黃金搶收。</p>
+          <div class="text-[11px] pg-warn font-medium">投入：全體工班 100% 滿載 + C 組代噴</div>
         </div>
 
         <!-- Q3 -->
-        <div onclick="selectQuarter('Q3')" id="qcard-Q3" class="cursor-pointer p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-emerald-400 transition space-y-3">
+        <div onclick="selectQuarter('Q3')" id="qcard-Q3" class="pg-qcard cursor-pointer p-5 rounded-2xl transition space-y-3">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">Q3 (7~9月)</span>
-            <span class="font-mono text-xs text-blue-400 font-extrabold">出工率 94.0%</span>
+            <span class="ad-pill ad-pill--ok">Q3 (7~9月)</span>
+            <span class="font-mono text-xs pg-ok font-extrabold">出工率 94.0%</span>
           </div>
-          <h4 class="font-black text-white text-base">盛夏梨桃與文旦柚中秋搶收</h4>
-          <p class="text-xs text-slate-400">東勢高接梨、拉拉山水蜜桃、麻豆老欉文旦白露前搶收、花東金針花海。</p>
-          <div class="text-[11px] text-blue-400/80 font-medium">投入：工班 B 組 + D 組冷鏈避險線</div>
+          <h4 class="font-black pg-text text-base">盛夏梨桃與文旦柚中秋搶收</h4>
+          <p class="text-xs ad-text-2">東勢高接梨、拉拉山水蜜桃、麻豆老欉文旦白露前搶收、花東金針花海。</p>
+          <div class="text-[11px] pg-ok font-medium">投入：工班 B 組 + D 組冷鏈避險線</div>
         </div>
 
         <!-- Q4 -->
-        <div onclick="selectQuarter('Q4')" id="qcard-Q4" class="cursor-pointer p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-emerald-400 transition space-y-3">
+        <div onclick="selectQuarter('Q4')" id="qcard-Q4" class="pg-qcard cursor-pointer p-5 rounded-2xl transition space-y-3">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-300">Q4 (10~12月)</span>
-            <span class="font-mono text-xs text-purple-400 font-extrabold">出工率 95.0%</span>
+            <span class="ad-pill ad-pill--ok">Q4 (10~12月)</span>
+            <span class="font-mono text-xs pg-ok font-extrabold">出工率 95.0%</span>
           </div>
-          <h4 class="font-black text-white text-base">高山冬茶、柿餅與草莓開幕</h4>
-          <p class="text-xs text-slate-400">新埔九降風曬柿餅、高山冬茶、美濃白玉蘿蔔、洋桔梗外銷、大湖草莓開幕。</p>
-          <div class="text-[11px] text-purple-400/80 font-medium">投入：工班 C 組農機 + A/D 組分級包裝</div>
+          <h4 class="font-black pg-text text-base">高山冬茶、柿餅與草莓開幕</h4>
+          <p class="text-xs ad-text-2">新埔九降風曬柿餅、高山冬茶、美濃白玉蘿蔔、洋桔梗外銷、大湖草莓開幕。</p>
+          <div class="text-[11px] pg-ok font-medium">投入：工班 C 組農機 + A/D 組分級包裝</div>
         </div>
       </div>
 
       <!-- Interactive Year & 12-Month Selector & Auto-Cycle Control -->
-      <div class="bg-slate-900/90 p-6 rounded-3xl border border-slate-800 shadow-2xl space-y-6">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div class="pg-surface p-6 rounded-3xl border pg-border space-y-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b pg-border pb-4">
           <div>
             <div class="flex items-center gap-2 flex-wrap">
-              <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              <h3 class="text-lg font-bold pg-text flex items-center gap-2">
                 全台農事產曆動態雷達
               </h3>
               <!-- Real-Time Indicator Badge -->
-              <div id="real-time-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-mono font-bold">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <div id="real-time-badge" class="ad-pill ad-pill--ok font-mono">
+                <span class="ad-pill__dot ad-live"></span>
                 <span>現實時間：</span><span id="real-time-display">2026年9月23日</span>
               </div>
               <!-- Year Selector -->
-              <div class="flex items-center bg-slate-800/90 rounded-xl px-2 py-1 border border-slate-700 text-xs font-mono">
-                <button onclick="changeYear(-1)" class="px-1.5 py-0.5 text-slate-400 hover:text-white transition">◀</button>
-                <span id="current-year-label" class="px-2 text-emerald-400 font-extrabold">2026 年</span>
-                <button onclick="changeYear(1)" class="px-1.5 py-0.5 text-slate-400 hover:text-white transition">▶</button>
+              <div class="flex items-center pg-surface-2 rounded-xl px-2 py-1 border pg-border text-xs font-mono">
+                <button onclick="changeYear(-1)" class="ad-btn ad-btn--ghost ad-btn--sm ad-btn--icon">◀</button>
+                <span id="current-year-label" class="px-2 pg-ok font-extrabold">2026 年</span>
+                <button onclick="changeYear(1)" class="ad-btn ad-btn--ghost ad-btn--sm ad-btn--icon">▶</button>
               </div>
             </div>
-            <p class="text-xs text-slate-400 mt-1">產曆已自動對應目前現實時間，即時推算當季主力作物、調度工班與收穫日倒數</p>
+            <p class="text-xs ad-text-2 mt-1">產曆已自動對應目前現實時間，即時推算當季主力作物、調度工班與收穫日倒數</p>
           </div>
           
           <div class="flex items-center gap-2 flex-wrap">
             <!-- Reset to Current Real Time Button -->
-            <button onclick="resetToRealTime()" class="px-3 py-2 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1.5 shadow">
+            <button onclick="resetToRealTime()" class="ad-btn ad-btn--secondary ad-btn--sm">
               回到目前現實時間
             </button>
             <!-- Auto-Cycle Toggle -->
-            <button id="auto-cycle-btn" onclick="toggleAutoCycle()" class="px-3 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 text-xs font-bold transition flex items-center gap-1.5">
+            <button id="auto-cycle-btn" onclick="toggleAutoCycle()" class="ad-chip gap-1.5">
               <span id="auto-cycle-icon" class="inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg></span>
               <span id="auto-cycle-text">啟動自動輪播</span>
             </button>
-            <a href="farmers_map.html" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold transition flex items-center gap-1.5">
+            <a href="farmers_map.html" class="ad-btn ad-btn--secondary ad-btn--sm">
               64 處農會地圖
             </a>
-            <a href="../TechBackend/admin.html" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1.5">
+            <a href="../TechBackend/admin.html" class="ad-btn ad-btn--primary ad-btn--sm">
               進入完整管理後台
             </a>
           </div>
@@ -690,41 +723,41 @@
 
         <!-- Month Pill Buttons -->
         <div class="flex flex-wrap items-center gap-1.5 text-xs">
-          <button onclick="selectMonth(1)" id="mbtn-1" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">1月</button>
-          <button onclick="selectMonth(2)" id="mbtn-2" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">2月</button>
-          <button onclick="selectMonth(3)" id="mbtn-3" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">3月</button>
-          <button onclick="selectMonth(4)" id="mbtn-4" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">4月</button>
-          <button onclick="selectMonth(5)" id="mbtn-5" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">5月</button>
-          <button onclick="selectMonth(6)" id="mbtn-6" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">6月</button>
-          <button onclick="selectMonth(7)" id="mbtn-7" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">7月</button>
-          <button onclick="selectMonth(8)" id="mbtn-8" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">8月</button>
-          <button onclick="selectMonth(9)" id="mbtn-9" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">9月 <span class="text-[10px] text-emerald-400 font-bold">●本月</span></button>
-          <button onclick="selectMonth(10)" id="mbtn-10" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">10月</button>
-          <button onclick="selectMonth(11)" id="mbtn-11" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">11月</button>
-          <button onclick="selectMonth(12)" id="mbtn-12" class="month-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">12月</button>
+          <button onclick="selectMonth(1)" id="mbtn-1" class="month-btn ad-chip">1月</button>
+          <button onclick="selectMonth(2)" id="mbtn-2" class="month-btn ad-chip">2月</button>
+          <button onclick="selectMonth(3)" id="mbtn-3" class="month-btn ad-chip">3月</button>
+          <button onclick="selectMonth(4)" id="mbtn-4" class="month-btn ad-chip">4月</button>
+          <button onclick="selectMonth(5)" id="mbtn-5" class="month-btn ad-chip">5月</button>
+          <button onclick="selectMonth(6)" id="mbtn-6" class="month-btn ad-chip">6月</button>
+          <button onclick="selectMonth(7)" id="mbtn-7" class="month-btn ad-chip">7月</button>
+          <button onclick="selectMonth(8)" id="mbtn-8" class="month-btn ad-chip">8月</button>
+          <button onclick="selectMonth(9)" id="mbtn-9" class="month-btn ad-chip">9月 <span class="text-[10px] pg-ok font-bold">●本月</span></button>
+          <button onclick="selectMonth(10)" id="mbtn-10" class="month-btn ad-chip">10月</button>
+          <button onclick="selectMonth(11)" id="mbtn-11" class="month-btn ad-chip">11月</button>
+          <button onclick="selectMonth(12)" id="mbtn-12" class="month-btn ad-chip">12月</button>
         </div>
 
         <!-- Month Detail Display Card -->
-        <div id="month-detail" class="bg-slate-950/70 p-6 rounded-2xl border border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
-          <div class="space-y-2 md:border-r border-slate-800 pr-4">
-            <span id="md-quarter" class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold text-[10px]">Q2 產季高峰</span>
-            <h4 id="md-title" class="text-base font-extrabold text-white mt-1">玉荷包荔枝 3 週黃金搶收・芒果外銷日韓高峰</h4>
-            <p id="md-regions" class="text-slate-400">高雄大樹、屏東枋山、台南玉井、雲林二崙、彰化大村</p>
+        <div id="month-detail" class="pg-inset p-6 rounded-2xl grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+          <div class="space-y-2 md:border-r pg-border pr-4">
+            <span id="md-quarter" class="ad-pill ad-pill--ok font-mono">Q2 產季高峰</span>
+            <h4 id="md-title" class="text-base font-extrabold pg-text mt-1">玉荷包荔枝 3 週黃金搶收・芒果外銷日韓高峰</h4>
+            <p id="md-regions" class="ad-text-2">高雄大樹、屏東枋山、台南玉井、雲林二崙、彰化大村</p>
           </div>
-          <div class="space-y-2 md:border-r border-slate-800 pr-4">
-            <span class="text-slate-400 font-semibold block">52 週主力盛產作物：</span>
-            <p id="md-crops" class="text-slate-200 text-sm font-bold">大樹玉荷包荔枝、枋山愛文芒果、二崙西瓜、大村葡萄</p>
-            <div id="md-sop" class="text-[11px] text-slate-400 mt-2">
+          <div class="space-y-2 md:border-r pg-border pr-4">
+            <span class="ad-text-2 font-semibold block">52 週主力盛產作物：</span>
+            <p id="md-crops" class="pg-text text-sm font-bold">大樹玉荷包荔枝、枋山愛文芒果、二崙西瓜、大村葡萄</p>
+            <div id="md-sop" class="text-[11px] ad-text-2 mt-2">
               SOP：熟度 8 分採摘、低溫預冷防褐變、保濕包裝、日韓檢疫外銷裝箱。
             </div>
           </div>
           <div class="space-y-3 flex flex-col justify-between">
             <div>
-              <span class="text-slate-400 font-semibold block">系統推薦調度派遣工班：</span>
-              <p id="md-team" class="text-emerald-400 text-sm font-bold">工班 B 組 (跨區專線) + 工班 A 組</p>
+              <span class="ad-text-2 font-semibold block">系統推薦調度派遣工班：</span>
+              <p id="md-team" class="pg-ok text-sm font-bold">工班 B 組 (跨區專線) + 工班 A 組</p>
             </div>
             <div class="flex gap-2">
-              <a href="../TechBackend/admin.html" class="w-full text-center py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition flex items-center justify-center gap-1.5">
+              <a href="../TechBackend/admin.html" class="ad-btn ad-btn--primary ad-btn--sm ad-btn--block">
                 依此產曆直接派工下單
               </a>
             </div>
@@ -732,16 +765,16 @@
         </div>
 
         <!-- UPCOMING HARVESTS SECTION (要到來的收穫日) -->
-        <div class="pt-6 border-t border-slate-800 space-y-4">
+        <div class="pt-6 border-t pg-border space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h4 class="text-base font-extrabold text-white flex items-center gap-2">
+              <h4 class="text-base font-extrabold pg-text flex items-center gap-2">
                 要到來的收穫日・全台搶工倒數雷達
-                <span id="harvest-calendar-badge" class="text-[10px] px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-mono font-bold">依 2026年 5月 時序即時計算</span>
+                <span id="harvest-calendar-badge" class="ad-pill ad-pill--danger font-mono">依 2026年 5月 時序即時計算</span>
               </h4>
-              <p class="text-xs text-slate-400 mt-0.5">系統依據選定月份，自動推算全台關鍵高價值作物即將到來的收穫期、倒數天數與緊急度！</p>
+              <p class="text-xs ad-text-2 mt-0.5">系統依據選定月份，自動推算全台關鍵高價值作物即將到來的收穫期、倒數天數與緊急度！</p>
             </div>
-            <span class="text-xs text-slate-400 font-mono">共 12 處關鍵收穫檔期</span>
+            <span class="text-xs ad-text-2 font-mono">共 12 處關鍵收穫檔期</span>
           </div>
 
           <!-- Harvest Cards Grid -->
@@ -817,16 +850,16 @@
         const countdownDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
 
         let statusLabel = "生長監測中";
-        let statusBadgeClass = "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+        let statusBadgeClass = "ad-pill--ok";
         if (countdownDays === 0) {
           statusLabel = "今日盛產採收日";
-          statusBadgeClass = "bg-red-500/30 text-red-200 border-red-500/50 animate-bounce";
+          statusBadgeClass = "ad-pill--danger ad-live";
         } else if (countdownDays <= 15) {
           statusLabel = "採收倒數中";
-          statusBadgeClass = "bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse";
+          statusBadgeClass = "ad-pill--danger";
         } else if (countdownDays <= 45) {
           statusLabel = "⏳ 預約搶工中";
-          statusBadgeClass = "bg-amber-500/20 text-amber-300 border-amber-500/40";
+          statusBadgeClass = "ad-pill--warn";
         }
 
         return {
@@ -851,44 +884,44 @@
 
       if (badge) {
         if (isCurrentRealMonth) {
-          badge.className = "text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-bold";
+          badge.className = "ad-pill ad-pill--ok font-mono";
           badge.innerText = `對應目前現實時間 (${realYear}年${realMonth}月${realDay}日) 即時推算`;
         } else {
-          badge.className = "text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold";
+          badge.className = "ad-pill ad-pill--warn font-mono";
           badge.innerText = `依 ${currentYear}年 ${currentMonth}月 時序模擬推算`;
         }
       }
 
       if (!grid) return;
       grid.innerHTML = list.map(item => `
-        <div class="bg-slate-950/80 p-4 rounded-2xl border ${item.countdownDays <= 15 ? 'border-rose-500/50' : 'border-slate-800'} space-y-3 flex flex-col justify-between hover:border-emerald-500/50 transition">
+        <div class="pg-inset p-4 rounded-2xl ${item.countdownDays <= 15 ? 'pg-border-danger' : ''} space-y-3 flex flex-col justify-between transition">
           <div class="space-y-2">
             <div class="flex items-center justify-between gap-1">
-              <span class="text-[11px] px-2 py-0.5 rounded-full border font-bold font-mono ${item.statusBadgeClass}">
+              <span class="ad-pill font-mono ${item.statusBadgeClass}">
                 ${item.statusLabel} (${item.countdownDays} 天)
               </span>
-              <span class="text-[10px] text-slate-400 font-mono">${item.harvestYear}年${item.month}月${item.day}日</span>
+              <span class="text-[10px] ad-text-2 font-mono">${item.harvestYear}年${item.month}月${item.day}日</span>
             </div>
 
-            <h5 class="text-sm font-extrabold text-white flex items-center gap-1.5">
+            <h5 class="text-sm font-extrabold pg-text flex items-center gap-1.5">
               ${item.cropName}
             </h5>
 
-            <div class="text-[11px] space-y-1 text-slate-300 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
-              <div class="flex items-center justify-between text-slate-400">
+            <div class="text-[11px] space-y-1 pg-text pg-surface p-2.5 rounded-xl border pg-border">
+              <div class="flex items-center justify-between ad-text-2">
                 <span>${item.region}</span>
-                <span class="font-mono text-emerald-400 font-bold">${item.window}</span>
+                <span class="font-mono pg-ok font-bold">${item.window}</span>
               </div>
-              <div class="text-[10px] text-slate-400 mt-1">${item.task}</div>
+              <div class="text-[10px] ad-text-2 mt-1">${item.task}</div>
             </div>
           </div>
 
-          <div class="space-y-2 pt-2 border-t border-slate-800">
+          <div class="space-y-2 pt-2 border-t pg-border">
             <div class="flex items-center justify-between text-[11px]">
-              <span class="text-slate-400 font-medium">建議工班：</span>
-              <span class="text-emerald-300 font-semibold">${item.team} (需 ${item.workers} 人)</span>
+              <span class="ad-text-2 font-medium">建議工班：</span>
+              <span class="pg-ok font-semibold">${item.team} (需 ${item.workers} 人)</span>
             </div>
-            <button onclick="onHarvestClick('${item.cropName}', ${item.countdownDays}, '${item.cropId}')" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs transition flex items-center justify-center gap-1">
+            <button onclick="onHarvestClick('${item.cropName}', ${item.countdownDays}, '${item.cropId}')" class="ad-btn ad-btn--primary ad-btn--sm ad-btn--block">
               預約此產季搶工 (早鳥鎖定名額)
             </button>
           </div>
@@ -901,19 +934,17 @@
 
       // 更新月份按鈕樣式
       document.querySelectorAll('.month-btn').forEach(btn => {
-        btn.classList.remove('bg-emerald-600', 'text-white', 'font-bold', 'ring-2', 'ring-emerald-400');
-        btn.classList.add('bg-slate-800', 'text-slate-300');
+        btn.classList.remove('is-on', 'is-now');
       });
       const targetBtn = document.getElementById('mbtn-' + m);
       if (targetBtn) {
-        targetBtn.classList.remove('bg-slate-800', 'text-slate-300');
-        targetBtn.classList.add('bg-emerald-600', 'text-white', 'font-bold');
+        targetBtn.classList.add('is-on');
       }
 
       // 若為現實本月，加上特別高亮外框
       const realMonthBtn = document.getElementById('mbtn-' + realMonth);
       if (realMonthBtn && currentYear === realYear) {
-        realMonthBtn.classList.add('ring-2', 'ring-emerald-400');
+        realMonthBtn.classList.add('is-now');
       }
 
       const item = calendarData.find(x => x.month === m);
@@ -932,11 +963,9 @@
           const card = document.getElementById('qcard-' + k);
           if (card) {
             if (k === item.quarter) {
-              card.classList.remove('border-slate-800', 'bg-slate-900/70');
-              card.classList.add('border-emerald-500/40', 'bg-slate-900/95', 'ring-1', 'ring-emerald-400/30');
+              card.classList.add('is-active');
             } else {
-              card.classList.remove('border-emerald-500/40', 'bg-slate-900/95', 'ring-1', 'ring-emerald-400/30');
-              card.classList.add('border-slate-800', 'bg-slate-900/70');
+              card.classList.remove('is-active');
             }
           }
         });
@@ -955,8 +984,7 @@
       if (icon) icon.classList.remove('animate-spin');
       if (text) text.innerText = '啟動自動輪播';
       if (btn) {
-        btn.classList.remove('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/40');
-        btn.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700');
+        btn.classList.remove('is-on');
       }
 
       currentYear = realYear;
@@ -988,16 +1016,14 @@
         if (icon) icon.classList.add('animate-spin');
         if (text) text.innerText = '自動輪播中 (4秒)';
         if (btn) {
-          btn.classList.remove('bg-slate-800', 'text-slate-300', 'border-slate-700');
-          btn.classList.add('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/40');
+          btn.classList.add('is-on');
         }
         startAutoCycle();
       } else {
         if (icon) icon.classList.remove('animate-spin');
         if (text) text.innerText = '啟動自動輪播';
         if (btn) {
-          btn.classList.remove('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/40');
-          btn.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700');
+          btn.classList.remove('is-on');
         }
         stopAutoCycle();
       }
@@ -1042,11 +1068,9 @@
         const card = document.getElementById('qcard-' + k);
         if (card) {
           if (k === q) {
-            card.classList.remove('border-slate-800', 'bg-slate-900/70');
-            card.classList.add('border-emerald-500/40', 'bg-slate-900/95', 'ring-1', 'ring-emerald-400/30');
+            card.classList.add('is-active');
           } else {
-            card.classList.remove('border-emerald-500/40', 'bg-slate-900/95', 'ring-1', 'ring-emerald-400/30');
-            card.classList.add('border-slate-800', 'bg-slate-900/70');
+            card.classList.remove('is-active');
           }
         }
       });
@@ -1166,7 +1190,7 @@
         let dotsHtml = '';
         for (let i = 0; i <= maxIdx; i++) {
           const active = i === currentDmIndex;
-          dotsHtml += `<button type="button" onclick="goToDmSlide(${i})" class="h-2 rounded-full transition-all duration-300 cursor-pointer ${active ? 'bg-amber-400 w-5 sm:w-6' : 'bg-slate-700 hover:bg-slate-500 w-2'}" aria-label="切換至第 ${i+1} 頁"></button>`;
+          dotsHtml += `<button type="button" onclick="goToDmSlide(${i})" class="h-2 rounded-full transition-all duration-300 cursor-pointer ${active ? 'pg-dot is-active w-5 sm:w-6' : 'pg-dot w-2'}" aria-label="切換至第 ${i+1} 頁"></button>`;
         }
         dotsContainer.innerHTML = dotsHtml;
       }
@@ -1404,22 +1428,22 @@
   </script>
 
   <!-- DM Quick Purchase Checkout Modal (工時包直接購買結帳彈窗) -->
-  <div id="dmPurchaseModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 transition-all duration-300 hidden" onclick="handleDmModalBackdrop(event)">
-    <div class="bg-slate-900 border border-amber-500/50 rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden relative flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
+  <div id="dmPurchaseModal" class="fixed inset-0 z-50 pg-backdrop backdrop-blur-md flex items-center justify-center p-3 sm:p-4 transition-all duration-300 hidden" onclick="handleDmModalBackdrop(event)">
+    <div class="pg-surface border pg-border-warn rounded-3xl max-w-lg w-full overflow-hidden relative flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
       
       <!-- Modal Header -->
-      <div class="p-5 border-b border-slate-800 bg-slate-900/95 flex items-center justify-between">
+      <div class="p-5 border-b pg-border pg-surface flex items-center justify-between">
         <div class="flex items-center gap-2.5">
           
           <div>
             <div class="flex items-center gap-1.5">
-              <h3 class="text-base sm:text-lg font-black text-white">工時包專案線上預約購買</h3>
-              <span id="dmModalBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">早鳥鎖定名額</span>
+              <h3 class="text-base sm:text-lg font-black pg-text">工時包專案線上預約購買</h3>
+              <span id="dmModalBadge" class="ad-pill ad-pill--warn">早鳥鎖定名額</span>
             </div>
-            <p class="text-xs text-slate-400">農業部外展農業合作社合規出工・預付 20% 定金優先鎖單</p>
+            <p class="text-xs ad-text-2">農業部外展農業合作社合規出工・預付 20% 定金優先鎖單</p>
           </div>
         </div>
-        <button type="button" onclick="closeDmPurchase()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm transition cursor-pointer">
+        <button type="button" onclick="closeDmPurchase()" class="ad-btn ad-btn--ghost ad-btn--sm ad-btn--icon">
           ✕
         </button>
       </div>
@@ -1428,26 +1452,26 @@
       <div class="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1 custom-scrollbar text-xs">
         
         <!-- Section 1: Order Item Card Summary -->
-        <div class="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-3">
+        <div class="p-4 rounded-2xl pg-surface-2 border pg-border space-y-3">
           <div class="flex items-start justify-between gap-2">
             <div>
-              <span id="dmModalRegion" class="text-[10px] text-emerald-400 font-semibold block">屏東枋山 / 台南玉井</span>
-              <h4 id="dmModalTitle" class="text-sm sm:text-base font-extrabold text-white mt-0.5">枋山愛文芒果 60 工時早鳥包</h4>
-              <p id="dmModalSpecs" class="text-slate-400 text-[11px] mt-1">4位熟練農工出勤2天・外銷日韓留蒂 0.5cm・遇雨自動轉接屏南冷鏈預冷場。</p>
+              <span id="dmModalRegion" class="text-[10px] pg-ok font-semibold block">屏東枋山 / 台南玉井</span>
+              <h4 id="dmModalTitle" class="text-sm sm:text-base font-extrabold pg-text mt-0.5">枋山愛文芒果 60 工時早鳥包</h4>
+              <p id="dmModalSpecs" class="ad-text-2 text-[11px] mt-1">4位熟練農工出勤2天・外銷日韓留蒂 0.5cm・遇雨自動轉接屏南冷鏈預冷場。</p>
             </div>
           </div>
 
           <!-- Price Calculation Box -->
-          <div class="pt-2.5 border-t border-slate-700/70 grid grid-cols-2 gap-2">
-            <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50">
-              <span class="text-[10px] text-slate-400 block">專案優惠總價 (含發票稅)</span>
-              <span id="dmModalDiscPrice" class="text-amber-400 font-black font-mono text-sm sm:text-base">NT$ 18,900</span>
-              <span id="dmModalOrigPrice" class="text-[10px] text-slate-500 block">315 元/hr・不打折</span>
+          <div class="pt-2.5 border-t pg-border grid grid-cols-2 gap-2">
+            <div class="p-2.5 rounded-xl pg-surface border pg-border">
+              <span class="text-[10px] ad-text-2 block">專案優惠總價 (含發票稅)</span>
+              <span id="dmModalDiscPrice" class="pg-warn font-black font-mono text-sm sm:text-base">NT$ 18,900</span>
+              <span id="dmModalOrigPrice" class="text-[10px] ad-text-3 block">315 元/hr・不打折</span>
             </div>
-            <div class="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40">
-              <span class="text-[10px] text-emerald-300 block font-bold">今日應繳定金 (20%)</span>
-              <span id="dmModalDeposit" class="text-emerald-400 font-black font-mono text-sm sm:text-base">NT$ 3,780</span>
-              <span class="text-[10px] text-slate-400 block">尾款驗收後農會轉帳</span>
+            <div class="p-2.5 rounded-xl pg-soft-ok border pg-border-ok">
+              <span class="text-[10px] pg-ok block font-bold">今日應繳定金 (20%)</span>
+              <span id="dmModalDeposit" class="pg-ok font-black font-mono text-sm sm:text-base">NT$ 3,780</span>
+              <span class="text-[10px] ad-text-2 block">尾款驗收後農會轉帳</span>
             </div>
           </div>
         </div>
@@ -1458,58 +1482,58 @@
             <input type="hidden" id="dmModalPkgId" value="">
 
             <div class="space-y-3">
-              <div class="flex items-center gap-1.5 font-bold text-white text-xs">
+              <div class="flex items-center gap-1.5 font-bold pg-text text-xs">
                 預約農場主資訊
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-[11px] font-semibold text-slate-300 mb-1">農場主 / 班長姓名 <span class="text-red-400">*</span></label>
-                  <input type="text" id="dmCustomerName" required value="陳建龍" placeholder="例：陳建龍" class="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                  <label class="ad-label ad-label--req block mb-1">農場主 / 班長姓名</label>
+                  <input type="text" id="dmCustomerName" required value="陳建龍" placeholder="例：陳建龍" class="ad-input">
                 </div>
                 <div>
-                  <label class="block text-[11px] font-semibold text-slate-300 mb-1">聯絡手機 / LINE <span class="text-red-400">*</span></label>
-                  <input type="tel" id="dmCustomerPhone" required value="0912-345-678" placeholder="例：0912-345-678" class="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                  <label class="ad-label ad-label--req block mb-1">聯絡手機 / LINE</label>
+                  <input type="tel" id="dmCustomerPhone" required value="0912-345-678" placeholder="例：0912-345-678" class="ad-input">
                 </div>
                 <div class="sm:col-span-2">
-                  <label class="block text-[11px] font-semibold text-slate-300 mb-1">農園地號 / 作業地點 <span class="text-red-400">*</span></label>
-                  <input type="text" id="dmCustomerLocation" required value="屏東縣枋山鄉愛文芒果合作園區 2 號地" placeholder="作業農場詳細地點" class="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                  <label class="ad-label ad-label--req block mb-1">農園地號 / 作業地點</label>
+                  <input type="text" id="dmCustomerLocation" required value="屏東縣枋山鄉愛文芒果合作園區 2 號地" placeholder="作業農場詳細地點" class="ad-input">
                 </div>
               </div>
             </div>
 
             <!-- Date Selection -->
             <div>
-              <label class="block text-[11px] font-semibold text-slate-300 mb-1">預計出工日期 <span class="text-red-400">*</span></label>
-              <input type="date" id="dmCustomerDate" required class="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-              <p class="text-[10px] text-slate-400 mt-1">（下單後調度總台專員將於 2 小時內去電與您確認田間動線與工班接送細節）</p>
+              <label class="ad-label ad-label--req block mb-1">預計出工日期</label>
+              <input type="date" id="dmCustomerDate" required class="ad-input">
+              <p class="text-[10px] ad-text-2 mt-1">（下單後調度總台專員將於 2 小時內去電與您確認田間動線與工班接送細節）</p>
             </div>
 
             <!-- Payment Method -->
             <div class="space-y-1.5">
-              <label class="block text-[11px] font-semibold text-slate-300">定金支付方式 (20%)</label>
+              <label class="ad-label block">定金支付方式 (20%)</label>
               <div class="grid grid-cols-2 gap-2">
-                <label class="flex items-center gap-2 p-2.5 rounded-xl border border-emerald-500/60 bg-emerald-950/20 cursor-pointer">
-                  <input type="radio" name="dmPaymentMethod" value="農會虛擬帳號轉帳" checked class="accent-emerald-500">
-                  <span class="text-[11px] text-white font-medium">農會專用帳號轉帳</span>
+                <label class="ad-choice">
+                  <input type="radio" name="dmPaymentMethod" value="農會虛擬帳號轉帳" checked>
+                  <span class="text-xs font-medium">農會專用帳號轉帳</span>
                 </label>
-                <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-700 bg-slate-850 cursor-pointer hover:border-slate-600">
-                  <input type="radio" name="dmPaymentMethod" value="信用卡 / LINE Pay" class="accent-emerald-500">
-                  <span class="text-[11px] text-white font-medium">信用卡 / LINE Pay</span>
+                <label class="ad-choice">
+                  <input type="radio" name="dmPaymentMethod" value="信用卡 / LINE Pay">
+                  <span class="text-xs font-medium">信用卡 / LINE Pay</span>
                 </label>
               </div>
             </div>
 
             <!-- Submit CTA -->
             <div class="pt-2 space-y-2">
-              <div id="dmPurchaseError" hidden role="alert" class="p-3 rounded-xl bg-rose-950/40 border border-rose-500/50 text-rose-200 text-xs space-y-1.5">
+              <div id="dmPurchaseError" hidden role="alert" class="ad-notice ad-notice--danger space-y-1.5" style="display: block;">
                 <p id="dmPurchaseErrorText"></p>
-                <a id="dmPurchaseLoginLink" hidden href="farmer-login.html" class="inline-block font-bold text-amber-300 underline">前往農場主登入</a>
+                <a id="dmPurchaseLoginLink" hidden href="farmer-login.html" class="ad-link font-bold">前往農場主登入</a>
               </div>
-              <button type="submit" id="dmSubmitBtn" class="w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer">
+              <button type="submit" id="dmSubmitBtn" class="ad-btn ad-btn--accent ad-btn--block">
                 確認購買並送出訂單（即刻鎖單）
               </button>
               
-              <button type="button" onclick="prefillAndScrollToBooking()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
+              <button type="button" onclick="prefillAndScrollToBooking()" class="ad-btn ad-btn--secondary ad-btn--sm ad-btn--block">
                 或前往完整客製化派工表單自訂細節 ➔
               </button>
             </div>
@@ -1518,44 +1542,44 @@
 
         <!-- Success Result View (Hidden by default) -->
         <div id="dmPurchaseSuccessView" class="hidden space-y-4 text-center py-2">
-          <div class="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center text-3xl mx-auto shadow-inner">
+          <div class="w-14 h-14 rounded-full pg-soft-ok border pg-border-ok pg-ok flex items-center justify-center text-3xl mx-auto">
             ✓
           </div>
           <div>
-            <h4 class="text-base sm:text-lg font-black text-white">恭喜！工時包專案預約購買成功</h4>
-            <p class="text-xs text-slate-400 mt-1">訂單已即時同步至總台調度庫與專屬帶班小工頭！</p>
+            <h4 class="text-base sm:text-lg font-black pg-text">恭喜！工時包專案預約購買成功</h4>
+            <p class="text-xs ad-text-2 mt-1">訂單已即時同步至總台調度庫與專屬帶班小工頭！</p>
           </div>
 
-          <div class="p-4 rounded-2xl bg-slate-800/90 border border-emerald-500/30 text-left space-y-2 text-xs">
-            <div class="flex items-center justify-between border-b border-slate-700 pb-2">
-              <span class="text-slate-400">訂單編號：</span>
-              <span id="dmSuccessOrderId" class="font-mono font-bold text-amber-400">ORD-DM-2026-8888</span>
+          <div class="p-4 rounded-2xl pg-surface-2 border pg-border-ok text-left space-y-2 text-xs">
+            <div class="flex items-center justify-between border-b pg-border pb-2">
+              <span class="ad-text-2">訂單編號：</span>
+              <span id="dmSuccessOrderId" class="font-mono font-bold pg-warn">ORD-DM-2026-8888</span>
             </div>
-            <div class="flex items-center justify-between border-b border-slate-700 pb-2">
-              <span class="text-slate-400">預約項目：</span>
-              <span id="dmSuccessPkgTitle" class="font-bold text-white">枋山愛文芒果 60 工時早鳥包</span>
+            <div class="flex items-center justify-between border-b pg-border pb-2">
+              <span class="ad-text-2">預約項目：</span>
+              <span id="dmSuccessPkgTitle" class="font-bold pg-text">枋山愛文芒果 60 工時早鳥包</span>
             </div>
-            <div class="flex items-center justify-between border-b border-slate-700 pb-2">
-              <span class="text-slate-400">今日應繳定金 (20%)：</span>
-              <span id="dmSuccessDeposit" class="font-mono font-bold text-emerald-400 text-sm">NT$ 3,780</span>
+            <div class="flex items-center justify-between border-b pg-border pb-2">
+              <span class="ad-text-2">今日應繳定金 (20%)：</span>
+              <span id="dmSuccessDeposit" class="font-mono font-bold pg-ok text-sm">NT$ 3,780</span>
             </div>
-            <p class="pt-1 text-[11px] text-slate-300">定金請到農場主頁「我的訂單」付款，付款完成才會排定出工班底。</p>
+            <p class="pt-1 text-[11px] pg-text">定金請到農場主頁「我的訂單」付款，付款完成才會排定出工班底。</p>
             <!-- 示範用的虛擬帳號，正式版不顯示 -->
-            <div data-demo-only class="pt-1 text-[11px] text-slate-300 space-y-1">
-              <p class="font-semibold text-amber-300">農會專屬繳費虛擬帳號：</p>
-              <div class="p-2.5 rounded-xl bg-slate-900 font-mono text-emerald-400 text-xs tracking-wider flex items-center justify-between">
+            <div data-demo-only class="pt-1 text-[11px] pg-text space-y-1">
+              <p class="font-semibold pg-warn">農會專屬繳費虛擬帳號：</p>
+              <div class="p-2.5 rounded-xl pg-surface font-mono pg-ok text-xs tracking-wider flex items-center justify-between">
                 <span>95102-000-88234567</span>
-                <span class="text-[10px] text-slate-400">(枋山地區農會 951)</span>
+                <span class="text-[10px] ad-text-2">(枋山地區農會 951)</span>
               </div>
-              <p class="text-[10px] text-slate-400">轉帳完成後系統將自動發送簡訊通知並鎖定出工班底。</p>
+              <p class="text-[10px] ad-text-2">轉帳完成後系統將自動發送簡訊通知並鎖定出工班底。</p>
             </div>
           </div>
 
           <div class="flex items-center gap-3 pt-2">
-            <button type="button" onclick="closeDmPurchase()" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition cursor-pointer">
+            <button type="button" onclick="closeDmPurchase()" class="flex-1 ad-btn ad-btn--secondary ad-btn--sm">
               完成關閉
             </button>
-            <button type="button" onclick="viewOrdersFromDm()" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition cursor-pointer">
+            <button type="button" onclick="viewOrdersFromDm()" class="flex-1 ad-btn ad-btn--primary ad-btn--sm">
               查看我的訂單
             </button>
           </div>
@@ -1567,7 +1591,7 @@
   </div>
 
   <!-- Footer -->
-  <footer class="border-t border-slate-800 bg-slate-950 py-8 text-center text-xs text-slate-500">
+  <footer class="border-t pg-border pg-bg py-8 text-center text-xs ad-text-3">
     <div class="max-w-7xl mx-auto px-4 space-y-2">
       <p>© 2026 智農派工 AgriDispatch. All rights reserved. 雙軌合規農事外展平台</p>
       <p>技術代管：智農科技有限公司 ╳ 外展主體：有限責任智農農業勞務生產合作社</p>

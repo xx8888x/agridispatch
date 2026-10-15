@@ -1,6 +1,7 @@
 package com.agridispatch.service;
 
 import com.agridispatch.common.ApiException;
+import com.agridispatch.config.AgriSettings;
 import com.agridispatch.common.IdGenerator;
 import com.agridispatch.entity.AccountDeletionRequest;
 import com.agridispatch.entity.Farmer;
@@ -29,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   工人  移除登入密碼並讓已登入的裝置失效；工人的聘僱、出勤、薪資、保險資料是合作社（法定雇主）的人事紀錄，依法保存，不在此刪除
  *   保留  訂單、付款、出勤、工資紀錄依勞基法與稅法保存（期間【待確認】）
  * 後台帳號（admin_tech）不受理，由系統管理員處理。
+ * demo 模式（路演）只更新申請狀態、不真的刪除，避免共用的示範帳號被刪掉後無法示範登入（與前端 Mock 一致）。
  */
 @Service
 public class AccountDeletionService {
@@ -47,12 +49,14 @@ public class AccountDeletionService {
     private final OrderRepository orderRepository;
     private final PushTokenRepository pushTokenRepository;
     private final LineBindingService lineBindingService;
+    private final AgriSettings settings;
     private final Map<String, Deque<Long>> webHits = new ConcurrentHashMap<>();
 
     public AccountDeletionService(AccountDeletionRequestRepository repository, UserRepository userRepository,
                                   WorkerRepository workerRepository, FarmerRepository farmerRepository,
                                   FarmRepository farmRepository, OrderRepository orderRepository,
-                                  PushTokenRepository pushTokenRepository, LineBindingService lineBindingService) {
+                                  PushTokenRepository pushTokenRepository, LineBindingService lineBindingService,
+                                  AgriSettings settings) {
         this.repository = repository;
         this.userRepository = userRepository;
         this.workerRepository = workerRepository;
@@ -61,6 +65,7 @@ public class AccountDeletionService {
         this.orderRepository = orderRepository;
         this.pushTokenRepository = pushTokenRepository;
         this.lineBindingService = lineBindingService;
+        this.settings = settings;
     }
 
     // =========================================================================
@@ -147,6 +152,10 @@ public class AccountDeletionService {
             }
         }
 
+        if (settings.isDemoEnabled()) {
+            return finish(r, acc, note, admin, "示範模式：只更新申請狀態，示範帳號不會真的刪除");
+        }
+
         List<String> done = new ArrayList<>();
         int line = lineBindingService.unbindAccount(acc.username(), acc.refId(), acc.role());
         if (line > 0) done.add("解除 LINE 綁定 " + line + " 筆");
@@ -184,6 +193,10 @@ public class AccountDeletionService {
             done.add("聘僱、出勤、薪資與保險紀錄由合作社依法保存");
         }
 
+        return finish(r, acc, note, admin, String.join("；", done));
+    }
+
+    private Map<String, Object> finish(AccountDeletionRequest r, Account acc, String note, AuthContext admin, String summary) {
         r.setStatus(AccountDeletionRequest.COMPLETED);
         r.setUsername(acc.username());
         r.setRefId(acc.refId());
@@ -191,7 +204,7 @@ public class AccountDeletionService {
         r.setDecidedAt(LocalDateTime.now());
         r.setDecidedBy(admin.sub());
         r.setDecisionNote(text(note, "備註"));
-        r.setResultSummary(String.join("；", done));
+        r.setResultSummary(summary);
         return view(repository.save(r), true);
     }
 

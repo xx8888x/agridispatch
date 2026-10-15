@@ -77,7 +77,7 @@
     .pg-chip--warn.is-on { border-color: var(--ad-accent); background: var(--ad-accent-soft); color: var(--ad-accent-text); }
     /* 月份 13 顆在手機 6 欄時塞得下 */
     .month-btn.ad-chip { padding: 0 6px; }
-    /* Leaflet 彈出泡泡與底圖跟著主題（底圖在 applyMapTheme() 切換） */
+    /* Leaflet 彈出泡泡跟著主題；底圖固定 OSM 亮色圖磚，深色靠下方濾鏡 */
     .leaflet-popup-content-wrapper {
       background: var(--ad-surface) !important;
       color: var(--ad-text) !important;
@@ -90,6 +90,11 @@
     .leaflet-popup-tip { background: var(--ad-surface) !important; border: 1px solid var(--ad-border-strong) !important; }
     .leaflet-popup-close-button { color: var(--ad-text-2) !important; }
     .leaflet-container { font-family: inherit !important; background: var(--ad-bg) !important; }
+    /* 深色主題：免金鑰的 OSM 標準圖磚只有亮色，把圖磚層反相再把色相轉回來、略壓亮度與飽和，
+       得到接近 --ad-bg 的深色底圖；只動 .leaflet-tile-pane，地標、泡泡、縮放鈕不受影響 */
+    html:not([data-theme="light"]) .leaflet-tile-pane {
+      filter: invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.55);
+    }
   </style>
 </head>
 <body class="ad-body min-h-screen flex flex-col">
@@ -1880,25 +1885,17 @@
       return set[region] || set.central;
     }
 
-    // 底圖跟著主題：深色 CartoDB Dark Matter、亮色 CartoDB Positron
-    let tileLayer = null;
-    const TILE_URLS = {
-      dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-      light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-    };
-    function applyMapTheme() {
-      if (!map) return;
-      const url = TILE_URLS[isLightTheme() ? 'light' : 'dark'];
-      if (tileLayer && tileLayer._url === url) return;
-      if (tileLayer) map.removeLayer(tileLayer);
-      tileLayer = L.tileLayer(url, {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
+    // 底圖：OpenStreetMap 標準圖磚，免 API 金鑰（CARTO 免費圖磚 2026 起要求金鑰，否則印「API KEY REQUIRED」浮水印）。
+    // OSM 只有亮色圖資，深色主題由 <style> 的 .leaflet-tile-pane 濾鏡反相成深色底圖，不必換圖層。
+    // 依 OSM 圖磚使用政策：不帶子網域與 {r}，須保留 OpenStreetMap 署名。
+    function addBaseLayer() {
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19
       }).addTo(map);
     }
-    // 頁首切換亮／深色（agri-theme.js 改 <html data-theme>）時換底圖，並重畫地標與卡片的分區色
-    new MutationObserver(() => { applyMapTheme(); if (markersLayer) renderApp(); if (openFarmerId) openModal(openFarmerId); })
+    // 頁首切換亮／深色（agri-theme.js 改 <html data-theme>）時重畫地標與卡片的分區色；底圖濾鏡由 CSS 自動跟著切
+    new MutationObserver(() => { if (markersLayer) renderApp(); if (openFarmerId) openModal(openFarmerId); })
       .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
     // ==========================================
@@ -1924,7 +1921,7 @@
       // 放置自訂縮放控制在右下
       L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-      applyMapTheme();
+      addBaseLayer();
 
       markersLayer = L.layerGroup().addTo(map);
     }

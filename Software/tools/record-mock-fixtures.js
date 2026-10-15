@@ -13,6 +13,11 @@
  *
  * 用法（於 Software/）：
  *   node tools/record-mock-fixtures.js [--requests rec.json] [--base http://localhost:3000/api]
+ *   node tools/record-mock-fixtures.js --weather-only [--base ...]   只重錄天候（368 鄉鎮氣象），其餘資料不動
+ *
+ * 天候：後端要有 CWA_API_KEY（中央氣象署授權碼）才錄得到；錄到的 GET /weather/towns 是示範版「天候戰情」在
+ * Open-Meteo 失敗（限流、斷網、逾時）時的離線後備（demo-mock.js 的 /weather/towns?sample=1）。
+ * 沒錄到會警告：後備資料失效，路演時網路不穩天候戰情會空白。
  */
 'use strict';
 
@@ -62,7 +67,52 @@ async function record(method, p, body, preferToken) {
 const data = r => (r && r.b && r.b.data) || [];
 const enc = encodeURIComponent;
 
+// 天候：只留畫面用得到的欄位並去掉 null（368 鄉鎮約 214 KB → 約一半），資料形狀不變
+const WEATHER_DROP = ['lat', 'lon', 'rainObsTime', 'beaufort', 'cwaCode', 'rainToday'];
+function trimWeather(body) {
+  const clean = o => { Object.keys(o).forEach(k => { if (o[k] === null || o[k] === undefined) delete o[k]; }); return o; };
+  const out = JSON.parse(JSON.stringify(body));
+  out.data.list = out.data.list.map(w => {
+    WEATHER_DROP.forEach(k => { delete w[k]; });
+    if (w.tomorrow) clean(w.tomorrow);
+    return clean(w);
+  });
+  return out;
+}
+
+// 錄 GET /weather/towns（需 admin token 與後端的 CWA_API_KEY）；回傳是否錄到
+async function recordWeather() {
+  const r = await call('GET', '/weather/towns', null, tokens.admin_tech);
+  const ok = r.s === 200 && r.b && r.b.success && r.b.data && Array.isArray(r.b.data.list) && r.b.data.list.length > 0;
+  if (ok) {
+    fixtures['GET /weather/towns'] = { s: 200, b: trimWeather(r.b) };
+    console.log(`[record-mock] 天候：${r.b.data.list.length} 個鄉鎮（${r.b.data.source}）`);
+  } else {
+    console.warn(`[record-mock] 未錄到天候資料（HTTP ${r.s}）：後端沒有 CWA_API_KEY？示範版天候戰情的離線後備會失效。`);
+  }
+  return ok;
+}
+
+// --weather-only：把天候併入既有的 demo-fixtures.js，其餘不動（鍵排序與完整錄製相同，差異只有這一筆）
+async function weatherOnly() {
+  tokens.admin_tech = (await call('POST', '/auth/demo-login', JSON.stringify({ role: 'admin_tech' }))).b.token;
+  if (!(await recordWeather())) process.exit(1);
+  const text = fs.readFileSync(OUT, 'utf8');
+  const marker = 'window.AGRI_FIXTURES = ';
+  const at = text.indexOf(marker);
+  if (at < 0) throw new Error('demo-fixtures.js 格式不符，請改用完整錄製');
+  const header = text.slice(0, at).replace(/\/\* 天候資料另於[^\n]*\n/g, '');
+  const existing = JSON.parse(text.slice(at + marker.length).replace(/;\s*$/, ''));
+  existing['GET /weather/towns'] = fixtures['GET /weather/towns'];
+  const out = {};
+  Object.keys(existing).sort().forEach(k => { out[k] = existing[k]; });
+  const note = '/* 天候資料另於 ' + new Date().toISOString() + ' 以 --weather-only 重錄 */\n';
+  fs.writeFileSync(OUT, header + note + marker + JSON.stringify(out) + ';\n', 'utf8');
+  console.log(`[record-mock] 已更新天候 → ${OUT}（${(fs.statSync(OUT).size / 1024).toFixed(0)} KB）`);
+}
+
 (async () => {
+  if (args.includes('--weather-only')) return weatherOnly();
   for (const role of ['admin_tech', 'farmer', 'worker_local', 'worker_foreign']) tokens[role] = await login(role);
 
   // 示範帳號：各工人／農場主的 demo-login 與帳密登入
@@ -114,6 +164,7 @@ const enc = encodeURIComponent;
   ];
   const got = {};
   for (const p of simple) got[p] = await record('GET', p);
+  await recordWeather();   // 示範版天候戰情的離線後備（見檔頭）
   // 帳號清單只留種子帳號（SeedService）：本機資料庫可能有路演來賓等真實人名的帳號，不錄進公開的示範站
   const acc = fixtures['GET /auth/accounts'];
   if (acc && acc.b && Array.isArray(acc.b.data)) {

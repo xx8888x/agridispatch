@@ -2098,8 +2098,14 @@
         var syn = mm[2] ? (tq && synthCrew(decodeURIComponent(mm[1]), decodeURIComponent(tq))) : synthMatching(decodeURIComponent(mm[1]));
         if (syn) return respond(syn.s, syn.b);
       }
-      // 天候戰情：純前端示範沒有後端代理中央氣象署，比照後端未設授權碼回 503，前端改用 Open-Meteo
-      if (sp.path === '/weather/towns') return respond(503, { success: false, error: '示範模式未連接中央氣象署（CWA_API_KEY）' });
+      // 天候戰情：純前端示範沒有後端代理中央氣象署，比照後端未設授權碼回 503，前端改用 Open-Meteo；
+      // Open-Meteo 也失敗（限流、斷網、逾時）時，前端改要 ?sample=1：回錄製的 368 鄉鎮氣象（tools/record-mock-fixtures.js 錄製），
+      // 前端會標示為「示範用錄製資料」。沒錄到就維持 503。
+      if (sp.path === '/weather/towns') {
+        var wxSample = /[?&]sample=1(?:&|$)/.test(sp.query || '') && FIX['GET /weather/towns'];
+        if (wxSample) return respond(wxSample.s, wxSample.b);
+        return respond(503, { success: false, error: '示範模式未連接中央氣象署（CWA_API_KEY）' });
+      }
       var hit = findGet(p);
       if (hit) return respond(hit.s, hit.b);
       if (global.console) console.warn('[demo-mock] 沒有示範資料：GET ' + p);

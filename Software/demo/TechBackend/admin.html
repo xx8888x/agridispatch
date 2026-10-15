@@ -126,7 +126,7 @@
               </div>
               <p class="ad-caption" style="margin-top: 4px;">
                 <template v-if="wx.loading">氣象資料載入中…</template>
-                <template v-else-if="wx.at">22 縣市・{{ wx.list.length }} 鄉鎮市區・{{ wx.provider === 'cwa' ? '預報時段' : '觀測時間' }} {{ wxObsTime }}・資料來源 {{ wx.source }}<span v-if="wx.stale" class="text-amber-400">（氣象署暫時無法連線，顯示上次資料）</span></template>
+                <template v-else-if="wx.at">22 縣市・{{ wx.list.length }} 鄉鎮市區・{{ wx.provider === 'cwa' ? '預報時段' : '觀測時間' }} {{ wxObsTime }}・資料來源 {{ wx.source }}<span v-if="wx.sample" class="text-amber-400">（無法取得即時氣象，目前顯示示範用錄製資料；按「重新整理」會再試）</span><span v-else-if="wx.stale" class="text-amber-400">（氣象署暫時無法連線，顯示上次資料）</span></template>
                 <template v-else>尚未取得氣象資料</template>
               </p>
             </div>
@@ -2882,7 +2882,7 @@
         };
 
         // 全台鄉鎮即時氣象（js/agri-weather.js → Open-Meteo）
-        const wx = reactive({ loading: false, error: '', at: 0, provider: '', source: '', stale: false, list: [] });
+        const wx = reactive({ loading: false, error: '', at: 0, provider: '', source: '', stale: false, sample: false, list: [] });
         const wxCounty = ref('');
         const wxQuery = ref('');
         const wxFilter = ref('all');
@@ -2897,6 +2897,7 @@
             wx.provider = r.provider;
             wx.source = r.source;
             wx.stale = !!r.stale;
+            wx.sample = !!r.sample;
             wx.list = r.list;
             if (force) showToast('氣象資料已更新');
           } catch (e) {

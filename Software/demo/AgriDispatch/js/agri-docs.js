@@ -61,10 +61,15 @@ const AgriDocs = (function () {
     const planName = escHtml(customOptions.planName || '');
     orderId = escHtml(orderId || '');
 
-    // 雙軌分流精算：82% 合作社勞務免稅，18% 科技公司代管應稅
-    const coopAmount = Math.round(amount * 0.82);
-    const techAmountTaxExcluded = Math.round((amount * 0.18) / 1.05);
-    const techTax = (amount * 0.18) - techAmountTaxExcluded;
+    // 雙軌分流精算：合作社勞務免稅，科技公司代管應稅。
+    // 代管費率 16%（財務模型 F2 v2.4；v2.3 以前為 18%／82%）；費率須經合作社依章程決議【待確認】
+    const TECH_RATE = 0.16;
+    const techPct = Math.round(TECH_RATE * 100);
+    const coopPct = 100 - techPct;
+    const techAmount = Math.round(amount * TECH_RATE);
+    const coopAmount = amount - techAmount;
+    const techAmountTaxExcluded = Math.round(techAmount / 1.05);
+    const techTax = techAmount - techAmountTaxExcluded;
 
     const html = `<!DOCTYPE html>
 <html lang="zh-TW">
@@ -163,8 +168,8 @@ ${isBalance ? `
 
     <div class="tax-split-box">
       <strong>合作社與科技公司雙軌金流扣繳拆分：</strong><br>
-      • 合作社外展農務勞務（免營業稅，農民社員交易）：<strong>NT$ ${coopAmount.toLocaleString()}</strong> (82%)<br>
-      • 智農科技代管營運（專車 logistics 與系統代管，應稅 5%）：<strong>NT$ ${Math.round(amount * 0.18).toLocaleString()}</strong> (銷售額 $${techAmountTaxExcluded.toLocaleString()} / 稅額 $${techTax.toLocaleString()})<br>
+      • 合作社外展農務勞務（免營業稅，農民社員交易）：<strong>NT$ ${coopAmount.toLocaleString()}</strong> (${coopPct}%)<br>
+      • 智農科技代管營運（專車 logistics 與系統代管，應稅 5%）：<strong>NT$ ${techAmount.toLocaleString()}</strong> (銷售額 $${techAmountTaxExcluded.toLocaleString()} / 稅額 $${techTax.toLocaleString()})<br>
       • 備註：本頁為系統展示用發票範本，並非正式統一發票；正式營運須串接財政部電子發票整合服務平台開立。
     </div>
 

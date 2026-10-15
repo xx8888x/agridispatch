@@ -1,0 +1,494 @@
+{
+  "startedAt": "2026-10-15T00:51:56.307Z",
+  "base": "http://localhost:3000",
+  "chrome": "155.0.8059.40",
+  "desktop": [
+    {
+      "site": "demo",
+      "page": "AgriDispatch/index.html",
+      "role": null,
+      "cold": {
+        "site": "demo",
+        "page": "AgriDispatch/index.html",
+        "role": null,
+        "status": 200,
+        "wall": 2535,
+        "ttfb": 5,
+        "dcl": 881,
+        "load": 1188,
+        "fcp": 808,
+        "lcp": 808,
+        "cls": 0.005,
+        "tbt": 241,
+        "longTasks": 1,
+        "reqs": 13,
+        "docKB": 13,
+        "transferKB": 1999,
+        "decodedKB": 2354,
+        "byType": {
+          "script": {
+            "n": 8,
+            "bytes": 1860259
+          },
+          "link": {
+            "n": 2,
+            "bytes": 34379
+          },
+          "css": {
+            "n": 1,
+            "bytes": 138796
+          },
+          "other": {
+            "n": 1,
+            "bytes": 337
+          }
+        },
+        "api": [],
+        "top": [
+          {
+            "url": "/demo/mock/demo-fixtures.js",
+            "kb": 818,
+            "ms": 19
+          },
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "kb": 494,
+            "ms": 224
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/lucide.min.js",
+            "kb": 432,
+            "ms": 37
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "kb": 398,
+            "ms": 37
+          },
+          {
+            "url": "/demo/mock/demo-mock.js",
+            "kb": 124,
+            "ms": 15
+          }
+        ],
+        "slow": [
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "ms": 224
+          },
+          {
+            "url": "/favicon.ico",
+            "ms": 46
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/lucide.min.js",
+            "ms": 37
+          }
+        ],
+        "ext": [
+          "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+        ],
+        "heapMB": 16.6,
+        "dom": 326,
+        "errors": [
+          "Failed to load resource: the server responded with a status of 404 ()"
+        ],
+        "failed": [],
+        "finalUrl": "/demo/AgriDispatch/index.html"
+      },
+      "warm": {
+        "ttfb": 40,
+        "dcl": 315,
+        "load": 327,
+        "fcp": 316,
+        "lcp": 316,
+        "tbt": 60,
+        "transferKB": 0,
+        "reqs": 32,
+        "wall": 1644
+      }
+    },
+    {
+      "site": "demo",
+      "page": "AgriDispatch/farmer.html",
+      "role": "farmer",
+      "cold": {
+        "site": "demo",
+        "page": "AgriDispatch/farmer.html",
+        "role": "farmer",
+        "status": 200,
+        "wall": 2437,
+        "ttfb": 5,
+        "dcl": 654,
+        "load": 1118,
+        "fcp": 552,
+        "lcp": 820,
+        "cls": 0.084,
+        "tbt": 184,
+        "longTasks": 1,
+        "reqs": 15,
+        "docKB": 112,
+        "transferKB": 2370,
+        "decodedKB": 2725,
+        "byType": {
+          "script": {
+            "n": 11,
+            "bytes": 2139224
+          },
+          "link": {
+            "n": 2,
+            "bytes": 34379
+          },
+          "css": {
+            "n": 1,
+            "bytes": 138796
+          }
+        },
+        "api": [],
+        "top": [
+          {
+            "url": "/demo/mock/demo-fixtures.js",
+            "kb": 818,
+            "ms": 19
+          },
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "kb": 494,
+            "ms": 133
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/lucide.min.js",
+            "kb": 432,
+            "ms": 27
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "kb": 398,
+            "ms": 26
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/chart.umd.min.js",
+            "kb": 204,
+            "ms": 39
+          }
+        ],
+        "slow": [
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "ms": 133
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/chart.umd.min.js",
+            "ms": 39
+          },
+          {
+            "url": "/demo/AgriDispatch/css/agri.css",
+            "ms": 38
+          }
+        ],
+        "ext": [
+          "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+        ],
+        "heapMB": 16.4,
+        "dom": 750,
+        "errors": [],
+        "failed": [],
+        "finalUrl": "/demo/AgriDispatch/farmer.html"
+      },
+      "warm": {
+        "ttfb": 4,
+        "dcl": 514,
+        "load": 521,
+        "fcp": 464,
+        "lcp": 464,
+        "tbt": 184,
+        "transferKB": 0,
+        "reqs": 34,
+        "wall": 1804
+      }
+    },
+    {
+      "site": "web",
+      "page": "AgriDispatch/index.html",
+      "role": null,
+      "cold": {
+        "site": "web",
+        "page": "AgriDispatch/index.html",
+        "role": null,
+        "status": 200,
+        "wall": 3364,
+        "ttfb": 18,
+        "dcl": 705,
+        "load": 2027,
+        "fcp": 708,
+        "lcp": 708,
+        "cls": 0.005,
+        "tbt": 146,
+        "longTasks": 2,
+        "reqs": 9,
+        "docKB": 13,
+        "transferKB": 1051,
+        "decodedKB": 1407,
+        "byType": {
+          "script": {
+            "n": 5,
+            "bytes": 889245
+          },
+          "link": {
+            "n": 2,
+            "bytes": 34379
+          },
+          "css": {
+            "n": 1,
+            "bytes": 138796
+          }
+        },
+        "api": [],
+        "top": [
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "kb": 494,
+            "ms": 207
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/lucide.min.js",
+            "kb": 432,
+            "ms": 283
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "kb": 398,
+            "ms": 1052
+          },
+          {
+            "url": "/web/AgriDispatch/css/agri.css",
+            "kb": 31,
+            "ms": 58
+          },
+          {
+            "url": "/web/AgriDispatch/js/agri-theme.js",
+            "kb": 21,
+            "ms": 75
+          }
+        ],
+        "slow": [
+          {
+            "url": "/web/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "ms": 1052
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/lucide.min.js",
+            "ms": 283
+          },
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "ms": 207
+          }
+        ],
+        "ext": [
+          "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+        ],
+        "heapMB": 11.5,
+        "dom": 189,
+        "errors": [],
+        "failed": [],
+        "finalUrl": "/web/AgriDispatch/index.html"
+      },
+      "warm": {
+        "ttfb": 4,
+        "dcl": 303,
+        "load": 311,
+        "fcp": 304,
+        "lcp": 304,
+        "tbt": 50,
+        "transferKB": 0,
+        "reqs": 29,
+        "wall": 1616
+      }
+    },
+    {
+      "site": "web",
+      "page": "AgriDispatch/farmer.html",
+      "role": "farmer",
+      "cold": {
+        "site": "web",
+        "page": "AgriDispatch/farmer.html",
+        "role": "farmer",
+        "status": 200,
+        "wall": 2898,
+        "ttfb": 5,
+        "dcl": 609,
+        "load": 978,
+        "fcp": 548,
+        "lcp": 548,
+        "cls": 0.083,
+        "tbt": 153,
+        "longTasks": 2,
+        "reqs": 25,
+        "docKB": 112,
+        "transferKB": 3032,
+        "decodedKB": 3384,
+        "byType": {
+          "script": {
+            "n": 8,
+            "bytes": 1168210
+          },
+          "link": {
+            "n": 2,
+            "bytes": 34379
+          },
+          "css": {
+            "n": 1,
+            "bytes": 138796
+          },
+          "fetch": {
+            "n": 13,
+            "bytes": 1648673
+          }
+        },
+        "api": [
+          {
+            "url": "/api/crops",
+            "ms": 3,
+            "ttfb": 2,
+            "bytes": 5241
+          },
+          {
+            "url": "/api/farmers/me/farms",
+            "ms": 4,
+            "ttfb": 3,
+            "bytes": 326
+          },
+          {
+            "url": "/api/orders",
+            "ms": 105,
+            "ttfb": 67,
+            "bytes": 1635080
+          },
+          {
+            "url": "/api/dispatch/teams",
+            "ms": 4,
+            "ttfb": 2,
+            "bytes": 2501
+          },
+          {
+            "url": "/api/ratings/teams/team_b",
+            "ms": 6,
+            "ttfb": 4,
+            "bytes": 746
+          },
+          {
+            "url": "/api/insurance/teams/team_b",
+            "ms": 9,
+            "ttfb": 8,
+            "bytes": 415
+          },
+          {
+            "url": "/api/skills/teams/team_b",
+            "ms": 44,
+            "ttfb": 43,
+            "bytes": 669
+          },
+          {
+            "url": "/api/orders/calculate",
+            "ms": 473,
+            "ttfb": 472,
+            "bytes": 1022
+          },
+          {
+            "url": "/api/ratings/teams/team_a",
+            "ms": 6,
+            "ttfb": 4,
+            "bytes": 735
+          },
+          {
+            "url": "/api/insurance/teams/team_a",
+            "ms": 10,
+            "ttfb": 9,
+            "bytes": 415
+          },
+          {
+            "url": "/api/skills/teams/team_a",
+            "ms": 35,
+            "ttfb": 32,
+            "bytes": 669
+          },
+          {
+            "url": "/api/ratings/orders/ORD-2026-013",
+            "ms": 7,
+            "ttfb": 5,
+            "bytes": 328
+          },
+          {
+            "url": "/api/farmers/me/past-workers?start=2026-10-16&end=2026-10-18&timeSlot=full_day",
+            "ms": 89,
+            "ttfb": 88,
+            "bytes": 526
+          }
+        ],
+        "top": [
+          {
+            "url": "/api/orders",
+            "kb": 1596,
+            "ms": 105
+          },
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "kb": 494,
+            "ms": 183
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/lucide.min.js",
+            "kb": 432,
+            "ms": 26
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "kb": 398,
+            "ms": 25
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/chart.umd.min.js",
+            "kb": 204,
+            "ms": 185
+          }
+        ],
+        "slow": [
+          {
+            "url": "/api/orders/calculate",
+            "ms": 473
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/chart.umd.min.js",
+            "ms": 185
+          },
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "ms": 183
+          }
+        ],
+        "ext": [
+          "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+        ],
+        "heapMB": 12.5,
+        "dom": 613,
+        "errors": [],
+        "failed": [],
+        "finalUrl": "/web/AgriDispatch/farmer.html"
+      },
+      "warm": {
+        "ttfb": 4,
+        "dcl": 448,
+        "load": 454,
+        "fcp": 408,
+        "lcp": 408,
+        "tbt": 156,
+        "transferKB": 1610,
+        "reqs": 43,
+        "wall": 2520
+      }
+    }
+  ],
+  "mobile": [],
+  "finishedAt": "2026-10-15T00:52:59.307Z"
+}

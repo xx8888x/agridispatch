@@ -1,0 +1,9 @@
+{
+  "name": "agridispatch-perf-tools",
+  "private": true,
+  "type": "module",
+  "description": "智農派工效能測試腳本（後端 API 壓測、前端頁面與截圖）",
+  "dependencies": {
+    "playwright-core": "1.49.1"
+  }
+}

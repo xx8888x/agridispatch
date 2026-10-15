@@ -1,0 +1,1307 @@
+{
+  "startedAt": "2026-10-15T01:15:32.434Z",
+  "base": "http://localhost:3100",
+  "chrome": "155.0.8059.40",
+  "desktop": [],
+  "mobile": [
+    {
+      "site": "web",
+      "page": "AgriDispatch/index.html",
+      "role": null,
+      "cold": {
+        "site": "web",
+        "page": "AgriDispatch/index.html",
+        "role": null,
+        "status": 200,
+        "wall": 12682,
+        "ttfb": 12,
+        "dcl": 5054,
+        "load": 11353,
+        "fcp": 4772,
+        "lcp": 4772,
+        "cls": 0,
+        "tbt": 2727,
+        "longTasks": 6,
+        "reqs": 10,
+        "docKB": 13,
+        "transferKB": 388,
+        "decodedKB": 1409,
+        "byType": {
+          "script": {
+            "n": 5,
+            "bytes": 243679
+          },
+          "link": {
+            "n": 2,
+            "bytes": 9779
+          },
+          "css": {
+            "n": 1,
+            "bytes": 138868
+          },
+          "other": {
+            "n": 1,
+            "bytes": 337
+          }
+        },
+        "api": [],
+        "top": [
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "kb": 496,
+            "ms": 897
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/lucide.min.js",
+            "kb": 432,
+            "ms": 1290
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "kb": 398,
+            "ms": 1385
+          },
+          {
+            "url": "/web/AgriDispatch/css/agri.css",
+            "kb": 31,
+            "ms": 460
+          },
+          {
+            "url": "/web/AgriDispatch/js/agri-theme.js",
+            "kb": 21,
+            "ms": 337
+          }
+        ],
+        "slow": [
+          {
+            "url": "/web/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "ms": 1385
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/lucide.min.js",
+            "ms": 1290
+          },
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "ms": 897
+          }
+        ],
+        "ext": [
+          "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+        ],
+        "heapMB": 11.5,
+        "dom": 189,
+        "errors": [
+          "Failed to load resource: the server responded with a status of 404 (Not Found) @/favicon.ico"
+        ],
+        "failed": [],
+        "finalUrl": "/web/AgriDispatch/index.html"
+      }
+    },
+    {
+      "site": "web",
+      "page": "AgriDispatch/farmer-login.html",
+      "role": null,
+      "cold": {
+        "site": "web",
+        "page": "AgriDispatch/farmer-login.html",
+        "role": null,
+        "status": 200,
+        "wall": 9827,
+        "ttfb": 15,
+        "dcl": 6665,
+        "load": 8498,
+        "fcp": 6236,
+        "lcp": 6536,
+        "cls": 0,
+        "tbt": 2827,
+        "longTasks": 6,
+        "reqs": 10,
+        "docKB": 14,
+        "transferKB": 449,
+        "decodedKB": 1574,
+        "byType": {
+          "script": {
+            "n": 6,
+            "bytes": 305487
+          },
+          "link": {
+            "n": 2,
+            "bytes": 9779
+          },
+          "css": {
+            "n": 1,
+            "bytes": 138868
+          }
+        },
+        "api": [],
+        "top": [
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "kb": 496,
+            "ms": 895
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/lucide.min.js",
+            "kb": 432,
+            "ms": 1642
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "kb": 398,
+            "ms": 1723
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/vue.global.prod.js",
+            "kb": 164,
+            "ms": 1267
+          },
+          {
+            "url": "/web/AgriDispatch/css/agri.css",
+            "kb": 31,
+            "ms": 320
+          }
+        ],
+        "slow": [
+          {
+            "url": "/web/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "ms": 1723
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/lucide.min.js",
+            "ms": 1642
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/vue.global.prod.js",
+            "ms": 1267
+          }
+        ],
+        "ext": [
+          "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+        ],
+        "heapMB": 11.3,
+        "dom": 62,
+        "errors": [],
+        "failed": [],
+        "finalUrl": "/web/AgriDispatch/farmer-login.html"
+      }
+    },
+    {
+      "site": "web",
+      "page": "AgriDispatch/farmer.html",
+      "role": "farmer",
+      "cold": {
+        "site": "web",
+        "page": "AgriDispatch/farmer.html",
+        "role": "farmer",
+        "status": 200,
+        "wall": 12691,
+        "ttfb": 16,
+        "dcl": 7116,
+        "load": 11360,
+        "fcp": 5716,
+        "lcp": 7696,
+        "cls": 0.433,
+        "tbt": 3252,
+        "longTasks": 11,
+        "reqs": 24,
+        "docKB": 112,
+        "transferKB": 519,
+        "decodedKB": 1805,
+        "byType": {
+          "script": {
+            "n": 8,
+            "bytes": 338476
+          },
+          "link": {
+            "n": 2,
+            "bytes": 9779
+          },
+          "css": {
+            "n": 1,
+            "bytes": 138868
+          },
+          "fetch": {
+            "n": 12,
+            "bytes": 11952
+          }
+        },
+        "api": [
+          {
+            "url": "/api/crops",
+            "ms": 437,
+            "ttfb": 5,
+            "bytes": 2251
+          },
+          {
+            "url": "/api/farmers/me/farms",
+            "ms": 304,
+            "ttfb": 4,
+            "bytes": 346
+          },
+          {
+            "url": "/api/orders",
+            "ms": 563,
+            "ttfb": 5,
+            "bytes": 4124
+          },
+          {
+            "url": "/api/orders/calculate",
+            "ms": 301,
+            "ttfb": 8,
+            "bytes": 320
+          },
+          {
+            "url": "/api/dispatch/teams",
+            "ms": 278,
+            "ttfb": 4,
+            "bytes": 1378
+          },
+          {
+            "url": "/api/ratings/teams/team_b",
+            "ms": 259,
+            "ttfb": 3,
+            "bytes": 640
+          },
+          {
+            "url": "/api/insurance/teams/team_b",
+            "ms": 270,
+            "ttfb": 6,
+            "bytes": 412
+          },
+          {
+            "url": "/api/skills/teams/team_b",
+            "ms": 266,
+            "ttfb": 53,
+            "bytes": 547
+          },
+          {
+            "url": "/api/ratings/teams/team_a",
+            "ms": 248,
+            "ttfb": 4,
+            "bytes": 636
+          },
+          {
+            "url": "/api/insurance/teams/team_a",
+            "ms": 270,
+            "ttfb": 5,
+            "bytes": 411
+          },
+          {
+            "url": "/api/skills/teams/team_a",
+            "ms": 274,
+            "ttfb": 22,
+            "bytes": 539
+          },
+          {
+            "url": "/api/ratings/orders/ORD-2026-013",
+            "ms": 257,
+            "ttfb": 4,
+            "bytes": 348
+          }
+        ],
+        "top": [
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "kb": 496,
+            "ms": 874
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/lucide.min.js",
+            "kb": 432,
+            "ms": 1775
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "kb": 398,
+            "ms": 1870
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/chart.umd.min.js",
+            "kb": 204,
+            "ms": 1462
+          },
+          {
+            "url": "/web/AgriDispatch/js/agri-docs.js",
+            "kb": 42,
+            "ms": 870
+          }
+        ],
+        "slow": [
+          {
+            "url": "/web/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "ms": 1870
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/lucide.min.js",
+            "ms": 1775
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/chart.umd.min.js",
+            "ms": 1462
+          }
+        ],
+        "ext": [
+          "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+        ],
+        "heapMB": 16.8,
+        "dom": 612,
+        "errors": [
+          "Failed to load resource: the server responded with a status of 403 (Forbidden) @/api/orders/calculate"
+        ],
+        "failed": [
+          "/api/orders/calculate HTTP 403"
+        ],
+        "finalUrl": "/web/AgriDispatch/farmer.html"
+      }
+    },
+    {
+      "site": "web",
+      "page": "AgriDispatch/worker-local.html",
+      "role": "worker_local",
+      "cold": {
+        "site": "web",
+        "page": "AgriDispatch/worker-local.html",
+        "role": "worker_local",
+        "status": 200,
+        "wall": 14048,
+        "ttfb": 12,
+        "dcl": 6698,
+        "load": 12722,
+        "fcp": 6220,
+        "lcp": 6220,
+        "cls": 0.025,
+        "tbt": 3399,
+        "longTasks": 8,
+        "reqs": 19,
+        "docKB": 81,
+        "transferKB": 439,
+        "decodedKB": 1574,
+        "byType": {
+          "script": {
+            "n": 7,
+            "bytes": 267431
+          },
+          "link": {
+            "n": 2,
+            "bytes": 9779
+          },
+          "css": {
+            "n": 1,
+            "bytes": 138868
+          },
+          "fetch": {
+            "n": 8,
+            "bytes": 10874
+          }
+        },
+        "api": [
+          {
+            "url": "/api/crops",
+            "ms": 469,
+            "ttfb": 5,
+            "bytes": 2251
+          },
+          {
+            "url": "/api/insurance/workers/W026",
+            "ms": 291,
+            "ttfb": 3,
+            "bytes": 707
+          },
+          {
+            "url": "/api/workers/W026/payroll",
+            "ms": 318,
+            "ttfb": 4,
+            "bytes": 1014
+          },
+          {
+            "url": "/api/attendance/history/W026",
+            "ms": 309,
+            "ttfb": 4,
+            "bytes": 1149
+          },
+          {
+            "url": "/api/workers/W026/schedule",
+            "ms": 333,
+            "ttfb": 6,
+            "bytes": 1488
+          },
+          {
+            "url": "/api/workers/W012/schedule",
+            "ms": 332,
+            "ttfb": 6,
+            "bytes": 1557
+          },
+          {
+            "url": "/api/workers/W030/schedule",
+            "ms": 702,
+            "ttfb": 5,
+            "bytes": 1824
+          },
+          {
+            "url": "/api/workers/W026/team-members",
+            "ms": 303,
+            "ttfb": 3,
+            "bytes": 884
+          }
+        ],
+        "top": [
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "kb": 496,
+            "ms": 901
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/lucide.min.js",
+            "kb": 432,
+            "ms": 1422
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "kb": 398,
+            "ms": 1516
+          },
+          {
+            "url": "/web/AgriDispatch/js/agri-docs.js",
+            "kb": 42,
+            "ms": 658
+          },
+          {
+            "url": "/web/AgriDispatch/css/agri.css",
+            "kb": 31,
+            "ms": 500
+          }
+        ],
+        "slow": [
+          {
+            "url": "/web/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "ms": 1516
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/lucide.min.js",
+            "ms": 1422
+          },
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "ms": 901
+          }
+        ],
+        "ext": [
+          "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+        ],
+        "heapMB": 15.9,
+        "dom": 554,
+        "errors": [],
+        "failed": [],
+        "finalUrl": "/web/AgriDispatch/worker-local.html"
+      }
+    },
+    {
+      "site": "web",
+      "page": "TechBackend/admin.html",
+      "role": "admin_tech",
+      "cold": {
+        "site": "web",
+        "page": "TechBackend/admin.html",
+        "role": "admin_tech",
+        "status": 200,
+        "wall": 18572,
+        "ttfb": 15,
+        "dcl": 15887,
+        "load": 17244,
+        "fcp": 5168,
+        "lcp": 5168,
+        "cls": 0.111,
+        "tbt": 4467,
+        "longTasks": 15,
+        "reqs": 24,
+        "docKB": 223,
+        "transferKB": 455,
+        "decodedKB": 1715,
+        "byType": {
+          "script": {
+            "n": 8,
+            "bytes": 226267
+          },
+          "link": {
+            "n": 2,
+            "bytes": 9592
+          },
+          "css": {
+            "n": 1,
+            "bytes": 138864
+          },
+          "fetch": {
+            "n": 12,
+            "bytes": 44374
+          }
+        },
+        "api": [
+          {
+            "url": "/api/workers",
+            "ms": 218,
+            "ttfb": 5,
+            "bytes": 3104
+          },
+          {
+            "url": "/api/orders",
+            "ms": 244,
+            "ttfb": 5,
+            "bytes": 4124
+          },
+          {
+            "url": "/api/crops",
+            "ms": 226,
+            "ttfb": 3,
+            "bytes": 2251
+          },
+          {
+            "url": "/api/dispatch/overview",
+            "ms": 222,
+            "ttfb": 4,
+            "bytes": 2105
+          },
+          {
+            "url": "/api/talents",
+            "ms": 188,
+            "ttfb": 5,
+            "bytes": 1377
+          },
+          {
+            "url": "/api/calendar?year=2026&month=10",
+            "ms": 245,
+            "ttfb": 3,
+            "bytes": 4509
+          },
+          {
+            "url": "/api/orders/categories",
+            "ms": 352,
+            "ttfb": 5,
+            "bytes": 1303
+          },
+          {
+            "url": "/api/orders/calculate",
+            "ms": 373,
+            "ttfb": 16,
+            "bytes": 320
+          },
+          {
+            "url": "/api/brochures?all=true",
+            "ms": 441,
+            "ttfb": 5,
+            "bytes": 7085
+          },
+          {
+            "url": "/api/legalize/summary",
+            "ms": 375,
+            "ttfb": 9,
+            "bytes": 785
+          },
+          {
+            "url": "/api/weather/towns",
+            "ms": 475,
+            "ttfb": 20,
+            "bytes": 16033
+          },
+          {
+            "url": "/api/dispatch/teams",
+            "ms": 195,
+            "ttfb": 2,
+            "bytes": 1378
+          }
+        ],
+        "top": [
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "kb": 496,
+            "ms": 896
+          },
+          {
+            "url": "/web/TechBackend/js/vendor/tailwindcss-3.4.17.js",
+            "kb": 398,
+            "ms": 1333
+          },
+          {
+            "url": "/api/weather/towns",
+            "kb": 206,
+            "ms": 475
+          },
+          {
+            "url": "/web/TechBackend/js/vendor/vue.global.prod.js",
+            "kb": 164,
+            "ms": 1024
+          },
+          {
+            "url": "/web/TechBackend/js/demo-data.js",
+            "kb": 57,
+            "ms": 475
+          }
+        ],
+        "slow": [
+          {
+            "url": "/web/TechBackend/js/vendor/tailwindcss-3.4.17.js",
+            "ms": 1333
+          },
+          {
+            "url": "/web/TechBackend/js/vendor/vue.global.prod.js",
+            "ms": 1024
+          },
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "ms": 896
+          }
+        ],
+        "ext": [
+          "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+        ],
+        "heapMB": 10.9,
+        "dom": 946,
+        "errors": [
+          "Failed to load resource: the server responded with a status of 403 (Forbidden) @/api/orders/calculate",
+          "SyntaxError: Unexpected token 'I', \"Invalid CORS request\" is not valid JSON @/web/TechBackend/admin.html"
+        ],
+        "failed": [
+          "/api/orders/calculate HTTP 403"
+        ],
+        "finalUrl": "/web/TechBackend/admin.html"
+      }
+    },
+    {
+      "site": "web",
+      "page": "AgriDispatch/brochure.html",
+      "role": null,
+      "cold": {
+        "site": "web",
+        "page": "AgriDispatch/brochure.html",
+        "role": null,
+        "status": 200,
+        "wall": 14089,
+        "ttfb": 8,
+        "dcl": 7225,
+        "load": 12752,
+        "fcp": 5620,
+        "lcp": 8904,
+        "cls": 0.113,
+        "tbt": 2973,
+        "longTasks": 8,
+        "reqs": 10,
+        "docKB": 36,
+        "transferKB": 362,
+        "decodedKB": 1179,
+        "byType": {
+          "script": {
+            "n": 5,
+            "bytes": 200817
+          },
+          "link": {
+            "n": 2,
+            "bytes": 9779
+          },
+          "css": {
+            "n": 1,
+            "bytes": 138868
+          },
+          "fetch": {
+            "n": 1,
+            "bytes": 7085
+          }
+        },
+        "api": [
+          {
+            "url": "/api/brochures",
+            "ms": 723,
+            "ttfb": 5,
+            "bytes": 7085
+          }
+        ],
+        "top": [
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "kb": 496,
+            "ms": 884
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "kb": 398,
+            "ms": 1187
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/vue.global.prod.js",
+            "kb": 164,
+            "ms": 885
+          },
+          {
+            "url": "/web/AgriDispatch/css/agri.css",
+            "kb": 31,
+            "ms": 452
+          },
+          {
+            "url": "/web/AgriDispatch/js/agri-theme.js",
+            "kb": 21,
+            "ms": 319
+          }
+        ],
+        "slow": [
+          {
+            "url": "/web/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "ms": 1187
+          },
+          {
+            "url": "/web/AgriDispatch/js/vendor/vue.global.prod.js",
+            "ms": 885
+          },
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "ms": 884
+          }
+        ],
+        "ext": [
+          "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+        ],
+        "heapMB": 17.2,
+        "dom": 204,
+        "errors": [],
+        "failed": [],
+        "finalUrl": "/web/AgriDispatch/brochure.html"
+      }
+    },
+    {
+      "site": "demo",
+      "page": "AgriDispatch/index.html",
+      "role": null,
+      "cold": {
+        "site": "demo",
+        "page": "AgriDispatch/index.html",
+        "role": null,
+        "status": 200,
+        "wall": 14245,
+        "ttfb": 9,
+        "dcl": 6320,
+        "load": 12921,
+        "fcp": 6212,
+        "lcp": 6212,
+        "cls": 0,
+        "tbt": 3120,
+        "longTasks": 7,
+        "reqs": 12,
+        "docKB": 13,
+        "transferKB": 489,
+        "decodedKB": 2356,
+        "byType": {
+          "script": {
+            "n": 8,
+            "bytes": 347969
+          },
+          "link": {
+            "n": 2,
+            "bytes": 9779
+          },
+          "css": {
+            "n": 1,
+            "bytes": 138868
+          }
+        },
+        "api": [],
+        "top": [
+          {
+            "url": "/demo/mock/demo-fixtures.js",
+            "kb": 818,
+            "ms": 1282
+          },
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "kb": 496,
+            "ms": 869
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/lucide.min.js",
+            "kb": 432,
+            "ms": 1811
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "kb": 398,
+            "ms": 1893
+          },
+          {
+            "url": "/demo/mock/demo-mock.js",
+            "kb": 124,
+            "ms": 938
+          }
+        ],
+        "slow": [
+          {
+            "url": "/demo/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "ms": 1893
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/lucide.min.js",
+            "ms": 1811
+          },
+          {
+            "url": "/demo/mock/demo-fixtures.js",
+            "ms": 1282
+          }
+        ],
+        "ext": [
+          "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+        ],
+        "heapMB": 16.3,
+        "dom": 326,
+        "errors": [],
+        "failed": [],
+        "finalUrl": "/demo/AgriDispatch/index.html"
+      }
+    },
+    {
+      "site": "demo",
+      "page": "AgriDispatch/farmer-login.html",
+      "role": null,
+      "cold": {
+        "site": "demo",
+        "page": "AgriDispatch/farmer-login.html",
+        "role": null,
+        "status": 200,
+        "wall": 12696,
+        "ttfb": 12,
+        "dcl": 6882,
+        "load": 11362,
+        "fcp": 6460,
+        "lcp": 6676,
+        "cls": 0,
+        "tbt": 3775,
+        "longTasks": 6,
+        "reqs": 13,
+        "docKB": 14,
+        "transferKB": 550,
+        "decodedKB": 2522,
+        "byType": {
+          "script": {
+            "n": 9,
+            "bytes": 409777
+          },
+          "link": {
+            "n": 2,
+            "bytes": 9779
+          },
+          "css": {
+            "n": 1,
+            "bytes": 138868
+          }
+        },
+        "api": [],
+        "top": [
+          {
+            "url": "/demo/mock/demo-fixtures.js",
+            "kb": 818,
+            "ms": 1646
+          },
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "kb": 496,
+            "ms": 891
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/lucide.min.js",
+            "kb": 432,
+            "ms": 2104
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "kb": 398,
+            "ms": 2190
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/vue.global.prod.js",
+            "kb": 164,
+            "ms": 1721
+          }
+        ],
+        "slow": [
+          {
+            "url": "/demo/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "ms": 2190
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/lucide.min.js",
+            "ms": 2104
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/vue.global.prod.js",
+            "ms": 1721
+          }
+        ],
+        "ext": [
+          "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+        ],
+        "heapMB": 14.3,
+        "dom": 224,
+        "errors": [],
+        "failed": [],
+        "finalUrl": "/demo/AgriDispatch/farmer-login.html"
+      }
+    },
+    {
+      "site": "demo",
+      "page": "AgriDispatch/farmer.html",
+      "role": "farmer",
+      "cold": {
+        "site": "demo",
+        "page": "AgriDispatch/farmer.html",
+        "role": "farmer",
+        "status": 200,
+        "wall": 12600,
+        "ttfb": 15,
+        "dcl": 7637,
+        "load": 11282,
+        "fcp": 5392,
+        "lcp": 8400,
+        "cls": 0.433,
+        "tbt": 2835,
+        "longTasks": 14,
+        "reqs": 15,
+        "docKB": 112,
+        "transferKB": 609,
+        "decodedKB": 2727,
+        "byType": {
+          "script": {
+            "n": 11,
+            "bytes": 442766
+          },
+          "link": {
+            "n": 2,
+            "bytes": 9779
+          },
+          "css": {
+            "n": 1,
+            "bytes": 138868
+          }
+        },
+        "api": [],
+        "top": [
+          {
+            "url": "/demo/mock/demo-fixtures.js",
+            "kb": 818,
+            "ms": 1899
+          },
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "kb": 496,
+            "ms": 867
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/lucide.min.js",
+            "kb": 432,
+            "ms": 2256
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "kb": 398,
+            "ms": 2364
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/chart.umd.min.js",
+            "kb": 204,
+            "ms": 2038
+          }
+        ],
+        "slow": [
+          {
+            "url": "/demo/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "ms": 2364
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/lucide.min.js",
+            "ms": 2256
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/chart.umd.min.js",
+            "ms": 2038
+          }
+        ],
+        "ext": [
+          "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+        ],
+        "heapMB": 15.9,
+        "dom": 750,
+        "errors": [],
+        "failed": [],
+        "finalUrl": "/demo/AgriDispatch/farmer.html"
+      }
+    },
+    {
+      "site": "demo",
+      "page": "AgriDispatch/worker-local.html",
+      "role": "worker_local",
+      "cold": {
+        "site": "demo",
+        "page": "AgriDispatch/worker-local.html",
+        "role": "worker_local",
+        "status": 200,
+        "wall": 13110,
+        "ttfb": 10,
+        "dcl": 5697,
+        "load": 11784,
+        "fcp": 4948,
+        "lcp": 4948,
+        "cls": 0.021,
+        "tbt": 1816,
+        "longTasks": 9,
+        "reqs": 14,
+        "docKB": 81,
+        "transferKB": 530,
+        "decodedKB": 2492,
+        "byType": {
+          "script": {
+            "n": 10,
+            "bytes": 371721
+          },
+          "link": {
+            "n": 2,
+            "bytes": 9779
+          },
+          "css": {
+            "n": 1,
+            "bytes": 138868
+          }
+        },
+        "api": [],
+        "top": [
+          {
+            "url": "/demo/mock/demo-fixtures.js",
+            "kb": 818,
+            "ms": 1445
+          },
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "kb": 496,
+            "ms": 917
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/lucide.min.js",
+            "kb": 432,
+            "ms": 1915
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "kb": 398,
+            "ms": 2025
+          },
+          {
+            "url": "/demo/mock/demo-mock.js",
+            "kb": 124,
+            "ms": 1184
+          }
+        ],
+        "slow": [
+          {
+            "url": "/demo/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "ms": 2025
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/lucide.min.js",
+            "ms": 1915
+          },
+          {
+            "url": "/demo/mock/demo-fixtures.js",
+            "ms": 1445
+          }
+        ],
+        "ext": [
+          "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+        ],
+        "heapMB": 14,
+        "dom": 691,
+        "errors": [],
+        "failed": [],
+        "finalUrl": "/demo/AgriDispatch/worker-local.html"
+      }
+    },
+    {
+      "site": "demo",
+      "page": "TechBackend/admin.html",
+      "role": "admin_tech",
+      "cold": {
+        "site": "demo",
+        "page": "TechBackend/admin.html",
+        "role": "admin_tech",
+        "status": 200,
+        "wall": 20693,
+        "ttfb": 15,
+        "dcl": 17293,
+        "load": 18322,
+        "fcp": 5904,
+        "lcp": 6740,
+        "cls": 0.13,
+        "tbt": 4049,
+        "longTasks": 12,
+        "reqs": 16,
+        "docKB": 223,
+        "transferKB": 514,
+        "decodedKB": 2379,
+        "byType": {
+          "script": {
+            "n": 11,
+            "bytes": 330565
+          },
+          "link": {
+            "n": 2,
+            "bytes": 9592
+          },
+          "css": {
+            "n": 1,
+            "bytes": 138868
+          },
+          "fetch": {
+            "n": 1,
+            "bytes": 0
+          }
+        },
+        "api": [],
+        "top": [
+          {
+            "url": "/demo/mock/demo-fixtures.js",
+            "kb": 818,
+            "ms": 1451
+          },
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "kb": 496,
+            "ms": 900
+          },
+          {
+            "url": "/demo/TechBackend/js/vendor/tailwindcss-3.4.17.js",
+            "kb": 398,
+            "ms": 1818
+          },
+          {
+            "url": "/demo/TechBackend/js/vendor/vue.global.prod.js",
+            "kb": 164,
+            "ms": 1351
+          },
+          {
+            "url": "/demo/mock/demo-mock.js",
+            "kb": 124,
+            "ms": 1180
+          }
+        ],
+        "slow": [
+          {
+            "url": "/demo/TechBackend/js/vendor/tailwindcss-3.4.17.js",
+            "ms": 1818
+          },
+          {
+            "url": "/demo/mock/demo-fixtures.js",
+            "ms": 1451
+          },
+          {
+            "url": "/demo/TechBackend/js/vendor/vue.global.prod.js",
+            "ms": 1351
+          }
+        ],
+        "ext": [
+          "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+          "https://api.open-meteo.com/v1/forecast?latitude=25.144,25.11,25.081,25.12,25.15,25.142,25.126,25.06,25.031,25.027,25.07,25.032,25.064,25.029,24.989,25.036,25.084,25.126,25.148,25.012,25.063,24.991,25.008,25.036,24.93,24.98,24.957,24.882,25.19,25.073,25.099,24.964,25.089,25.096,25.056,25.1,24.998,24.947,24.911,25.232,25.266,25.138,25.026,24.997,25.026,25.218,25.176,24.788,25.001,24.98,24.868,24.918,25.061,25.065,25.024,24.95,24.851,24.921,24.973,25.027,24.73,24.79,24.826,24.772,24.839,24.731,24.841,24.785,24.886,24.907,24.766,24.708,24.672,24.737,24.678,24.595,24.578,24.564,24.411,24.486,24.699,24.676,24.617,24.325,24.394,24.503,24.456,24.566,24.574,24.381,24.542,24.625,24.636,24.52,24.419,24.142,24.137,24.121,24.144,24.159,24.183,24.142,24.184,24.25,24.25,24.378,24.294,24.234,24.25,24.31,24.266,24.212,24.227,24.178,24.265,24.336,24.365,24.084,24.145,24.202,24.043,24.115,24.096,24.276,24.075,24.084,24.114,24.138,24.171,24.033,24.033,24.03,24.006,23.957,23.952,23.857,23.992,23.992,23.953,23.921,23.905,23.809,23.868,23.916,23.901,23.882,23.958,23.859,23.851,23.827,23.922,23.979,23.983,23.698,23.837,23.851,23.738,23.906,23.876,24.031,23.796,23.656,24.029,23.707,23.671,23.717,23.78,23.691,23.592,23.626,23.646,23.77,23.756,23.793,23.779,23.791,23.696,23.716,23.717,23.643,23.646,23.573,23.562,23.482,23.48,23.473,23.446,23.375,23.599,23.543,23.594,23.546,23.51,23.469,23.346,23.408,23.429,23.404,23.504,23.555,23.428,23.289,23.441,23.302,23.298,23.351,23.269,23.362,23.278,23.183,23.231,23.227,23.191,23.145,23.167,23.252,23.125,23.123,23.209,23.279,23.034,23.14,23.083,23.1,23.097,23.115,23.179,23.115,23.026,22.941,22.947,22.956,22.955,23.027,22.982,22.956,23.01,23.049,22.99,22.995,22.624,22.648,22.685,22.721,22.65,22.63,22.627,22.623,22.592,22.583,22.548,22.614,22.505,22.593,22.711,22.74,22.701,22.663,22.805,22.753,22.788,22.864,22.87,22.857,22.893,22.882,22.822,22.779,22.748,22.865,22.9,23.009,23.117,22.997,22.957,22.92,23.225,23.263,22.665,22.537,22.461,21.985,22.588,22.695,22.649,22.732,22.799,22.743,22.81,22.582,22.651,22.59,22.487,22.403,22.516,22.515,22.44,22.48,22.429,22.34,22.079,22.049,22.267,22.798,22.76,22.671,22.604,22.502,22.404,22.261,22.156,24.75,24.679,24.557,24.903,24.812,24.752,24.742,24.642,24.689,24.668,24.545,24.441,23.996,23.743,23.372,24.056,23.956,23.845,23.647,23.585,23.516,23.197,24.124,23.726,23.39,22.752,23.126,23.038,22.765,22.952,23.093,22.98,23.335,22.591,22.383,22.66,23.115,22.903,22.582,22.385,22.047,23.549,23.578,23.653,23.606,23.372,23.208,24.413,24.488,24.443,24.457,24.433,24.992,26.155,26.22,25.961,26.37&longitude=121.776,121.684,121.745,121.743,121.733,121.708,121.773,121.558,121.572,121.543,121.538,121.52,121.513,121.497,121.574,121.61,121.592,121.551,121.518,121.458,121.487,121.494,121.517,121.437,121.532,121.401,121.347,121.416,121.463,121.655,121.824,121.446,121.471,121.433,121.416,121.352,121.62,121.647,121.724,121.515,121.569,121.413,121.758,121.833,121.919,121.606,121.644,121.542,121.3,121.215,121.296,121.129,121.283,121.211,121.357,121.291,121.212,121.214,121.066,121.114,121.375,120.993,120.946,120.922,120.994,121.075,121.094,121.187,121.052,120.995,121.105,121.147,121.064,120.999,121.011,121.282,121.139,120.811,120.688,120.714,120.876,120.919,120.779,120.856,120.863,120.851,120.799,121.017,120.883,120.77,120.761,120.87,120.953,120.921,121.068,120.681,120.697,120.665,120.665,120.681,120.627,120.618,120.736,120.738,120.84,120.636,120.577,120.584,120.524,120.715,120.673,120.711,120.641,120.831,120.79,120.665,120.59,120.629,120.554,120.524,120.72,120.773,120.693,121.141,120.569,120.426,120.511,120.442,120.474,120.423,120.504,120.56,120.629,120.593,120.483,120.59,120.559,120.459,120.534,120.542,120.602,120.629,120.533,120.404,120.522,120.468,120.341,120.295,120.414,120.522,120.679,120.963,120.732,120.71,120.785,120.677,120.782,120.786,120.926,120.868,120.862,121.021,121.144,120.56,120.483,120.429,120.458,120.365,120.294,120.612,120.426,120.529,120.615,120.396,120.334,120.238,120.256,120.312,120.2,120.328,120.194,120.171,120.235,120.471,120.425,120.344,120.254,120.176,120.481,120.444,120.401,120.348,120.271,120.174,120.224,120.305,120.415,120.537,120.597,120.639,120.608,120.59,120.76,120.295,120.248,120.458,120.355,120.349,120.444,120.241,120.265,120.38,120.348,120.399,120.179,120.184,120.2,120.099,120.127,120.126,120.336,120.299,120.292,120.23,120.371,120.461,120.517,120.544,120.412,120.242,120.293,120.334,120.387,120.254,120.228,120.19,120.206,120.153,120.164,120.194,120.284,120.274,120.292,120.3,120.318,120.307,120.294,120.32,120.312,120.289,120.353,120.355,120.398,120.411,120.425,120.371,120.361,120.373,120.298,120.301,120.371,120.396,120.321,120.266,120.226,120.198,120.226,120.239,120.259,120.475,120.563,120.658,120.623,120.562,120.472,120.752,120.852,120.721,120.48,120.557,120.474,120.764,120.477,120.556,120.53,120.485,120.506,120.569,120.602,120.602,120.589,120.528,120.585,120.597,120.45,120.501,120.511,120.518,120.547,120.371,120.743,120.844,120.658,120.687,120.801,120.68,120.692,120.686,120.698,120.736,120.817,121.757,121.77,121.836,121.843,121.735,121.802,121.661,121.76,121.806,121.664,121.515,121.666,121.609,121.469,121.361,121.614,121.565,121.535,121.435,121.495,121.407,121.298,121.481,121.319,121.18,121.111,121.354,121.177,121.002,121.157,121.218,121.252,121.426,120.98,120.898,121.49,121.018,120.983,120.857,120.835,121.55,119.59,119.645,119.588,119.509,119.501,119.429,118.313,118.42,118.417,118.328,118.241,119.451,119.934,119.988,119.975,120.49&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_gusts_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,uv_index_max,wind_gusts_10m_max&forecast_days=2&timezone=Asia%2FTaipei&wind_speed_unit=ms"
+        ],
+        "heapMB": 14.9,
+        "dom": 701,
+        "errors": [
+          "Failed to load resource: the server responded with a status of 429 (Too Many Requests) @https://api.open-meteo.com/v1/forecast?latitude=25.144,25.11,25.081,25.12,25.15,25.142,25.126,25.06,25.031,25.027,25.07,25.032,25.064,25.029,24.989,25.036,25.084,25.126,25.148,25.012,25.063,24.991,25.008,25.036,24.93,24.98,24.957,24.882,25.19,25.073,25.099,24.964,25.089,25.096,25.056,25.1,24.998,24.947,24.911,25.232,25.266,25.138,25.026,24.997,25.026,25.218,25.176,24.788,25.001,24.98,24.868,24.918,25.061,25.065,25.024,24.95,24.851,24.921,24.973,25.027,24.73,24.79,24.826,24.772,24.839,24.731,24.841,24.785,24.886,24.907,24.766,24.708,24.672,24.737,24.678,24.595,24.578,24.564,24.411,24.486,24.699,24.676,24.617,24.325,24.394,24.503,24.456,24.566,24.574,24.381,24.542,24.625,24.636,24.52,24.419,24.142,24.137,24.121,24.144,24.159,24.183,24.142,24.184,24.25,24.25,24.378,24.294,24.234,24.25,24.31,24.266,24.212,24.227,24.178,24.265,24.336,24.365,24.084,24.145,24.202,24.043,24.115,24.096,24.276,24.075,24.084,24.114,24.138,24.171,24.033,24.033,24.03,24.006,23.957,23.952,23.857,23.992,23.992,23.953,23.921,23.905,23.809,23.868,23.916,23.901,23.882,23.958,23.859,23.851,23.827,23.922,23.979,23.983,23.698,23.837,23.851,23.738,23.906,23.876,24.031,23.796,23.656,24.029,23.707,23.671,23.717,23.78,23.691,23.592,23.626,23.646,23.77,23.756,23.793,23.779,23.791,23.696,23.716,23.717,23.643,23.646,23.573,23.562,23.482,23.48,23.473,23.446,23.375,23.599,23.543,23.594,23.546,23.51,23.469,23.346,23.408,23.429,23.404,23.504,23.555,23.428,23.289,23.441,23.302,23.298,23.351,23.269,23.362,23.278,23.183,23.231,23.227,23.191,23.145,23.167,23.252,23.125,23.123,23.209,23.279,23.034,23.14,23.083,23.1,23.097,23.115,23.179,23.115,23.026,22.941,22.947,22.956,22.955,23.027,22.982,22.956,23.01,23.049,22.99,22.995,22.624,22.648,22.685,22.721,22.65,22.63,22.627,22.623,22.592,22.583,22.548,22.614,22.505,22.593,22.711,22.74,22.701,22.663,22.805,22.753,22.788,22.864,22.87,22.857,22.893,22.882,22.822,22.779,22.748,22.865,22.9,23.009,23.117,22.997,22.957,22.92,23.225,23.263,22.665,22.537,22.461,21.985,22.588,22.695,22.649,22.732,22.799,22.743,22.81,22.582,22.651,22.59,22.487,22.403,22.516,22.515,22.44,22.48,22.429,22.34,22.079,22.049,22.267,22.798,22.76,22.671,22.604,22.502,22.404,22.261,22.156,24.75,24.679,24.557,24.903,24.812,24.752,24.742,24.642,24.689,24.668,24.545,24.441,23.996,23.743,23.372,24.056,23.956,23.845,23.647,23.585,23.516,23.197,24.124,23.726,23.39,22.752,23.126,23.038,22.765,22.952,23.093,22.98,23.335,22.591,22.383,22.66,23.115,22.903,22.582,22.385,22.047,23.549,23.578,23.653,23.606,23.372,23.208,24.413,24.488,24.443,24.457,24.433,24.992,26.155,26.22,25.961,26.37&longitude=121.776,121.684,121.745,121.743,121.733,121.708,121.773,121.558,121.572,121.543,121.538,121.52,121.513,121.497,121.574,121.61,121.592,121.551,121.518,121.458,121.487,121.494,121.517,121.437,121.532,121.401,121.347,121.416,121.463,121.655,121.824,121.446,121.471,121.433,121.416,121.352,121.62,121.647,121.724,121.515,121.569,121.413,121.758,121.833,121.919,121.606,121.644,121.542,121.3,121.215,121.296,121.129,121.283,121.211,121.357,121.291,121.212,121.214,121.066,121.114,121.375,120.993,120.946,120.922,120.994,121.075,121.094,121.187,121.052,120.995,121.105,121.147,121.064,120.999,121.011,121.282,121.139,120.811,120.688,120.714,120.876,120.919,120.779,120.856,120.863,120.851,120.799,121.017,120.883,120.77,120.761,120.87,120.953,120.921,121.068,120.681,120.697,120.665,120.665,120.681,120.627,120.618,120.736,120.738,120.84,120.636,120.577,120.584,120.524,120.715,120.673,120.711,120.641,120.831,120.79,120.665,120.59,120.629,120.554,120.524,120.72,120.773,120.693,121.141,120.569,120.426,120.511,120.442,120.474,120.423,120.504,120.56,120.629,120.593,120.483,120.59,120.559,120.459,120.534,120.542,120.602,120.629,120.533,120.404,120.522,120.468,120.341,120.295,120.414,120.522,120.679,120.963,120.732,120.71,120.785,120.677,120.782,120.786,120.926,120.868,120.862,121.021,121.144,120.56,120.483,120.429,120.458,120.365,120.294,120.612,120.426,120.529,120.615,120.396,120.334,120.238,120.256,120.312,120.2,120.328,120.194,120.171,120.235,120.471,120.425,120.344,120.254,120.176,120.481,120.444,120.401,120.348,120.271,120.174,120.224,120.305,120.415,120.537,120.597,120.639,120.608,120.59,120.76,120.295,120.248,120.458,120.355,120.349,120.444,120.241,120.265,120.38,120.348,120.399,120.179,120.184,120.2,120.099,120.127,120.126,120.336,120.299,120.292,120.23,120.371,120.461,120.517,120.544,120.412,120.242,120.293,120.334,120.387,120.254,120.228,120.19,120.206,120.153,120.164,120.194,120.284,120.274,120.292,120.3,120.318,120.307,120.294,120.32,120.312,120.289,120.353,120.355,120.398,120.411,120.425,120.371,120.361,120.373,120.298,120.301,120.371,120.396,120.321,120.266,120.226,120.198,120.226,120.239,120.259,120.475,120.563,120.658,120.623,120.562,120.472,120.752,120.852,120.721,120.48,120.557,120.474,120.764,120.477,120.556,120.53,120.485,120.506,120.569,120.602,120.602,120.589,120.528,120.585,120.597,120.45,120.501,120.511,120.518,120.547,120.371,120.743,120.844,120.658,120.687,120.801,120.68,120.692,120.686,120.698,120.736,120.817,121.757,121.77,121.836,121.843,121.735,121.802,121.661,121.76,121.806,121.664,121.515,121.666,121.609,121.469,121.361,121.614,121.565,121.535,121.435,121.495,121.407,121.298,121.481,121.319,121.18,121.111,121.354,121.177,121.002,121.157,121.218,121.252,121.426,120.98,120.898,121.49,121.018,120.983,120.857,120.835,121.55,119.59,119.645,119.588,119.509,119.501,119.429,118.313,118.42,118.417,118.328,118.241,119.451,119.934,119.988,119.975,120.49&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_gusts_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,uv_index_max,wind_gusts_10m_max&forecast_days=2&timezone=Asia%2FTaipei&wind_speed_unit=ms"
+        ],
+        "failed": [
+          "https://api.open-meteo.com/v1/forecast?latitude=25.144,25.11,25.081,25.12,25.15,25.142,25.126,25.06,25.031,25.027,25.07,25.032,25.064,25.029,24.989,25.036,25.084,25.126,25.148,25.012,25.063,24.991,25.008,25.036,24.93,24.98,24.957,24.882,25.19,25.073,25.099,24.964,25.089,25.096,25.056,25.1,24.998,24.947,24.911,25.232,25.266,25.138,25.026,24.997,25.026,25.218,25.176,24.788,25.001,24.98,24.868,24.918,25.061,25.065,25.024,24.95,24.851,24.921,24.973,25.027,24.73,24.79,24.826,24.772,24.839,24.731,24.841,24.785,24.886,24.907,24.766,24.708,24.672,24.737,24.678,24.595,24.578,24.564,24.411,24.486,24.699,24.676,24.617,24.325,24.394,24.503,24.456,24.566,24.574,24.381,24.542,24.625,24.636,24.52,24.419,24.142,24.137,24.121,24.144,24.159,24.183,24.142,24.184,24.25,24.25,24.378,24.294,24.234,24.25,24.31,24.266,24.212,24.227,24.178,24.265,24.336,24.365,24.084,24.145,24.202,24.043,24.115,24.096,24.276,24.075,24.084,24.114,24.138,24.171,24.033,24.033,24.03,24.006,23.957,23.952,23.857,23.992,23.992,23.953,23.921,23.905,23.809,23.868,23.916,23.901,23.882,23.958,23.859,23.851,23.827,23.922,23.979,23.983,23.698,23.837,23.851,23.738,23.906,23.876,24.031,23.796,23.656,24.029,23.707,23.671,23.717,23.78,23.691,23.592,23.626,23.646,23.77,23.756,23.793,23.779,23.791,23.696,23.716,23.717,23.643,23.646,23.573,23.562,23.482,23.48,23.473,23.446,23.375,23.599,23.543,23.594,23.546,23.51,23.469,23.346,23.408,23.429,23.404,23.504,23.555,23.428,23.289,23.441,23.302,23.298,23.351,23.269,23.362,23.278,23.183,23.231,23.227,23.191,23.145,23.167,23.252,23.125,23.123,23.209,23.279,23.034,23.14,23.083,23.1,23.097,23.115,23.179,23.115,23.026,22.941,22.947,22.956,22.955,23.027,22.982,22.956,23.01,23.049,22.99,22.995,22.624,22.648,22.685,22.721,22.65,22.63,22.627,22.623,22.592,22.583,22.548,22.614,22.505,22.593,22.711,22.74,22.701,22.663,22.805,22.753,22.788,22.864,22.87,22.857,22.893,22.882,22.822,22.779,22.748,22.865,22.9,23.009,23.117,22.997,22.957,22.92,23.225,23.263,22.665,22.537,22.461,21.985,22.588,22.695,22.649,22.732,22.799,22.743,22.81,22.582,22.651,22.59,22.487,22.403,22.516,22.515,22.44,22.48,22.429,22.34,22.079,22.049,22.267,22.798,22.76,22.671,22.604,22.502,22.404,22.261,22.156,24.75,24.679,24.557,24.903,24.812,24.752,24.742,24.642,24.689,24.668,24.545,24.441,23.996,23.743,23.372,24.056,23.956,23.845,23.647,23.585,23.516,23.197,24.124,23.726,23.39,22.752,23.126,23.038,22.765,22.952,23.093,22.98,23.335,22.591,22.383,22.66,23.115,22.903,22.582,22.385,22.047,23.549,23.578,23.653,23.606,23.372,23.208,24.413,24.488,24.443,24.457,24.433,24.992,26.155,26.22,25.961,26.37&longitude=121.776,121.684,121.745,121.743,121.733,121.708,121.773,121.558,121.572,121.543,121.538,121.52,121.513,121.497,121.574,121.61,121.592,121.551,121.518,121.458,121.487,121.494,121.517,121.437,121.532,121.401,121.347,121.416,121.463,121.655,121.824,121.446,121.471,121.433,121.416,121.352,121.62,121.647,121.724,121.515,121.569,121.413,121.758,121.833,121.919,121.606,121.644,121.542,121.3,121.215,121.296,121.129,121.283,121.211,121.357,121.291,121.212,121.214,121.066,121.114,121.375,120.993,120.946,120.922,120.994,121.075,121.094,121.187,121.052,120.995,121.105,121.147,121.064,120.999,121.011,121.282,121.139,120.811,120.688,120.714,120.876,120.919,120.779,120.856,120.863,120.851,120.799,121.017,120.883,120.77,120.761,120.87,120.953,120.921,121.068,120.681,120.697,120.665,120.665,120.681,120.627,120.618,120.736,120.738,120.84,120.636,120.577,120.584,120.524,120.715,120.673,120.711,120.641,120.831,120.79,120.665,120.59,120.629,120.554,120.524,120.72,120.773,120.693,121.141,120.569,120.426,120.511,120.442,120.474,120.423,120.504,120.56,120.629,120.593,120.483,120.59,120.559,120.459,120.534,120.542,120.602,120.629,120.533,120.404,120.522,120.468,120.341,120.295,120.414,120.522,120.679,120.963,120.732,120.71,120.785,120.677,120.782,120.786,120.926,120.868,120.862,121.021,121.144,120.56,120.483,120.429,120.458,120.365,120.294,120.612,120.426,120.529,120.615,120.396,120.334,120.238,120.256,120.312,120.2,120.328,120.194,120.171,120.235,120.471,120.425,120.344,120.254,120.176,120.481,120.444,120.401,120.348,120.271,120.174,120.224,120.305,120.415,120.537,120.597,120.639,120.608,120.59,120.76,120.295,120.248,120.458,120.355,120.349,120.444,120.241,120.265,120.38,120.348,120.399,120.179,120.184,120.2,120.099,120.127,120.126,120.336,120.299,120.292,120.23,120.371,120.461,120.517,120.544,120.412,120.242,120.293,120.334,120.387,120.254,120.228,120.19,120.206,120.153,120.164,120.194,120.284,120.274,120.292,120.3,120.318,120.307,120.294,120.32,120.312,120.289,120.353,120.355,120.398,120.411,120.425,120.371,120.361,120.373,120.298,120.301,120.371,120.396,120.321,120.266,120.226,120.198,120.226,120.239,120.259,120.475,120.563,120.658,120.623,120.562,120.472,120.752,120.852,120.721,120.48,120.557,120.474,120.764,120.477,120.556,120.53,120.485,120.506,120.569,120.602,120.602,120.589,120.528,120.585,120.597,120.45,120.501,120.511,120.518,120.547,120.371,120.743,120.844,120.658,120.687,120.801,120.68,120.692,120.686,120.698,120.736,120.817,121.757,121.77,121.836,121.843,121.735,121.802,121.661,121.76,121.806,121.664,121.515,121.666,121.609,121.469,121.361,121.614,121.565,121.535,121.435,121.495,121.407,121.298,121.481,121.319,121.18,121.111,121.354,121.177,121.002,121.157,121.218,121.252,121.426,120.98,120.898,121.49,121.018,120.983,120.857,120.835,121.55,119.59,119.645,119.588,119.509,119.501,119.429,118.313,118.42,118.417,118.328,118.241,119.451,119.934,119.988,119.975,120.49&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_gusts_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,uv_index_max,wind_gusts_10m_max&forecast_days=2&timezone=Asia%2FTaipei&wind_speed_unit=ms HTTP 429"
+        ],
+        "finalUrl": "/demo/TechBackend/admin.html"
+      }
+    },
+    {
+      "site": "demo",
+      "page": "AgriDispatch/brochure.html",
+      "role": null,
+      "cold": {
+        "site": "demo",
+        "page": "AgriDispatch/brochure.html",
+        "role": null,
+        "status": 200,
+        "wall": 13513,
+        "ttfb": 8,
+        "dcl": 5651,
+        "load": 12189,
+        "fcp": 5544,
+        "lcp": 8412,
+        "cls": 0,
+        "tbt": 2518,
+        "longTasks": 5,
+        "reqs": 12,
+        "docKB": 36,
+        "transferKB": 457,
+        "decodedKB": 2112,
+        "byType": {
+          "script": {
+            "n": 8,
+            "bytes": 305107
+          },
+          "link": {
+            "n": 2,
+            "bytes": 9779
+          },
+          "css": {
+            "n": 1,
+            "bytes": 138868
+          }
+        },
+        "api": [],
+        "top": [
+          {
+            "url": "/demo/mock/demo-fixtures.js",
+            "kb": 818,
+            "ms": 1239
+          },
+          {
+            "url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap",
+            "kb": 496,
+            "ms": 881
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "kb": 398,
+            "ms": 1677
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/vue.global.prod.js",
+            "kb": 164,
+            "ms": 1302
+          },
+          {
+            "url": "/demo/mock/demo-mock.js",
+            "kb": 124,
+            "ms": 938
+          }
+        ],
+        "slow": [
+          {
+            "url": "/demo/AgriDispatch/js/vendor/tailwindcss-3.4.17.js",
+            "ms": 1677
+          },
+          {
+            "url": "/demo/AgriDispatch/js/vendor/vue.global.prod.js",
+            "ms": 1302
+          },
+          {
+            "url": "/demo/mock/demo-fixtures.js",
+            "ms": 1239
+          }
+        ],
+        "ext": [
+          "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+        ],
+        "heapMB": 14.3,
+        "dom": 321,
+        "errors": [],
+        "failed": [],
+        "finalUrl": "/demo/AgriDispatch/brochure.html"
+      }
+    }
+  ],
+  "finishedAt": "2026-10-15T01:21:10.046Z"
+}

@@ -1,0 +1,82 @@
+[
+  {
+    "page": "web/AgriDispatch/farmer-login.html",
+    "variant": "基準（不封鎖）",
+    "fcp": 2668,
+    "load": 3182,
+    "tbt": 1966,
+    "longTasks": 6
+  },
+  {
+    "page": "web/AgriDispatch/farmer-login.html",
+    "variant": "封鎖 tailwindcss",
+    "fcp": 1092,
+    "load": 1390,
+    "tbt": 389,
+    "longTasks": 4
+  },
+  {
+    "page": "web/AgriDispatch/farmer-login.html",
+    "variant": "封鎖 lucide",
+    "fcp": 2340,
+    "load": 2728,
+    "tbt": 1563,
+    "longTasks": 4
+  },
+  {
+    "page": "web/AgriDispatch/farmer-login.html",
+    "variant": "封鎖 chart.js",
+    "fcp": 2200,
+    "load": 2447,
+    "tbt": 1598,
+    "longTasks": 5
+  },
+  {
+    "page": "web/AgriDispatch/farmer-login.html",
+    "variant": "封鎖 Google Fonts",
+    "fcp": 2592,
+    "load": 2762,
+    "tbt": 1667,
+    "longTasks": 4
+  },
+  {
+    "page": "web/AgriDispatch/farmer.html",
+    "variant": "基準（不封鎖）",
+    "fcp": 1824,
+    "load": 3091,
+    "tbt": 1491,
+    "longTasks": 7
+  },
+  {
+    "page": "web/AgriDispatch/farmer.html",
+    "variant": "封鎖 tailwindcss",
+    "fcp": 912,
+    "load": 1445,
+    "tbt": 811,
+    "longTasks": 4
+  },
+  {
+    "page": "web/AgriDispatch/farmer.html",
+    "variant": "封鎖 lucide",
+    "fcp": 1832,
+    "load": 2799,
+    "tbt": 1296,
+    "longTasks": 8
+  },
+  {
+    "page": "web/AgriDispatch/farmer.html",
+    "variant": "封鎖 chart.js",
+    "fcp": 2252,
+    "load": 4083,
+    "tbt": 1800,
+    "longTasks": 10
+  },
+  {
+    "page": "web/AgriDispatch/farmer.html",
+    "variant": "封鎖 Google Fonts",
+    "fcp": 2600,
+    "load": 3317,
+    "tbt": 1771,
+    "longTasks": 8
+  }
+]

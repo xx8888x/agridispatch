@@ -1,0 +1,425 @@
+{
+  "oid": "ORD-2026-001",
+  "rows": [
+    {
+      "group": "public",
+      "method": "GET",
+      "path": "/api/public/config",
+      "status": 200,
+      "bytes": 60,
+      "cold": 4.8,
+      "warmMed": 2.9,
+      "warmMax": 4.4
+    },
+    {
+      "group": "public",
+      "method": "GET",
+      "path": "/api/crops",
+      "status": 200,
+      "bytes": 4941,
+      "cold": 6.9,
+      "warmMed": 5,
+      "warmMax": 5.7
+    },
+    {
+      "group": "public",
+      "method": "GET",
+      "path": "/api/calendar",
+      "status": 200,
+      "bytes": 12814,
+      "cold": 6,
+      "warmMed": 2.8,
+      "warmMax": 3.5
+    },
+    {
+      "group": "public",
+      "method": "GET",
+      "path": "/api/calendar/harvests",
+      "status": 200,
+      "bytes": 5979,
+      "cold": 2.3,
+      "warmMed": 3.3,
+      "warmMax": 8.1
+    },
+    {
+      "group": "public",
+      "method": "GET",
+      "path": "/api/brochures",
+      "status": 200,
+      "bytes": 14347,
+      "cold": 9.1,
+      "warmMed": 4.9,
+      "warmMax": 5.5
+    },
+    {
+      "group": "public",
+      "method": "GET",
+      "path": "/api/orders/categories",
+      "status": 200,
+      "bytes": 1558,
+      "cold": 2.9,
+      "warmMed": 2.9,
+      "warmMax": 3.2
+    },
+    {
+      "group": "public",
+      "method": "GET",
+      "path": "/api/payments/methods",
+      "status": 200,
+      "bytes": 664,
+      "cold": 4.2,
+      "warmMed": 3,
+      "warmMax": 4.1
+    },
+    {
+      "group": "public",
+      "method": "GET",
+      "path": "/api/dispatch/overview",
+      "status": 200,
+      "bytes": 3172,
+      "cold": 8.2,
+      "warmMed": 4.3,
+      "warmMax": 5.3
+    },
+    {
+      "group": "public",
+      "method": "GET",
+      "path": "/api/dispatch/weather-state",
+      "status": 200,
+      "bytes": 1565,
+      "cold": 2.5,
+      "warmMed": 2.4,
+      "warmMax": 3.3
+    },
+    {
+      "group": "public",
+      "method": "POST",
+      "path": "/api/orders/calculate",
+      "status": 400,
+      "bytes": 50,
+      "cold": 11.9,
+      "warmMed": 8.9,
+      "warmMax": 11.4
+    },
+    {
+      "group": "farmer",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "status": 200,
+      "bytes": 172,
+      "cold": 390.6,
+      "warmMed": 5.4,
+      "warmMax": 8.6
+    },
+    {
+      "group": "farmer",
+      "method": "GET",
+      "path": "/api/orders",
+      "status": 200,
+      "bytes": 17532,
+      "cold": 7.4,
+      "warmMed": 9.4,
+      "warmMax": 21
+    },
+    {
+      "group": "farmer",
+      "method": "GET",
+      "path": "/api/orders/ORD-2026-001",
+      "status": 200,
+      "bytes": 1145,
+      "cold": 26.8,
+      "warmMed": 7.5,
+      "warmMax": 23.4
+    },
+    {
+      "group": "farmer",
+      "method": "GET",
+      "path": "/api/matching/orders/ORD-2026-001",
+      "status": 200,
+      "bytes": 3688,
+      "cold": 377.9,
+      "warmMed": 94.7,
+      "warmMax": 218
+    },
+    {
+      "group": "farmer",
+      "method": "GET",
+      "path": "/api/rosters",
+      "status": 200,
+      "bytes": 2065,
+      "cold": 49.8,
+      "warmMed": 7.7,
+      "warmMax": 8.4
+    },
+    {
+      "group": "farmer",
+      "method": "GET",
+      "path": "/api/farmers/me/farms",
+      "status": 200,
+      "bytes": 26,
+      "cold": 7.2,
+      "warmMed": 4.1,
+      "warmMax": 10.2
+    },
+    {
+      "group": "farmer",
+      "method": "GET",
+      "path": "/api/farmers/me/past-workers",
+      "status": 200,
+      "bytes": 226,
+      "cold": 29.1,
+      "warmMed": 13.6,
+      "warmMax": 16.5
+    },
+    {
+      "group": "farmer",
+      "method": "GET",
+      "path": "/api/ratings/teams",
+      "status": 200,
+      "bytes": 615,
+      "cold": 13,
+      "warmMed": 8.8,
+      "warmMax": 10.9
+    },
+    {
+      "group": "farmer",
+      "method": "GET",
+      "path": "/api/dispatch/teams",
+      "status": 200,
+      "bytes": 2201,
+      "cold": 12.8,
+      "warmMed": 4.9,
+      "warmMax": 6.4
+    },
+    {
+      "group": "farmer",
+      "method": "GET",
+      "path": "/api/notifications",
+      "status": 200,
+      "bytes": 499,
+      "cold": 3.9,
+      "warmMed": 2.9,
+      "warmMax": 3.3
+    },
+    {
+      "group": "farmer",
+      "method": "GET",
+      "path": "/api/insurance/types",
+      "status": 200,
+      "bytes": 106,
+      "cold": 3.9,
+      "warmMed": 2.9,
+      "warmMax": 4.3
+    },
+    {
+      "group": "farmer",
+      "method": "GET",
+      "path": "/api/weather/towns",
+      "status": 200,
+      "bytes": 211315,
+      "cold": 4802.4,
+      "warmMed": 10.9,
+      "warmMax": 13.3
+    },
+    {
+      "group": "worker",
+      "method": "GET",
+      "path": "/api/workers/W026",
+      "status": 200,
+      "bytes": 557,
+      "cold": 16.6,
+      "warmMed": 3.7,
+      "warmMax": 4.7
+    },
+    {
+      "group": "worker",
+      "method": "GET",
+      "path": "/api/workers/W026/schedule",
+      "status": 200,
+      "bytes": 3115,
+      "cold": 13.3,
+      "warmMed": 5.3,
+      "warmMax": 6.6
+    },
+    {
+      "group": "worker",
+      "method": "GET",
+      "path": "/api/workers/W026/attendance",
+      "status": 200,
+      "bytes": 6475,
+      "cold": 17.8,
+      "warmMed": 4.9,
+      "warmMax": 5.5
+    },
+    {
+      "group": "worker",
+      "method": "GET",
+      "path": "/api/workers/W026/payroll",
+      "status": 200,
+      "bytes": 2088,
+      "cold": 30,
+      "warmMed": 8.6,
+      "warmMax": 35.1
+    },
+    {
+      "group": "worker",
+      "method": "GET",
+      "path": "/api/workers/W026/team-members",
+      "status": 200,
+      "bytes": 2157,
+      "cold": 4.9,
+      "warmMed": 4.3,
+      "warmMax": 4.8
+    },
+    {
+      "group": "worker",
+      "method": "GET",
+      "path": "/api/workers/W026/leaves",
+      "status": 200,
+      "bytes": 26,
+      "cold": 5.4,
+      "warmMed": 3.7,
+      "warmMax": 4.8
+    },
+    {
+      "group": "worker",
+      "method": "GET",
+      "path": "/api/attendance/today/W026",
+      "status": 200,
+      "bytes": 443,
+      "cold": 5.1,
+      "warmMed": 2.9,
+      "warmMax": 3.5
+    },
+    {
+      "group": "worker",
+      "method": "GET",
+      "path": "/api/leaves/types",
+      "status": 200,
+      "bytes": 515,
+      "cold": 2.7,
+      "warmMed": 1.8,
+      "warmMax": 2
+    },
+    {
+      "group": "admin",
+      "method": "GET",
+      "path": "/api/workers",
+      "status": 200,
+      "bytes": 17564,
+      "cold": 5.1,
+      "warmMed": 4.1,
+      "warmMax": 7.9
+    },
+    {
+      "group": "admin",
+      "method": "GET",
+      "path": "/api/leaves",
+      "status": 200,
+      "bytes": 26,
+      "cold": 3.4,
+      "warmMed": 2,
+      "warmMax": 2.5
+    },
+    {
+      "group": "admin",
+      "method": "GET",
+      "path": "/api/payroll/months",
+      "status": 200,
+      "bytes": 1118,
+      "cold": 3.3,
+      "warmMed": 3.1,
+      "warmMax": 25
+    },
+    {
+      "group": "admin",
+      "method": "GET",
+      "path": "/api/payroll/attendance",
+      "status": 400,
+      "bytes": 46,
+      "cold": 3.6,
+      "warmMed": 3.3,
+      "warmMax": 4.1
+    },
+    {
+      "group": "admin",
+      "method": "GET",
+      "path": "/api/insurance/workers",
+      "status": 200,
+      "bytes": 37243,
+      "cold": 20.4,
+      "warmMed": 15,
+      "warmMax": 18.6
+    },
+    {
+      "group": "admin",
+      "method": "GET",
+      "path": "/api/skills/workers",
+      "status": 200,
+      "bytes": 52901,
+      "cold": 171.6,
+      "warmMed": 210.1,
+      "warmMax": 283.7
+    },
+    {
+      "group": "admin",
+      "method": "GET",
+      "path": "/api/auth/accounts",
+      "status": 200,
+      "bytes": 8181,
+      "cold": 8.6,
+      "warmMed": 6.5,
+      "warmMax": 9.5
+    },
+    {
+      "group": "admin",
+      "method": "GET",
+      "path": "/api/talents",
+      "status": 200,
+      "bytes": 2454,
+      "cold": 20.8,
+      "warmMed": 8.9,
+      "warmMax": 46.6
+    },
+    {
+      "group": "admin",
+      "method": "GET",
+      "path": "/api/legalize/summary",
+      "status": 200,
+      "bytes": 862,
+      "cold": 13,
+      "warmMed": 7,
+      "warmMax": 20.5
+    },
+    {
+      "group": "admin",
+      "method": "GET",
+      "path": "/api/line/bindings",
+      "status": 200,
+      "bytes": 30,
+      "cold": 4.2,
+      "warmMed": 2.7,
+      "warmMax": 7.3
+    },
+    {
+      "group": "admin",
+      "method": "GET",
+      "path": "/api/orders",
+      "status": 200,
+      "bytes": 17532,
+      "cold": 6.6,
+      "warmMed": 7.7,
+      "warmMax": 14.3
+    },
+    {
+      "group": "admin",
+      "method": "GET",
+      "path": "/api/attendance/summary/present-count",
+      "status": 200,
+      "bytes": 33,
+      "cold": 11.8,
+      "warmMed": 3.5,
+      "warmMax": 5.9
+    }
+  ]
+}

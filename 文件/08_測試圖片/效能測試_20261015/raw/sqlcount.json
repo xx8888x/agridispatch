@@ -1,0 +1,46 @@
+[
+  {
+    "endpoint": "GET /api/crops",
+    "sql": 1
+  },
+  {
+    "endpoint": "POST /api/orders/calculate",
+    "sql": 73
+  },
+  {
+    "endpoint": "GET /api/matching/orders/{id}",
+    "sql": 103
+  },
+  {
+    "endpoint": "GET /api/skills/workers",
+    "sql": 133
+  },
+  {
+    "endpoint": "GET /api/insurance/workers",
+    "sql": 2
+  },
+  {
+    "endpoint": "GET /api/orders (farmer)",
+    "sql": 1
+  },
+  {
+    "endpoint": "GET /api/dispatch/overview",
+    "sql": 1
+  },
+  {
+    "endpoint": "GET /api/workers/W026/schedule",
+    "sql": 5
+  },
+  {
+    "endpoint": "GET /api/workers/W026/payroll",
+    "sql": 8
+  },
+  {
+    "endpoint": "GET /api/workers (admin)",
+    "sql": 1
+  },
+  {
+    "endpoint": "GET /api/auth/me",
+    "sql": 2
+  }
+]

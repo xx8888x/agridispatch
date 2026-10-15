@@ -371,10 +371,10 @@
     actions.appendChild(btn);
   }
 
-  // 8. 田間模式：前台（AgriDispatch/）的農場主、本國工人、登入、首頁等頁加上 html.is-field（css/agri.css 第 16 節）。
-  //    科技後台、LINE 體驗頁，以及產品介紹、DM、產地地圖、證明書等行銷／列印頁（有寫死的深色樣式）不套。
+  // 8. 田間模式：前台（AgriDispatch/）的農場主、本國工人、登入、首頁、產品介紹、DM、產地地圖、證明書等頁加上 html.is-field（css/agri.css 第 16 節）。
+  //    科技後台、LINE 體驗頁，以及轉址／下架頁（legalize、coldchain、app）不套。
   //    主題：手機／觸控裝置預設亮色（戶外日光下深色底看不清），桌機維持深色；頁首「切換亮色／深色」鈕，選擇記在 localStorage.agri_theme。
-  var FIELD_EXCLUDE = /^(pitch|brochure|farmers_map|farmer-certificate|legalize|coldchain|app)\.html$/;
+  var FIELD_EXCLUDE = /^(legalize|coldchain|app)\.html$/;
   var pageFile = (function () {
     var p = window.location.pathname;
     try { p = decodeURIComponent(p); } catch (e) {}

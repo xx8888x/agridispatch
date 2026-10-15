@@ -444,6 +444,14 @@ public class OrderService {
      */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public Order createOrder(Order input, String farmerId, com.agridispatch.entity.Worker preferred) {
+        return createOrder(input, farmerId, preferred, true);
+    }
+
+    /**
+     * @param enforceStartNotPast true＝開工日不得早於今天（農場主自助下單）；false＝科技後台管理員代建／補登，可填過去的開工日
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public Order createOrder(Order input, String farmerId, com.agridispatch.entity.Worker preferred, boolean enforceStartNotPast) {
         if (input.getFarmerName() == null || input.getFarmerName().isBlank()) {
             throw ApiException.badRequest("農場主姓名 (farmerName) 為必填欄位");
         }
@@ -476,6 +484,7 @@ public class OrderService {
         order.setTimeSlot(normalizeSlot(input.getTimeSlot()));
         order.setPackageId(input.getPackageId() == null || input.getPackageId().isBlank() ? null : input.getPackageId().trim());
         validatePeriod(input.getStartDate(), input.getEndDate());
+        if (enforceStartNotPast) validateStartNotPast(input.getStartDate());
         order.setStartDate(input.getStartDate());
         order.setEndDate(input.getEndDate());
         order.setCreatedAt(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
@@ -595,6 +604,10 @@ public class OrderService {
             java.time.LocalDate start = updated.getStartDate() != null ? updated.getStartDate() : existing.getStartDate();
             java.time.LocalDate end = updated.getEndDate() != null ? updated.getEndDate() : existing.getEndDate();
             validatePeriod(start, end);
+            // 開工日有改才檢查；科技後台管理員（isAdmin）可更正成過去的日期（補登、延誤更正），農場主與合作社不行
+            if (!isAdmin && updated.getStartDate() != null && !updated.getStartDate().equals(existing.getStartDate())) {
+                validateStartNotPast(updated.getStartDate());
+            }
             existing.setStartDate(start);
             existing.setEndDate(end);
         }
@@ -808,6 +821,22 @@ public class OrderService {
     private static void checkLength(String value, int max, String label) {
         if (value != null && value.length() > max) {
             throw ApiException.badRequest(label + "過長（上限 " + max + " 字）");
+        }
+    }
+
+    /** 開工日最早可選：今天（台灣時間）＋最短提前天數。目前最短提前天數為 0（可選今天）【待確認】營運規則 */
+    public static final int MIN_LEAD_DAYS = 0;
+    private static final java.time.ZoneId TPE = java.time.ZoneId.of("Asia/Taipei");
+
+    public static java.time.LocalDate earliestStartDate() {
+        return java.time.LocalDate.now(TPE).plusDays(MIN_LEAD_DAYS);
+    }
+
+    /** 開工日不得早於 {@link #earliestStartDate()}；未提供開工日（null）不檢查 */
+    static void validateStartNotPast(java.time.LocalDate start) {
+        java.time.LocalDate earliest = earliestStartDate();
+        if (start != null && start.isBefore(earliest)) {
+            throw ApiException.badRequest("開工日 (startDate) 不得早於今天（最早 " + earliest + "）");
         }
     }
 

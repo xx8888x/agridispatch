@@ -182,26 +182,28 @@ class MatchingApiTest extends ApiTestSupport {
     @Order(6)
     void periodValidationAndWhoMayChangeIt() throws Exception {
         Map<String, Object> base = Map.of("farmerName", "工期測試", "cropId", "taoyuan_veg", "area", 2.0, "plan", "early_bird");
+        // 日期一律用相對於今天的未來日期（開工日不得早於今天，固定日期會隨時間過期）
+        LocalDate d0 = LocalDate.now().plusDays(40);
         Map<String, Object> bad = new HashMap<>(base);
-        bad.put("startDate", "2026-11-10");
-        bad.put("endDate", "2026-11-05");
+        bad.put("startDate", d0.plusDays(5).toString());
+        bad.put("endDate", d0.toString());
         assertEquals(400, status("POST", "/api/orders", admin, bad), "完工早於開工");
         Map<String, Object> half = new HashMap<>(base);
-        half.put("startDate", "2026-11-10");
+        half.put("startDate", d0.plusDays(5).toString());
         assertEquals(400, status("POST", "/api/orders", admin, half), "只給開工日");
         Map<String, Object> ok = new HashMap<>(base);
-        ok.put("startDate", "2026-11-10");
-        ok.put("endDate", "2026-11-12");
+        ok.put("startDate", d0.plusDays(5).toString());
+        ok.put("endDate", d0.plusDays(7).toString());
         JsonNode created = json(call("POST", "/api/orders", admin, ok)).get("data");
-        assertEquals("2026-11-12", created.get("endDate").asText());
+        assertEquals(d0.plusDays(7).toString(), created.get("endDate").asText());
 
         MvcResult r = call("POST", "/api/auth/reset-password", admin, Map.of("identifier", "farmer", "newPassword", "Farmer#2026pw"));
         assertEquals(200, r.getResponse().getStatus());
         String farmer = login("farmer", "Farmer#2026pw");
         assertEquals(200, status("PUT", "/api/orders/ORD-2026-014", farmer,
-                Map.of("startDate", "2026-10-06", "endDate", "2026-10-08")), "待付款訂單農場主可改工期");
+                Map.of("startDate", d0.plusDays(1).toString(), "endDate", d0.plusDays(3).toString())), "待付款訂單農場主可改工期");
         assertEquals(409, status("PUT", "/api/orders/ORD-2026-001", farmer,
-                Map.of("startDate", "2026-10-07", "endDate", "2026-10-09")), "已排定訂單須由合作社調整");
+                Map.of("startDate", d0.plusDays(2).toString(), "endDate", d0.plusDays(4).toString())), "已排定訂單須由合作社調整");
         assertEquals(409, status("PUT", "/api/orders/ORD-2026-004", admin,
                 Map.of("startDate", "2026-09-16", "endDate", "2026-09-19")), "已完工不可改");
     }

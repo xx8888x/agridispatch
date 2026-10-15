@@ -526,6 +526,8 @@
   }
   function createOrder(o) {
     if (blank(o.farmerName)) throw new Error('農場主姓名為必填');
+    // 開工日不得早於今天（同後端 OrderService.validateStartNotPast；最短提前天數 0【待確認】）。科技後台管理員可補登過去的日期
+    if (!blank(o.startDate) && String(o.startDate) < ymdToday(0) && (currentUser() || {}).role !== 'admin_tech') throw new Error('開工日 (startDate) 不得早於今天（最早 ' + ymdToday(0) + '）');
     var u = currentUser() || {};
     var calc = calculate({
       cropId: o.cropId, area: o.area, plan: o.plan, zone: o.transportZone,
@@ -631,6 +633,10 @@
     if (u.startDate != null || u.endDate != null) {
       var s = u.startDate != null ? u.startDate : o.startDate, e = u.endDate != null ? u.endDate : o.endDate;
       if (s && e && e < s) return respond(400, { success: false, error: '完工日不可早於開工日' });
+      // 開工日有改才檢查（同後端 OrderService.updateOrder；科技後台管理員除外）
+      if (u.startDate != null && u.startDate !== o.startDate && String(u.startDate) < ymdToday(0) && (currentUser() || {}).role !== 'admin_tech') {
+        return respond(400, { success: false, error: '開工日 (startDate) 不得早於今天（最早 ' + ymdToday(0) + '）' });
+      }
       o.startDate = s; o.endDate = e;
     }
     if (priced) {

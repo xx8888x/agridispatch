@@ -87,7 +87,8 @@ public class OrderController {
         }
         var preferred = preferredWorkerService.resolveForNewOrder(ctx.isAdmin() ? null : farmerId,
                 order.getPreferredWorkerId(), order.getStartDate(), order.getEndDate(), order.getTimeSlot());
-        Order created = orderService.createOrder(order, farmerId, preferred);
+        // 開工日不得早於今天：農場主自助下單適用；科技後台管理員代建／補登不受限
+        Order created = orderService.createOrder(order, farmerId, preferred, !ctx.isAdmin());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("success", true, "data", created, "message", "成功建立派工訂單"));
     }

@@ -845,7 +845,7 @@
       editEl('eSlot').value = o.timeSlot || 'full_day';
       editEl('eWorkers').value = o.requestedWorkers || '';
       editEl('eStartDate').value = o.startDate || '';
-      editEl('eStartDate').min = endDateFor(new Date().toLocaleDateString('sv-SE'), 1);   // 今天（本地時區 yyyy-MM-dd）
+      editEl('eStartDate').min = todayLocal();
       editEl('eArea').disabled = editEl('eSlot').disabled = !!o.packageId;
       editEl('eLocation').value = o.farmLocation || '';
       editEl('eForemanName').value = o.foremanName || '';
@@ -928,6 +928,7 @@
       if (editSpecDirty(o)) {
         const start = editEl('eStartDate').value;
         if (!start) { showErr('請選擇起工日期'); return; }
+        if (start !== (o.startDate || '') && start < todayLocal()) { showErr('起工日期不可早於今天'); return; }   // 沒改起工日就不擋（後端同規則）
         if (!editQuote) { showErr('新規格尚未試算完成，請確認面積與人數後再儲存'); return; }
         if (!o.packageId) {
           payload.area = parseFloat(editEl('eArea').value);
@@ -1339,6 +1340,10 @@
     }
 
     // 預估完工日 = 起工日 + 建議天數（進位，含開工當天）
+    // 今天（本地時區 yyyy-MM-dd）：起工日期最早可選的日期。最短提前天數目前為 0（可選今天）【待確認】，
+    // 與後端 OrderService.MIN_LEAD_DAYS 同步
+    const todayLocal = () => new Date().toLocaleDateString('sv-SE');
+
     function endDateFor(startStr, estDays) {
       if (!startStr) return null;
       const d = new Date(startStr + 'T00:00:00');
@@ -1461,6 +1466,11 @@
 
     async function submitFarmerBooking(e) {
       e.preventDefault();
+      const pickedStart = document.getElementById('fStartDate').value;
+      if (pickedStart && pickedStart < todayLocal()) {
+        if (window.AgriDocs) AgriDocs.notify('預約未送出', '起工日期不可早於今天，請重新選擇。', { channel: 'dispatch' });
+        return;
+      }
       const btn = document.getElementById('fSubmitBtn');
       btn.disabled = true;
       btn.textContent = '處理中…';
@@ -1877,7 +1887,9 @@
 
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      document.getElementById('fStartDate').value = tomorrow.toISOString().split('T')[0];
+      const startEl = document.getElementById('fStartDate');
+      startEl.min = todayLocal();
+      startEl.value = tomorrow.toLocaleDateString('sv-SE');   // 本地時區的明天（toISOString 是 UTC，凌晨會差一天）
       const qs = new URLSearchParams(window.location.search);
       // 從文宣／簡報帶入工時包（?pkg=dm-mango-2026）；不認得的值忽略。先套工時包，?workers=、?category= 可再覆蓋
       applyPackage(qs.get('pkg'));

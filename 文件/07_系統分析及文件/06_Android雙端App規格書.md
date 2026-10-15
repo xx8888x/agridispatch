@@ -320,7 +320,7 @@ debug 版已開啟 WebView 遠端偵錯（`WebView.setWebContentsDebuggingEnable
 |---|---|---|
 | 測試軌 | 封閉測試 → 正式版 | 內部測試（僅代管人員名單） |
 | 商店頁語系 | zh-TW、vi、id（各自截圖與說明） | 不需公開商店頁 |
-| 資料安全表單 | 位置（GPS 打卡）、裝置 ID（FCM）、使用者提供之帳號資料 | 同左，另含後台管理之個資 |
+| 資料安全表單 | 逐題草稿與商店文案見 `10_Google Play資料安全表單與商店資訊草稿.md`（2026-10-15）；送審前須補隱私權政策、刪除帳號、位置權限決策 | 只上內部測試軌時免填【待確認】 |
 | 簽章 | 啟用 Play App Signing；兩支 App 共用同一把上傳金鑰 `D:\AgriDispatch-keys\agridispatch-upload.jks`（2026-10-02 產生，密碼僅存於 gitignore 的 `keystore.properties`，須另行備份） | 同左 |
 | 上傳檔 | `bundle/clientRelease/app-client-release.aab` | `bundle/serverRelease/app-server-release.aab` |
 | 版本號 | `version.properties` 由 release 建置自動遞增 `VERSION_CODE`，`versionName` = `1.0.<code>`；兩支 App 同一次建置共用同號（目前 1.0.5） | 同左，`versionName` 加 `-admin` |

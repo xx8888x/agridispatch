@@ -116,9 +116,9 @@
 
             <div class="ad-card__head" style="margin: 0;">
               <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-                <span class="ad-avatar ad-avatar--lg">祥</span>
+                <span id="fm-card-avatar" class="ad-avatar ad-avatar--lg">祥</span>
                 <div style="min-width: 0;">
-                  <h3 class="ad-heading">林小祥（阿祥領班）</h3>
+                  <h3 id="fm-card-name" class="ad-heading">林小祥（阿祥領班）</h3>
                   <p id="fm-caption-lead" class="ad-caption">外展工班 B 組帶隊領班，帶領 6 名組員</p>
                 </div>
               </div>
@@ -320,10 +320,10 @@
 
             <div class="ad-card__head" style="margin: 0;">
               <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-                <span class="ad-avatar ad-avatar--lg">宏</span>
+                <span id="mc-card-avatar" class="ad-avatar ad-avatar--lg">宏</span>
                 <div style="min-width: 0;">
-                  <h3 class="ad-heading">陳建宏（資深機耕技師）</h3>
-                  <p class="ad-caption">工班 C 組帶隊長，民航局雙證照飛手</p>
+                  <h3 id="mc-card-name" class="ad-heading">陳建宏（資深機耕技師）</h3>
+                  <p id="mc-caption-lead" class="ad-caption">工班 C 組帶隊長，民航局雙證照飛手</p>
                 </div>
               </div>
               <span class="ad-pill ad-pill--ok">機耕統包專案中</span>
@@ -458,10 +458,10 @@
 
             <div class="ad-card__head" style="margin: 0;">
               <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-                <span class="ad-avatar ad-avatar--lg">張</span>
+                <span id="lb-card-avatar" class="ad-avatar ad-avatar--lg">張</span>
                 <div style="min-width: 0;">
-                  <h3 class="ad-heading">張志明（農業勞務工）</h3>
-                  <p class="ad-caption">合作社在籍農業勞務員，依規定在台從事農業工作</p>
+                  <h3 id="lb-card-name" class="ad-heading">張志明（農業勞務工）</h3>
+                  <p id="lb-caption-lead" class="ad-caption">合作社在籍農業勞務員，依規定在台從事農業工作</p>
                 </div>
               </div>
               <span class="ad-pill ad-pill--ok">今日出勤中</span>
@@ -656,14 +656,28 @@
       ? `${window.location.origin}/api`
       : 'http://localhost:3000/api';
 
-    let currentTrack = 'foreman';
+    // ===== 登入身分 =====
+    // 真正登入的本國工人（有工號、不是 demo 自動登入）：身分軌（領班／機耕師／勞務員）、姓名、工號一律取自登入者，
+    // 不再由登入頁選的分頁或網址 ?role= 決定。demo 自動登入與離線示範沿用下面的示範人物（林小祥／陳建宏／張志明）。
+    const IS_PROD = !!(window.AGRI_CONFIG && window.AGRI_CONFIG.mode === 'production');
+    const LOCAL_TRACKS = ['foreman', 'machinery', 'labor'];
+    const REAL_WORKER = (() => {
+      const u = (window.AgriAuth && window.AgriAuth.getUser && window.AgriAuth.getUser()) || null;
+      return (u && u.role === 'worker_local' && u.refId && !u.demo) ? u : null;
+    })();
+    // 後端 subRole：tier3→machinery、領班→foreman、其餘本國工人（兼職、中高齡、學生…）→labor
+    const OWN_TRACK = REAL_WORKER ? (LOCAL_TRACKS.includes(REAL_WORKER.subRole) ? REAL_WORKER.subRole : 'labor') : null;
+    const PERSONA_NAME = { foreman: '林小祥', machinery: '陳建宏', labor: '張志明' };   // 示範人物
 
-    // 從登入頁帶來的身分設定，自動切軌
+    let currentTrack = OWN_TRACK || 'foreman';
+
+    // 從登入頁帶來的身分設定，自動切軌（真實登入者以帳號身分為準）
     document.addEventListener('DOMContentLoaded', () => {
       const savedRole = sessionStorage.getItem('localRole');
       const urlRole = new URLSearchParams(window.location.search).get('role');
-      const role = urlRole || savedRole;
-      if (role && role !== 'foreman') {
+      const role = OWN_TRACK || urlRole || savedRole;
+      applyOwnIdentity();
+      if (role && (role !== 'foreman' || OWN_TRACK)) {
         switchLocalTrack(role);
       }
       if (savedRole) sessionStorage.removeItem('localRole'); // 用完即清
@@ -678,6 +692,41 @@
       machinery: { title: '今日機耕任務', badge: '雲林彩椒溫室機耕統包中', summary: '陳建宏（資深機耕師 ╳ 曳引機與飛手）', name: '陳建宏 (資深機耕師)', role: '雙證照專業飛手 ╳ C 組組長', initial: '陳' },
       labor: { title: '今日農務任務', badge: '農業勞務工 (今日出勤)', summary: '張志明（一般農業勞務工 ╳ 合作社在籍員工）', name: '張志明 (農業勞務工)', role: '合作社在籍農業勞務員 ╳ 屏東產區', initial: '張' }
     };
+
+    const ROLE_SHORT = { foreman: '帶隊領班', machinery: '機耕師', labor: '農業勞務員' };
+
+    // 登入者本人的顯示資料：姓名、身分說明、所屬工班（後端 login 回傳的 user.name／roleDesc／workerProfile.teamId）
+    function ownIdentity() {
+      const nm = String(REAL_WORKER.name || REAL_WORKER.username || '').trim() || REAL_WORKER.refId;
+      const team = TEAM_LABEL[REAL_WORKER.workerProfile && REAL_WORKER.workerProfile.teamId] || '';
+      const desc = REAL_WORKER.roleDesc || ROLE_SHORT[OWN_TRACK];
+      return { nm, team, desc, initial: Array.from(nm)[0] || '工' };
+    }
+
+    // 頁首姓名、身分說明、頭像：目前身分軌是登入者本人的軌就用本人資料，不用示範人物
+    function applyOwnTrackMeta() {
+      if (!REAL_WORKER) return;
+      const { nm, team, desc, initial } = ownIdentity();
+      Object.assign(TRACK_META[OWN_TRACK], {
+        name: `${nm} (${ROLE_SHORT[OWN_TRACK]})`, initial,
+        summary: `${nm}（${desc}${team ? ' ╳ ' + team : ''}）`,
+        role: `${desc}${team ? ' ╳ ' + team : ''}`
+      });
+    }
+
+    // 登入者本人那一軌的卡片標題、頭像與說明文字（其他軌留示範人物，只在 demo 的身分切換看得到）
+    function applyOwnIdentity() {
+      if (!REAL_WORKER) return;
+      applyOwnTrackMeta();
+      const { nm, team, desc, initial } = ownIdentity();
+      const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+      const ids = { foreman: ['fm-card-avatar', 'fm-card-name', 'fm-caption-lead'], machinery: ['mc-card-avatar', 'mc-card-name', 'mc-caption-lead'], labor: ['lb-card-avatar', 'lb-card-name', 'lb-caption-lead'] }[OWN_TRACK];
+      set(ids[0], initial);
+      set(ids[1], `${nm}（${ROLE_SHORT[OWN_TRACK]}）`);
+      set(ids[2], `${team ? team + ' ' : ''}${desc}`);
+      TRACK_META[OWN_TRACK].badge = `${team ? team + ' ' : ''}${ROLE_SHORT[OWN_TRACK]}`;
+      set('header-avatar', TRACK_META[currentTrack].initial);
+    }
 
     function updatePageTitle() {
       const el = document.getElementById('pageTitle');
@@ -895,11 +944,14 @@
     let payrollData = null;
     let payrollSeq = 0;
 
+    // 某個身分軌對應的工號：登入者本人那一軌用本人工號；其餘軌（demo 身分切換）用示範帳號。
+    // demo 自動登入的身分（u.demo）只是示範帳號，不代表登入者，所以只認真正登入的本國工人（REAL_WORKER）。
+    function workerIdForTrack(track) {
+      return (REAL_WORKER && track === OWN_TRACK) ? REAL_WORKER.refId : DEMO_WORKER[track];
+    }
+
     function payrollWorkerId() {
-      const u = (window.AgriAuth && window.AgriAuth.getUser && window.AgriAuth.getUser()) || null;
-      // demo 自動登入的身分（u.demo）只是示範帳號，不代表目前頁面選的身分，所以只認真正登入的本國工人
-      if (u && u.role === 'worker_local' && u.refId && !u.demo) return u.refId;
-      return DEMO_WORKER[currentTrack] || 'W026';
+      return workerIdForTrack(currentTrack) || 'W026';
     }
 
     function localSlip(id, overtimeHours) {
@@ -1051,15 +1103,18 @@
       return [d.getHours(), d.getMinutes(), d.getSeconds()].map((n) => String(n).padStart(2, '0')).join(':');
     })();
 
+    // 正式版的真實登入者不套「8 小時前已上班」的示範預設：先當作尚未打卡，待出勤紀錄（syncPunch）回來再更新
+    const PUNCH_DEFAULT = (REAL_WORKER && IS_PROD) ? 'idle' : 'working';
+
     const PUNCH = {
       foreman: {
         ids: { inBtn: 'foremanClockInBtn', outBtn: 'foremanClockOutBtn', timeIn: 'foreman-time-in', timeOut: 'foreman-time-out', badge: 'foreman-punch-status', hours: 'foreman-today-hours' },
-        state: 'working', inTime: DEMO_IN_TIME, outTime: '', shift: null,
+        state: PUNCH_DEFAULT, inTime: DEMO_IN_TIME, outTime: '', shift: null,
         badgeWorking: (t) => `帶隊作業中（${t} 上班）`, badgeDone: (t, h) => `已完工下班（${t}・${h}h）`
       },
       local: {
         ids: { inBtn: 'localClockInBtn', outBtn: 'localClockOutBtn', timeIn: 'local-time-in', timeOut: 'local-time-out', badge: 'local-punch-status-badge', row: 'local-row-today', hours: 'local-today-hours', sign: 'local-foreman-sign' },
-        state: 'working', inTime: DEMO_IN_TIME, outTime: '', shift: null,
+        state: PUNCH_DEFAULT, inTime: DEMO_IN_TIME, outTime: '', shift: null,
         badgeWorking: (t) => `作業中（${t} 上班）`, badgeDone: (t, h) => `已完工下班（${h}h 統包驗收完畢）`
       }
     };
@@ -1098,21 +1153,16 @@
     }
 
     // 任務一律讀本人排班 GET /workers/{id}/schedule（只含排給本人的工作，不含金額與農場主電話）。
-    // 真正登入的本國工人，目前身分查本人；其餘身分查示範帳號（正式版會 403，該身分沿用示範文字）。
-    function taskWorkerId(track) {
-      const u = (window.AgriAuth && window.AgriAuth.getUser && window.AgriAuth.getUser()) || null;
-      if (u && u.role === 'worker_local' && u.refId && !u.demo && track === currentTrack) return u.refId;
-      return DEMO_WORKER[track];
-    }
-
+    // 真正登入的本國工人只讀本人那一軌；demo 身分切換才另外讀示範帳號（對正式後端會 403，所以正式版不讀）。
     async function loadLocalTasks() {
       const get = async (path) => {
         const res = await fetch(`${API_BASE}${path}`);
         if (!res.ok) throw new Error(path);
         return (await res.json()).data;
       };
-      await Promise.all(Object.keys(DEMO_WORKER).map(async (track) => {
-        const id = taskWorkerId(track);
+      const tracks = (REAL_WORKER && IS_PROD) ? [OWN_TRACK] : Object.keys(DEMO_WORKER);
+      await Promise.all(tracks.map(async (track) => {
+        const id = workerIdForTrack(track);
         const data = await get(`/workers/${encodeURIComponent(id)}/schedule`).catch(() => null);
         if (!data || !data.team) return;
         const mine = (data.items || []).map((i) => Object.assign({}, i, { id: i.orderId }));
@@ -1206,14 +1256,16 @@
       if (fm && fm.members) {
         const team = short(fm.team.name), n = fm.members.length;
         TRACK_META.foreman.badge = `${team}帶隊領班 (帶隊 ${n} 人)`;
-        TRACK_META.foreman.summary = `林小祥（資深小工頭 ╳ 帶領 ${n} 名組員）`;
+        TRACK_META.foreman.summary = REAL_WORKER && OWN_TRACK === 'foreman'
+          ? `${ownIdentity().nm}（帶隊領班 ╳ 帶領 ${n} 名組員）`
+          : `${PERSONA_NAME.foreman}（資深小工頭 ╳ 帶領 ${n} 名組員）`;
         TRACK_META.foreman.role = `外展帶隊小工頭 ╳ ${team.replace('工班 ', '')} ${n} 名組員`;
         set('fm-caption-lead', `外展${team}帶隊領班，帶領 ${n} 名組員`);
         set('fm-caption-perf', `外展${team}，帶領 ${n} 名組員`);
         set('fm-pill-crew', `帶隊出勤中（${n}/${n} 到齊）`);
       }
       if (mc) TRACK_META.machinery.badge = `${short(mc.order.cropName)}・機耕作業中`;
-      if (lb) TRACK_META.labor.role = `合作社在籍農業勞務員 ╳ ${short(lb.team.name)}`;
+      if (lb && !(REAL_WORKER && OWN_TRACK === 'labor')) TRACK_META.labor.role = `合作社在籍農業勞務員 ╳ ${short(lb.team.name)}`;
       const meta = TRACK_META[currentTrack];
       if (meta) {
         set('headerRoleBadge', meta.badge);
@@ -1228,7 +1280,7 @@
 
     // 勞務員區塊的打卡鈕：帶工號與作業地點打卡，結果由 clockAction 通知
     function laborClock(type) {
-      return AgriDocs.clockAction(type, { workerId: DEMO_WORKER.labor, locationLabel: taskLocation('labor', '屏東枋山芒果採收場域') });
+      return AgriDocs.clockAction(type, { workerId: workerIdForTrack('labor'), locationLabel: taskLocation('labor', '屏東枋山芒果採收場域') });
     }
 
     function renderPunch(key) {
@@ -1276,7 +1328,7 @@
 
     async function handleForemanClockIn() {
       const punch = window.AgriDocs
-        ? await AgriDocs.clockAction('clock-in', { workerId: DEMO_WORKER.foreman, locationLabel: taskLocation('foreman', '枋山愛文芒果合作園區'), silent: true })
+        ? await AgriDocs.clockAction('clock-in', { workerId: workerIdForTrack('foreman'), locationLabel: taskLocation('foreman', '枋山愛文芒果合作園區'), silent: true })
         : { success: true };
       if (!punch.success) return;
 
@@ -1293,7 +1345,7 @@
     async function handleForemanClockOut() {
       // 先向後端打卡，成功才更新畫面；後端拒絕（如重複打卡）時由 clockAction 顯示原因
       const punch = window.AgriDocs
-        ? await AgriDocs.clockAction('clock-out', { workerId: DEMO_WORKER.foreman, locationLabel: taskLocation('foreman', '枋山愛文芒果合作園區'), silent: true })
+        ? await AgriDocs.clockAction('clock-out', { workerId: workerIdForTrack('foreman'), locationLabel: taskLocation('foreman', '枋山愛文芒果合作園區'), silent: true })
         : { success: true };
       if (!punch.success) return;
 
@@ -1366,7 +1418,8 @@
     document.addEventListener('DOMContentLoaded', () => {
       renderPunch('foreman');
       renderPunch('local');
-      syncPunch('foreman', DEMO_WORKER.foreman);
+      // 正式版的非領班不讀領班（示範帳號）的出勤；打卡狀態一律以出勤紀錄為準
+      if (!(REAL_WORKER && IS_PROD) || OWN_TRACK === 'foreman') syncPunch('foreman', workerIdForTrack('foreman'));
       loadLocalTasks();   // 機耕師／勞務員卡片在 switchLocalTrack 切軌時同步
     });
   </script>

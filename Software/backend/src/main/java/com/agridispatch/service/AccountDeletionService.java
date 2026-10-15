@@ -75,7 +75,7 @@ public class AccountDeletionService {
     /** App 內申請：每個帳號同時只能有一筆待處理 */
     public Map<String, Object> requestFromApp(AuthContext ctx, String reason) {
         // 只看實際角色（isAdmin() 在 demo 模式對所有示範 token 都成立）
-        if (AuthContext.ROLE_ADMIN.equals(ctx.role())) throw ApiException.badRequest("後台管理帳號請洽系統管理員處理");
+        if (AuthContext.ROLE_ADMIN.equals(ctx.role()) || AuthContext.ROLE_COOP.equals(ctx.role())) throw ApiException.badRequest("後台管理帳號請洽系統管理員處理");
         if (latestPending(ctx.sub()).isPresent()) throw ApiException.conflict("您已送出刪除帳號申請，合作社處理中");
         AccountDeletionRequest r = new AccountDeletionRequest();
         r.setId(nextId());
@@ -144,7 +144,7 @@ public class AccountDeletionService {
         String target = "app".equals(r.getSource()) ? r.getUsername() : trim(identifier);
         if (target == null) throw ApiException.badRequest("網頁申請請先核對身分，並填入要刪除的帳號或工號");
         Account acc = resolve(target).orElseThrow(() -> ApiException.notFound("查無帳號：" + target));
-        if (AuthContext.ROLE_ADMIN.equals(acc.role())) throw ApiException.badRequest("後台管理帳號不在此刪除");
+        if (AuthContext.ROLE_ADMIN.equals(acc.role()) || AuthContext.ROLE_COOP.equals(acc.role())) throw ApiException.badRequest("後台管理帳號不在此刪除");
         if (acc.isFarmer()) {
             List<String> active = activeOrders(acc.refId());
             if (!active.isEmpty()) {

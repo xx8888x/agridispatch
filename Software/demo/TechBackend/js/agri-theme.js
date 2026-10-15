@@ -236,13 +236,13 @@
   //    已登入但頁首沒有頭像的頁面，在 .ad-header__actions 補一顆。
   // 選單文字依頁面語言（<html lang>，外勞頁 setLang 會更新）；「我的帳號」頁本身目前只有中文
   var AM_TEXT = {
-    zh: { roles: { farmer: '農場主', worker_local: '本國工人', worker_foreign: '外籍移工', admin_tech: '科技後台管理員' },
+    zh: { roles: { farmer: '農場主', worker_local: '本國工人', worker_foreign: '外籍移工', admin_tech: '科技後台管理員', coop_admin: '合作社管理員' },
       account: '帳號 ', mine: '我的帳號', password: '修改密碼', manage: '帳號與密碼管理', switchAcct: '切換帳號',
       logout: '登出', guest: '尚未登入', login: '登入', menu: '帳號選單' },
-    vi: { roles: { farmer: 'Chủ nông trại', worker_local: 'Lao động Đài Loan', worker_foreign: 'Lao động nước ngoài', admin_tech: 'Quản trị viên' },
+    vi: { roles: { farmer: 'Chủ nông trại', worker_local: 'Lao động Đài Loan', worker_foreign: 'Lao động nước ngoài', admin_tech: 'Quản trị viên', coop_admin: 'Quản trị hợp tác xã' },
       account: 'Tài khoản ', mine: 'Tài khoản của tôi', password: 'Đổi mật khẩu', manage: 'Quản lý tài khoản', switchAcct: 'Đổi tài khoản',
       logout: 'Đăng xuất', guest: 'Chưa đăng nhập', login: 'Đăng nhập', menu: 'Menu tài khoản' },
-    id: { roles: { farmer: 'Pemilik kebun', worker_local: 'Pekerja Taiwan', worker_foreign: 'Pekerja migran', admin_tech: 'Administrator' },
+    id: { roles: { farmer: 'Pemilik kebun', worker_local: 'Pekerja Taiwan', worker_foreign: 'Pekerja migran', admin_tech: 'Administrator', coop_admin: 'Admin koperasi' },
       account: 'Akun ', mine: 'Akun saya', password: 'Ganti sandi', manage: 'Kelola akun', switchAcct: 'Ganti akun',
       logout: 'Keluar', guest: 'Belum masuk', login: 'Masuk', menu: 'Menu akun' }
   };
@@ -251,7 +251,7 @@
     return AM_TEXT[l] || AM_TEXT.zh;
   }
   var ROLE_LOGIN = { farmer: ['main', 'farmer-login.html'], worker_local: ['main', 'worker-local-login.html'],
-    worker_foreign: ['main', 'worker-foreign-login.html'], admin_tech: ['tech', 'admin-login.html'] };
+    worker_foreign: ['main', 'worker-foreign-login.html'], admin_tech: ['tech', 'admin-login.html'], coop_admin: ['tech', 'admin-login.html'] };
 
   function currentUser() {
     try { return window.AgriAuth && window.AgriAuth.getToken() ? window.AgriAuth.getUser() : null; } catch (e) { return null; }
@@ -301,7 +301,7 @@
         '<div class="ad-caption">' + escapeHtml(T.roles[user.role] || user.role || '') + '・' + escapeHtml(T.account + (user.username || '')) + '</div></div>' +
         '<a role="menuitem" href="' + escapeHtml(p.main + 'account.html') + '"><i data-lucide="user-round" class="ad-icon ad-icon--sm"></i>' + escapeHtml(T.mine) + '</a>' +
         '<a role="menuitem" href="' + escapeHtml(p.main + 'account.html#password') + '"><i data-lucide="key-round" class="ad-icon ad-icon--sm"></i>' + escapeHtml(T.password) + '</a>' +
-        (user.role === 'admin_tech' ? '<a role="menuitem" href="' + escapeHtml(p.tech + 'accounts.html') + '"><i data-lucide="users" class="ad-icon ad-icon--sm"></i>' + escapeHtml(T.manage) + '</a>' : '') +
+        ((user.role === 'admin_tech' || user.role === 'coop_admin') ? '<a role="menuitem" href="' + escapeHtml(p.tech + 'accounts.html') + '"><i data-lucide="users" class="ad-icon ad-icon--sm"></i>' + escapeHtml(T.manage) + '</a>' : '') +
         '<a role="menuitem" href="' + escapeHtml(switchHref) + '"><i data-lucide="repeat" class="ad-icon ad-icon--sm"></i>' + escapeHtml(T.switchAcct) + '</a>' +
         '<button type="button" role="menuitem" class="am-danger" data-am-logout><i data-lucide="log-out" class="ad-icon ad-icon--sm"></i>' + escapeHtml(T.logout) + '</button>';
     } else {
@@ -339,6 +339,15 @@
     if (open && !t.closest('#ad-account-menu')) closeAccountMenu();
   }, true);
 
+  // 合作社帳號：後台頁面的「回後台」「首頁」連結改指向合作社首頁（coop.html）
+  function coopHomeLinks() {
+    var u = currentUser();
+    if (!u || u.role !== 'coop_admin') return;
+    document.querySelectorAll('a[href="admin.html"]').forEach(function (a) {
+      if (/回後台|^\s*$/.test(a.textContent) || a.classList.contains('ad-header__brand') || a.classList.contains('ad-tabbar__item')) a.setAttribute('href', 'coop.html');
+    });
+  }
+
   function accountButton(retried) {
     if (document.querySelector('[data-account-menu], a[aria-label="切換帳號"]')) return;
     var user = currentUser();
@@ -362,5 +371,5 @@
   window.AgriTheme = { mode: mode, icons: icons, drawer: drawer, toast: toast, demoNav: demoNav, feature: feature,
     employment: EMPLOYMENT, employmentLabel: employmentLabel, visibleWorkers: visibleWorkers, logout: logout };
 
-  document.addEventListener('DOMContentLoaded', function () { icons(); demoNavFab(); accountButton(); });
+  document.addEventListener('DOMContentLoaded', function () { icons(); demoNavFab(); accountButton(); coopHomeLinks(); });
 })();

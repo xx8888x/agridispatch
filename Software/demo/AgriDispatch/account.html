@@ -101,9 +101,9 @@
 
   <script>
     const API = (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
-    const ROLE_LABEL = { farmer: '農場主', worker_local: '本國工人', worker_foreign: '外籍移工', admin_tech: '科技後台管理員' };
-    const ROLE_HOME = { farmer: 'farmer.html', worker_local: 'worker-local.html', worker_foreign: 'worker-foreign.html', admin_tech: '../TechBackend/admin.html' };
-    const ROLE_LOGIN = { farmer: 'farmer-login.html', worker_local: 'worker-local-login.html', worker_foreign: 'worker-foreign-login.html', admin_tech: '../TechBackend/admin-login.html' };
+    const ROLE_LABEL = { farmer: '農場主', worker_local: '本國工人', worker_foreign: '外籍移工', admin_tech: '科技後台管理員', coop_admin: '合作社管理員' };
+    const ROLE_HOME = { farmer: 'farmer.html', worker_local: 'worker-local.html', worker_foreign: 'worker-foreign.html', admin_tech: '../TechBackend/admin.html', coop_admin: '../TechBackend/coop.html' };
+    const ROLE_LOGIN = { farmer: 'farmer-login.html', worker_local: 'worker-local-login.html', worker_foreign: 'worker-foreign-login.html', admin_tech: '../TechBackend/admin-login.html', coop_admin: '../TechBackend/admin-login.html' };
     let me = null;
 
     function esc(s) {
@@ -248,7 +248,7 @@
     }
 
     async function loadDeletion() {
-      if (!me || me.role === 'admin_tech') return;
+      if (!me || me.role === 'admin_tech' || me.role === 'coop_admin') return;
       document.getElementById('delete').hidden = false;
       const worker = /^worker_/.test(me.role || '');
       document.getElementById('delFarmerNote').hidden = me.role !== 'farmer';

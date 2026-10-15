@@ -10,7 +10,7 @@
   <script src="js/api-client.js"></script>
   <script>
     // production 模式：無 token 或角色不符則導向登入頁（demo 模式不強制）
-    if (window.AgriAuth) window.AgriAuth.requireRole(['admin_tech'], 'admin-login.html');
+    if (window.AgriAuth) window.AgriAuth.requireRole(['admin_tech', 'coop_admin'], 'admin-login.html');
   </script>
   <script>
     if (window.AGRI_CONFIG && window.AGRI_CONFIG.mode !== 'production') {
@@ -76,8 +76,9 @@
           <button type="button" class="ad-nav__link" :class="{ 'is-active': activeTab === 'revenue' }" @click="activeTab = 'revenue'">營收</button>
         </nav>
         <div class="ad-header__actions">
-          <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" @click="activeTab = 'dispatch'; dispatchSubTab = 'brochures'" title="管理與上傳文宣 DM" aria-label="文宣管理"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ad-icon ad-icon--sm"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg><span class="ad-hide-sm">文宣 {{ brochures.length }}</span></button>
-          <a href="admin-line.html" class="ad-btn ad-btn--ghost ad-btn--sm" title="LINE 官方帳號與帳號綁定" aria-label="LINE 官方帳號"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ad-icon ad-icon--sm"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg><span class="ad-hide-sm">LINE</span></a>
+          <button type="button" v-if="!isCoop" class="ad-btn ad-btn--ghost ad-btn--sm" @click="activeTab = 'dispatch'; dispatchSubTab = 'brochures'" title="管理與上傳文宣 DM" aria-label="文宣管理"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ad-icon ad-icon--sm"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg><span class="ad-hide-sm">文宣 {{ brochures.length }}</span></button>
+          <a v-if="!isCoop" href="admin-line.html" class="ad-btn ad-btn--ghost ad-btn--sm" title="LINE 官方帳號與帳號綁定" aria-label="LINE 官方帳號"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ad-icon ad-icon--sm"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg><span class="ad-hide-sm">LINE</span></a>
+          <span v-if="isCoop" class="ad-pill ad-pill--warn" title="系統設定與部分操作僅科技後台">合作社帳號</span>
           <span class="ad-pill" :class="backendOnline ? 'ad-pill--ok' : 'ad-pill--warn'" :title="backendOnline ? '後端連線正常' : '後端離線或連線中'"><span class="ad-pill__dot"></span>{{ backendOnline ? '已連線' : '離線' }}</span>
           <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only @click="openDemoNav" aria-label="示範導覽"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ad-icon ad-icon--sm"><rect width="7" height="7" x="3" y="3" rx="1"></rect><rect width="7" height="7" x="14" y="3" rx="1"></rect><rect width="7" height="7" x="14" y="14" rx="1"></rect><rect width="7" height="7" x="3" y="14" rx="1"></rect></svg><span class="ad-hide-sm">示範導覽</span></button>
           <a href="../AgriDispatch/login.html" class="ad-btn ad-btn--ghost ad-btn--sm ad-btn--icon" title="切換帳號" aria-label="切換帳號"><span class="ad-avatar">林</span></a>
@@ -131,7 +132,7 @@
             </div>
             <div class="flex items-center gap-2 shrink-0">
               <button type="button" @click="loadWeather(true)" class="ad-btn ad-btn--secondary" :disabled="wx.loading">{{ wx.loading ? '更新中…' : '重新整理' }}</button>
-              <button type="button" @click="toggleWeather()" class="ad-btn" :class="dispatch.isRainMode ? 'ad-btn--accent' : 'ad-btn--danger'" title="全體工班轉室內冷鏈作業，並以 LINE 通知受影響農場主與工班">
+              <button type="button" v-if="!isCoop" @click="toggleWeather()" class="ad-btn" :class="dispatch.isRainMode ? 'ad-btn--accent' : 'ad-btn--danger'" title="全體工班轉室內冷鏈作業，並以 LINE 通知受影響農場主與工班">
                 {{ dispatch.isRainMode ? '恢復田間作業' : '啟動暴雨避險' }}
               </button>
             </div>
@@ -307,10 +308,10 @@
           <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'orders' }" :aria-selected="dispatchSubTab === 'orders'" @click="dispatchSubTab = 'orders'">訂單<span class="ad-tab__count">{{ orders.length }}</span></button>
           <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'workers' }" :aria-selected="dispatchSubTab === 'workers'" @click="dispatchSubTab = 'workers'">農工名冊<span class="ad-tab__count">{{ workers.length }}</span></button>
           <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'teams' }" :aria-selected="dispatchSubTab === 'teams'" @click="dispatchSubTab = 'teams'">工班<span class="ad-tab__count">{{ dispatch.teams.length }}</span></button>
-          <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'crops' }" :aria-selected="dispatchSubTab === 'crops'" @click="dispatchSubTab = 'crops'">作物基準<span class="ad-tab__count">{{ crops.length }}</span></button>
+          <button type="button" v-if="!isCoop" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'crops' }" :aria-selected="dispatchSubTab === 'crops'" @click="dispatchSubTab = 'crops'">作物基準<span class="ad-tab__count">{{ crops.length }}</span></button>
           <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'calendar' }" :aria-selected="dispatchSubTab === 'calendar'" @click="dispatchSubTab = 'calendar'">全台產曆</button>
-          <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'talents' }" :aria-selected="dispatchSubTab === 'talents'" @click="dispatchSubTab = 'talents'">人才儲備<span class="ad-tab__count">{{ talents.length }}</span></button>
-          <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'brochures' }" :aria-selected="dispatchSubTab === 'brochures'" @click="dispatchSubTab = 'brochures'">產品文宣<span class="ad-tab__count">{{ brochures.length }}</span></button>
+          <button type="button" v-if="!isCoop" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'talents' }" :aria-selected="dispatchSubTab === 'talents'" @click="dispatchSubTab = 'talents'">人才儲備<span class="ad-tab__count">{{ talents.length }}</span></button>
+          <button type="button" v-if="!isCoop" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'brochures' }" :aria-selected="dispatchSubTab === 'brochures'" @click="dispatchSubTab = 'brochures'">產品文宣<span class="ad-tab__count">{{ brochures.length }}</span></button>
           <button type="button" role="tab" data-feature="legalize" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'legalize' }" :aria-selected="dispatchSubTab === 'legalize'" @click="dispatchSubTab = 'legalize'; fetchLegalize()">工班合法化<span v-if="legalizeSummary" class="ad-tab__count">{{ legalizeSummary.totals.gapOpen }}</span></button>
         </div>
 
@@ -2040,6 +2041,8 @@
 
         const backendOnline = ref(true);
         const activeTab = ref('weather');
+        // 合作社管理員（coop_admin）：作物、人才庫、文宣、天候切換、LINE 等科技公司專屬功能不顯示（後端同樣拒絕）
+        const isCoop = (() => { try { const u = window.AgriAuth && window.AgriAuth.getUser(); return !!u && u.role === 'coop_admin'; } catch (e) { return false; } })();
         const dispatchSubTab = ref('orders');
 
         // 後端與示範資料的文字可能帶 emoji，進入畫面前先濾除（icon／coverImage 欄位不動）
@@ -3590,6 +3593,7 @@
         });
 
         return {
+          isCoop,
           backendOnline,
           activeTab,
           dispatchSubTab,

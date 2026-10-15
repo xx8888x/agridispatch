@@ -7,7 +7,7 @@
   <script src="js/app-config.js"></script>
   <script src="js/api-client.js"></script>
   <script>
-    if (window.AgriAuth) window.AgriAuth.requireRole(['admin_tech'], 'admin-login.html');
+    if (window.AgriAuth) window.AgriAuth.requireRole(['admin_tech', 'coop_admin'], 'admin-login.html');
   </script>
   <!-- 設計系統：共用 demo 模式標記、圖示、抽屜 -->
   <script src="js/agri-theme.js"></script>
@@ -64,6 +64,7 @@
           <option value="worker_local">本國工人</option>
           <option value="worker_foreign" data-feature="foreignWorkers">外籍移工</option>
           <option value="admin_tech">科技後台管理員</option>
+          <option value="coop_admin">合作社管理員</option>
         </select>
       </div>
       <span id="count" class="ad-caption" style="padding-bottom: 10px;"></span>
@@ -135,7 +136,7 @@
   <script>
     const API = (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
     const demoNav = window.AgriTheme ? AgriTheme.demoNav() : { open() {} };
-    const ROLE_LABEL = { farmer: '農場主', worker_local: '本國工人', worker_foreign: '外籍移工', admin_tech: '科技後台管理員' };
+    const ROLE_LABEL = { farmer: '農場主', worker_local: '本國工人', worker_foreign: '外籍移工', admin_tech: '科技後台管理員', coop_admin: '合作社管理員' };
     let accounts = [];
     let target = null;
 
@@ -250,6 +251,9 @@
     const fmtTime = (v) => { const d = new Date(v); return isNaN(d) ? String(v || '') : d.toLocaleString('zh-TW', { hour12: false }); };
 
     async function loadDeletions() {
+      // 刪除帳號申請只有科技後台管理員能審核；合作社帳號不顯示這一區
+      const meUser = (window.AgriAuth && window.AgriAuth.getUser && window.AgriAuth.getUser()) || {};
+      if (meUser.role === 'coop_admin') { document.querySelector('[aria-labelledby="delTitle"]').hidden = true; return; }
       const err = document.getElementById('delError');
       try {
         const res = await fetch(`${API}/account-deletions`);

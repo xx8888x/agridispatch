@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智農派工 AgriDispatch - 合作社後台</title>
+  <script src="js/app-config.js"></script>
+  <script src="js/api-client.js"></script>
+  <script>
+    // 合作社管理員（coop_admin）的首頁；科技後台管理員也可進來看合作社看到的畫面
+    if (window.AgriAuth) window.AgriAuth.requireRole(['coop_admin', 'admin_tech'], 'admin-login.html');
+  </script>
+  <!-- 設計系統：共用 demo 模式標記、圖示、抽屜 -->
+  <script src="js/agri-theme.js"></script>
+  <script src="js/vendor/lucide.min.js"></script>
+  <link rel="stylesheet" href="css/agri.css">
+</head>
+<body class="ad-body">
+
+  <header class="ad-header">
+    <div class="ad-container ad-header__inner" style="max-width: 960px;">
+      <a href="coop.html" class="ad-header__brand">
+        <span class="ad-header__logo"><i data-lucide="sprout" class="ad-icon"></i></span>
+        智農派工
+        <span class="ad-header__role">合作社後台</span>
+      </a>
+      <div class="ad-header__actions">
+        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-demo-only onclick="demoNav.open()" aria-label="示範導覽"><i data-lucide="layout-grid" class="ad-icon ad-icon--sm"></i><span class="ad-hide-sm">示範導覽</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="ad-container" style="width: 100%; max-width: 960px; padding-block: 24px 40px; display: flex; flex-direction: column; gap: 24px;">
+    <div>
+      <h1 class="ad-display">合作社後台</h1>
+      <p class="ad-caption" style="margin-top: 6px; max-width: 720px;">合作社是工人的法定雇主：工人名冊、加退保、出勤與薪資、請假、派工都在這裡處理。系統設定與營運工具由科技公司負責。</p>
+    </div>
+
+    <section aria-labelledby="empTitle" style="display: flex; flex-direction: column; gap: 12px;">
+      <h2 id="empTitle" class="ad-title">雇主作業</h2>
+      <div class="ad-list">
+        <a class="ad-row" href="admin.html"><div class="ad-row__main"><div class="ad-row__title">農工名冊與派工調度</div><div class="ad-row__meta">新增、編輯工人與工作許可；訂單、工班、營收（唯讀）</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
+        <a class="ad-row" href="insurance.html"><div class="ad-row__main"><div class="ad-row__title">保險登錄</div><div class="ad-row__meta">勞保、就保、職保、健保的加退保與申報編號</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
+        <a class="ad-row" href="payroll.html"><div class="ad-row__main"><div class="ad-row__title">出勤與月結算</div><div class="ad-row__meta">補登、修正出勤；月結算、薪資單</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
+        <a class="ad-row" href="leaves.html"><div class="ad-row__main"><div class="ad-row__title">請假審核</div><div class="ad-row__meta">工人請假的核准、駁回，撞期改派</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
+        <a class="ad-row" href="matching.html"><div class="ad-row__main"><div class="ad-row__title">派工媒合</div><div class="ad-row__meta">確認出工名單與改派</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
+        <a class="ad-row" href="rosters.html"><div class="ad-row__main"><div class="ad-row__title">共享班表</div><div class="ad-row__meta">開班、確認、取消</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
+        <a class="ad-row" href="skills.html"><div class="ad-row__main"><div class="ad-row__title">技能複核</div><div class="ad-row__meta">熟手標籤暫停後的複核恢復</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
+        <a class="ad-row" href="accounts.html"><div class="ad-row__main"><div class="ad-row__title">帳號與密碼管理</div><div class="ad-row__meta">忘記密碼時，核對身分後重設工人與農場主的臨時密碼</div></div><i data-lucide="chevron-right" class="ad-icon ad-icon--sm ad-text-3"></i></a>
+      </div>
+    </section>
+
+    <section class="ad-card" aria-labelledby="limitTitle">
+      <h2 id="limitTitle" class="ad-heading">合作社帳號不能做的事</h2>
+      <ul class="ad-caption" style="margin: 8px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px;">
+        <li>切換天候情境、LINE 與 App 推播、作物基準、產品文宣、人才庫、示範資料重灌</li>
+        <li>重設管理員帳號的密碼、審核刪除帳號申請</li>
+        <li>代農場主建立訂單、直接改訂單狀態</li>
+        <li>工人證件的完整號碼（只顯示遮罩後的號碼）</li>
+      </ul>
+      <p class="ad-caption" style="margin-top: 8px;">需要這些功能時請聯絡科技公司。</p>
+    </section>
+  </main>
+
+  <script>
+    const demoNav = window.AgriTheme ? AgriTheme.demoNav() : { open() {} };
+    window.addEventListener('DOMContentLoaded', () => { if (window.lucide) lucide.createIcons(); });
+  </script>
+</body>
+</html>

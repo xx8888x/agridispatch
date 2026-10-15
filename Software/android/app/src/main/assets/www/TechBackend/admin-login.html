@@ -180,7 +180,7 @@
               const data = await res.json().catch(() => null);
               if (res.ok && data && data.success && data.user) {
                 window.AgriAuth.setSession(data.token, data.user);
-                window.location.href = 'admin.html';
+                window.location.href = data.user.role === 'coop_admin' ? 'coop.html' : 'admin.html';
               } else {
                 errorMsg.value = (data && data.error) || '帳號或密碼錯誤';
               }
@@ -201,7 +201,7 @@
             email: email,
             org: org,
             name: (matched && matched.name) || (org === 'tech' ? '林技術長 (Tech Lead)' : (org === 'coop' ? '陳理事長 (Coop Chair)' : '張稽核專員')),
-            role: 'admin_tech',
+            role: org === 'coop' ? 'coop_admin' : 'admin_tech',
             demo: true
           };
           let token = 'demo-admin-token-2026';
@@ -209,12 +209,20 @@
           try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 3000); // 後端 PBKDF2 驗證約 1~1.5 秒
-            const res = await fetch(`${window.AgriAuth.API_BASE}/auth/login`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ identifier: email, password: form.value.password || (matched && matched.password) || '' }),
-              signal: controller.signal
-            });
+            // 合作社調度長示範帳號：以 demo-login 取得合作社管理員身分（其餘示範帳號沿用原本登入）
+            const res = org === 'coop'
+              ? await fetch(`${window.AgriAuth.API_BASE}/auth/demo-login`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ role: 'coop_admin' }),
+                  signal: controller.signal
+                })
+              : await fetch(`${window.AgriAuth.API_BASE}/auth/login`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ identifier: email, password: form.value.password || (matched && matched.password) || '' }),
+                  signal: controller.signal
+                });
             clearTimeout(timeoutId);
             if (res.ok) {
               const data = await res.json();
@@ -229,7 +237,7 @@
 
           sessionStorage.setItem('agri_admin_user', JSON.stringify(finalUser));
           window.AgriAuth.setSession(token, finalUser);
-          setTimeout(() => { window.location.href = 'admin.html'; }, 300);
+          setTimeout(() => { window.location.href = finalUser.role === 'coop_admin' ? 'coop.html' : 'admin.html'; }, 300);
         };
 
         return {

@@ -111,6 +111,7 @@
 
   // ---------------- 使用者／登入 ----------------
   var ROLE_BY_PAGE = [
+    [/^coop/, 'coop_admin'],
     [/^(admin|insurance|skills|matching|accounts|leaves|payroll)/, 'admin_tech'],
     [/^(farmer|legalize|expenses)/, 'farmer'],
     [/^worker-foreign/, 'worker_foreign'],
@@ -129,7 +130,7 @@
       b.token = 'mock.' + role + '.' + (b.user.refId || '');
       return respond(200, b);
     }
-    return respond(200, { success: true, token: 'mock.' + role, user: { username: role, name: '示範使用者', role: role, refId: refId || null, demo: true } });
+    return respond(200, { success: true, token: 'mock.' + role, user: { username: role, name: role === 'coop_admin' ? '合作社管理員（示範）' : '示範使用者', role: role, refId: refId || null, demo: true } });
   }
   function currentUser() {
     try { return JSON.parse(global.sessionStorage.getItem('agri_user')); } catch (e) { return null; }
@@ -283,7 +284,7 @@
     return { total: days * 2, claimed: claimed, pct: Math.floor(claimed * 100 / (days * 2)) };
   }
   function rosterView(r) {
-    var me = currentUser() || {}, admin = me.role === 'admin_tech', today = isoDay(new Date());
+    var me = currentUser() || {}, admin = me.role === 'admin_tech' || me.role === 'coop_admin', today = isoDay(new Date());
     var v = clone(r), p = rosterPercent(r), claims = rosterClaims(r);
     var claimable = (r.status === 'open' || r.status === 'confirmed') && !(r.status === 'open' && today > r.claimDeadline);
     v.statusLabel = ROSTER_LABEL[r.status] || r.status;
@@ -316,7 +317,7 @@
   function rostersApi(id) {
     var me = currentUser() || {};
     if (me.role !== 'admin_tech' && me.role !== 'farmer') return respond(403, { success: false, error: 'FORBIDDEN' });
-    var list = rosterList().list.filter(function (r) { return me.role === 'admin_tech' || r.status === 'open' || r.status === 'confirmed'; });
+    var list = rosterList().list.filter(function (r) { return me.role === 'admin_tech' || me.role === 'coop_admin' || r.status === 'open' || r.status === 'confirmed'; });
     if (id) {
       var r = list.filter(function (x) { return x.id === id; })[0];
       return r ? respond(200, { success: true, data: rosterView(r) }) : respond(404, { success: false, error: '找不到共享班表：' + id });
@@ -755,7 +756,7 @@
     return d;
   }
   function savePayStatus(d) { put(payStatusKey(d.orderId), { s: 200, b: { success: true, data: d } }); }
-  function isAdminUser() { return (currentUser() || {}).role === 'admin_tech'; }
+  function isAdminUser() { var r = (currentUser() || {}).role; return r === 'admin_tech' || r === 'coop_admin'; }   // 尾款登錄等雇主作業：合作社也可
   function balanceResult(d, tx) {
     var r = payStatusOf(d.orderId);
     return { orderId: r.orderId, finalAmount: r.finalAmount, depositCredit: r.depositCredit, balancePaid: r.balancePaid, balanceOutstanding: r.balanceOutstanding, transaction: tx };
@@ -1513,7 +1514,7 @@
     var list = leaveList(), l = list.filter(function (x) { return x.id === id; })[0];
     if (!l) return respond(404, { success: false, error: '查無請假紀錄：' + id });
     var note = (b && b.note ? String(b.note).trim() : '') || null;
-    var admin = (currentUser() || {}).role === 'admin_tech';
+    var admin = ['admin_tech', 'coop_admin'].indexOf((currentUser() || {}).role) >= 0;
     if (action === 'approve' || action === 'reject') {
       if (!admin) return respond(403, { success: false, error: 'FORBIDDEN' });
       if (l.status !== 'pending') return respond(409, { success: false, error: '這筆假已「' + LEAVE_STATUS[l.status] + '」，不能再審核' });

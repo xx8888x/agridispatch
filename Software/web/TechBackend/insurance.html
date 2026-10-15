@@ -10,7 +10,7 @@
   <script src="js/api-client.js"></script>
   <script>
     // production 模式：無 token 或非管理員則導向登入頁（demo 模式不強制）
-    if (window.AgriAuth) window.AgriAuth.requireRole(['admin_tech'], 'admin-login.html');
+    if (window.AgriAuth) window.AgriAuth.requireRole(['admin_tech', 'coop_admin'], 'admin-login.html');
   </script>
   <!-- Tailwind CSS CDN -->
   <script src="js/vendor/tailwindcss-3.4.17.js"></script>

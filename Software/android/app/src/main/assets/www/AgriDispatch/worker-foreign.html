@@ -267,6 +267,48 @@
       <div class="ad-card" style="padding: 24px;">
         <div id="workerCalendar"></div>
       </div>
+
+      <!-- 請假：送出後由合作社審核；核准的假不會再被排班（POST /workers/{id}/leaves）。文字一律走 translations（zh／vi／id） -->
+      <div class="ad-card" style="padding: 24px; margin-top: 20px;">
+        <div class="ad-card__head">
+          <h3 class="ad-heading" data-i18n="leaveTitle">請假</h3>
+          <span class="ad-caption" data-i18n="leaveHint">合作社核准後，這段期間不會被排班</span>
+        </div>
+        <form id="leaveForm" novalidate style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px 16px;">
+          <div class="ad-field">
+            <label class="ad-label" for="leaveType" data-i18n="leaveTypeLbl">假別</label>
+            <select id="leaveType" class="ad-select" required><option value="annual" data-i18n="leaveType_annual">特別休假</option><option value="personal" data-i18n="leaveType_personal">事假</option><option value="sick" data-i18n="leaveType_sick">普通傷病假</option><option value="menstrual" data-i18n="leaveType_menstrual">生理假</option><option value="family_care" data-i18n="leaveType_family_care">家庭照顧假</option><option value="marriage" data-i18n="leaveType_marriage">婚假</option><option value="bereavement" data-i18n="leaveType_bereavement">喪假</option><option value="official" data-i18n="leaveType_official">公假</option><option value="injury" data-i18n="leaveType_injury">公傷病假</option><option value="maternity" data-i18n="leaveType_maternity">產假／產檢假</option><option value="paternity" data-i18n="leaveType_paternity">陪產檢及陪產假</option><option value="other" data-i18n="leaveType_other">其他</option></select>
+          </div>
+          <div class="ad-field">
+            <label class="ad-label" for="leaveStart" data-i18n="leaveStartLbl">開始日</label>
+            <input id="leaveStart" type="date" class="ad-input" required>
+          </div>
+          <div class="ad-field">
+            <label class="ad-label" for="leaveEnd" data-i18n="leaveEndLbl">結束日</label>
+            <input id="leaveEnd" type="date" class="ad-input">
+            <span class="ad-hint" data-i18n="leaveEndHint">只請一天可不填</span>
+          </div>
+          <div class="ad-field">
+            <label class="ad-label" for="leaveSlot" data-i18n="leaveSlotLbl">時段</label>
+            <select id="leaveSlot" class="ad-select">
+              <option value="full_day" data-i18n="leaveSlotFull">整天</option>
+              <option value="morning" data-i18n="leaveSlotAm">上午（半天）</option>
+              <option value="afternoon" data-i18n="leaveSlotPm">下午（半天）</option>
+            </select>
+          </div>
+          <div class="ad-field" style="grid-column: 1 / -1;">
+            <label class="ad-label" for="leaveReason" data-i18n="leaveReasonLbl">事由（選填）</label>
+            <input id="leaveReason" type="text" class="ad-input" maxlength="200">
+          </div>
+          <div id="leaveMsg" role="alert" style="grid-column: 1 / -1;" hidden></div>
+          <div style="grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+            <button id="leaveBtn" type="submit" class="ad-btn ad-btn--primary" data-i18n="leaveSubmit">送出請假</button>
+            <span class="ad-caption" data-i18n="leaveNote">病假等臨時請假可事後 30 天內補請；假別給薪與天數依勞基法規定，有疑問請洽合作社。</span>
+          </div>
+        </form>
+        <h4 class="ad-heading" style="margin: 24px 0 10px;" data-i18n="leaveListTitle">我的請假紀錄</h4>
+        <div id="leaveList" class="ad-list"><p class="ad-caption" data-i18n="leaveLoading">讀取中…</p></div>
+      </div>
     </div>
 
     <!-- TAB 2: 薪資與薪資單 -->
@@ -486,7 +528,58 @@
         downloadPdf: "下載 PDF",
         payErr: "無法取得薪資資料：{msg}",
         errOffline: "無法連線伺服器，請稍後再試",
-        errForbidden: "沒有權限查看這位工人的薪資"
+        errForbidden: "沒有權限查看這位工人的薪資",
+        leaveTitle: "請假",
+        leaveHint: "合作社核准後，這段期間不會被排班",
+        leaveTypeLbl: "假別",
+        leaveStartLbl: "開始日",
+        leaveEndLbl: "結束日",
+        leaveEndHint: "只請一天可不填",
+        leaveSlotLbl: "時段",
+        leaveSlotFull: "整天",
+        leaveSlotAm: "上午（半天）",
+        leaveSlotPm: "下午（半天）",
+        leaveReasonLbl: "事由（選填）",
+        leaveSubmit: "送出請假",
+        leaveSending: "送出中…",
+        leaveNote: "病假等臨時請假可事後 30 天內補請；假別給薪與天數依勞基法規定，有疑問請洽合作社。",
+        leaveListTitle: "我的請假紀錄",
+        leaveLoading: "讀取中…",
+        leaveEmpty: "還沒有請假紀錄。",
+        leaveCancel: "取消",
+        leaveConfirmCancel: "確定取消這筆請假？",
+        leaveSent: "已送出（{id}），等合作社審核。",
+        leaveConflict: "這段期間你已排入 {ids}，合作社會協調改派。",
+        leaveErrType: "請選擇假別。",
+        leaveErrStart: "請選擇開始日。",
+        leaveErrEnd: "結束日不可早於開始日。",
+        leaveErrHalf: "半天假只能請單日，結束日請留空。",
+        leaveErrOverlap: "與已申請的假重疊。",
+        leaveErrForbidden: "沒有權限處理這位工人的請假",
+        leaveFail: "請假未送出：{msg}",
+        leaveCancelFail: "取消失敗：{msg}",
+        leaveLoadErr: "無法讀取請假紀錄：{msg}",
+        leaveDays: "{n} 天",
+        leaveAm: "上午",
+        leavePm: "下午",
+        leaveDecisionNote: "合作社備註：{n}",
+        leaveRejectNote: "駁回原因：{n}",
+        leaveSt_pending: "待審核",
+        leaveSt_approved: "已核准",
+        leaveSt_rejected: "已駁回",
+        leaveSt_cancelled: "已取消",
+        leaveType_annual: "特別休假",
+        leaveType_personal: "事假",
+        leaveType_sick: "普通傷病假",
+        leaveType_menstrual: "生理假",
+        leaveType_family_care: "家庭照顧假",
+        leaveType_marriage: "婚假",
+        leaveType_bereavement: "喪假",
+        leaveType_official: "公假",
+        leaveType_injury: "公傷病假",
+        leaveType_maternity: "產假／產檢假",
+        leaveType_paternity: "陪產檢及陪產假",
+        leaveType_other: "其他"
       },
       vi: {
         navTask: "Nhiệm vụ",
@@ -621,7 +714,58 @@
         downloadPdf: "Tải PDF",
         payErr: "Không lấy được dữ liệu lương: {msg}",
         errOffline: "Không kết nối được máy chủ, vui lòng thử lại sau",
-        errForbidden: "Bạn không có quyền xem lương của người này"
+        errForbidden: "Bạn không có quyền xem lương của người này",
+        leaveTitle: "Xin nghỉ phép",
+        leaveHint: "Sau khi hợp tác xã duyệt, bạn sẽ không được xếp lịch trong thời gian này",
+        leaveTypeLbl: "Loại nghỉ",
+        leaveStartLbl: "Ngày bắt đầu",
+        leaveEndLbl: "Ngày kết thúc",
+        leaveEndHint: "Nghỉ một ngày thì để trống",
+        leaveSlotLbl: "Buổi",
+        leaveSlotFull: "Cả ngày",
+        leaveSlotAm: "Buổi sáng (nửa ngày)",
+        leaveSlotPm: "Buổi chiều (nửa ngày)",
+        leaveReasonLbl: "Lý do (không bắt buộc)",
+        leaveSubmit: "Gửi đơn nghỉ",
+        leaveSending: "Đang gửi…",
+        leaveNote: "Nghỉ đột xuất như nghỉ ốm có thể xin bổ sung trong vòng 30 ngày; lương và số ngày nghỉ theo Luật Tiêu chuẩn Lao động, nếu có thắc mắc hãy hỏi hợp tác xã.",
+        leaveListTitle: "Đơn nghỉ của tôi",
+        leaveLoading: "Đang tải…",
+        leaveEmpty: "Chưa có đơn nghỉ nào.",
+        leaveCancel: "Hủy",
+        leaveConfirmCancel: "Bạn chắc chắn muốn hủy đơn nghỉ này?",
+        leaveSent: "Đã gửi ({id}), chờ hợp tác xã duyệt.",
+        leaveConflict: "Trong thời gian này bạn đã được xếp vào {ids}, hợp tác xã sẽ sắp xếp người thay.",
+        leaveErrType: "Vui lòng chọn loại nghỉ.",
+        leaveErrStart: "Vui lòng chọn ngày bắt đầu.",
+        leaveErrEnd: "Ngày kết thúc không được trước ngày bắt đầu.",
+        leaveErrHalf: "Nghỉ nửa ngày chỉ được một ngày, hãy để trống ngày kết thúc.",
+        leaveErrOverlap: "Trùng với đơn nghỉ đã gửi.",
+        leaveErrForbidden: "Bạn không có quyền xử lý đơn nghỉ của người này",
+        leaveFail: "Chưa gửi được đơn nghỉ: {msg}",
+        leaveCancelFail: "Hủy không thành công: {msg}",
+        leaveLoadErr: "Không tải được đơn nghỉ: {msg}",
+        leaveDays: "{n} ngày",
+        leaveAm: "buổi sáng",
+        leavePm: "buổi chiều",
+        leaveDecisionNote: "Ghi chú của hợp tác xã: {n}",
+        leaveRejectNote: "Lý do không duyệt: {n}",
+        leaveSt_pending: "Chờ duyệt",
+        leaveSt_approved: "Đã duyệt",
+        leaveSt_rejected: "Không duyệt",
+        leaveSt_cancelled: "Đã hủy",
+        leaveType_annual: "Nghỉ phép năm",
+        leaveType_personal: "Nghỉ việc riêng",
+        leaveType_sick: "Nghỉ ốm",
+        leaveType_menstrual: "Nghỉ kinh nguyệt",
+        leaveType_family_care: "Nghỉ chăm sóc gia đình",
+        leaveType_marriage: "Nghỉ kết hôn",
+        leaveType_bereavement: "Nghỉ tang",
+        leaveType_official: "Nghỉ công vụ",
+        leaveType_injury: "Nghỉ tai nạn lao động",
+        leaveType_maternity: "Nghỉ thai sản / khám thai",
+        leaveType_paternity: "Nghỉ cùng vợ khám thai và sinh con",
+        leaveType_other: "Khác"
       },
       id: {
         navTask: "Tugas",
@@ -756,7 +900,58 @@
         downloadPdf: "Unduh PDF",
         payErr: "Data gaji tidak dapat dimuat: {msg}",
         errOffline: "Tidak dapat terhubung ke server, coba lagi nanti",
-        errForbidden: "Anda tidak berhak melihat gaji pekerja ini"
+        errForbidden: "Anda tidak berhak melihat gaji pekerja ini",
+        leaveTitle: "Ajukan cuti",
+        leaveHint: "Setelah disetujui koperasi, Anda tidak akan dijadwalkan pada periode ini",
+        leaveTypeLbl: "Jenis cuti",
+        leaveStartLbl: "Tanggal mulai",
+        leaveEndLbl: "Tanggal selesai",
+        leaveEndHint: "Kosongkan jika hanya satu hari",
+        leaveSlotLbl: "Waktu",
+        leaveSlotFull: "Sehari penuh",
+        leaveSlotAm: "Pagi (setengah hari)",
+        leaveSlotPm: "Siang (setengah hari)",
+        leaveReasonLbl: "Alasan (opsional)",
+        leaveSubmit: "Kirim pengajuan cuti",
+        leaveSending: "Mengirim…",
+        leaveNote: "Cuti mendadak seperti sakit dapat diajukan susulan dalam 30 hari; gaji dan jumlah hari cuti mengikuti Undang-Undang Standar Ketenagakerjaan, tanyakan koperasi jika ada pertanyaan.",
+        leaveListTitle: "Riwayat cuti saya",
+        leaveLoading: "Memuat…",
+        leaveEmpty: "Belum ada pengajuan cuti.",
+        leaveCancel: "Batalkan",
+        leaveConfirmCancel: "Yakin ingin membatalkan cuti ini?",
+        leaveSent: "Terkirim ({id}), menunggu persetujuan koperasi.",
+        leaveConflict: "Pada periode ini Anda sudah dijadwalkan di {ids}, koperasi akan mengatur penggantinya.",
+        leaveErrType: "Silakan pilih jenis cuti.",
+        leaveErrStart: "Silakan pilih tanggal mulai.",
+        leaveErrEnd: "Tanggal selesai tidak boleh sebelum tanggal mulai.",
+        leaveErrHalf: "Cuti setengah hari hanya untuk satu hari, kosongkan tanggal selesai.",
+        leaveErrOverlap: "Bertabrakan dengan cuti yang sudah diajukan.",
+        leaveErrForbidden: "Anda tidak berhak memproses cuti pekerja ini",
+        leaveFail: "Cuti belum terkirim: {msg}",
+        leaveCancelFail: "Gagal membatalkan: {msg}",
+        leaveLoadErr: "Riwayat cuti tidak dapat dimuat: {msg}",
+        leaveDays: "{n} hari",
+        leaveAm: "pagi",
+        leavePm: "siang",
+        leaveDecisionNote: "Catatan koperasi: {n}",
+        leaveRejectNote: "Alasan ditolak: {n}",
+        leaveSt_pending: "Menunggu",
+        leaveSt_approved: "Disetujui",
+        leaveSt_rejected: "Ditolak",
+        leaveSt_cancelled: "Dibatalkan",
+        leaveType_annual: "Cuti tahunan",
+        leaveType_personal: "Cuti pribadi",
+        leaveType_sick: "Cuti sakit",
+        leaveType_menstrual: "Cuti haid",
+        leaveType_family_care: "Cuti merawat keluarga",
+        leaveType_marriage: "Cuti menikah",
+        leaveType_bereavement: "Cuti duka",
+        leaveType_official: "Cuti dinas",
+        leaveType_injury: "Cuti kecelakaan kerja",
+        leaveType_maternity: "Cuti melahirkan / periksa kehamilan",
+        leaveType_paternity: "Cuti mendampingi istri melahirkan",
+        leaveType_other: "Lainnya"
       }
     };
 
@@ -806,6 +1001,7 @@
       if (payrollData) renderPayroll(payrollData);
       else if (payrollError) renderPayrollError(payrollError);
       if (window.ScheduleCalendar) ScheduleCalendar.setLang(currentLang);
+      if (leaveData) renderLeaves();
     }
     // 範本字串 {key} 代換
     const fill = (tpl, vars) => String(tpl).replace(/\{(\w+)\}/g, (m, k) => (vars[k] != null ? vars[k] : m));
@@ -833,8 +1029,11 @@
       });
       // 行事曆：後台排給本人所屬工班的工作
       if (currentTab === 'calendar' && window.ScheduleCalendar) {
-        ScheduleCalendar.mount(document.getElementById('workerCalendar'), { workerId: currentWorkerId(), lang: currentLang });
+        ScheduleCalendar.mount(document.getElementById('workerCalendar'), {
+          workerId: currentWorkerId(), lang: currentLang, leaveLabel: (code) => tr('leaveType_' + code)
+        });
       }
+      if (currentTab === 'calendar') loadLeaves();
       if (window.scrollY > 200) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -1057,6 +1256,139 @@
       const u = (window.AgriAuth && window.AgriAuth.getUser && window.AgriAuth.getUser()) || null;
       return (u && u.role === 'worker_foreign' && u.refId) ? u.refId : 'W001';
     }
+
+    // ===== 請假：GET／POST /workers/{id}/leaves，取消 POST /leaves/{id}/cancel（本人；已核准的假只能在開始前取消）=====
+    // 假別、狀態、時段依 translations 顯示；後端的錯誤訊息只有中文，常見狀況（403、409）改用翻譯
+    const LEAVE_PILL = { pending: 'ad-pill ad-pill--warn', approved: 'ad-pill ad-pill--ok', rejected: 'ad-pill', cancelled: 'ad-pill' };
+    var leaveData = null;   // var：setLang 可能早於這行執行
+    let leaveSeq = 0;
+
+    function escLeave(v) {
+      return String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    async function leaveApi(path, init) {
+      let res;
+      try {
+        res = await fetch(`${API_BASE}${path}`, init);
+      } catch (e) {
+        throw new Error(tr('errOffline'));
+      }
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body.success === false) {
+        throw new Error(res.status === 403 ? tr('leaveErrForbidden') : res.status === 409 ? tr('leaveErrOverlap') : (body.error || body.message || `HTTP ${res.status}`));
+      }
+      return body.data;
+    }
+
+    async function loadLeaves() {
+      const start = document.getElementById('leaveStart');
+      if (start && !start.value) start.value = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+      const seq = ++leaveSeq;
+      try {
+        const list = await leaveApi(`/workers/${encodeURIComponent(currentWorkerId())}/leaves`);
+        if (seq !== leaveSeq) return;
+        leaveData = { list };
+      } catch (e) {
+        if (seq !== leaveSeq) return;
+        leaveData = { error: e.message };
+      }
+      renderLeaves();
+    }
+
+    function leavePeriod(l) {
+      const p = l.startDate === l.endDate ? l.startDate : `${l.startDate}～${l.endDate}`;
+      if (l.timeSlot === 'morning') return `${p} ${tr('leaveAm')}`;
+      if (l.timeSlot === 'afternoon') return `${p} ${tr('leavePm')}`;
+      return `${p}（${fill(tr('leaveDays'), { n: l.days })}）`;
+    }
+
+    function renderLeaves() {
+      const box = document.getElementById('leaveList');
+      if (!box || !leaveData) return;
+      if (leaveData.error) {
+        box.innerHTML = `<div class="ad-notice ad-notice--danger" role="alert">${escLeave(fill(tr('leaveLoadErr'), { msg: leaveData.error }))}</div>`;
+        return;
+      }
+      if (!leaveData.list.length) {
+        box.innerHTML = `<p class="ad-caption">${escLeave(tr('leaveEmpty'))}</p>`;
+        return;
+      }
+      box.innerHTML = leaveData.list.map((l) => {
+        const type = tr('leaveType_' + l.leaveType) || l.leaveTypeLabel;
+        const conflicts = (l.conflicts || []).map((c) => c.id).join('、');
+        const note = l.decisionNote ? fill(tr(l.status === 'rejected' ? 'leaveRejectNote' : 'leaveDecisionNote'), { n: l.decisionNote }) : '';
+        return `<div class="ad-row" style="align-items: flex-start;">
+            <div class="ad-row__main">
+              <div class="ad-row__title" style="white-space: normal;">${escLeave(type)}・${escLeave(leavePeriod(l))}</div>
+              <div class="ad-row__meta">${escLeave(l.id)}${l.reason ? '・' + escLeave(l.reason) : ''}</div>
+              ${note ? `<div class="ad-caption" style="margin-top: 4px;">${escLeave(note)}</div>` : ''}
+              ${conflicts ? `<div class="ad-caption" style="margin-top: 4px; color: var(--ad-accent-text);">${escLeave(fill(tr('leaveConflict'), { ids: conflicts }))}</div>` : ''}
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0;">
+              <span class="${LEAVE_PILL[l.status] || 'ad-pill'}">${escLeave(tr('leaveSt_' + l.status) || l.statusLabel)}</span>
+              ${l.cancellable ? `<button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" data-cancel-leave="${escLeave(l.id)}">${escLeave(tr('leaveCancel'))}</button>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function showLeaveMsg(text, kind) {
+      const el = document.getElementById('leaveMsg');
+      el.className = `ad-notice ad-notice--${kind || 'danger'}`;
+      el.textContent = text;
+      el.hidden = !text;
+    }
+
+    document.getElementById('leaveForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const startDate = document.getElementById('leaveStart').value;
+      const endDate = document.getElementById('leaveEnd').value || startDate;
+      const timeSlot = document.getElementById('leaveSlot').value;
+      const leaveType = document.getElementById('leaveType').value;
+      if (!leaveType) return showLeaveMsg(tr('leaveErrType'));
+      if (!startDate) return showLeaveMsg(tr('leaveErrStart'));
+      if (endDate < startDate) return showLeaveMsg(tr('leaveErrEnd'));
+      if (timeSlot !== 'full_day' && endDate !== startDate) return showLeaveMsg(tr('leaveErrHalf'));
+      showLeaveMsg('');
+      const btn = document.getElementById('leaveBtn');
+      btn.disabled = true;
+      btn.textContent = tr('leaveSending');
+      try {
+        const l = await leaveApi(`/workers/${encodeURIComponent(currentWorkerId())}/leaves`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ leaveType, startDate, endDate, timeSlot, reason: document.getElementById('leaveReason').value.trim() })
+        });
+        const conflicts = (l.conflicts || []).map((c) => c.id).join('、');
+        showLeaveMsg(fill(tr('leaveSent'), { id: l.id }) + (conflicts ? fill(tr('leaveConflict'), { ids: conflicts }) : ''), conflicts ? 'warn' : 'ok');
+        document.getElementById('leaveEnd').value = '';
+        document.getElementById('leaveReason').value = '';
+        loadLeaves();
+        if (window.ScheduleCalendar && ScheduleCalendar.reload) ScheduleCalendar.reload();
+      } catch (err) {
+        showLeaveMsg(fill(tr('leaveFail'), { msg: err.message }));
+      }
+      btn.disabled = false;
+      btn.textContent = tr('leaveSubmit');
+    });
+
+    document.getElementById('leaveList').addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-cancel-leave]');
+      if (!btn) return;
+      if (!window.confirm(tr('leaveConfirmCancel'))) return;
+      btn.disabled = true;
+      try {
+        await leaveApi(`/leaves/${encodeURIComponent(btn.dataset.cancelLeave)}/cancel`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+        });
+        loadLeaves();
+        if (window.ScheduleCalendar && ScheduleCalendar.reload) ScheduleCalendar.reload();
+      } catch (err) {
+        btn.disabled = false;
+        showLeaveMsg(fill(tr('leaveCancelFail'), { msg: err.message }));
+      }
+    });
 
     function localSlip(overtimeHours) {
       const base = 29500, agri = 8800, transport = 1200;

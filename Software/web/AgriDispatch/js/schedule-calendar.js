@@ -9,6 +9,7 @@
      可再給 actions(訂單) 回傳 [{ label, primary, run }]，明細卡底下會出現對應按鈕（例如前往付款、看訂單）。
    換語言 ScheduleCalendar.setLang('vi')。訂單資料（地點、作物）只有中文。
    工人版另標示本人的請假（schedule 回傳的 leaves：待審核與已核准）；請假後呼叫 ScheduleCalendar.reload() 重讀。
+   假別名稱預設用後端的中文，頁面可給 leaveLabel(假別代碼) 換成目前語言（外勞頁用）。
    ============================================================ */
 (function () {
   'use strict';
@@ -155,7 +156,7 @@
     el: null, lang: 'zh', workerId: null, seq: 0,
     loading: false, error: null, noTeam: false,
     variant: 'worker', loader: null, actions: null, actionMap: {},
-    orders: [], leaves: [], team: null,
+    orders: [], leaves: [], team: null, leaveLabel: null,
     view: null, selected: null
   };
 
@@ -186,8 +187,10 @@
 
   function leaveText(l) {
     var tx = t();
-    var slot = tx.slots && tx.slots[l.timeSlot] ? '・' + String(tx.slots[l.timeSlot]).split(' ')[0] : '';
-    return (l.status === 'approved' ? tx.leaveApproved : tx.leavePending) + '：' + (l.leaveTypeLabel || '') + slot;
+    // 時段文字去掉後面的時間（例：「Buổi chiều 13:00–17:00」→「Buổi chiều」）
+    var slot = tx.slots && tx.slots[l.timeSlot] ? '・' + String(tx.slots[l.timeSlot]).replace(/\s*\d.*$/, '') : '';
+    var type = (state.leaveLabel && state.leaveLabel(l.leaveType)) || l.leaveTypeLabel || '';
+    return (l.status === 'approved' ? tx.leaveApproved : tx.leavePending) + '：' + type + slot;
   }
 
   async function load() {
@@ -399,6 +402,7 @@
         el.addEventListener('click', onClick);
       }
       if (opts.lang) state.lang = TEXT[opts.lang] ? opts.lang : 'zh';
+      if (typeof opts.leaveLabel === 'function') state.leaveLabel = opts.leaveLabel;
       var now = new Date();
       if (!state.view) state.view = new Date(now.getFullYear(), now.getMonth(), 1);
       if (!state.selected) state.selected = ymd(now);

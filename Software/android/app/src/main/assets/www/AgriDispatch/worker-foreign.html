@@ -252,13 +252,6 @@
                 </div>
                 <span class="ad-pill ad-pill--ok">今日出勤</span>
               </div>
-              <div class="ad-row">
-                <div class="ad-row__main">
-                  <div class="ad-row__title" style="white-space: normal;">週六：午後暴雨預報，轉派冷鏈包裝場</div>
-                  <div class="ad-row__meta">屏南冷鏈預冷物流庫・室內空調作業免淋雨</div>
-                </div>
-                <span class="ad-pill ad-pill--warn">避險排班</span>
-              </div>
             </div>
           </div>
 
@@ -485,11 +478,8 @@
         pillConfirmed: "已排定",
         pillPending: "待確認",
         pillCompleted: "已完工",
-        pillHedge: "避險排班",
         periodTbd: "工期待排定",
         scheduleMeta: "{van} 06:30 發車・{loc}・對口：{who}",
-        hedgeRow: "遇午後暴雨：轉派 {loc}",
-        hedgeTaskDefault: "室內作業免淋雨",
         listSep: "、",
         insLabor: "勞保",
         insEmployment: "就保",
@@ -671,11 +661,8 @@
         pillConfirmed: "Đã xếp lịch",
         pillPending: "Chờ xác nhận",
         pillCompleted: "Hoàn thành",
-        pillHedge: "Lịch tránh mưa",
         periodTbd: "Chưa xếp ngày",
         scheduleMeta: "{van} xuất phát 06:30・{loc}・Phụ trách: {who}",
-        hedgeRow: "Nếu mưa chiều: chuyển sang {loc}",
-        hedgeTaskDefault: "Làm việc trong nhà, không bị mưa",
         listSep: ", ",
         insLabor: "BH lao động",
         insEmployment: "BH việc làm",
@@ -857,11 +844,8 @@
         pillConfirmed: "Terjadwal",
         pillPending: "Menunggu",
         pillCompleted: "Selesai",
-        pillHedge: "Jadwal hujan",
         periodTbd: "Tanggal belum ditetapkan",
         scheduleMeta: "{van} berangkat 06:30・{loc}・Penanggung jawab: {who}",
-        hedgeRow: "Jika hujan sore: pindah ke {loc}",
-        hedgeTaskDefault: "Kerja di dalam ruangan, tidak kehujanan",
         listSep: ", ",
         insLabor: "Asuransi tenaga kerja",
         insEmployment: "Asuransi pekerjaan",
@@ -1203,9 +1187,9 @@
         const order = mine.filter((o) => TASK_RANK[o.status] != null)
           .sort((a, b) => TASK_RANK[a.status] - TASK_RANK[b.status] || String(b.id).localeCompare(String(a.id)))[0];
         if (!order) return;
-        // 出工名單可能是別工班的訂單：接送車與遇雨改派以訂單所屬工班為準
+        // 出工名單可能是別工班的訂單：接送車以訂單所屬工班為準
         const team = Object.assign({}, data.team, order.vehicle ? {
-          vehicle: order.vehicle, driver: order.driver, hedgeLocation: order.hedgeLocation, hedgeTask: order.hedgeTask } : {});
+          vehicle: order.vehicle, driver: order.driver } : {});
         TASK = {
           order, team, mine,
           location: order.farmLocation || team.normalLocation || '',
@@ -1229,7 +1213,7 @@
       set('val-tasks', TASK.tasks);
       set('row-today-meta', `${TASK.location.split(' (')[0]}・${tr('foremanLabel')}${TASK.foreman}`);
 
-      // 本週班表：工班的訂單（依工期），最後一列是天候避險時的室內改派地點
+      // 本週班表：工班的訂單（依工期）
       const list = document.getElementById('schedule-list');
       if (!list) return;
       const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1252,15 +1236,6 @@
                 <span class="${pill[0]}">${esc(pill[1])}</span>
               </div>`;
         });
-      if (team.hedgeLocation) {
-        rows.push(`<div class="ad-row">
-                <div class="ad-row__main">
-                  <div class="ad-row__title" style="white-space: normal;">${esc(fill(tr('hedgeRow'), { loc: team.hedgeLocation }))}</div>
-                  <div class="ad-row__meta">${esc(team.hedgeTask || tr('hedgeTaskDefault'))}</div>
-                </div>
-                <span class="ad-pill ad-pill--warn">${esc(tr('pillHedge'))}</span>
-              </div>`);
-      }
       list.innerHTML = rows.join('');
     }
 

@@ -188,12 +188,12 @@
       <!-- ============================================================= -->
       <section v-if="activeTab === 'weather'" class="space-y-6">
         <!-- 戰情總覽 -->
-        <div class="p-5 rounded-xl tb-surface border" :class="dispatch.isRainMode ? 'tb-border-danger' : 'tb-border'">
+        <div class="p-5 rounded-xl tb-surface border tb-border">
           <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
             <div>
               <div class="flex flex-wrap items-center gap-2">
                 <h2 class="ad-title">全台即時氣象</h2>
-                <span class="ad-pill" :class="dispatch.isRainMode ? 'ad-pill--danger' : 'ad-pill--ok'"><span class="ad-pill__dot"></span>{{ dispatch.isRainMode ? '暴雨避險中' : '田間作業中' }}</span>
+                <span class="ad-pill ad-pill--ok"><span class="ad-pill__dot"></span>田間作業中</span>
               </div>
               <p class="ad-caption" style="margin-top: 4px;">
                 <template v-if="wx.loading">氣象資料載入中…</template>
@@ -203,9 +203,6 @@
             </div>
             <div class="flex items-center gap-2 shrink-0">
               <button type="button" @click="loadWeather(true)" class="ad-btn ad-btn--secondary" :disabled="wx.loading">{{ wx.loading ? '更新中…' : '重新整理' }}</button>
-              <button type="button" v-if="!isCoop" @click="toggleWeather()" class="ad-btn" :class="dispatch.isRainMode ? 'ad-btn--accent' : 'ad-btn--danger'" title="全體工班轉室內冷鏈作業，並以 LINE 通知受影響農場主與工班">
-                {{ dispatch.isRainMode ? '恢復田間作業' : '啟動暴雨避險' }}
-              </button>
             </div>
           </div>
 
@@ -350,7 +347,7 @@
                   <div><span class="tb-text-2">領班：</span>{{ a.team.leader || '—' }}</div>
                   <div><span class="tb-text-2">人數：</span><span class="font-mono">{{ a.crew.length || a.team.count || '—' }}</span> 人</div>
                   <div class="col-span-2"><span class="tb-text-2">專車：</span>{{ a.team.vehicle || '—' }}<template v-if="a.team.driver">（{{ a.team.driver }}）</template></div>
-                  <div class="col-span-2"><span class="tb-text-2">{{ a.team.status === 'hedged_indoor' ? '避險地點：' : '作業：' }}</span>{{ a.team.status === 'hedged_indoor' ? a.team.hedgeLocation : (a.team.task || a.order.categoryName) }}</div>
+                  <div class="col-span-2"><span class="tb-text-2">作業：</span>{{ a.team.task || a.order.categoryName }}</div>
                 </div>
                 <div v-if="a.crew.length" class="flex flex-wrap gap-1.5">
                   <span v-for="w in a.crew" :key="w.id" class="px-2 py-0.5 rounded-full tb-surface-2 border tb-border tb-text text-[12px]" :title="(w.nationality || '') + (w.leader ? '・領班' : '')">
@@ -446,7 +443,6 @@
                 <option value="tillage_planting">【整地種植】曳引機深耕與定植</option>
                 <option value="pruning_bagging">【田間管理】修枝疏果與引蔓套袋</option>
                 <option value="drone_pest_control">【科技植保】無人機精準噴藥施肥</option>
-                <option value="cold_chain_pack">【冷鏈包裝】室內預冷與生鮮截切</option>
                 <option value="typhoon_emergency">【緊急救火】防颱搶收 24H 馳援</option>
               </select>
             </div>
@@ -563,9 +559,6 @@
           </button>
           <button type="button" @click="orderCategoryFilter = 'drone_pest_control'" :class="{ 'is-on': orderCategoryFilter === 'drone_pest_control' }" class="ad-chip">
             科技植保 ({{ orders.filter(o => o.dispatchCategory === 'drone_pest_control').length }})
-          </button>
-          <button type="button" @click="orderCategoryFilter = 'cold_chain_pack'" :class="{ 'is-on': orderCategoryFilter === 'cold_chain_pack' }" class="ad-chip">
-            冷鏈包裝 ({{ orders.filter(o => o.dispatchCategory === 'cold_chain_pack').length }})
           </button>
           <button type="button" @click="orderCategoryFilter = 'typhoon_emergency'" :class="{ 'is-on': orderCategoryFilter === 'typhoon_emergency' }" class="ad-chip">
             防颱搶收 ({{ orders.filter(o => o.dispatchCategory === 'typhoon_emergency').length }})
@@ -803,9 +796,9 @@
                   <!-- Current Task & Dispatch Status -->
                   <td data-label="任務・狀態" class="tb-cards__wide">
                     <div class="flex items-center gap-1.5">
-                      <span :class="w.dispatchStatus === 'hedged_indoor' ? 'tb-warn-soft tb-warn tb-border-warn' : (w.dispatchStatus === 'standby' ? 'tb-surface-3 tb-text-soft tb-border' : 'tb-ok-soft tb-ok tb-border-ok')"
+                      <span :class="w.dispatchStatus === 'standby' ? 'tb-surface-3 tb-text-soft tb-border' : 'tb-ok-soft tb-ok tb-border-ok'"
                             class="px-2 py-0.5 rounded border text-[13px] font-bold">
-                        {{ w.dispatchStatus === 'hedged_indoor' ? '室內冷鏈' : (w.dispatchStatus === 'standby' ? '待命' : '田間作業') }}
+                        {{ w.dispatchStatus === 'standby' ? '待命' : '田間作業' }}
                       </span>
                     </div>
                     <div class="text-[13px] tb-text-soft mt-1 max-w-xs truncate" :title="w.currentTask">
@@ -849,7 +842,7 @@
         <div class="ad-section__head" style="margin-bottom: 0; flex-wrap: wrap; align-items: center;">
           <div style="min-width: 0;">
             <h2 class="ad-title">工班</h2>
-            <p class="ad-caption" style="margin-top: 2px;">共 {{ scopedTeams.length }} 個工班<template v-if="scopeActive">（{{ scopeLabel }}）</template>・領班、接送車輛與晴雨天作業地點；農工與訂單都掛在工班底下</p>
+            <p class="ad-caption" style="margin-top: 2px;">共 {{ scopedTeams.length }} 個工班<template v-if="scopeActive">（{{ scopeLabel }}）</template>・領班、接送車輛與作業地點；農工與訂單都掛在工班底下</p>
           </div>
           <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
             <button type="button" @click="openTeamModal()" class="ad-btn ad-btn--primary">新增工班</button>
@@ -866,8 +859,7 @@
                   <th>工班</th>
                   <th>領班</th>
                   <th>車輛・司機</th>
-                  <th>晴天作業</th>
-                  <th>雨天避險</th>
+                  <th>作業</th>
                   <th style="text-align: center;">名冊</th>
                   <th style="text-align: right;">操作</th>
                 </tr>
@@ -887,13 +879,9 @@
                     <div class="tb-text-soft">{{ t.vehicle }}</div>
                     <div class="text-[13px] tb-text-2">{{ t.driver }}</div>
                   </td>
-                  <td data-label="晴天作業" class="tb-text-soft max-w-xs">
+                  <td data-label="作業" class="tb-text-soft max-w-xs">
                     <div>{{ t.normalLocation }}</div>
                     <div class="text-[13px] tb-text-2">{{ t.normalTask }}</div>
-                  </td>
-                  <td data-label="雨天避險" class="tb-warn max-w-xs">
-                    <div>{{ t.hedgeLocation }}</div>
-                    <div class="text-[13px] tb-text-2">{{ t.hedgeTask }}</div>
                   </td>
                   <td data-label="名冊" class="font-mono font-bold tb-text tb-cards__wide" style="text-align: center;">{{ teamRosterCount(t.id) }} 人</td>
                   <td class="space-x-1 tb-cards__actions" style="text-align: right; white-space: nowrap;">
@@ -916,7 +904,7 @@
         <div class="ad-section__head" style="margin-bottom: 0; flex-wrap: wrap; align-items: center;">
           <div style="min-width: 0;">
             <h2 class="ad-title">作物基準</h2>
-            <p class="ad-caption" style="margin-top: 2px;">共 {{ crops.length }} 種・每分地工時、牌價與雨天替代作業</p>
+            <p class="ad-caption" style="margin-top: 2px;">共 {{ crops.length }} 種・每分地工時與牌價</p>
           </div>
           <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
             <button type="button" @click="openCropModal()" class="ad-btn ad-btn--primary">新增作物</button>
@@ -935,7 +923,6 @@
                   <th style="text-align: center;">建議人數</th>
                   <th style="text-align: center;">牌價</th>
                   <th>田間作業</th>
-                  <th>雨天替代</th>
                   <th style="text-align: right;">操作</th>
                 </tr>
               </thead>
@@ -950,7 +937,6 @@
                   <td data-label="建議人數" class="font-mono font-bold tb-text" style="text-align: center;">{{ c.workersPerFen }}人</td>
                   <td data-label="牌價" class="font-mono font-bold tb-ok tb-cards__wide" style="text-align: center;">${{ c.rate }}/h</td>
                   <td data-label="田間作業" class="tb-text-soft max-w-xs">{{ c.taskDescription }}</td>
-                  <td data-label="雨天替代" class="tb-warn max-w-xs">{{ c.indoorAlternative }}</td>
                   <td class="space-x-1 tb-cards__actions" style="text-align: right;">
                     <button type="button" @click="openCropModal(c)" class="ad-btn ad-btn--ghost ad-btn--sm">編輯</button>
                     <button type="button" @click="deleteCrop(c.id)" class="ad-btn ad-btn--ghost ad-btn--sm" style="color: var(--ad-danger-text);">刪除</button>
@@ -1699,7 +1685,6 @@
             <label class="tb-text-2 block mb-1">目前派遣狀態</label>
             <select v-model="workerModal.form.dispatchStatus" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
               <option value="dispatched_field">田間作業 (dispatched_field)</option>
-              <option value="hedged_indoor">室內冷鏈避險 (hedged_indoor)</option>
               <option value="standby">待命 (standby)</option>
             </select>
           </div>
@@ -1770,10 +1755,6 @@
             <label class="tb-text-2 block mb-1">標準田間作業SOP</label>
             <input v-model="cropModal.form.taskDescription" placeholder="採收、精緻挑菜、田間分級" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
-          <div class="col-span-2">
-            <label class="tb-text-2 block mb-1">雨天室內冷鏈替代作業</label>
-            <input v-model="cropModal.form.indoorAlternative" placeholder="八德蔬果預冷冷鏈包裝中心" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
-          </div>
         </div>
         <div class="flex justify-end gap-2 pt-3 border-t tb-border text-[13px]">
           <button @click="cropModal.show = false" class="px-4 py-2 rounded-xl tb-surface-3 tb-hover-surface-3 tb-text-soft transition">取消</button>
@@ -1821,7 +1802,6 @@
             <label class="tb-text-2 block mb-1" for="teamFormStatus">狀態</label>
             <select id="teamFormStatus" v-model="teamModal.form.status" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
               <option value="active_field">田間作業</option>
-              <option value="hedged_indoor">室內避險</option>
               <option value="standby">待命</option>
             </select>
           </div>
@@ -1832,14 +1812,6 @@
           <div class="col-span-2">
             <label class="tb-text-2 block mb-1" for="teamFormNormalTask">晴天作業內容</label>
             <input id="teamFormNormalTask" v-model="teamModal.form.normalTask" maxlength="255" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
-          </div>
-          <div class="col-span-2">
-            <label class="tb-text-2 block mb-1" for="teamFormHedgeLoc">雨天避險地點</label>
-            <input id="teamFormHedgeLoc" v-model="teamModal.form.hedgeLocation" maxlength="255" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
-          </div>
-          <div class="col-span-2">
-            <label class="tb-text-2 block mb-1" for="teamFormHedgeTask">雨天避險內容</label>
-            <input id="teamFormHedgeTask" v-model="teamModal.form.hedgeTask" maxlength="255" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
           </div>
         </div>
         <div class="flex justify-end gap-2 pt-3 border-t tb-border text-[13px]">
@@ -1891,7 +1863,6 @@
               <option value="tillage_planting">【整地種植】曳引機深耕與定植</option>
               <option value="pruning_bagging">【田間管理】修枝疏果與引蔓套袋</option>
               <option value="drone_pest_control">【科技植保】無人機精準噴藥施肥</option>
-              <option value="cold_chain_pack">【冷鏈包裝】室內預冷與生鮮截切</option>
               <option value="typhoon_emergency">【緊急救火】防颱搶收 24H 馳援</option>
             </select>
           </div>
@@ -2102,12 +2073,6 @@
                   <span class="text-[13px] tb-text-2">科技藍靛調</span>
                 </div>
               </button>
-              <button type="button" @click="selectBrochurePreset('coldchain')" class="p-2 rounded-xl tb-surface-2 tb-hover-ok-soft-strong border tb-border-ok text-left transition flex items-center gap-2 cursor-pointer">
-                <div>
-                  <strong class="tb-ok block text-[13px]">採後冷鏈物流</strong>
-                  <span class="text-[13px] tb-text-2">冰晶青藍調</span>
-                </div>
-              </button>
             </div>
           </div>
 
@@ -2123,7 +2088,7 @@
             </div>
             <div class="sm:col-span-3">
               <label class="tb-text-2 block mb-1">副標題 / 核心 Slogan</label>
-              <input v-model="brochureModal.form.subtitle" placeholder="例如: 告別產季搶工被放鳥！合法外展工班 ╳ 產季保證出工 ╳ 梅雨冷鏈避險" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
+              <input v-model="brochureModal.form.subtitle" placeholder="例如: 告別產季搶工被放鳥！合法外展工班 ╳ 產季保證出工 ╳ 專車接送" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
             </div>
             <div>
               <label class="tb-text-2 block mb-1">文宣類別</label>
@@ -2131,7 +2096,6 @@
                 <option value="採收早鳥">採收早鳥</option>
                 <option value="設施溫室">設施溫室</option>
                 <option value="智慧機耕">智慧機耕</option>
-                <option value="冷鏈防汛">冷鏈防汛</option>
                 <option value="修枝疏果">修枝疏果</option>
                 <option value="產銷應急">產銷應急</option>
               </select>
@@ -2319,7 +2283,6 @@
         const brochures = ref(initialData ? JSON.parse(JSON.stringify(initialData.brochures || [])) : []);
         const orderCategories = ref(initialData ? JSON.parse(JSON.stringify(initialData.orderCategories || [])) : []);
         const dispatch = reactive({
-          isRainMode: false,
           currentWeather: '晴朗 28°C',
           weatherMessage: '全區田間出勤中・外展農工出勤率 100%',
           teams: initialData ? JSON.parse(JSON.stringify(initialData.teams || [])) : []
@@ -2432,7 +2395,6 @@
             const res = await fetch(`${API_BASE}/dispatch/overview`);
             const json = plainDeep(await res.json());
             if (json.success && json.data) {
-              dispatch.isRainMode = json.data.isRainMode;
               dispatch.currentWeather = json.data.currentWeather;
               dispatch.weatherMessage = json.data.weatherMessage;
               if (json.data.scenarioId) currentScenario.value = json.data.scenarioId;
@@ -2458,7 +2420,7 @@
           teamModal.isEdit = !!team;
           teamModal.form = team ? { ...team } : {
             id: '', name: '', leader: '', leaderPhone: '', vehicle: '', driver: '', workerCount: 0,
-            normalLocation: '', normalTask: '', hedgeLocation: '', hedgeTask: '', status: 'active_field'
+            normalLocation: '', normalTask: '', status: 'active_field'
           };
           teamModal.show = true;
         };
@@ -2869,7 +2831,7 @@
         // 離線試算的建議工班：從實際工班清單挑——類別慣用工班（示範資料 team_a～d，代替後端的技能排序）存在就優先，其次進行中訂單少者，最後依代號
         // （連得上後端時一律用後端試算的 suggestedTeam）
         const CATEGORY_TEAM_HINT = { harvest_grading: 'team_a', tillage_planting: 'team_c', pruning_bagging: 'team_b',
-          drone_pest_control: 'team_c', cold_chain_pack: 'team_d', typhoon_emergency: 'team_b' };
+          drone_pest_control: 'team_c', typhoon_emergency: 'team_b' };
         const pickLocalTeam = (category) => {
           const active = ['pending', 'confirmed', 'in_progress'];
           const load = (id) => orders.value.filter(o => o.assignedTeamId === id && active.includes(o.status)).length;
@@ -3150,35 +3112,6 @@
         // ==========================================
         // DISPATCH & WEATHER
         // ==========================================
-        // 暴雨避險開關：後端 /dispatch/weather-scenario 會改工班狀態並以 LINE 通知受影響的農場主與出工名單
-        const toggleWeather = async () => {
-          const scenarioId = dispatch.isRainMode ? 'sunny' : 'heavy_rain';
-          const rain = scenarioId === 'heavy_rain';
-          try {
-            const res = await fetch(`${API_BASE}/dispatch/weather-scenario`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ scenarioId })
-            });
-            const json = plainDeep(await res.json());
-            if (json.success) {
-              await fetchDispatch();
-              showToast(rain ? '已啟動暴雨避險：工班轉室內冷鏈作業，並 LINE 通知受影響農場主' : '已恢復田間作業');
-              return;
-            }
-            showToast(json.error || '天候切換失敗', 'error');
-            return;
-          } catch (e) {
-            console.warn('Backend unavailable, rain mode updated locally', e);
-            if (!LOCAL_FALLBACK) { showToast(OFFLINE_MSG, 'error'); return; }
-          }
-          // 後端離線：本地套用（晴天時 D 組固定在室內冷鏈）
-          currentScenario.value = scenarioId;
-          dispatch.isRainMode = rain;
-          dispatch.teams.forEach(t => { t.status = (rain || t.id === 'team_d') ? 'hedged_indoor' : 'active_field'; });
-          showToast((rain ? '已啟動暴雨避險' : '已恢復田間作業') + '（本地模式）');
-        };
-
         // 全台鄉鎮即時氣象（js/agri-weather.js → Open-Meteo）
         const wx = reactive({ loading: false, error: '', at: 0, provider: '', source: '', stale: false, sample: false, list: [] });
         const wxCounty = ref('');
@@ -3231,8 +3164,7 @@
           count: t.workerCount || t.memberCount,
           vehicle: t.vehicle || t.vanNumber,
           driver: t.driver || t.driverName,
-          task: t.normalTask || t.fieldTask,
-          hedgeLocation: t.hedgeLocation || t.indoorLocation
+          task: t.normalTask || t.fieldTask
         });
 
         // 作業中 = 進行中 + 已排定；農場地址 → 鄉鎮 → 氣象；工班與出工名單（優先用訂單指定的 crewWorkerIds）
@@ -3477,14 +3409,12 @@
               featuresJson: JSON.stringify([
                 { icon: '', title: '保證 1：保證準時出工，違約雙倍賠償', desc: '簽約後清晨 07:00 前專車準時送抵田門口，失誤延遲當日工資全免！' },
                 { icon: '', title: '保證 2：外銷專業採收 SOP 手路培訓', desc: '防碰傷防摩擦、特級品良率達 95% 以上！' },
-                { icon: '', title: '保證 3：下雨轉冷鏈，果農零停工損失', desc: '遇暴雨泥濘 15 分鐘專車轉接至室內預冷場作業，零停工損失！' },
-                { icon: '', title: '保證 4：開立合法合作社發票與名冊', desc: '100% 依法納保，開立合法進項統一發票供農場主扣抵營業稅！' }
+                { icon: '', title: '保證 3：開立合法合作社發票與名冊', desc: '100% 依法納保，開立合法進項統一發票供農場主扣抵營業稅！' }
               ]),
               comparisonJson: JSON.stringify([
                 { item: '法律合規性', illegal: '違法非法黑工，查獲重罰 15~75 萬', legal: '依外展農務制度申請中，依法足額納保！' },
                 { item: '出工確定性', illegal: '口頭約定，隨時被隔壁加價截工放鳥', legal: '簽約白紙黑字保證出工，違約雙倍賠償！' },
                 { item: '採收手路技術', illegal: '烏合之眾，碰傷果皮蹭掉外銷果粉', legal: '外銷級 SOP 訓練，特級良率達標！' },
-                { item: '下雨天候停工', illegal: '田間泥濘白賠工資或沒收入', legal: '突發降雨自動專車轉派室內冷鏈場包裝！' },
                 { item: '發票與稽核', illegal: '只能拿手寫白單，無法抵稅報帳', legal: '開立合法發票，全聯通路稽核 100% 過關！' }
               ]),
               testimonialName: '',
@@ -3541,14 +3471,6 @@
             brochureModal.form.region = '雲林元長、嘉義太保、台南後壁';
             brochureModal.form.coverImage = 'https://images.unsplash.com/photo-1527061011665-3652c757a4d4?w=800&auto=format&fit=crop&q=80';
             brochureModal.form.badge = '★ 科技代噴良率達標保證';
-          } else if (preset === 'coldchain') {
-            brochureModal.form.icon = '';
-            brochureModal.form.themeColor = 'cyan';
-            brochureModal.form.category = '冷鏈防汛';
-            brochureModal.form.crop = '鳳梨、香蕉、洋蔥、青蔥';
-            brochureModal.form.region = '高雄旗山、屏東高樹、屏南冷鏈物流園區';
-            brochureModal.form.coverImage = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&auto=format&fit=crop&q=80';
-            brochureModal.form.badge = '★ 防颱 24 小時快速馳援保證';
           }
           showToast(`已套用【${brochureModal.form.crop}】專案預設主題！`);
         };
@@ -3753,14 +3675,10 @@
           return m[status] || status;
         };
 
-        const teamStatusBadge = (status) => {
-          return status === 'hedged_indoor'
-            ? 'tb-warn-soft tb-warn border tb-border-warn'
-            : 'tb-ok-soft tb-ok border tb-border-ok';
-        };
+        const teamStatusBadge = () => 'tb-ok-soft tb-ok border tb-border-ok';
 
         const teamStatusName = (status) => {
-          return status === 'hedged_indoor' ? '室內冷鏈避險中' : (status === 'standby' ? '待命' : '田間出勤作業中');
+          return status === 'standby' ? '待命' : '田間出勤作業中';
         };
 
         const categoryBadge = (cat) => {
@@ -3769,7 +3687,6 @@
             tillage_planting: 'tb-ok-soft tb-ok tb-border-ok',
             pruning_bagging: 'tb-warn-soft tb-warn tb-border-warn',
             drone_pest_control: 'tb-ok-soft tb-ok tb-border-ok',
-            cold_chain_pack: 'tb-ok-soft tb-ok tb-border-ok',
             typhoon_emergency: 'tb-danger-soft tb-danger tb-border-danger'
           };
           return m[cat] || 'tb-surface-3 tb-text-soft tb-border';
@@ -4117,7 +4034,6 @@
           payMethodName,
           payStatusName,
           todayStr,
-          toggleWeather,
           currentScenario,
           wx,
           wxCounty,

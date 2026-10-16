@@ -145,7 +145,6 @@
       { root: 'main', href: 'pitch.html', title: '產品介紹', meta: '痛點、雙軌架構、52 週產曆' },
       { root: 'main', href: 'brochure.html', title: '文宣 DM', meta: '四大工時包，A4 可列印' },
       { root: 'main', href: 'farmers_map.html', title: '產地地圖', meta: '全台農會名冊與產季' },
-      { root: 'main', href: 'coldchain.html', title: '冷鏈與物流', meta: '雨天改派與預冷場' },
       { root: 'main', href: 'legalize.html', title: '法規與合規', meta: '外展農務制度與雙軌架構', feature: 'legalize' },
       { root: 'line', href: 'line.html', title: 'LINE Bot', meta: '圖文選單與對話模擬' },
       { root: 'main', href: 'invite.html', title: '邀請夥伴', meta: '推廣連結：Facebook、LINE 邀請農場主與工人' },
@@ -381,9 +380,9 @@
   }
 
   // 8. 田間模式：前台（AgriDispatch/）的農場主、本國工人、登入、首頁、產品介紹、DM、產地地圖、證明書等頁加上 html.is-field（css/agri.css 第 16 節）。
-  //    科技後台、LINE 體驗頁，以及轉址／下架頁（legalize、coldchain、app）不套。
+  //    科技後台、LINE 體驗頁，以及轉址／下架頁（legalize、app）不套。
   //    主題：手機／觸控裝置預設亮色（戶外日光下深色底看不清），桌機維持深色；頁首「切換亮色／深色」鈕，選擇記在 localStorage.agri_theme。
-  var FIELD_EXCLUDE = /^(legalize|coldchain|app)\.html$/;
+  var FIELD_EXCLUDE = /^(legalize|app)\.html$/;
   var pageFile = (function () {
     var p = window.location.pathname;
     try { p = decodeURIComponent(p); } catch (e) {}

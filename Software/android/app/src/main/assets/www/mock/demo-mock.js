@@ -178,15 +178,13 @@
   var PACKAGE_SPECS = {
     'dm-mango-2026': ['mango', 'harvest_grading', 3.5],
     'dm-greenhouse-2026': ['taoyuan_veg', 'tillage_planting', 3.0],
-    'dm-drone-2026': ['rice', 'drone_pest_control', 5.0],
-    'dm-coldchain-2026': ['pineapple', 'cold_chain_pack', 4.0]
+    'dm-drone-2026': ['rice', 'drone_pest_control', 5.0]
   };
   var CATEGORY = {
     harvest_grading: ['【採收分級】田間採收與外銷分級', 'team_a', '工班 A 組 (桃園溫室蔬菜組)'],
     tillage_planting: ['【整地種植】曳引機深耕與定植', 'team_c', '工班 C 組 (機耕無人機隊)'],
     pruning_bagging: ['【田間管理】修枝疏果與引蔓套袋', 'team_b', '工班 B 組 (跨區專線組)'],
     drone_pest_control: ['【科技植保】無人機精準噴藥施肥', 'team_c', '工班 C 組 (機耕無人機隊)'],
-    cold_chain_pack: ['【冷鏈包裝】室內預冷與生鮮截切', 'team_d', '工班 D 組 (冷鏈常態組)'],
     typhoon_emergency: ['【緊急救火】防颱搶收 24H 馳援', 'team_b', '全工班跨區緊急馳援']
   };
   function blank(v) { return v == null || String(v).trim() === ''; }
@@ -1168,7 +1166,7 @@
         cropName: o.cropName, area: o.area, categoryName: o.categoryName, farmLocation: o.farmLocation,
         farmerName: o.farmerName, foremanName: o.foremanName || t.leader || null,
         foremanPhone: o.foremanPhone || t.leaderPhone || null, foremanNotes: o.foremanNotes || null,
-        vehicle: t.vehicle || null, driver: t.driver || null, hedgeLocation: t.hedgeLocation || null, hedgeTask: t.hedgeTask || null
+        vehicle: t.vehicle || null, driver: t.driver || null
       });
     });
     items.sort(function (a, b) { return a.startDate < b.startDate ? -1 : a.startDate > b.startDate ? 1 : String(a.orderId).localeCompare(String(b.orderId)); });
@@ -1176,7 +1174,7 @@
     return respond(200, { success: true, data: {
       workerId: w.id, teamId: w.teamId || null,
       team: mt ? { id: mt.id, name: mt.name, leader: mt.leader, leaderPhone: mt.leaderPhone, vehicle: mt.vehicle, driver: mt.driver,
-        normalLocation: mt.normalLocation, normalTask: mt.normalTask, hedgeLocation: mt.hedgeLocation, hedgeTask: mt.hedgeTask } : null,
+        normalLocation: mt.normalLocation, normalTask: mt.normalTask } : null,
       from: from || null, to: to || null, items: items,
       // 本人待審核與已核准的請假（行事曆標示用）
       leaves: leaveList().filter(function (x) {
@@ -2233,10 +2231,8 @@
     }
     if (sp.path === '/legalize/roster' && method === 'POST') return legalizeWrite('POST', null, body || {});
     if (/^\/legalize\/roster\/(?!reset$)[^/]+$/.test(sp.path)) return legalizeWrite(method, decodeURIComponent(seg[2]), body || {});
-    if (method === 'POST' && (sp.path === '/dispatch/weather-scenario' || sp.path === '/dispatch/weather-switch')) {
-      var sid = sp.path === '/dispatch/weather-switch'
-        ? (body && body.isRainMode ? 'heavy_rain' : 'sunny')
-        : ((body && body.scenarioId) || 'sunny');
+    if (method === 'POST' && sp.path === '/dispatch/weather-scenario') {
+      var sid = (body && body.scenarioId) || 'sunny';
       // 套用錄製的情境快照，換頁後調度總覽、工班狀態仍維持此情境
       var prefix = 'SCENARIO ' + sid + ' ';
       Object.keys(FIX).forEach(function (k) {

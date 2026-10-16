@@ -155,8 +155,8 @@
           <div class="ad-card ad-card--inset" style="padding: 12px 16px;">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
               <span class="ad-caption">{{ t.todayTask }}</span>
-              <span class="ad-pill" :class="workerModal.data.workerProfile.dispatchStatus === 'hedged_indoor' ? 'ad-pill--warn' : 'ad-pill--ok'">
-                {{ workerModal.data.workerProfile.dispatchStatus === 'hedged_indoor' ? t.indoorHedge : t.fieldWork }}
+              <span class="ad-pill" class="ad-pill--ok">
+                {{ t.fieldWork }}
               </span>
             </div>
             <div class="ad-heading" style="margin-top: 4px;">{{ workerModal.data.workerProfile.currentTask }}</div>
@@ -196,7 +196,6 @@
         okBadge: 'Đăng nhập thành công',
         todayTask: 'Nhiệm vụ hôm nay',
         fieldWork: 'Làm ngoài đồng',
-        indoorHedge: 'Tránh mưa trong nhà',
         arcNo: 'Số thẻ cư trú',
         passportNo: 'Số hộ chiếu',
         teamLabel: 'Tổ',
@@ -237,7 +236,6 @@
         okBadge: 'Berhasil masuk',
         todayTask: 'Tugas hari ini',
         fieldWork: 'Kerja di lapangan',
-        indoorHedge: 'Di dalam ruangan (hindari hujan)',
         arcNo: 'Nomor ARC',
         passportNo: 'Nomor paspor',
         teamLabel: 'Regu',
@@ -278,7 +276,6 @@
         okBadge: 'เข้าสู่ระบบสำเร็จ',
         todayTask: 'งานวันนี้',
         fieldWork: 'ทำงานในไร่',
-        indoorHedge: 'ทำงานในร่ม (หลบฝน)',
         arcNo: 'เลขบัตร ARC',
         passportNo: 'เลขหนังสือเดินทาง',
         teamLabel: 'ทีม',
@@ -319,7 +316,6 @@
         okBadge: 'Signed in',
         todayTask: "Today's task",
         fieldWork: 'Field work',
-        indoorHedge: 'Indoor (rain hedge)',
         arcNo: 'ARC No.',
         passportNo: 'Passport No.',
         teamLabel: 'Team',
@@ -332,7 +328,7 @@
         legalTag: 'Licensed Agricultural Cooperative - Ministry of Agriculture',
         heroTitle1: 'Work Tasks & Rights',
         heroTitle2: 'Foreign Migrant Workers',
-        heroDesc: 'Daily dispatch task viewer, harvesting locations, indoor cold-chain rain switch notification, and transparent wage breakdown.',
+        heroDesc: 'Daily dispatch task viewer, harvesting locations, and transparent wage breakdown.',
         wageTitle: 'Monthly Guaranteed Wage & Government Bonus',
         perMonth: 'mo',
         wageBase: 'Base Salary',
@@ -360,7 +356,6 @@
         okBadge: '登入成功',
         todayTask: '今日任務',
         fieldWork: '田間出勤',
-        indoorHedge: '室內避險',
         arcNo: '居留證號',
         passportNo: '護照號碼',
         teamLabel: '工班',
@@ -373,7 +368,7 @@
         legalTag: '農業部外展合作社 ╳ 合法在籍移工專用',
         heroTitle1: '派遣任務與權益保障',
         heroTitle2: '外籍外展農工門戶',
-        heroDesc: '提供每日派工任務即時查詢、出勤集合地點、雨天室內冷鏈避險通知與透明薪資獎勵金明細。',
+        heroDesc: '提供每日派工任務即時查詢、出勤集合地點與透明薪資獎勵金明細。',
         wageTitle: '法定薪資與農業部就業獎勵保障',
         perMonth: '月',
         wageBase: '法定基本底薪',
@@ -501,7 +496,7 @@
             'AD88123451': { id: 'W001', name: '阮文雄 (Nguyễn Văn Hùng)', role: 'WORKER_FOREIGN', arcNumber: 'AD88123451', passportNumber: 'P8921822', teamId: 'A組 (宜蘭蔬菜班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '青蔥採收分級', baseSalary: 29500, agriBonus: 8800, transportAllowance: 1200 },
             'AD77234561': { id: 'W006', name: 'Budi Santoso', role: 'WORKER_FOREIGN', arcNumber: 'AD77234561', passportNumber: 'B1123490', teamId: 'B組 (屏東芒果班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '芒果套袋採收', baseSalary: 29500, agriBonus: 8800, transportAllowance: 1200 },
             'AD66345671': { id: 'W020', name: 'Somchai Prasert', role: 'WORKER_FOREIGN', arcNumber: 'AD66345671', passportNumber: 'T5512301', teamId: 'D組 (元長落花生班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '落花生採收倒株曝曬', baseSalary: 29500, agriBonus: 8800, transportAllowance: 1200 },
-            'AD55456781': { id: 'W023', name: 'Maria Santos', role: 'WORKER_FOREIGN', arcNumber: 'AD55456781', passportNumber: 'P4412301', teamId: 'B組 (屏東芒果班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '包裝分級裝箱 ╳ 冷鏈預冷', baseSalary: 29500, agriBonus: 8800, transportAllowance: 1200 }
+            'AD55456781': { id: 'W023', name: 'Maria Santos', role: 'WORKER_FOREIGN', arcNumber: 'AD55456781', passportNumber: 'P4412301', teamId: 'B組 (屏東芒果班)', insuranceStatus: '已投保 (勞健職災)', dispatchStatus: 'dispatched_field', currentTask: '包裝分級裝箱', baseSalary: 29500, agriBonus: 8800, transportAllowance: 1200 }
           };
 
           const matchedWorker = mockWorkerMap[form.identifier] || {

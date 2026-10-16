@@ -9,7 +9,7 @@
 
 1. **方式 A（最簡單，直接開啟）**：
    * 雙擊開啟 [`Demo/index.html`](./index.html)（進入品牌官方入口，含四大身分快速直通入口）。
-   * 雙擊開啟 [`TechBackend/admin.html`](../TechBackend/admin.html)（**💻 科技營運與調度管理後台**，含 25 位農工名冊、6大派工類別、現場小工頭、暴雨冷鏈避險與全台產曆）。
+   * 雙擊開啟 [`TechBackend/admin.html`](../TechBackend/admin.html)（**💻 科技營運與調度管理後台**，含 25 位農工名冊、5大派工類別、現場小工頭與全台產曆）。
    * 雙擊開啟 [`Demo/login.html`](./login.html)（四大角色專屬身分選擇大廳）。
    * 雙擊開啟 [`TechBackend/admin-login.html`](../TechBackend/admin-login.html)（管理人員與合作社調度員專屬驗證登入門戶）。
    * 雙擊開啟 [`Demo/app.html`](./app.html)（傳統多角色戰情與調度平台）。
@@ -26,9 +26,9 @@
 
 | 頁面檔案 | 角色與功能定位 | 核心體驗重點 |
 | :--- | :--- | :--- |
-| [`../TechBackend/admin.html`](../TechBackend/admin.html) | **💻 科技營運與調度管理後台 (Admin Console)** | • 25 位外展移工名冊管理與主管機關送審 CSV 匯出<br>• 6 大派工類別與農場主自訂「現場派工小工頭」調度<br>• 突發午後暴雨冷鏈避險演練（保全 100% 出勤）<br>• 52 週全台產曆動態輪播與 12 處收穫倒數雷達<br>• 產品文宣與商業簡報內部專區 |
+| [`../TechBackend/admin.html`](../TechBackend/admin.html) | **💻 科技營運與調度管理後台 (Admin Console)** | • 25 位外展移工名冊管理與主管機關送審 CSV 匯出<br>• 5 大派工類別與農場主自訂「現場派工小工頭」調度<br>• 52 週全台產曆動態輪播與 12 處收穫倒數雷達<br>• 產品文宣與商業簡報內部專區 |
 | [`../TechBackend/admin-login.html`](../TechBackend/admin-login.html) | **🔑 管理人員專屬登入門戶** | 科技公司技術長、合作社調度長、農業部稽核員一鍵填入實測 |
-| [`farmer-login.html`](./farmer-login.html) | **👨‍🌾 農場主 / 班長專屬門戶** | 產季早鳥工時包預約（315 元/hr）、6大派工類別智慧試算、自訂現場小工頭 |
+| [`farmer-login.html`](./farmer-login.html) | **👨‍🌾 農場主 / 班長專屬門戶** | 產季早鳥工時包預約（315 元/hr）、5大派工類別智慧試算、自訂現場小工頭 |
 | [`worker-foreign-login.html`](./worker-foreign-login.html) | **👷 外籍外展農工專屬門戶** | 越/印/泰/菲五語切換、ARC居留證號快速登入、今日派遣工單 |
 | [`worker-local-login.html`](./worker-local-login.html) | **🚜 本國機耕 / 兼職門戶** | 80hp 曳引機深耕整地、無人機代噴驗收、時薪 $310 彈性排班 |
 | [`login.html`](./login.html) | **🏛️ 四大身分分流登入大廳** | 一目了然切換農場主、外展移工、本地機耕師與管理後台 |
@@ -46,9 +46,6 @@
 
 ### 2. 🛰️ 派工調度戰情中心 (`view-dispatch`)
 * **全台產曆排程與工班接送監控**：即時掌握 4 個工班、20 位在籍外展移工分佈。
-* **⚡ 殺手級功能：突發天候避險演練按鈕**：
-  * 點擊 **「🌧️ 模擬午後突發暴雨（啟動冷鏈避險機制）」**。
-  * 系統即時觸發避險邏輯：將田間工班動態切換至「室內冷鏈預冷分級場」，顯示保全 NT$ 62,500 營收與 100% 出勤率，徹底解決移工雨天閒置赤字！
 
 ### 3. 👷 外展移工多語工單中心 (`view-worker`)
 * **三語系切換**：繁體中文、🇻🇳 Tiếng Việt（越南語）、🇮🇩 Bahasa Indonesia（印尼語）。

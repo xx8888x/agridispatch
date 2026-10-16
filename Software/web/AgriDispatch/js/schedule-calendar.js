@@ -3,7 +3,7 @@
    依訂單工期 startDate～endDate 排在月曆上，點日期看當天明細，下方列出接下來的工作。
    - 工人：ScheduleCalendar.mount(容器, { workerId, lang })，讀 GET /workers/{id}/schedule（本人或 admin），
      後端只回排給這位工人的訂單——有出工名單看名單、沒有名單看所屬工班——且不含金額與農場主電話
-     （規則見後端 WorkerScheduleService）；車輛、對口、遇雨改派隨每筆排班回傳。標籤有中／越／印三語。
+     （規則見後端 WorkerScheduleService）；車輛、對口隨每筆排班回傳。標籤有中／越／印三語。
    - 農場主：ScheduleCalendar.mount(容器, { variant: 'farmer', load })，load 為頁面提供的 async 函式，
      回傳 { items: [訂單…] }（farmer.html 用 GET /orders 的本人訂單，另補 teamName）；只有中文。
      可再給 actions(訂單) 回傳 [{ label, primary, run }]，明細卡底下會出現對應按鈕（例如前往付款、看訂單）。
@@ -32,7 +32,6 @@
       period: '工期', location: '地點', contact: '現場對口', van: '接送',
       depart: '06:30 發車', departPm: '12:30 發車', content: '作業內容', farmer: '農場主',
       slot: '時段', slots: { morning: '上午 07:00–11:00', afternoon: '下午 13:00–17:00' },
-      hedge: function (loc) { return '遇雨改派：' + loc; },
       loading: '讀取排班中…',
       error: '目前讀不到排班資料，請稍後再試或洽帶隊小工頭。',
       noTeam: '你目前尚未編入工班，排班確定後會出現在這裡。',
@@ -53,7 +52,6 @@
       period: 'Thời gian', location: 'Địa điểm', contact: 'Người phụ trách', van: 'Xe đưa đón',
       depart: 'xuất phát 06:30', departPm: 'xuất phát 12:30', content: 'Công việc', farmer: 'Chủ nông trại',
       slot: 'Ca làm', slots: { morning: 'Buổi sáng 07:00–11:00', afternoon: 'Buổi chiều 13:00–17:00' },
-      hedge: function (loc) { return 'Nếu mưa chuyển sang: ' + loc; },
       loading: 'Đang tải lịch…',
       error: 'Không tải được lịch làm việc, vui lòng thử lại sau hoặc hỏi trưởng nhóm.',
       noTeam: 'Bạn chưa được xếp vào nhóm, lịch sẽ hiện ở đây khi được xếp.',
@@ -74,7 +72,6 @@
       period: 'Periode', location: 'Lokasi', contact: 'Penanggung jawab', van: 'Antar-jemput',
       depart: 'berangkat 06:30', departPm: 'berangkat 12:30', content: 'Pekerjaan', farmer: 'Pemilik kebun',
       slot: 'Sesi', slots: { morning: 'Pagi 07:00–11:00', afternoon: 'Siang 13:00–17:00' },
-      hedge: function (loc) { return 'Jika hujan pindah ke: ' + loc; },
       loading: 'Memuat jadwal…',
       error: 'Jadwal tidak dapat dimuat, coba lagi nanti atau hubungi mandor.',
       noTeam: 'Anda belum masuk tim, jadwal akan muncul di sini setelah ditetapkan.',
@@ -346,10 +343,7 @@
         return '<div class="ad-notice ' + (l.status === 'approved' ? 'ad-notice--danger' : 'ad-notice--warn') + '" style="margin-bottom:8px;">' + esc(leaveText(l)) + '</div>';
       }).join('') +
       (selList.length
-        ? '<div class="ad-list">' + selList.map(function (o) { return orderCard(o, true); }).join('') + '</div>' +
-          selList.filter(function (o) { return o.hedgeLocation; }).slice(0, 1).map(function (o) {
-            return '<div class="ad-notice ad-notice--warn" style="margin-top:8px;">' + esc(tx.hedge(o.hedgeLocation)) + (o.hedgeTask ? '（' + esc(o.hedgeTask) + '）' : '') + '</div>';
-          }).join('')
+        ? '<div class="ad-list">' + selList.map(function (o) { return orderCard(o, true); }).join('') + '</div>'
         : (selLeaves.length ? '' : '<p class="ad-caption">' + esc(tx.dayEmpty) + '</p>')) +
       '</div>';
 

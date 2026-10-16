@@ -236,7 +236,6 @@
                     <option value="pruning_bagging" data-hint="專業技職工，嫁接、修剪、疏果">嫁接與高空修剪</option>
                     <option value="tillage_planting" data-hint="溫室巡檢工，整地、定植、日常管理">設施溫室精緻管理</option>
                     <option value="drone_pest_control" data-hint="無人機專隊，噴藥、施肥">大型無人機精準植保</option>
-                    <option value="cold_chain_pack" data-hint="採後冷鏈工，清洗、預冷、分級包裝">蔬果清洗分級包裝</option>
                     <option value="typhoon_emergency" data-hint="機動應急隊，颱風前夕 24 小時搶收（時薪 360 元）">產銷班應急代工</option>
                   </select>
                   <span id="fCategoryHint" class="ad-hint"></span>
@@ -452,10 +451,6 @@
         <div class="ad-card">
           <div style="display: flex; align-items: center; gap: 8px; color: var(--ad-primary-text);"><i data-lucide="check" class="ad-icon ad-icon--sm"></i><h3 class="ad-heading">保證準時出工</h3></div>
           <p class="ad-caption" style="margin-top: 6px;">專車清晨 07:00 準時送達果園門口，遲到免單，放鳥雙倍賠償。</p>
-        </div>
-        <div class="ad-card">
-          <div style="display: flex; align-items: center; gap: 8px; color: var(--ad-primary-text);"><i data-lucide="check" class="ad-icon ad-icon--sm"></i><h3 class="ad-heading">天候避險零停工</h3></div>
-          <p class="ad-caption" style="margin-top: 6px;">暴雨泥濘專車自動轉派冷鏈預冷分級場，農主零底薪赤字。</p>
         </div>
         <div class="ad-card">
           <div style="display: flex; align-items: center; gap: 8px; color: var(--ad-primary-text);"><i data-lucide="check" class="ad-icon ad-icon--sm"></i><h3 class="ad-heading">合規發票抵稅</h3></div>
@@ -1121,15 +1116,14 @@
       });
     }
 
-    // 工時包（?pkg=）：文宣 brochure.html 與簡報 pitch.html 的四張 DM。帶進來就鎖定規格並用 DM 固定價，
+    // 工時包（?pkg=）：文宣 brochure.html 與簡報 pitch.html 的三張 DM。帶進來就鎖定規格並用 DM 固定價，
     // 後端依 packageId 取該 DM 的工時、價格、定金建單，所以文宣標價 = 成立金額（管理後台改 DM 價格會跟著變）。
     // 下面的 hours／original／price／deposit 只供連不上後端的 demo 離線展示用，與 SeedService 的 DM 標準資料同步。
     // 人數預設為 DM 建議編制，可改（只影響完工天數，不影響價格）；作業地點只在 demo 模式帶示範地址。
     const PACKAGES = {
       'dm-mango-2026':      { name: '屏東枋山愛文芒果 60 工時包', crop: 'mango',       category: 'harvest_grading',    acreage: 3.5, workers: 4, hours: 60,  original: 18900, price: 18900, deposit: 3780, location: '屏東縣枋山鄉愛文芒果合作園區 2 號地' },
       'dm-greenhouse-2026': { name: '八德設施有機溫室 120 工時包', crop: 'taoyuan_veg', category: 'tillage_planting',   acreage: 3,   workers: 6, hours: 120, original: 37800, price: 37800, deposit: 7560, location: '桃園市八德區興豐路有機水耕農場 1 號棚' },
-      'dm-drone-2026':      { name: 'T50 無人機與機耕深耕包',      crop: 'rice',        category: 'drone_pest_control', acreage: 5,   workers: 2, hours: 30,  original: 28800, price: 25200, deposit: 5040, location: '嘉義縣太保市有機米契作產銷示範田' },
-      'dm-coldchain-2026':  { name: '旗山高樹採後冷鏈 80 工時包',  crop: 'pineapple',   category: 'cold_chain_pack',    acreage: 4,   workers: 5, hours: 80,  original: 25200, price: 25200, deposit: 5040, location: '高雄市旗山區高樹冷鏈集貨預冷中心' }
+      'dm-drone-2026':      { name: 'T50 無人機與機耕深耕包',      crop: 'rice',        category: 'drone_pest_control', acreage: 5,   workers: 2, hours: 30,  original: 28800, price: 25200, deposit: 5040, location: '嘉義縣太保市有機米契作產銷示範田' }
     };
     let activePkg = null;   // 目前套用的工時包 id；null = 自訂規格（依作物與面積計價）
 
@@ -1753,7 +1747,7 @@
 
     // 我的訂單：以後端為準（GET /api/orders 只回本人訂單；demo 由 Mock 回應錄製資料，再依登入者 refId 過濾）。
     // 連不上後端時（demo 離線展示）才退回本機 agri_orders；本機只補後端沒有的離線訂單。
-    const SKILL_OF_CATEGORY = { harvest_grading: 'harvest', pruning_bagging: 'pruning', tillage_planting: 'tillage', cold_chain_pack: 'packing' };
+    const SKILL_OF_CATEGORY = { harvest_grading: 'harvest', pruning_bagging: 'pruning', tillage_planting: 'tillage' };
     let teamNames = null;
     let teamNamesLoading = null;   // 同時有多次重畫時共用同一個請求，避免後到者拿到空的名稱表
     let ordersRenderSeq = 0;
@@ -2028,7 +2022,7 @@
       // 從黑轉白轉換中心帶入補位人數（?workers=N，1～30）；不填或不合理就由系統估
       const qsWorkers = parseInt(qs.get('workers'), 10);
       if (qsWorkers >= 1) document.getElementById('fWorkersCount').value = Math.min(30, qsWorkers);
-      // 從各入口預選派工類別（?category=cold_chain_pack，例如「冷鏈與物流」入口）；不認得的值忽略
+      // 從各入口預選派工類別（?category=harvest_grading 等派工類別代號）；不認得的值忽略
       const qsCategory = qs.get('category');
       const categorySelect = document.getElementById('fCategory');
       if (!activePkg && qsCategory && [...categorySelect.options].some(o => o.value === qsCategory)) categorySelect.value = qsCategory;

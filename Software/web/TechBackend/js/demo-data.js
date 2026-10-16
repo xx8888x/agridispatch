@@ -13,8 +13,7 @@ const DEFAULT_ADMIN_DATA = {
       workersPerFen: 3,
       rate: 290,
       season: "全年365天溫室採收",
-      taskDescription: "採收、精緻挑菜、田間分級修葉、生鮮小包裝",
-      indoorAlternative: "八德蔬果預冷冷鏈包裝中心 (室內B棟：蔬果預冷、自動光波秤重、外銷包裝)"
+      taskDescription: "採收、精緻挑菜、田間分級修葉、生鮮小包裝"
     },
     {
       id: "scallion",
@@ -23,8 +22,7 @@ const DEFAULT_ADMIN_DATA = {
       workersPerFen: 3,
       rate: 300,
       season: "6月 ~ 10月",
-      taskDescription: "拔蔥、專用洗蔥機作業、分級束捆、冷藏保鮮預備",
-      indoorAlternative: "三星地區農會洗蔥預冷處理場 (水洗機操作、蔥管套袋、冷鏈排板)"
+      taskDescription: "拔蔥、專用洗蔥機作業、分級束捆、冷藏保鮮預備"
     },
     {
       id: "hsinchu_tea",
@@ -33,8 +31,7 @@ const DEFAULT_ADMIN_DATA = {
       workersPerFen: 4,
       rate: 320,
       season: "4月 ~ 11月",
-      taskDescription: "一心二葉精緻手採、輕柔採摘、防曬通風保鮮",
-      indoorAlternative: "峨眉茶葉冷鏈溫控發酵庫 (室內分級挑枝、溫濕度控制包裝)"
+      taskDescription: "一心二葉精緻手採、輕柔採摘、防曬通風保鮮"
     },
     {
       id: "xinpu_citrus",
@@ -43,8 +40,7 @@ const DEFAULT_ADMIN_DATA = {
       workersPerFen: 3,
       rate: 300,
       season: "10月 ~ 1月",
-      taskDescription: "產季採收、修枝防果刺、削皮整枝、分級裝箱",
-      indoorAlternative: "新埔農會柑橘蔬果低溫集貨場 (清洗預冷、自動選果分級包裝)"
+      taskDescription: "產季採收、修枝防果刺、削皮整枝、分級裝箱"
     },
     {
       id: "mango",
@@ -53,8 +49,7 @@ const DEFAULT_ADMIN_DATA = {
       workersPerFen: 4,
       rate: 300,
       season: "4月 ~ 7月",
-      taskDescription: "外銷級採收 (護果粉)、疏果、防菌套袋",
-      indoorAlternative: "屏南冷鏈預冷分級場 (清洗預冷、重量自動分級、外銷裝箱)"
+      taskDescription: "外銷級採收 (護果粉)、疏果、防菌套袋"
     },
     {
       id: "onion",
@@ -63,8 +58,7 @@ const DEFAULT_ADMIN_DATA = {
       workersPerFen: 4,
       rate: 290,
       season: "1月 ~ 4月",
-      taskDescription: "拔蔥、剪根剪葉、田間裝袋 (每袋 20kg)、搬運上埂",
-      indoorAlternative: "恆春恆農洋蔥低溫冷藏通風庫 (分級篩選、冷藏排板)"
+      taskDescription: "拔蔥、剪根剪葉、田間裝袋 (每袋 20kg)、搬運上埂"
     },
     {
       id: "pepper",
@@ -73,8 +67,7 @@ const DEFAULT_ADMIN_DATA = {
       workersPerFen: 3,
       rate: 310,
       season: "全年設施溫室",
-      taskDescription: "整枝修芽、溫室精準分批採摘、防蟲網維護",
-      indoorAlternative: "西螺蔬果集貨冷藏中心 (生鮮小包裝、貼標封口)"
+      taskDescription: "整枝修芽、溫室精準分批採摘、防蟲網維護"
     },
     {
       id: "strawberry",
@@ -83,8 +76,7 @@ const DEFAULT_ADMIN_DATA = {
       workersPerFen: 3,
       rate: 310,
       season: "12月 ~ 4月",
-      taskDescription: "高架草莓精密疏花疏果、紅熟採收、海綿襯墊防撞裝盒",
-      indoorAlternative: "大湖蔬果低溫集貨中心 (快速降溫預冷、生鮮冷鏈分級包裝)"
+      taskDescription: "高架草莓精密疏花疏果、紅熟採收、海綿襯墊防撞裝盒"
     },
     {
       id: "mushroom",
@@ -93,8 +85,7 @@ const DEFAULT_ADMIN_DATA = {
       workersPerFen: 3,
       rate: 295,
       season: "全年環控溫室",
-      taskDescription: "菇傘熟成採收、菌包清理轉化、溫濕度監測",
-      indoorAlternative: "新社香菇低溫乾燥分級中心 (低溫烘乾排板、光波選別包裝)"
+      taskDescription: "菇傘熟成採收、菌包清理轉化、溫濕度監測"
     },
     {
       id: "melon",
@@ -103,8 +94,7 @@ const DEFAULT_ADMIN_DATA = {
       workersPerFen: 4,
       rate: 330,
       season: "5月 ~ 8月",
-      taskDescription: "溫室一株一果精緻管理、掛果防磨套袋、成熟度測糖採收",
-      indoorAlternative: "壯圍農會冷藏包裝作業場 (自動甜度光波檢測、精品禮盒排裝)"
+      taskDescription: "溫室一株一果精緻管理、掛果防磨套袋、成熟度測糖採收"
     }
   ],
 
@@ -120,8 +110,6 @@ const DEFAULT_ADMIN_DATA = {
       driverName: "張大哥 (0912-111-333)",
       fieldLocation: "八德有機蔬菜專銷班 溫室第 3 區",
       fieldTask: "有機葉菜採收、修葉分級、生鮮小包裝",
-      indoorLocation: "八德蔬果預冷冷鏈包裝中心 (室內B棟)",
-      indoorTask: "蔬果預冷降溫、自動光波秤重、外銷包裝貼標",
       status: "active_field"
     },
     {
@@ -134,8 +122,6 @@ const DEFAULT_ADMIN_DATA = {
       driverName: "李建國 大哥 (0912-222-444)",
       fieldLocation: "枋山愛文芒果合作園 / 三星青蔥專區",
       fieldTask: "外銷級採收、套袋防護、拔蔥洗蔥束捆",
-      indoorLocation: "屏南冷鏈預冷分級場 / 三星農會包裝場",
-      indoorTask: "差壓預冷、自動光波選果、外銷紙箱封裝",
       status: "active_field"
     },
     {
@@ -148,23 +134,19 @@ const DEFAULT_ADMIN_DATA = {
       driverName: "陳建宏",
       fieldLocation: "新竹峨眉茶園 / 雲林雜糧稻作區",
       fieldTask: "無人機精準代噴 + 80hp 曳引機深耕碎土",
-      indoorLocation: "智慧農業資材維護所",
-      indoorTask: "無人機超音波噴嘴清洗、RTK 航線校正保養",
       status: "active_field"
     },
     {
       id: "team_d",
-      name: "工班 D 組 (冷鏈常態組)",
+      name: "工班 D 組 (機動支援組)",
       memberCount: 6,
       leaderName: "范氏紅 (Phạm Thị Hồng)",
       leaderPhone: "0988-444-555",
-      vanNumber: "智農 4 號保溫專車 (固定專線)",
+      vanNumber: "智農 4 號專車 (固定專線)",
       driverName: "王大哥 (0912-555-666)",
-      fieldLocation: "八德蔬果預冷冷鏈包裝中心 (室內B棟)",
-      fieldTask: "蔬果預冷降溫、精密秤重分級、冷鏈櫃裝櫃",
-      indoorLocation: "八德蔬果預冷冷鏈包裝中心 (室內B棟)",
-      indoorTask: "蔬果預冷降溫、外銷精密秤重分級、冷鏈櫃裝櫃",
-      status: "hedged_indoor"
+      fieldLocation: "八德有機蔬菜專銷班 溫室第 5 區",
+      fieldTask: "有機葉菜採收、精密秤重分級、外銷裝箱",
+      status: "active_field"
     }
   ],
 
@@ -470,8 +452,8 @@ const DEFAULT_ADMIN_DATA = {
       passportNumber: "C9823107",
       permitExpiry: "2027-11-20",
       insuranceStatus: "已納保 (勞/健/職災)",
-      currentTask: "八德蔬果冷鏈包裝中心 外銷精密秤重分級",
-      dispatchStatus: "hedged_indoor",
+      currentTask: "八德溫室 外銷精密秤重分級",
+      dispatchStatus: "dispatched_field",
       phone: "0988-444-555"
     },
     {
@@ -489,8 +471,8 @@ const DEFAULT_ADMIN_DATA = {
       passportNumber: "C9823108",
       permitExpiry: "2027-11-20",
       insuranceStatus: "已納保 (勞/健/職災)",
-      currentTask: "八德蔬果冷鏈中心 預冷降溫與套袋",
-      dispatchStatus: "hedged_indoor",
+      currentTask: "八德溫室 採收整理與套袋",
+      dispatchStatus: "dispatched_field",
       phone: "0988-444-556"
     },
     {
@@ -508,8 +490,8 @@ const DEFAULT_ADMIN_DATA = {
       passportNumber: "X8812308",
       permitExpiry: "2027-11-20",
       insuranceStatus: "已納保 (勞/健/職災)",
-      currentTask: "八德蔬果冷鏈中心 外銷紙箱組裝貼標",
-      dispatchStatus: "hedged_indoor",
+      currentTask: "八德溫室 外銷紙箱組裝貼標",
+      dispatchStatus: "dispatched_field",
       phone: "0988-444-557"
     },
     {
@@ -527,8 +509,8 @@ const DEFAULT_ADMIN_DATA = {
       passportNumber: "X8812309",
       permitExpiry: "2027-11-20",
       insuranceStatus: "已納保 (勞/健/職災)",
-      currentTask: "八德蔬果冷鏈中心 光波選果機操作",
-      dispatchStatus: "hedged_indoor",
+      currentTask: "八德溫室 光波選果機操作",
+      dispatchStatus: "dispatched_field",
       phone: "0988-444-558"
     },
     {
@@ -546,8 +528,8 @@ const DEFAULT_ADMIN_DATA = {
       passportNumber: "T5512301",
       permitExpiry: "2027-12-10",
       insuranceStatus: "已納保 (勞/健/職災)",
-      currentTask: "冷鏈常態組 低溫冷藏庫棧板堆疊",
-      dispatchStatus: "hedged_indoor",
+      currentTask: "機動支援組 棧板堆疊與搬運",
+      dispatchStatus: "dispatched_field",
       phone: "0988-444-559"
     },
     {
@@ -910,11 +892,11 @@ const DEFAULT_ADMIN_DATA = {
       area: 6.0,
       plan: "early_bird",
       planName: "【Tier 1】產季早鳥工時包 (鎖定名額・優先排班)",
-      dispatchCategory: "cold_chain_pack",
-      categoryName: "【冷鏈包裝】室內預冷與生鮮截切",
-      foremanName: "李添木 (溫控班長)",
+      dispatchCategory: "harvest_grading",
+      categoryName: "【採收分級】田間採收與外銷分級",
+      foremanName: "李添木 (班長)",
       foremanPhone: "0937-111-333",
-      foremanNotes: "進入預冷庫請著保暖外套，先做截切後入庫",
+      foremanNotes: "太空包香菇採收後依大小分級，輕拿輕放",
       transportZone: "cross_region",
       transportSurcharge: 1200,
       totalHours: 132,
@@ -968,11 +950,11 @@ const DEFAULT_ADMIN_DATA = {
       area: 3.0,
       plan: "hourly_flex",
       planName: "【Tier 2】在地彈性兼職包 (隨叫隨派)",
-      dispatchCategory: "cold_chain_pack",
-      categoryName: "【冷鏈包裝】室內預冷與生鮮截切",
-      foremanName: "林佳蓉 (冷鏈場主管)",
+      dispatchCategory: "harvest_grading",
+      categoryName: "【採收分級】田間採收與外銷分級",
+      foremanName: "林佳蓉 (場務主管)",
       foremanPhone: "0911-888-999",
-      foremanNotes: "八德二廠冷鏈包裝線，全日室內空調作業",
+      foremanNotes: "蘆竹溫室二廠採收分級，全日作業",
       transportZone: "core_35km",
       transportSurcharge: 0,
       totalHours: 60,
@@ -1102,12 +1084,12 @@ const DEFAULT_ADMIN_DATA = {
     }
   ],
 
-  // 6. 產品文宣 DM (4 大季節工時包)
+  // 6. 產品文宣 DM (3 大季節工時包)
   brochures: [
     {
       id: "dm-mango-2026",
       title: "【屏東枋山外銷愛文芒果】產季早鳥保證出工 60 工時包",
-      subtitle: "告別產季搶工被放鳥！合法外展工班 ╳ 產季保證出工 ╳ 梅雨冷鏈避險",
+      subtitle: "告別產季搶工被放鳥！合法外展工班 ╳ 產季保證出工 ╳ 專車準時接送",
       targetCategory: "採收早鳥",
       targetCrop: "愛文芒果",
       targetRegion: "屏東枋山、台南玉井",
@@ -1151,7 +1133,7 @@ const DEFAULT_ADMIN_DATA = {
       totalHours: 120,
       headcount: 6,
       durationDays: 4,
-      serviceDesc: "專為溫室有機蔬菜農場量身打造的月約工時包！提供受過有機驗證衛生訓練之常態班底，含溫室穴盤定植、除草整枝、精緻採收與室內截切預冷包裝。",
+      serviceDesc: "專為溫室有機蔬菜農場量身打造的月約工時包！提供受過有機驗證衛生訓練之常態班底，含溫室穴盤定植、除草整枝與精緻採收。",
       endorsementName: "廖國安（阿安班長）",
       endorsementTitle: "桃園八德有機蔬菜產銷班第 3 班 班長",
       endorsementQuote: "我們天天都要交 3 萬把有機青江菜到全聯，工人每天 7 點準時到溫室報到。挑菜切菜乾淨又俐落，整班安心交給智農！",
@@ -1187,42 +1169,13 @@ const DEFAULT_ADMIN_DATA = {
       contactAddress: "雲林縣元長鄉中山路 66 號",
       status: "active",
       publishDate: "2026-09-03"
-    },
-    {
-      id: "dm-coldchain-2026",
-      title: "【高屏旗山/高樹採後冷鏈物流】生鮮蔬果清洗預冷與外銷截切包裝 80 工時包",
-      subtitle: "防颱防汛搶收必備！15°C 恆溫無塵分級 ╳ 急速差壓預冷保鮮 ╳ 風雨天候自動轉接零停工",
-      targetCategory: "冷鏈防汛",
-      targetCrop: "鳳梨、香蕉、洋蔥、青蔥",
-      targetRegion: "高雄旗山、屏東高樹、屏南冷鏈物流園區",
-      targetCustomer: "農會運銷部、外銷貿易商、全聯鮮食截切廠、產銷合作社",
-      badge: "★ 防颱 24 小時快速馳援保證",
-      icon: "",
-      themeColor: "cyan",
-      coverImage: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&auto=format&fit=crop&q=80",
-      originalPrice: 25200,
-      discountPrice: 25200,
-      depositPercent: 20,
-      depositAmount: 5040,
-      totalHours: 80,
-      headcount: 5,
-      durationDays: 2,
-      serviceDesc: "解決產季爆量與颱風來襲搶收之冷鏈集貨瓶頸！配備標準生鮮截切冷房、光波自動秤重機與急速預冷庫，熟練包裝工班進駐，確保蔬果採後零失溫腐爛。",
-      endorsementName: "洪錦華（洪課長）",
-      endorsementTitle: "屏南生鮮物流合作中心 供銷課長",
-      endorsementQuote: "颱風警報一發，5 位熟手包裝工當天下午立刻報到，兩天幫我們包了 1,800 箱外銷金鑽鳳梨！這才是真正能救命的現代農業冷鏈！",
-      contactPhone: "07-661-8888 / 0928-333-444",
-      contactAddress: "高雄市旗山區中華路 520 號",
-      status: "active",
-      publishDate: "2026-09-04"
     }
   ],
 
-  // 7. 六大派工類別 (6 種)
+  // 7. 五大派工類別 (5 種)
   orderCategories: [
     { id: "harvest_grading", name: "【採收分級】田間採收與外銷分級", icon: "", desc: "熟練採收、分級修葉、外銷裝箱" },
     { id: "pruning_bagging", name: "【田間管理】修枝疏果與引蔓套袋", icon: "", desc: "套袋疏果、修剪果刺、除草引蔓" },
-    { id: "cold_chain_pack", name: "【冷鏈包裝】室內預冷與生鮮截切", icon: "", desc: "預冷冷鏈、自動秤重、外銷貼標" },
     { id: "drone_pest_control", name: "【科技植保】無人機精準噴藥施肥", icon: "", desc: "大疆 T50 代噴、RTK 公分級航跡" },
     { id: "tillage_planting", name: "【整地種植】曳引機深耕與定植", icon: "", desc: "80hp 曳引機翻土整地、穴盤定植" },
     { id: "typhoon_emergency", name: "【緊急救火】防颱搶收 24H 馳援", icon: "", desc: "颱風汛期優先調度、搶收救急" }
@@ -1256,10 +1209,10 @@ const DEFAULT_ADMIN_DATA = {
         name: "第 3 季：盛夏水果王國、高接梨與文旦柚中秋搶收",
         months: "7月 ~ 9月",
         utilizationRate: "94.0%",
-        climateContext: "梅雨與颱風好發季・啟動演算法天候避險・室內冷鏈預冷包裝",
+        climateContext: "梅雨與颱風好發季・天候變化大・機動調度",
         primaryRegions: "台中東勢/苗栗卓蘭、台南玉井、花蓮富里/台東太麻里、台南麻豆、宜蘭三星",
         keyCrops: ["東勢/卓蘭高接梨", "玉井愛文芒果", "拉拉山水蜜桃", "六十石山/太麻里金針花", "麻豆老欉文旦柚 (白露前搶收)", "宜蘭三星青蔥", "新埔柿餅"],
-        dispatchStrategy: "啟動天候避險大腦，降雨時立即專車改派八德/西螺/麻豆蔬果冷鏈預冷包裝線，出勤率零閒置。"
+        dispatchStrategy: "依天候預報機動調度各工班，優先搶收易受颱風影響的果品。"
       },
       {
         quarter: "Q4",
@@ -1269,7 +1222,7 @@ const DEFAULT_ADMIN_DATA = {
         climateContext: "九降風起曬柿餅・高山冬茶採收・二期稻作割稻・草莓第一期花",
         primaryRegions: "新竹新埔、坪林/阿里山、高雄美濃、台南善化/白河、嘉義新港、全台稻作區",
         keyCrops: ["新埔牛心柿餅", "坪林/阿里山高山冬茶", "美濃白玉蘿蔔", "善化胡麻割株", "新港洋桔梗 (外銷日本)", "大湖草莓第一期花", "二期水稻隨車接穀"],
-        dispatchStrategy: "工班 C 組出動大型收割機與無人機，工班 D 組常態駐紮冷鏈分級，工班 A 組轉戰北部冬作溫室。"
+        dispatchStrategy: "工班 C 組出動大型收割機與無人機，工班 D 組支援採收分級，工班 A 組轉戰北部冬作溫室。"
       }
     ],
     months: [
@@ -1280,7 +1233,7 @@ const DEFAULT_ADMIN_DATA = {
       { month: 5, monthLabel: "5月", quarter: "Q2", title: "玉荷包荔枝 3 週黃金搶收・芒果外銷日韓高峰", regions: "高雄大樹、屏東枋山、台南玉井、雲林二崙", crops: "大樹玉荷包荔枝、枋山愛文芒果、二崙西瓜", suggestedTeam: "工班 B 組 + 工班 A 組" },
       { month: 6, monthLabel: "6月", quarter: "Q2", title: "清晨破曉掘綠竹筍・東方美人茶・一期水稻收割", regions: "大溪/士林、新竹北埔、桃園拉拉山、花東池上", crops: "大溪綠竹筍、北埔東方美人茶、拉拉山水蜜桃", suggestedTeam: "工班 A 組 + 工班 C 組" },
       { month: 7, monthLabel: "7月", quarter: "Q3", title: "高接梨寄接梨・玉井芒果高峰・拉拉山水蜜桃", regions: "苗栗卓蘭、台中東勢、台南玉井、桃園復興", crops: "卓蘭高接梨、東勢寄接梨、玉井芒果、公館紅棗", suggestedTeam: "工班 B 組 (跨區專線)" },
-      { month: 8, monthLabel: "8月", quarter: "Q3", title: "麻豆文旦白露前搶收・花東金針花海手採", regions: "台南麻豆、新北八里、花蓮富里、台東太麻里", crops: "麻豆老欉文旦柚、六十石山金針花、太麻里金針", suggestedTeam: "工班 B 組 + 工班 D 組 (冷鏈)" },
+      { month: 8, monthLabel: "8月", quarter: "Q3", title: "麻豆文旦白露前搶收・花東金針花海手採", regions: "台南麻豆、新北八里、花蓮富里、台東太麻里", crops: "麻豆老欉文旦柚、六十石山金針花、太麻里金針", suggestedTeam: "工班 B 組 + 工班 D 組" },
       { month: 9, monthLabel: "9月", quarter: "Q3", title: "水田採茭白筍・九降風起曬柿餅・百香果盛產", regions: "新北三芝、新竹新埔、南投埔里、嘉義竹崎", crops: "三芝茭白筍、新埔柿餅、埔里百香果", suggestedTeam: "工班 A 組 + 工班 D 組" },
       { month: 10, monthLabel: "10月", quarter: "Q4", title: "高山冬茶大採收・新埔柿餅滿開・洛神花捅心", regions: "新北坪林、南投鹿谷、嘉義梅山、新竹新埔", crops: "坪林/阿里山冬茶、新埔柿餅、太麻里洛神花", suggestedTeam: "工班 C 組 (機耕無人機隊)" },
       { month: 11, monthLabel: "11月", quarter: "Q4", title: "美濃白玉蘿蔔・善化胡麻割株・洋桔梗外銷日本", regions: "高雄美濃、台南善化/白河、嘉義新港", crops: "美濃白玉蘿蔔、善化胡麻、新港洋桔梗", suggestedTeam: "工班 C 組 + 工班 D 組" },
@@ -1295,7 +1248,7 @@ const DEFAULT_ADMIN_DATA = {
       { id: "H06", cropName: "新埔九降風牛心柿餅", location: "新竹縣新埔鎮", month: 9, countdownDays: 60, period: "9月20日 ~ 11月15日", alertTag: "穩定加工出勤期", taskSummary: "人工削皮、圓盤日曬、九降風天然風乾、手工捏壓成形", suggestedTeamId: "team_a", cropId: "xinpu_citrus", area: 8 },
       { id: "H07", cropName: "坪林文山包種 / 阿里山高山冬茶", location: "新北坪林 / 嘉義梅山", month: 10, countdownDays: 75, period: "10月15日 ~ 11月10日", alertTag: "冬茶黃金嫩芽期", taskSummary: "一心二葉精緻手採、防日曬萎凋、茶菁即時送廠", suggestedTeamId: "team_c", cropId: "hsinchu_tea", area: 18 },
       { id: "H08", cropName: "美濃白玉蘿蔔", location: "高雄市美濃區", month: 11, countdownDays: 90, period: "11月10日 ~ 12月20日", alertTag: "在地觀光與契作搶收", taskSummary: "田間人工拔取、整修泥根、生鮮分級裝箱裝車", suggestedTeamId: "team_c", cropId: "taoyuan_veg", area: 8 },
-      { id: "H09", cropName: "大湖香水草莓第一期花", location: "苗栗縣大湖鄉", month: 12, countdownDays: 110, period: "12月01日 ~ 1月15日", alertTag: "冬季草莓季盛大開幕", taskSummary: "高架草莓紅熟採收、防碰傷盒裝、冷鏈預冷直配", suggestedTeamId: "team_a", cropId: "strawberry", area: 15 },
+      { id: "H09", cropName: "大湖香水草莓第一期花", location: "苗栗縣大湖鄉", month: 12, countdownDays: 110, period: "12月01日 ~ 1月15日", alertTag: "冬季草莓季盛大開幕", taskSummary: "高架草莓紅熟採收、防碰傷盒裝、直配都會超市", suggestedTeamId: "team_a", cropId: "strawberry", area: 15 },
       { id: "H10", cropName: "車城黃金洋蔥 / 恆春洋蔥", location: "屏東縣車城鄉 / 恆春鎮", month: 2, countdownDays: 150, period: "2月10日 ~ 3月31日", alertTag: "落山風拔蔥採收期", taskSummary: "拔蔥、剪根剪葉、田間裝袋 (每袋 20kg)、搬運上埂", suggestedTeamId: "team_b", cropId: "onion", area: 16 }
     ]
   },
@@ -1310,7 +1263,6 @@ DEFAULT_ADMIN_DATA.calendarHarvests = DEFAULT_ADMIN_DATA.calendar.upcomingHarves
 DEFAULT_ADMIN_DATA.weatherState = {
   scenarioId: "cloudy",
   scenarioName: "舒適多雲時晴",
-  isRainMode: false,
   currentWeather: "舒適多雲 26°C (微風涼爽宜農作)",
   alertLevel: "normal",
   weatherMessage: "全台天候良好・外展農工出勤率 100% (26/26人在崗)・作業稼動率高",
@@ -1318,7 +1270,7 @@ DEFAULT_ADMIN_DATA.weatherState = {
   dailyCapacityHrs: 160,
   regionalWeather: [
     { region: "屏東枋山", county: "屏東縣", district: "枋山鄉", farmName: "枋山愛文芒果山坡外銷合作園", crop: "愛文芒果專區", temp: "30°C", icon: "", condition: "多雲時晴", rainChance: "20%", humidity: "68%", uv: "中量 (6)", advice: "果園採收與套袋作業正常推進，果實外觀品相優良。" },
-    { region: "桃園八德", county: "桃園市", district: "八德區", farmName: "八德水耕溫室有機蔬菜產銷契作棚", crop: "設施有機蔬菜", temp: "26°C", icon: "", condition: "多雲舒適", rainChance: "20%", humidity: "68%", uv: "中量 (5)", advice: "溫室通風良好，持續精緻修葉分級與生鮮冷鏈直配。" },
+    { region: "桃園八德", county: "桃園市", district: "八德區", farmName: "八德水耕溫室有機蔬菜產銷契作棚", crop: "設施有機蔬菜", temp: "26°C", icon: "", condition: "多雲舒適", rainChance: "20%", humidity: "68%", uv: "中量 (5)", advice: "溫室通風良好，持續精緻修葉分級與生鮮直配。" },
     { region: "宜蘭三星", county: "宜蘭縣", district: "三星鄉", farmName: "三星青蔥有機專銷履歷洗蔥班", crop: "三星青蔥專班", temp: "25°C", icon: "", condition: "陰天多雲", rainChance: "25%", humidity: "75%", uv: "低量 (4)", advice: "氣溫涼爽極利拔蔥，洗蔥機水線高效作業中。" },
     { region: "雲林元長", county: "雲林縣", district: "元長鄉", farmName: "元長黑金剛落花生與溫室彩椒班", crop: "設施彩椒/花生專區", temp: "28°C", icon: "", condition: "多雲微風", rainChance: "15%", humidity: "65%", uv: "中量 (6)", advice: "設施內溫度適宜，進行吊蔓修葉與病蟲害巡視。" },
     { region: "新竹峨眉", county: "新竹縣", district: "峨眉鄉", farmName: "峨眉東方美人小綠葉蟬茶生態園", crop: "東方美人茶園", temp: "26°C", icon: "", condition: "多雲風輕", rainChance: "15%", humidity: "65%", uv: "中量 (5)", advice: "適合大疆 T50 執行大面積超低空精準施肥作業。" }

@@ -189,7 +189,7 @@
                     <p>不用安裝 App，從下方圖文選單就能：</p>
                     <ul>
                       <li>查今天的出工與專車司機</li>
-                      <li>暴雨時通報改到室內冷鏈作業</li>
+                      <li>天候警報時通知出工調整</li>
                       <li>試算早鳥工時包（315 元／小時）</li>
                       <li data-feature="foreignWorkers">工人端切換越南語、印尼語工單</li>
                     </ul>
@@ -560,13 +560,12 @@
           { cmd: '黑轉白', icon: 'refresh-cw', title: '工班黑轉白', desc: '依身分合法轉換', feature: 'legalize',
             alt: { cmd: '查產曆', icon: 'calendar-days', title: '全台產曆', desc: '產季與缺工預測' } },
           { cmd: '早鳥工時包', icon: 'zap', title: '早鳥工時包', desc: '鎖定名額・優先排班' },
-          { cmd: '天候避險', icon: 'cloud-rain', title: '暴雨避險', desc: '冷鏈轉移通報' },
           { cmd: '機耕代噴', icon: 'tractor', title: '預約機耕', desc: '植保／深耕' },
           { cmd: '快速叫工', icon: 'users', title: '急件叫工', desc: '明日一鍵叫合法工班' },
           { cmd: '聯絡工頭', icon: 'phone-call', title: '聯絡工頭', desc: '小工頭／司機專線' },
           { cmd: '查費率', icon: 'coins', title: '查費率', desc: '時薪／包工' }
         ],
-        chips: ['黑轉白', '查派工單', '早鳥工時包', '天候避險', '查產曆', '查費率'],
+        chips: ['黑轉白', '查派工單', '早鳥工時包', '查產曆', '查費率'],
         chipFeatures: { '黑轉白': 'legalize' }
       },
       worker_foreign: {
@@ -592,7 +591,7 @@
           { cmd: '工班點名', icon: 'users', title: '工班點名', desc: 'B 組 6 人／實名' },
           { cmd: '機耕航跡', icon: 'navigation', title: '機耕航跡', desc: 'T50／80hp 深耕' },
           { cmd: '完工簽核', icon: 'clipboard-check', title: '完工簽核', desc: '驗收／憑證' },
-          { cmd: '車隊調度', icon: 'bus', title: '車隊調度', desc: '1～4 號車／冷鏈' },
+          { cmd: '車隊調度', icon: 'bus', title: '車隊調度', desc: '1～4 號車' },
           { cmd: '領班分紅', icon: 'coins', title: '領班分紅', desc: '帶工津貼／本月累計' },
           { cmd: '異常回報', icon: 'triangle-alert', title: '異常回報', desc: '天候／設備' }
         ],
@@ -1089,8 +1088,6 @@
         renderFlexCard(buildMockOrderQueryFlex(clean));
       } else if (clean.includes('早鳥工時包') || clean.includes('早鳥9折') || clean.includes('早鳥') || clean.includes('工時包')) {
         renderFlexCard(buildFarmerEarlyBirdFlex());
-      } else if (clean.includes('暴雨天候避險') || clean.includes('暴雨避險') || clean.includes('天候避險') || clean.includes('暴雨') || clean.includes('下雨') || clean.includes('冷鏈轉移') || clean.includes('避險')) {
-        renderFlexCard(buildMockWeatherFlex());
       } else if (clean.includes('預約專業機耕') || clean.includes('機耕代噴') || clean.includes('預約機耕') || clean.includes('機耕') || clean.includes('代噴') || clean.includes('植保') || clean.includes('t50') || clean.includes('曳引機')) {
         renderFlexCard(buildFarmerMechanizationFlex());
       } else if (clean.includes('全台產曆查詢') || clean.includes('查全台產曆') || clean.includes('查產曆') || clean.includes('產曆') || clean.includes('產季') || clean.includes('收穫') || clean.includes('採收') || clean.includes('芒果') || clean.includes('洋蔥') || clean.includes('鳳梨') || clean.includes('西瓜')) {
@@ -1343,7 +1340,7 @@
               { layout: 'baseline', contents: [{ text: '工班 A 組 (5人)', color: '#64748B' }, { text: '桃園設施溫室組・智農 1 號車 (張大哥)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '工班 B 組 (6人)', color: '#64748B' }, { text: '枋山芒果專線・領班阿迪・智農 2 號車', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '工班 C 組 (4人)', color: '#64748B' }, { text: '雲林機耕無人機隊・陳建宏雙證照飛手', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '工班 D 組 (5人)', color: '#64748B' }, { text: '屏南冷鏈預冷分級・范氏紅冷鏈專線', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '工班 D 組 (5人)', color: '#64748B' }, { text: '八德溫室機動支援・范氏紅領班', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '今日出勤率', color: '#64748B' }, { text: '100% (160 工時全滿檔・零閒置)', color: '#047857' }] }
             ]
           },
@@ -1375,7 +1372,6 @@
               { layout: 'baseline', contents: [{ text: '防颱搶收馳援', color: '#64748B' }, { text: 'NT$ 360 / 小時 (24H 優先調度加乘)', color: '#E11D48' }] },
               { layout: 'baseline', contents: [{ text: '大型曳引機整地', color: '#64748B' }, { text: 'NT$ 310 / 小時 (80hp 機具另計)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '無人機精準代噴', color: '#64748B' }, { text: 'NT$ 250 / 分地 (大疆 T50 植保機)', color: '#047857' }] },
-              { layout: 'baseline', contents: [{ text: '暴雨避險條款', color: '#64748B' }, { text: '室內冷鏈預冷分級場替代，免停工損失', color: '#2563EB' }] }
             ]
           },
           footer: {
@@ -1394,22 +1390,21 @@
           header: {
             backgroundColor: '#1E3A8A',
             contents: [
-              { text: '突發暴雨避險機制啟動', color: '#93C5FD', size: 'xs', weight: 'bold' },
-              { text: '全體專車轉移至冷鏈集貨場', color: '#FFFFFF', size: 'xl', weight: 'bold' },
-              { text: '屏東枋山/高樹午後強降雨・演算法避險大腦運作', color: '#BFDBFE', size: 'xs', weight: 'normal' }
+              { text: '天候警報通知', color: '#93C5FD', size: 'xs', weight: 'bold' },
+              { text: '午後強降雨・田區暫停採收', color: '#FFFFFF', size: 'xl', weight: 'bold' },
+              { text: '屏東枋山/高樹午後強降雨特報', color: '#BFDBFE', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '轉移地點', color: '#64748B' }, { text: '屏南冷鏈預冷分級場 (B棟 室內分級線)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '作業內容', color: '#64748B' }, { text: '芒果低溫預冷、外銷秤重、洋蔥乾燥裝箱', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '接駁專車', color: '#64748B' }, { text: '智農 1、2 號車已抵達各田區載運工班', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '出勤保全', color: '#64748B' }, { text: '100% 正常出勤，零工時浪費，保全 $62,500 產值', color: '#047857' }] }
+              { layout: 'baseline', contents: [{ text: '受影響田區', color: '#64748B' }, { text: '屏東枋山、高樹', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '作業安排', color: '#64748B' }, { text: '暫停田間採收，依現場小工頭通知復工或改期', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '接駁專車', color: '#64748B' }, { text: '智農 1、2 號車待命，視天候接回工班', color: '#0F172A' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '查看冷鏈接送專車即時車隊', uri: 'https://agridispatch.tw/track/fleet' }, color: '#2563EB' }
+              { action: { label: '聯絡現場小工頭', uri: 'javascript:handleQuickCmd("聯絡工頭")' }, color: '#2563EB' }
             ]
           }
         }
@@ -1438,7 +1433,6 @@
               { layout: 'baseline', contents: [{ text: '適用產季作物', color: '#64748B' }, { text: '枋山芒果、金鑽鳳梨、紅龍果、大西瓜', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '早鳥工時單價', color: '#64748B' }, { text: 'NT$ 315 / 小時 (不打折・鎖定名額)', color: '#047857' }] },
               { layout: 'baseline', contents: [{ text: '保證出工承諾', color: '#64748B' }, { text: 'SLA 合約保障，旺季搶工絕不被挖角放鳥', color: '#D97706' }] },
-              { layout: 'baseline', contents: [{ text: '暴雨天候避險', color: '#64748B' }, { text: '免費轉移冷鏈預冷包裝廠室內作業', color: '#2563EB' }] },
               { layout: 'baseline', contents: [{ text: '本季限量席位', color: '#64748B' }, { text: '限量 20 席，目前僅剩最後 4 席', color: '#E11D48' }] }
             ]
           },
@@ -1557,7 +1551,7 @@
             contents: [
               { text: 'Xe đưa đón chuyên dụng ｜ 接送專車時刻表', color: '#93C5FD', size: 'xs', weight: 'bold' },
               { text: '智農 2 號接送專車 (TDC-8899)', color: '#FFFFFF', size: 'xl', weight: 'bold' },
-              { text: '恆春半島 ╳ 枋山果園 ╳ 屏南冷鏈中繼專線', color: '#BFDBFE', size: 'xs', weight: 'normal' }
+              { text: '恆春半島 ╳ 枋山果園專線', color: '#BFDBFE', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
@@ -1565,8 +1559,7 @@
               { layout: 'baseline', contents: [{ text: '專屬司機', color: '#64748B' }, { text: '李建國 大哥 (0912-222-444)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '去程發車', color: '#64748B' }, { text: '06:30 潮州外展移工宿舍大門準時發車', color: '#2563EB' }] },
               { layout: 'baseline', contents: [{ text: '到達田區', color: '#64748B' }, { text: '07:10 枋山愛文芒果園 (約 40 分鐘車程)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '回程發車', color: '#64748B' }, { text: '17:30 園區入口原地接駁返回宿舍', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '暴雨避險', color: '#64748B' }, { text: '如遇豪雨自動轉運至屏南冷鏈預冷廠', color: '#047857' }] }
+              { layout: 'baseline', contents: [{ text: '回程發車', color: '#64748B' }, { text: '17:30 園區入口原地接駁返回宿舍', color: '#0F172A' }] }
             ]
           },
           footer: {
@@ -1815,7 +1808,7 @@
             contents: [
               { text: '接駁車隊即時調度 ｜ 車隊中樞', color: '#94A3B8', size: 'xs', weight: 'bold' },
               { text: '全島 4 輛中型接駁專車 ｜ 運作中', color: '#FFFFFF', size: 'xl', weight: 'bold' },
-              { text: '配備車載 GPS、冷鏈轉運支援、職災急救包', color: '#CBD5E1', size: 'xs', weight: 'normal' }
+              { text: '配備車載 GPS、職災急救包', color: '#CBD5E1', size: 'xs', weight: 'normal' }
             ]
           },
           body: {
@@ -1823,13 +1816,12 @@
               { layout: 'baseline', contents: [{ text: '智農 1 號車', color: '#64748B' }, { text: '桃園設施組 (張大哥) ｜ 時速 52km/h 正常', color: '#047857' }] },
               { layout: 'baseline', contents: [{ text: '智農 2 號車', color: '#64748B' }, { text: '屏東枋山線 (李大哥) ｜ 枋山芒果園待命中', color: '#2563EB' }] },
               { layout: 'baseline', contents: [{ text: '智農 3 號車', color: '#64748B' }, { text: '雲林機耕無人機隊 ｜ 斗南機耕中心整備', color: '#2563EB' }] },
-              { layout: 'baseline', contents: [{ text: '智農 4 號車', color: '#64748B' }, { text: '屏南冷鏈預冷車 ｜ 待命暴雨避險轉運', color: '#047857' }] }
+              { layout: 'baseline', contents: [{ text: '智農 4 號車', color: '#64748B' }, { text: '八德溫室機動支援 ｜ 待命中', color: '#047857' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '查看車隊全島 GPS 監控地圖', uri: 'https://agridispatch.tw/track/fleet' }, color: '#2563EB' },
-              { action: { label: '發送車隊待命避險指令', uri: 'javascript:handleQuickCmd("天候避險")' }, color: '#059669' }
+              { action: { label: '查看車隊全島 GPS 監控地圖', uri: 'https://agridispatch.tw/track/fleet' }, color: '#2563EB' }
             ]
           }
         }
@@ -1882,15 +1874,13 @@
           body: {
             contents: [
               { layout: 'baseline', contents: [{ text: '異常類別', color: '#64748B' }, { text: '天候突發豪雨 / 田區泥濘無法採收', color: '#E11D48' }] },
-              { layout: 'baseline', contents: [{ text: '通報時間', color: '#64748B' }, { text: '今日 13:40 (系統自動觸發天候避險條款)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '演算法解法', color: '#64748B' }, { text: '引導工班全體搭乘專車轉移至屏南冷鏈預冷廠', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '通報時間', color: '#64748B' }, { text: '今日 13:40 (田區回報)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '現場處置', color: '#64748B' }, { text: '暫停採收，工班搭專車返回，等候小工頭通知', color: '#047857' }] },
               { layout: 'baseline', contents: [{ text: '專車支援', color: '#64748B' }, { text: '智農 2 號車李司機已接收指令，10 分鐘內抵達', color: '#2563EB' }] },
-              { layout: 'baseline', contents: [{ text: '薪資保全', color: '#64748B' }, { text: '室內冷鏈分級工時照計，農民與移工零損失', color: '#047857' }] }
             ]
           },
           footer: {
             contents: [
-              { action: { label: '啟動冷鏈轉移作業指令', uri: 'javascript:handleQuickCmd("天候避險")' }, color: '#E11D48' },
               { action: { label: '撥打科技總台緊急指揮線 (0800)', uri: 'tel:0800888999' }, color: '#4B5563' }
             ]
           }

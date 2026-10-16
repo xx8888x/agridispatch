@@ -1513,8 +1513,8 @@
                   <tbody>
                     <tr v-for="(l, i) in voucherForm.lines" :key="i">
                       <td><select v-model="l.account" class="ad-select" :aria-label="'第 ' + (i + 1) + ' 列科目'"><option value="">請選擇科目</option><option v-for="a in voucherAccounts" :key="a.code" :value="a.code">{{ a.code }} {{ a.name }}</option></select></td>
-                      <td><input type="number" min="0" step="1" v-model="l.debit" @input="if (l.debit !== '') l.credit = ''" class="ad-input" style="text-align: right;" :aria-label="'第 ' + (i + 1) + ' 列借方'"></td>
-                      <td><input type="number" min="0" step="1" v-model="l.credit" @input="if (l.credit !== '') l.debit = ''" class="ad-input" style="text-align: right;" :aria-label="'第 ' + (i + 1) + ' 列貸方'"></td>
+                      <td><input type="number" min="0" step="1" v-model="l.debit" @input="l.debit !== '' && (l.credit = '')" class="ad-input" style="text-align: right;" :aria-label="'第 ' + (i + 1) + ' 列借方'"></td>
+                      <td><input type="number" min="0" step="1" v-model="l.credit" @input="l.credit !== '' && (l.debit = '')" class="ad-input" style="text-align: right;" :aria-label="'第 ' + (i + 1) + ' 列貸方'"></td>
                       <td><input v-model="l.note" maxlength="100" class="ad-input" :aria-label="'第 ' + (i + 1) + ' 列備註'"></td>
                       <td><button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" v-if="voucherForm.lines.length > 2" @click="voucherForm.lines.splice(i, 1)">刪除</button></td>
                     </tr>

@@ -529,6 +529,17 @@ button.ad-card--interactive { font: inherit; color: inherit; text-align: left; w
 /* 角色導覽：每個角色只看到自己的 3～5 個項目 */
 .ad-nav { display: none; align-items: center; gap: var(--ad-sp-1); }
 @media (min-width: 768px) { .ad-nav { display: flex; } }
+.ad-nav__link { white-space: nowrap; flex-shrink: 0; }
+/* 平板（768～1023px）：導覽項目多，表頭收斂（角色字樣、狀態 pill、示範導覽文字讓位）避免文字被擠成直排 */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .ad-header__inner { gap: var(--ad-sp-2); }
+  .ad-header__role { display: none; }
+  .ad-header__actions .ad-pill { display: none; }
+  .ad-header__actions .ad-hide-sm { display: none !important; }
+  .ad-nav { flex: 1 1 0; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .ad-nav::-webkit-scrollbar { display: none; }
+  .ad-nav__link { padding: 0 8px; font-size: 13px; gap: 4px; }
+}
 .ad-nav__link {
   display: inline-flex;
   align-items: center;

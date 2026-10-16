@@ -47,6 +47,15 @@
   var root = document.documentElement;
   root.classList.add(mode === 'production' ? 'is-production' : 'is-demo');
 
+  // 2a. Android App（有原生橋接）：即使內建的是 demo 資料，也不顯示「示範導覽」（只有 Demo 網站保留）
+  var inApp = !!window.AgriNativeBridge;
+  if (inApp) {
+    root.classList.add('is-app');
+    var appCss = document.createElement('style');
+    appCss.textContent = 'html.is-app button[aria-label="示範導覽"]{display:none !important;}';
+    (document.head || root).appendChild(appCss);
+  }
+
   // 2b. 功能開關（AGRI_CONFIG.features）：關閉的功能，標了 data-feature="名稱" 的元素一律隱藏
   var FEATURES = (window.AGRI_CONFIG && window.AGRI_CONFIG.features) || {};
   function feature(name) { return FEATURES[name] !== false; }
@@ -161,7 +170,7 @@
 
   function demoNav(paths) {
     var noop = { open: function () {}, close: function () {}, toggle: function () {} };
-    if (mode === 'production') return noop;
+    if (mode === 'production' || inApp) return noop;
     var p = paths || defaultPaths();
     var id = 'ad-demo-drawer';
     if (document.getElementById(id)) return drawer(id) || noop;
@@ -213,7 +222,7 @@
 
   // 頁首沒有「示範導覽」按鈕的頁面（登入頁、DM、證明書等），demo 模式補一顆浮動按鈕，路演時任何頁都能跳轉
   function demoNavFab() {
-    if (mode === 'production' || document.getElementById('ad-demo-fab')) return;
+    if (mode === 'production' || inApp || document.getElementById('ad-demo-fab')) return;
     // 頁首已有示範導覽按鈕（onclick 或 Vue @click，後者掛載後屬性會消失，所以也認 aria-label）
     if (document.querySelector('[data-demo-only][onclick*=".open()"], button[data-demo-only][aria-label="示範導覽"]')) return;
     var ctl = demoNav();

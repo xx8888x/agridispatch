@@ -266,13 +266,6 @@
                   </div>
                   <button type="button" onclick="playVoiceInstruction('喝水休息')" class="ad-btn ad-btn--sm ad-btn--secondary">播放</button>
                 </div>
-                <div class="ad-row" style="border-color: var(--ad-accent);">
-                  <div class="ad-row__main">
-                    <div class="ad-row__title" style="white-space: normal;">「午後暴雨，全體專車轉移至冷鏈場！」</div>
-                    <div class="ad-row__meta">越：Mưa to, lên xe sang xưởng lạnh　印：Hujan, naik mobil ke gudang</div>
-                  </div>
-                  <button type="button" onclick="playVoiceInstruction('轉移冷鏈場')" class="ad-btn ad-btn--sm ad-btn--accent">廣播</button>
-                </div>
               </div>
             </div>
 
@@ -296,8 +289,8 @@
                 <div class="ad-stat ad-stat--accent"><div class="ad-stat__label">領班責任加給</div><div class="ad-stat__value">+NT$ 8,000</div></div>
               </div>
 
-              <div class="ad-label" style="margin: 20px 0 8px;">現場工安與組員健康巡檢</div>
-              <div class="ad-list">
+              <div id="fm-safety-label" class="ad-label" style="margin: 20px 0 8px;">現場工安與組員健康巡檢</div>
+              <div id="fm-safety-list" class="ad-list">
               <label class="ad-choice"><input type="checkbox" checked><span>全員配戴防曬大斗笠、純棉薄手套與防刺袖套</span></label>
               <label class="ad-choice"><input type="checkbox" checked><span>田邊備妥冰涼電解質飲用水（每人每日配額 3,000cc）</span></label>
               <label class="ad-choice"><input type="checkbox" checked><span>採收剪刀於每行起採前以 75% 酒精消毒刀刃</span></label>
@@ -1261,8 +1254,49 @@
       return false;
     }
 
+    // 現場工安與組員健康巡檢：依作物（環境與主要危害）＋作業類別（工具與機具）組合，每次 5 項
+    const SAFETY_BY_CROP = [
+      { re: /芒果/, tag: '芒果', items: ['全員配戴防曬大斗笠、長袖與純棉手套，樹下每小時輪流休息補水（每人每日 3,000cc 電解質水）', '芒果樹液（流膠）易引起皮膚過敏：採收戴防刺袖套與手套，沾到立即沖水；高枝採收用穩固採果梯，禁止徒手爬枝'] },
+      { re: /鳳梨/, tag: '鳳梨', items: ['鳳梨葉緣帶刺：全員穿長袖、厚手套與護腿，避免徒手撥葉', '裝箱搬運每箱兩人抬或使用推車，彎腰作業 1 小時輪替一次並護腰'] },
+      { re: /茶/, tag: '茶', items: ['茶園坡地：穿防滑膠鞋，行間走道先清除濕滑落葉，戴斗笠、頸巾防曬', '採茶前巡視茶叢有無虎頭蜂與蛇類，備妥蜂螫過敏急救藥與通報電話'] },
+      { re: /洋蔥/, tag: '洋蔥', items: ['洋蔥採拔彎腰負荷大：每 40 分鐘換姿勢伸展，戴護腰與防曬帽', '切蒂、分級備護目鏡與洗眼水，田邊備足電解質飲用水'] },
+      { re: /蔥/, tag: '蔥', items: ['蔥田濕泥：穿長筒雨鞋與防水圍裙，田埂濕滑慢行、禁止奔跑', '採蔥刀具加刀套、不得夾在腋下；剝蔥作業備洗眼水，避免辛辣汁液入眼'] },
+      { re: /柑橘|柿/, tag: '柑橘柿', items: ['修枝與高處採果：戴安全帽與護目鏡，梯子放平穩並有人扶梯', '果樹枝刺與落果踩踏易傷腳：穿安全鞋與長袖，高枝鋸不使用時加套'] },
+      { re: /草莓/, tag: '草莓', items: ['高架栽培長時間低頭：每 30 分鐘輪替姿勢，設施內備風扇與飲水', '食品衛生：進棚前洗手消毒、戴乾淨手套與髮帽，不得佩戴飾品、棚內禁止飲食'] },
+      { re: /香菇/, tag: '香菇', items: ['菇舍高濕低溫：全員戴 N95 口罩防孢子，穿防滑鞋與保暖外套，進出菇舍避免溫差過大', '太空包重物搬運兩人配合、堆疊不超過安全高度；菇舍地面濕滑須即時清理'] },
+      { re: /彩椒|黃瓜|洋香瓜|瓜/, tag: '設施瓜果', items: ['設施溫室悶熱：入棚前確認通風與水簾運轉，每 1 小時出棚補水休息、測量體溫', '引蔓、疏果工具每行作業前以 75% 酒精消毒，避免病毒傳播；確認農藥安全採收間隔已過'] },
+      { re: /蔬菜/, tag: '設施蔬菜', items: ['溫室悶熱：入棚前確認通風運轉，每 1 小時出棚補水休息並留意頭暈與噁心', '有機驗證場域：不得攜入禁用資材，手與採收容器依場域規範清潔、分區使用'] }
+    ];
+    const SAFETY_DEFAULT_CROP = { tag: '一般作物', items: ['全員配戴防曬帽、長袖與手套，田邊備妥電解質飲用水（每人每日 3,000cc）', '出發前確認作業區域有無積水、蜂巢或蛇蟲，並指定集合避難點'] };
+    const SAFETY_BY_CATEGORY = [
+      { re: /採收分級/, tag: '採收分級', items: ['採收剪刀於每行起採前以 75% 酒精消毒刀刃，剪刀使用完放回刀袋', '分級場地動線淨空、搬運籃箱不超載，兩人以上搬運超過 15 公斤的箱籃'] },
+      { re: /整地種植/, tag: '整地種植', items: ['曳引機作業半徑 5 公尺內禁止人員進入，傳動軸（PTO）護蓋確實安裝', '機手與人工分區作業，定植人員穿安全鞋、戴口罩防粉塵，機具熄火後才可靠近'] },
+      { re: /田間管理/, tag: '田間管理', items: ['修枝剪、疏果刀每行作業前以 75% 酒精消毒，刀刃朝下、不得揮舞', '高處引蔓套袋使用穩固梯具並有人扶持，單人高度超過 2 公尺須繫安全帶'] },
+      { re: /科技植保/, tag: '科技植保', items: ['無人機起降區與下風處 20 公尺淨空，人員撤離至上風處，風速過大暫停作業', '施藥人員穿戴防護衣、護目鏡與防毒口罩，藥劑標示核對、空瓶統一回收、作業後換洗'] },
+      { re: /緊急救火|防颱/, tag: '防颱搶收', items: ['出發前確認中央氣象署警報，風雨增強即全員撤離，設定撤離時間與集合點', '搶收戴安全帽與雨衣，山坡地與水邊作業不得單獨行動，領班每 30 分鐘點名'] }
+    ];
+    function safetyChecklist(order, team) {
+      const crop = String(order.cropName || '');
+      const cat = String(order.categoryName || '');
+      const c = SAFETY_BY_CROP.find((x) => x.re.test(crop)) || SAFETY_DEFAULT_CROP;
+      const k = SAFETY_BY_CATEGORY.find((x) => x.re.test(cat));
+      const items = c.items.concat(k ? k.items : []);
+      const indoor = /香菇|草莓|設施/.test(c.tag);
+      items.push(`${String(team.vehicle || '接送專車').split(' (')[0]}備妥${indoor ? '' : '專業中暑'}急救包與 AED`);
+      return { label: `${c.tag}${k ? '・' + k.tag : ''}`, items };
+    }
+    function renderSafety(order, team) {
+      const box = document.getElementById('fm-safety-list');
+      if (!box || !order) return;
+      const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+      const s = safetyChecklist(order, team || {});
+      box.innerHTML = s.items.map((t) => `<label class="ad-choice"><input type="checkbox" checked><span>${esc(t)}</span></label>`).join('');
+      const label = document.getElementById('fm-safety-label');
+      if (label) label.textContent = `現場工安與組員健康巡檢（${s.label}）`;
+    }
+
     function applyLocalTasks() {
-      const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+      const set =(id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
       const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
       const d = new Date();
       const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -1313,6 +1347,7 @@
           }).join('');
         }
         history(fm, 'fm-history');
+        renderSafety(fm.order, fm.team);
       }
 
       const mc = LOCAL_TASKS.machinery;

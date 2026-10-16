@@ -106,6 +106,15 @@
     <!-- TAB 1: 預約派工 -->
     <div id="tabContentBooking">
 
+    <!-- 社區共享班表入口：有開放認領的班表才顯示 -->
+    <div id="rosterBanner" class="ad-notice ad-notice--ok" hidden style="align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+      <div style="min-width: 0;">
+        <strong id="rosterBannerTitle">社區共享班表開放認領</strong>
+        <div id="rosterBannerSub" class="ad-caption" style="margin-top: 2px;"></div>
+      </div>
+      <a class="ad-btn ad-btn--primary ad-btn--sm" href="rosters.html">去認領時段</a>
+    </div>
+
     <!-- 兩步驟：先登錄農場（可多個，登錄過就跳過），再選一個農場預約派工 -->
     <div class="ad-stages" style="grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 24px;" aria-label="預約步驟">
       <div id="stageFarm" class="ad-stage ad-stage--now"><div class="ad-stage__title">1 登錄農場</div><div id="stageFarmSub" class="ad-stage__sub">第一次預約時填寫</div></div>
@@ -831,6 +840,27 @@
       }
     }
     document.addEventListener('DOMContentLoaded', loadTeamSkills);
+
+    // 社區共享班表入口橫幅：列出開放認領中的班表與尚餘空格，點進 rosters.html 認領
+    async function loadRosterBanner() {
+      const box = document.getElementById('rosterBanner');
+      if (!box) return;
+      try {
+        const base = (window.AgriAuth && window.AgriAuth.API_BASE) || '/api';
+        const res = await fetch(`${base}/rosters`);
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) return;
+        const open = (body.data || []).filter(r => r.claimable && r.status === 'open');
+        if (!open.length) return;
+        const free = open.reduce((t, r) => t + Math.max(0, r.totalSlots - r.claimedSlots), 0);
+        const first = open[0];
+        document.getElementById('rosterBannerTitle').textContent = `社區共享班表：${open.length} 個班表開放認領`;
+        document.getElementById('rosterBannerSub').textContent =
+          `${first.title}（${first.region}）${open.length > 1 ? ` 等 ${open.length} 個` : ''}・共 ${free} 個半天空格・小面積只要認領半天`;
+        box.hidden = false;
+      } catch (e) { /* 橫幅是加分入口，載入失敗不打擾 */ }
+    }
+    document.addEventListener('DOMContentLoaded', loadRosterBanner);
   </script>
 
   <script>

@@ -218,7 +218,8 @@
               <div class="ad-caption">${md(r.startDate)} ～ ${md(r.endDate)}・認領截止 ${md(r.claimDeadline)}・半天 ${money(r.prices.halfDay.early_bird.total)}／格</div>
               ${r.cancelReason ? `<div class="ad-caption" style="color: var(--ad-danger-text);">取消原因：${esc(r.cancelReason)}</div>` : ''}
             </div>
-            ${active ? `<div style="display: flex; gap: 8px; align-items: flex-start;">
+            ${active ? `<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start;">
+              ${r.status === 'open' ? `<a class="ad-btn ad-btn--ghost ad-btn--sm" href="../AgriDispatch/rosters.html" target="_blank" rel="noopener" title="農場主登入後在「社區班表」認領上午／下午格">前台認領頁 ↗</a>` : ''}
               ${r.status === 'open' ? `<button type="button" class="ad-btn ad-btn--primary ad-btn--sm" data-id="${esc(r.id)}" onclick="confirmRoster(this.dataset.id)" ${r.thresholdMet ? '' : 'disabled title="未達門檻"'}>確認開班</button>` : ''}
               <button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" data-id="${esc(r.id)}" onclick="cancelRoster(this.dataset.id)">取消班表</button>
             </div>` : ''}

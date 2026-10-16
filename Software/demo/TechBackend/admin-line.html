@@ -78,8 +78,9 @@
         <div class="ad-card" style="padding: 16px; display: flex; flex-direction: column; gap: 12px;">
           <div class="ad-field">
             <label class="ad-label" for="broadcast-text">給全部農場主的方案通知</label>
-            <textarea class="ad-textarea" id="broadcast-text" rows="3" maxlength="1000" placeholder="例如：產季早鳥工時包開放預約，鎖定名額、優先排班。"></textarea>
-            <span class="ad-hint">只會發到「智農派工（農場主）」帳號。工作人員帳號不做全員廣播。</span>
+            <div class="ad-tabs" id="broadcast-templates" role="group" aria-label="通知範本"></div>
+            <textarea class="ad-textarea" id="broadcast-text" rows="6" maxlength="1000" placeholder="先選上方範本，或直接輸入通知內容。"></textarea>
+            <span class="ad-hint" id="broadcast-hint">選範本會帶入內容，【】 內是要自己填的地方，填完才能發送。只會發到「智農派工（農場主）」帳號，工作人員帳號不做全員廣播。</span>
           </div>
           <div><button type="button" class="ad-btn ad-btn--line ad-btn--sm" id="broadcast-btn">發送通知</button></div>
         </div>
@@ -279,9 +280,51 @@
       }
     });
 
+    // 農場主通知範本：【】 是要自己填的欄位，沒填完不給發送
+    const BROADCAST_TEMPLATES = [
+      { key: 'early', label: '早鳥方案', text: '〔智農派工〕產季早鳥工時包開放預約\n\n預約期間：【起日】～【迄日】\n適用作物／工期：【作物與工期】\n方案內容：鎖定名額、優先排班\n\n名額有限，請至「智農派工」下單或洽客服預約。' },
+      { key: 'weather', label: '天候提醒', text: '〔智農派工〕天候提醒\n\n【日期】【地區】預報【颱風／豪雨／高溫】，已排定的出工請留意以下安排：\n【調整說明，例如：該日出工延期，由本平台聯繫改期】\n\n如有疑問請洽客服。' },
+      { key: 'maintain', label: '系統維護', text: '〔智農派工〕系統維護公告\n\n維護時間：【日期 時間】～【日期 時間】\n影響範圍：【下單／付款／查詢等】\n維護期間若有緊急需求，請直接洽客服。\n\n造成不便，敬請見諒。' },
+      { key: 'feature', label: '新功能上線', text: '〔智農派工〕新功能上線\n\n【功能名稱】已開放使用：\n【一句話說明這個功能能幫農場主做什麼】\n\n操作方式：【在哪個頁面、怎麼用】\n\n歡迎使用並提供意見。' },
+      { key: 'deposit', label: '定金提醒', text: '〔智農派工〕定金繳納提醒\n\n您的訂單【訂單編號】尚未收到定金，請於【繳款期限】前完成繳納，逾期訂單將依規定處理。\n\n已繳款者請忽略此訊息。' },
+      { key: 'blank', label: '空白', text: '' }
+    ];
+    const bcText = $('broadcast-text');
+    const bcTabs = $('broadcast-templates');
+    const bcHint = $('broadcast-hint');
+    const bcHintDefault = bcHint.textContent;
+    BROADCAST_TEMPLATES.forEach((t) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ad-tab';
+      b.dataset.tpl = t.key;
+      b.textContent = t.label;
+      bcTabs.appendChild(b);
+    });
+    function unfilled(text) { return text.match(/【[^】]*】/g) || []; }
+    function refreshBroadcastHint() {
+      const left = unfilled(bcText.value);
+      bcHint.textContent = left.length ? '還有 ' + left.length + ' 處【】沒填：' + left.slice(0, 3).join('、') + (left.length > 3 ? '…' : '') : bcHintDefault;
+      bcHint.style.color = left.length ? 'var(--ad-danger-text, #f87171)' : '';
+    }
+    bcTabs.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('[data-tpl]');
+      if (!btn) return;
+      const tpl = BROADCAST_TEMPLATES.find((t) => t.key === btn.dataset.tpl);
+      if (bcText.value.trim() && bcText.value !== bcText.dataset.tplText && !confirm('目前輸入的內容會被範本取代，確定嗎？')) return;
+      bcText.value = tpl.text;
+      bcText.dataset.tplText = tpl.text;
+      bcTabs.querySelectorAll('.ad-tab').forEach((x) => x.classList.toggle('is-active', x === btn));
+      refreshBroadcastHint();
+      bcText.focus();
+    });
+    bcText.addEventListener('input', refreshBroadcastHint);
+
     $('broadcast-btn').addEventListener('click', async () => {
       const text = $('broadcast-text').value.trim();
       if (!text) { showError('請先輸入通知內容。'); return; }
+      const left = unfilled(text);
+      if (left.length) { showError('通知還有【】沒填完：' + left.join('、')); return; }
       if (!confirm('確定發送給全部農場主？')) return;
       const btn = $('broadcast-btn');
       btn.disabled = true;
@@ -292,6 +335,9 @@
         const d = await res.json().catch(() => ({}));
         if (!res.ok || !d.success) throw new Error();
         $('broadcast-text').value = '';
+        bcText.dataset.tplText = '';
+        bcTabs.querySelectorAll('.ad-tab').forEach((x) => x.classList.remove('is-active'));
+        refreshBroadcastHint();
         toast('已發送給農場主');
       } catch (e) {
         showError('發送失敗，請確認 LINE 機器人服務已啟動。');

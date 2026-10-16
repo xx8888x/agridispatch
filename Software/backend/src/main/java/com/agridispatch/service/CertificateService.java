@@ -142,7 +142,7 @@ public class CertificateService {
     /** 訂單擁有者或 admin 取得證明 */
     public Map<String, Object> forOrder(com.agridispatch.security.AuthContext ctx, String orderId) {
         Order order = orderService.requireOrder(orderId);
-        orderService.checkOwnerOrAdmin(ctx, order);
+        orderService.checkOwnerOrStaff(ctx, order);
         return build(order);
     }
 

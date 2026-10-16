@@ -871,6 +871,12 @@ public class OrderService {
     private boolean workerCanSee(AuthContext ctx, Order order, String teamId) {
         if (settings.isDemoEnabled()) return true;
         if (teamId != null && teamId.equals(order.getAssignedTeamId())) return true;
+        if (ctx.isAdmin() || isOwner(ctx, order)) return;
+        throw ApiException.forbidden();
+    }
+
+    /** 唯讀查詢（付款狀態、合法用工證明）：後台人員（含合作社）或訂單擁有者 */
+    public void checkOwnerOrStaff(AuthContext ctx, Order order) {
         String crew = order.getCrewWorkerIds();
         return crew != null && Arrays.asList(crew.split(",")).contains(ctx.ref());
     }

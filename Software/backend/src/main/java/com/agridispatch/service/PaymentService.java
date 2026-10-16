@@ -263,7 +263,7 @@ public class PaymentService {
      */
     public Map<String, Object> getPaymentStatus(AuthContext ctx, String orderId) {
         Order order = orderService.requireOrder(orderId);
-        orderService.checkOwnerOrAdmin(ctx, order);
+        orderService.checkOwnerOrStaff(ctx, order);
         Map<String, Object> res = new LinkedHashMap<>();
         res.put("orderId", order.getId());
         res.put("farmerName", order.getFarmerName());

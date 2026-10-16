@@ -416,7 +416,7 @@
             <p class="ad-caption" style="margin-top: 2px;">共 {{ scopedOrders.length }} 筆<template v-if="scopeActive">（{{ scopeLabel }}）</template></p>
           </div>
           <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
-            <button type="button" @click="showOrderCalc = !showOrderCalc" class="ad-btn" :class="showOrderCalc ? 'ad-btn--secondary' : 'ad-btn--primary'">{{ showOrderCalc ? '收起新增表單' : '新增訂單' }}</button>
+            <button type="button" v-if="!isCoop" @click="showOrderCalc = !showOrderCalc" class="ad-btn" :class="showOrderCalc ? 'ad-btn--secondary' : 'ad-btn--primary'">{{ showOrderCalc ? '收起新增表單' : '新增訂單' }}</button>
             <button type="button" @click="fetchOrders()" class="ad-btn ad-btn--ghost ad-btn--sm ad-btn--icon" title="重新整理" aria-label="重新整理"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg></button>
           </div>
         </div>
@@ -638,8 +638,8 @@
                   </td>
                   <td class="space-x-1 tb-cards__actions" style="text-align: right;">
                     <button type="button" @click="openPayModal(o)" class="ad-btn ad-btn--ghost ad-btn--sm" title="付款紀錄、尾款收款登錄、補登發票">收款</button>
-                    <button type="button" @click="openOrderModal(o)" class="ad-btn ad-btn--ghost ad-btn--sm">改單</button>
-                    <button type="button" @click="deleteOrder(o.id)" class="ad-btn ad-btn--ghost ad-btn--sm" style="color: var(--ad-danger-text);">取消</button>
+                    <button type="button" v-if="!isCoop" @click="openOrderModal(o)" class="ad-btn ad-btn--ghost ad-btn--sm">改單</button>
+                    <button type="button" v-if="!isCoop" @click="deleteOrder(o.id)" class="ad-btn ad-btn--ghost ad-btn--sm" style="color: var(--ad-danger-text);">取消</button>
                   </td>
                 </tr>
                 <tr v-if="filteredOrders.length === 0">

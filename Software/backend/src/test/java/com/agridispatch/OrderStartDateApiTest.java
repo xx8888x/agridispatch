@@ -117,7 +117,7 @@ class OrderStartDateApiTest extends ApiTestSupport {
     }
 
     @Test
-    void adminMayBackdateButCoopMayNot() throws Exception {
+    void adminMayBackdateButCoopMayNotEditOrders() throws Exception {
         // 科技後台管理員代建／補登：可以填過去的開工日
         Map<String, Object> o = order(today().minusDays(3), today());
         o.put("farmerId", "F001");
@@ -128,14 +128,15 @@ class OrderStartDateApiTest extends ApiTestSupport {
 
         assertNotNull(id);
 
-        // 合作社帳號：改開工日比照農場主，不可改成過去
+        // 合作社帳號：不能修改訂單（規格 13 §2.2，僅科技後台與訂單擁有者），改開工日一律 403
         if (!userRepository.existsById("coop_start_test")) {
             userRepository.save(new User("coop_start_test", passwordHasher.hash("Coop#2026pw"), "合作社測試員", "coop_admin", "COOP01", "合作社後台人員"));
         }
         String coop = login("coop_start_test", "Coop#2026pw");
         String future = create(farmer, today().plusDays(9), today().plusDays(10));
         MvcResult c = call("PUT", "/api/orders/" + future, coop, Map.of("startDate", today().minusDays(1).toString(), "endDate", today().plusDays(10).toString()));
-        assertEquals(400, c.getResponse().getStatus(), body(c));
+        assertEquals(403, c.getResponse().getStatus(), body(c));
+        assertEquals(today().plusDays(9).toString(), json(call("GET", "/api/orders/" + future, farmer, null)).get("data").get("startDate").asText(), "被擋下後工期沒有被改");
     }
 
     @Test

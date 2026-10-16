@@ -134,4 +134,24 @@ class CoopRoleTest extends ApiTestSupport {
             assertNotEquals(wAdmin.get("arcNumber").asText(), wCoop.get("arcNumber").asText(), "合作社看到的證號必須遮罩");
         }
     }
+
+    /** 規格 13 §2.2：合作社對訂單只能看，不能改、取消、付定金、評價（只有科技後台與訂單擁有者可以） */
+    @Test
+    void orderWritesAreAdminOrOwnerOnly() throws Exception {
+        String order = "ORD-2026-005";
+        assertEquals(403, status("PUT", "/api/orders/" + order, coop, Map.of("onSiteNote", "合作社改單")), "修改訂單");
+        assertEquals(403, status("DELETE", "/api/orders/" + order, coop, null), "取消訂單");
+        assertEquals(403, status("POST", "/api/payments/checkout", coop, Map.of("orderId", order, "paymentMethod", "credit_card")), "替訂單付定金");
+        assertEquals(403, status("PUT", "/api/ratings/orders/" + order, coop, Map.of("score", 5)), "評價工班");
+
+        // 唯讀仍可：訂單、付款狀態、合法用工證明
+        assertEquals(200, status("GET", "/api/orders/" + order, coop, null), "看訂單");
+        assertEquals(200, status("GET", "/api/payments/" + order + "/status", coop, null), "看付款狀態");
+        assertNotEquals(403, status("GET", "/api/certificates/orders/" + order, coop, null), "合法用工證明（唯讀）");
+
+        // 科技後台同一組操作不是 403（結果依訂單狀態可能 200 或 409，但不得被授權擋下）
+        assertNotEquals(403, status("PUT", "/api/orders/" + order, admin, Map.of("onSiteNote", "後台改單")), "後台修改訂單");
+        assertNotEquals(403, status("POST", "/api/payments/checkout", admin, Map.of("orderId", order, "paymentMethod", "credit_card")), "後台付款");
+        assertNotEquals(403, status("PUT", "/api/ratings/orders/" + order, admin, Map.of("score", 5)), "後台評價");
+    }
 }

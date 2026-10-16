@@ -2164,6 +2164,8 @@
     if (method === 'POST' && sp.path === '/orders') {
       try { return respond(200, { success: true, data: createOrder(body || {}) }); } catch (err) { return respond(400, { success: false, error: err.message }); }
     }
+    // 合作社（coop_admin）對訂單只能看：改單、取消、付定金僅科技後台與訂單擁有者（規格 13 §2.2）
+    if ((currentUser() || {}).role === 'coop_admin' && ((method === 'POST' && sp.path === '/payments/checkout') || (/^\/orders\/[^/]+$/.test(sp.path) && (method === 'PUT' || method === 'DELETE')))) return respond(403, { success: false, error: 'FORBIDDEN' });
     if (method === 'POST' && sp.path === '/payments/checkout') return checkout(body || {});
     if (method === 'POST' && (sp.path === '/attendance/clock-in' || sp.path === '/attendance/clock-out')) return clock(seg[1], body || {});
     if (method === 'POST' && sp.path === '/line/bind') return lineBind(body || {});

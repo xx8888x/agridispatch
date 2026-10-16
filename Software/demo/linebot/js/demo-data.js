@@ -53,7 +53,7 @@ const DEFAULT_ADMIN_DATA = {
       workersPerFen: 4,
       rate: 300,
       season: "4月 ~ 7月",
-      taskDescription: "外銷級採收 (留蒂 0.5cm 護果粉)、疏果、防菌套袋",
+      taskDescription: "外銷級採收 (護果粉)、疏果、防菌套袋",
       indoorAlternative: "屏南冷鏈預冷分級場 (清洗預冷、重量自動分級、外銷裝箱)"
     },
     {
@@ -133,7 +133,7 @@ const DEFAULT_ADMIN_DATA = {
       vanNumber: "智農 2 號專車 (跨區專線 / RBF-9988)",
       driverName: "李建國 大哥 (0912-222-444)",
       fieldLocation: "枋山愛文芒果合作園 / 三星青蔥專區",
-      fieldTask: "外銷級留蒂採收、套袋防護、拔蔥洗蔥束捆",
+      fieldTask: "外銷級採收、套袋防護、拔蔥洗蔥束捆",
       indoorLocation: "屏南冷鏈預冷分級場 / 三星農會包裝場",
       indoorTask: "差壓預冷、自動光波選果、外銷紙箱封裝",
       status: "active_field"
@@ -299,7 +299,7 @@ const DEFAULT_ADMIN_DATA = {
       passportNumber: "X8812302",
       permitExpiry: "2027-06-30",
       insuranceStatus: "已納保 (勞/健/職災)",
-      currentTask: "枋山愛文芒果園 剪枝留蒂與果品初選",
+      currentTask: "枋山愛文芒果園 剪枝與果品初選",
       dispatchStatus: "dispatched_field",
       phone: "0988-222-334"
     },
@@ -1126,7 +1126,7 @@ const DEFAULT_ADMIN_DATA = {
       serviceDesc: "內含 60 個標準外展技術工時（約 4 位熟練農工出勤 2 天）。產季前 60 天預購，每小時 315 元不打折；預付 20% 定金即可鎖定產季名額、優先排班，遲到免單、放鳥雙倍賠！",
       endorsementName: "陳建龍（阿龍班長）",
       endorsementTitle: "枋山愛文芒果產銷班第 7 班 班長",
-      endorsementQuote: "去年被工頭放鳥，爛了快 30 萬芒果。今年跟智農派工簽早鳥合約，4 個年輕人早上準時站在田門口，剪蒂頭留 0.5cm 護果粉比我自己還幼路！",
+      endorsementQuote: "去年被工頭放鳥，爛了快 30 萬芒果。今年跟智農派工簽早鳥合約，4 個年輕人早上準時站在田門口，採收護果粉比我自己還幼路！",
       contactPhone: "08-876-1234 / 0912-345-678",
       contactAddress: "屏東縣枋山鄉加祿路 128 號",
       status: "active",
@@ -1288,7 +1288,7 @@ const DEFAULT_ADMIN_DATA = {
     ],
     upcomingHarvests: [
       { id: "H01", cropName: "大樹玉荷包荔枝", location: "高雄市大樹區", month: 5, countdownDays: 10, period: "5月20日 ~ 6月05日", alertTag: "3週黃金搶收期", taskSummary: "延誤即落果變質！集中搶收、剪葉分級、低溫冷藏", suggestedTeamId: "team_b", cropId: "mango", area: 15 },
-      { id: "H02", cropName: "枋山愛文芒果 (日韓外銷)", location: "屏東縣枋山鄉", month: 5, countdownDays: 14, period: "5月10日 ~ 6月25日", alertTag: "早鳥預約外銷高峰", taskSummary: "留蒂 0.5cm 護果粉、重量光波選果、外銷裝箱", suggestedTeamId: "team_b", cropId: "mango", area: 20 },
+      { id: "H02", cropName: "枋山愛文芒果 (日韓外銷)", location: "屏東縣枋山鄉", month: 5, countdownDays: 14, period: "5月10日 ~ 6月25日", alertTag: "早鳥預約外銷高峰", taskSummary: "護果粉、重量光波選果、外銷裝箱", suggestedTeamId: "team_b", cropId: "mango", area: 20 },
       { id: "H03", cropName: "拉拉山水蜜桃", location: "桃園市復興區", month: 6, countdownDays: 25, period: "6月20日 ~ 7月25日", alertTag: "高山搶收大尖峰", taskSummary: "高海拔手採防碰傷、海綿網套防撞、清晨低溫採摘", suggestedTeamId: "team_a", cropId: "taoyuan_veg", area: 10 },
       { id: "H04", cropName: "東勢寄接梨 / 卓蘭高接梨", location: "台中市東勢區 / 苗栗卓蘭", month: 7, countdownDays: 32, period: "7月10日 ~ 8月20日", alertTag: "產季早鳥搶工期", taskSummary: "套袋果摘除、冷藏預冷保鮮、自動重量分級", suggestedTeamId: "team_b", cropId: "taoyuan_veg", area: 12 },
       { id: "H05", cropName: "麻豆老欉文旦柚 (中秋禮盒)", location: "台南市麻豆區", month: 8, countdownDays: 45, period: "8月20日 ~ 9月10日", alertTag: "白露前10天徹夜搶收", taskSummary: "白露前搶收消水、外觀修整、中秋禮盒排裝、颱風防搶", suggestedTeamId: "team_b", cropId: "taoyuan_veg", area: 25 },

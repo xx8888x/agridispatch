@@ -374,9 +374,9 @@
       <section v-if="activeTab === 'dispatch'" class="space-y-6">
         <!-- 子頁頁籤 -->
         <div class="ad-tabs" role="tablist" aria-label="派工調度子頁">
-          <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'orders' }" :aria-selected="dispatchSubTab === 'orders'" @click="dispatchSubTab = 'orders'">訂單<span class="ad-tab__count">{{ orders.length }}</span></button>
-          <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'workers' }" :aria-selected="dispatchSubTab === 'workers'" @click="dispatchSubTab = 'workers'">農工名冊<span class="ad-tab__count">{{ workers.length }}</span></button>
-          <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'teams' }" :aria-selected="dispatchSubTab === 'teams'" @click="dispatchSubTab = 'teams'">工班<span class="ad-tab__count">{{ dispatch.teams.length }}</span></button>
+          <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'orders' }" :aria-selected="dispatchSubTab === 'orders'" @click="dispatchSubTab = 'orders'">訂單<span class="ad-tab__count">{{ scopedOrders.length }}</span></button>
+          <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'workers' }" :aria-selected="dispatchSubTab === 'workers'" @click="dispatchSubTab = 'workers'">農工名冊<span class="ad-tab__count">{{ scopedWorkers.length }}</span></button>
+          <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'teams' }" :aria-selected="dispatchSubTab === 'teams'" @click="dispatchSubTab = 'teams'">工班<span class="ad-tab__count">{{ scopedTeams.length }}</span></button>
           <button type="button" v-if="!isCoop" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'crops' }" :aria-selected="dispatchSubTab === 'crops'" @click="dispatchSubTab = 'crops'">作物基準<span class="ad-tab__count">{{ crops.length }}</span></button>
           <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'calendar' }" :aria-selected="dispatchSubTab === 'calendar'" @click="dispatchSubTab = 'calendar'">全台產曆</button>
           <button type="button" v-if="!isCoop" role="tab" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'talents' }" :aria-selected="dispatchSubTab === 'talents'" @click="dispatchSubTab = 'talents'">人才儲備<span class="ad-tab__count">{{ talents.length }}</span></button>
@@ -384,12 +384,34 @@
           <button type="button" role="tab" data-feature="legalize" class="ad-tab" :class="{ 'is-active': dispatchSubTab === 'legalize' }" :aria-selected="dispatchSubTab === 'legalize'" @click="dispatchSubTab = 'legalize'; fetchLegalize()">工班合法化<span v-if="legalizeSummary" class="ad-tab__count">{{ legalizeSummary.totals.gapOpen }}</span></button>
         </div>
 
+        <!-- 地域／縣市／農場篩選（訂單、農工名冊、工班共用；依農場作業地點判斷縣市） -->
+        <div v-if="['orders', 'workers', 'teams'].includes(dispatchSubTab)" class="ad-card" style="padding: 12px 16px;">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="ad-caption" style="margin-right: 4px;">地域</span>
+            <button type="button" @click="setScopeRegion('')" :class="{ 'is-on': scopeRegion === '' }" class="ad-chip">全台 ({{ orders.length }})</button>
+            <button v-for="r in SCOPE_REGIONS" :key="r.name" type="button" @click="setScopeRegion(r.name)" :class="{ 'is-on': scopeRegion === r.name }" class="ad-chip">{{ r.name }} ({{ regionOrderCount(r) }})</button>
+          </div>
+          <div v-if="scopeRegion" class="flex items-center gap-1.5 flex-wrap" style="margin-top: 8px;">
+            <span class="ad-caption" style="margin-right: 4px;">縣市</span>
+            <button type="button" @click="scopeCounty = ''; scopeFarm = ''" :class="{ 'is-on': scopeCounty === '' }" class="ad-chip">{{ scopeRegion }}全部</button>
+            <button v-for="c in scopeCounties" :key="c" type="button" @click="scopeCounty = c; scopeFarm = ''" :class="{ 'is-on': scopeCounty === c }" class="ad-chip">{{ c }} ({{ countyOrderCount(c) }})</button>
+          </div>
+          <div v-if="scopeRegion" class="flex items-center gap-2 flex-wrap" style="margin-top: 8px;">
+            <label class="ad-caption" for="scopeFarm">農場</label>
+            <select id="scopeFarm" v-model="scopeFarm" class="ad-select" style="max-width: 320px;">
+              <option value="">{{ scopeCounty || scopeRegion }}全部農場（{{ scopeFarms.length }}）</option>
+              <option v-for="f in scopeFarms" :key="f" :value="f">{{ f }}</option>
+            </select>
+            <button type="button" @click="setScopeRegion('')" class="ad-btn ad-btn--ghost ad-btn--sm">清除篩選</button>
+          </div>
+        </div>
+
         <!-- Sub-View 1: Orders -->
         <div v-if="dispatchSubTab === 'orders'" class="space-y-6">
         <div class="ad-section__head" style="margin-bottom: 0; flex-wrap: wrap; align-items: center;">
           <div style="min-width: 0;">
             <h2 class="ad-title">派工訂單</h2>
-            <p class="ad-caption" style="margin-top: 2px;">共 {{ orders.length }} 筆</p>
+            <p class="ad-caption" style="margin-top: 2px;">共 {{ scopedOrders.length }} 筆<template v-if="scopeActive">（{{ scopeLabel }}）</template></p>
           </div>
           <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
             <button type="button" @click="showOrderCalc = !showOrderCalc" class="ad-btn" :class="showOrderCalc ? 'ad-btn--secondary' : 'ad-btn--primary'">{{ showOrderCalc ? '收起新增表單' : '新增訂單' }}</button>
@@ -825,7 +847,7 @@
         <div class="ad-section__head" style="margin-bottom: 0; flex-wrap: wrap; align-items: center;">
           <div style="min-width: 0;">
             <h2 class="ad-title">工班</h2>
-            <p class="ad-caption" style="margin-top: 2px;">共 {{ dispatch.teams.length }} 個工班・領班、接送車輛與晴雨天作業地點；農工與訂單都掛在工班底下</p>
+            <p class="ad-caption" style="margin-top: 2px;">共 {{ scopedTeams.length }} 個工班<template v-if="scopeActive">（{{ scopeLabel }}）</template>・領班、接送車輛與晴雨天作業地點；農工與訂單都掛在工班底下</p>
           </div>
           <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
             <button type="button" @click="openTeamModal()" class="ad-btn ad-btn--primary">新增工班</button>
@@ -849,7 +871,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="t in dispatch.teams" :key="t.id">
+                <tr v-for="t in scopedTeams" :key="t.id">
                   <td data-label="代號・狀態">
                     <div class="font-mono font-bold tb-ok text-[13px]">{{ t.id }}</div>
                     <div class="text-[13px] px-1.5 py-0.5 rounded tb-surface-3 tb-text-soft font-semibold mt-1 w-max">{{ teamStatusName(t.status) }}</div>
@@ -877,7 +899,7 @@
                     <button type="button" @click="deleteTeam(t)" class="ad-btn ad-btn--ghost ad-btn--sm" style="color: var(--ad-danger-text);">刪除</button>
                   </td>
                 </tr>
-                <tr v-if="dispatch.teams.length === 0">
+                <tr v-if="scopedTeams.length === 0">
                   <td colspan="8" style="text-align: center; padding: 32px 12px; color: var(--ad-text-3);">還沒有工班，按「新增工班」；要先有工班才能登錄農工</td>
                 </tr>
               </tbody>
@@ -2169,6 +2191,10 @@
         // Order Calculator & Categories
         const showOrderCalc = ref(false);
         const orderCategoryFilter = ref('');
+        // 派工調度的地域／縣市／農場篩選（訂單、農工名冊、工班共用）
+        const scopeRegion = ref('');
+        const scopeCounty = ref('');
+        const scopeFarm = ref('');
         const calcForm = reactive({
           cropId: 'taoyuan_veg',
           area: 5.0,
@@ -2446,7 +2472,7 @@
         // WORKERS CRUD
         // ==========================================
         const filteredWorkers = computed(() => {
-          return workers.value.filter(w => {
+          return scopedWorkers.value.filter(w => {
             const kw = (workerSearch.value || '').toLowerCase().trim();
             const matchKw = !kw || 
               (w.name && w.name.toLowerCase().includes(kw)) ||
@@ -2634,8 +2660,43 @@
         // ORDERS CRUD & CALCULATOR
         // ==========================================
         const filteredOrders = computed(() => {
-          return orders.value.filter(o => !orderCategoryFilter.value || o.dispatchCategory === orderCategoryFilter.value);
+          return scopedOrders.value.filter(o => !orderCategoryFilter.value || o.dispatchCategory === orderCategoryFilter.value);
         });
+
+        // ==========================================
+        // 地域／縣市／農場篩選：以訂單的農場作業地點比對縣市，工班與農工以「有該區訂單的工班」判斷
+        // ==========================================
+        const SCOPE_REGIONS = [
+          { name: '北部', counties: ['基隆市', '台北市', '新北市', '桃園市', '新竹市', '新竹縣'] },
+          { name: '中部', counties: ['苗栗縣', '台中市', '彰化縣', '南投縣', '雲林縣'] },
+          { name: '南部', counties: ['嘉義市', '嘉義縣', '台南市', '高雄市', '屏東縣'] },
+          { name: '東部', counties: ['宜蘭縣', '花蓮縣', '台東縣'] },
+          { name: '離島', counties: ['澎湖縣', '金門縣', '連江縣'] }
+        ];
+        const orderCounty = (o) => {
+          const loc = window.AgriWeather ? window.AgriWeather.matchLocation(o.farmLocation) : null;
+          return loc ? loc.county : '';
+        };
+        const orderFarm = (o) => o.farmName || o.farmerName || '';
+        const scopeActive = computed(() => !!scopeRegion.value);
+        const scopeCounties = computed(() => {
+          const r = SCOPE_REGIONS.find(x => x.name === scopeRegion.value);
+          return r ? r.counties : [];
+        });
+        const scopeLabel = computed(() => [scopeRegion.value, scopeCounty.value, scopeFarm.value].filter(Boolean).join('・'));
+        const inRegionCounty = (o) => {
+          if (!scopeRegion.value) return true;
+          const c = orderCounty(o);
+          return scopeCounty.value ? c === scopeCounty.value : scopeCounties.value.includes(c);
+        };
+        const scopedOrders = computed(() => orders.value.filter(o => inRegionCounty(o) && (!scopeFarm.value || orderFarm(o) === scopeFarm.value)));
+        const scopeFarms = computed(() => [...new Set(orders.value.filter(inRegionCounty).map(orderFarm).filter(Boolean))]);
+        const scopedTeamIds = computed(() => new Set(scopedOrders.value.map(o => o.assignedTeamId).filter(Boolean)));
+        const scopedTeams = computed(() => scopeActive.value ? dispatch.teams.filter(t => scopedTeamIds.value.has(t.id)) : dispatch.teams);
+        const scopedWorkers = computed(() => scopeActive.value ? workers.value.filter(w => scopedTeamIds.value.has(w.teamId)) : workers.value);
+        const regionOrderCount = (r) => orders.value.filter(o => r.counties.includes(orderCounty(o))).length;
+        const countyOrderCount = (c) => orders.value.filter(o => orderCounty(o) === c).length;
+        const setScopeRegion = (name) => { scopeRegion.value = name; scopeCounty.value = ''; scopeFarm.value = ''; };
 
         // 離線試算的建議工班：從實際工班清單挑——類別慣用工班（示範資料 team_a～d，代替後端的技能排序）存在就優先，其次進行中訂單少者，最後依代號
         // （連得上後端時一律用後端試算的 suggestedTeam）
@@ -3688,6 +3749,8 @@
           orderCategoryFilter,
           orderCategories,
           filteredOrders,
+          SCOPE_REGIONS, scopeRegion, scopeCounty, scopeFarm, scopeActive, scopeLabel, scopeCounties, scopeFarms,
+          scopedOrders, scopedTeams, scopedWorkers, regionOrderCount, countyOrderCount, setScopeRegion,
           crops,
           talents,
           brochures,

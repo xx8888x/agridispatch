@@ -9,7 +9,7 @@
     <string name="btn_gps_clockin">📍 GPS 抵達現場數位打卡</string>
     <string name="clockin_success">打卡成功！已紀錄 GPS 座標與時間</string>
     <string name="weather_alert_title">天候避險啟動</string>
-    <string name="weather_alert_msg">遇雨田區泥濘，工班即刻改派屏南冷鏈預冷包裝場！</string>
+    <string name="weather_alert_msg">遇雨田區泥濘，請暫停採收並依現場小工頭通知復工！</string>
 
     <!-- 客戶端身分選擇 (RoleSelectActivity)：一頁只問一個問題；文案規則見 文件/07_系統分析及文件/04_UI設計系統規範.md 第 6 節 -->
     <string name="role_pick_title">你是哪一位？</string>

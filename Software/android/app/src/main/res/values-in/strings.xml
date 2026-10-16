@@ -9,7 +9,7 @@
     <string name="btn_gps_clockin">📍 Presensi Digital GPS di Lapangan</string>
     <string name="clockin_success">Presensi berhasil! Koordinat GPS dan waktu tercatat.</string>
     <string name="weather_alert_title">Mitigasi Cuaca Aktif</string>
-    <string name="weather_alert_msg">Hujan lebat! Alihkan langsung ke Gudang Cold Chain Pingnan!</string>
+    <string name="weather_alert_msg">Hujan lebat! Hentikan panen dan ikuti arahan mandor!</string>
 
     <string name="role_pick_title">Anda siapa?</string>
     <string name="role_pick_back">Kembali</string>

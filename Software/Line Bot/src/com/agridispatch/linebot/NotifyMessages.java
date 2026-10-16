@@ -90,9 +90,8 @@ public final class NotifyMessages {
                         FlexMessageBuilder.notifyPostbackButton(I18n.t(lang, "notify.tomorrow.button"), "a=task")));
             }
             case "weather_worker": {
-                boolean indoor = Boolean.TRUE.equals(p.get("indoor")) || "true".equals(String.valueOf(p.get("indoor")));
                 String title = I18n.t(lang, "notify.weather.title");
-                List<String> lines = List.of(I18n.t(lang, indoor ? "notify.weather.indoor" : "notify.weather.field"),
+                List<String> lines = List.of(I18n.t(lang, "notify.weather.field"),
                         I18n.t(lang, "notify.weather.label") + "：" + s(p, "weather"));
                 return List.of(FlexMessageBuilder.notifyBubble(title, "#1D4ED8", "智農派工（工作者）", title, lines,
                         FlexMessageBuilder.notifyPostbackButton(I18n.t(lang, "notify.weather.button"), "a=weather")));

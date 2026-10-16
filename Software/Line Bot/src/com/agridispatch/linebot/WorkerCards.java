@@ -73,7 +73,7 @@ final class WorkerCards {
         List<Map<String, Object>> items = list(d.get("items"));
         for (Map<String, Object> it : items) {
             lines.add(heading(it, ""));
-            lines.add(I18n.t(lang, Boolean.TRUE.equals(it.get("indoor")) ? "weather.indoor" : "weather.field"));
+            lines.add(I18n.t(lang, "weather.field"));
             lines.add(label(lang, "weather.place.label", orPending(lang, s(it, "place"))));
             if (!s(it, "work").isEmpty()) lines.add(label(lang, "task.work", s(it, "work")));
             String ride = join(s(it, "vehicle"), s(it, "driver").isEmpty() ? "" : I18n.t(lang, "weather.driver") + " " + s(it, "driver"));

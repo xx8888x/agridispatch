@@ -58,10 +58,10 @@ public class FlexMessageBuilder {
     }
 
     /**
-     * 3. 突發暴雨天候避險快訊
+     * 3. 突發暴雨天候警報快訊（田區暫停採收，不再轉移到室內）
      */
-    public static String getWeatherHedgeFlex() {
-        return wrapFlex("突發暴雨避險快訊 - 全體轉移室內冷鏈", 
+    public static String getWeatherAlertFlex() {
+        return wrapFlex("突發暴雨天候警報 - 田區暫停採收", 
                 loadTemplateOrFallback("F-04_zh.json", "{}"));
     }
 

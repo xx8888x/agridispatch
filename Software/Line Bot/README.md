@@ -34,7 +34,7 @@ Software\Line Bot\
 ├── flex_templates/                    # 8 大情境 Flex Message JSON 範本 (相容 LINE Bot Designer)
 │   ├── F-01_zh.json                   # 枋山愛文芒果派工確認單（檔名規則 <功能代碼>_<lang>.json，規格第玖章）
 │   ├── F-03_zh.json                   # 產季早鳥保證工時包 (315 元/hr・鎖定名額)
-│   ├── F-04_zh.json                   # 突發暴雨避險・專車轉移通報
+│   ├── F-04_zh.json                   # 突發暴雨天候警報・田區暫停採收通知
 │   ├── W-01_zh.json                   # 移工每日任務卡 (繁體中文)
 │   ├── W-01_vi.json                   # 移工每日任務卡 (🇻🇳 越南語)
 │   ├── W-01_id.json                   # 移工每日任務卡 (🇮🇩 印尼語)
@@ -102,7 +102,7 @@ Invoke-RestMethod -Uri "http://localhost:5000/health"
    - 📱 擬真智慧型手機外框與對話氣泡
    - 🎛️ 六宮格圖文選單點擊互動
    - 🌐 繁中 / 越語 / 印尼語切換按鈕
-   - ⚡ 突發暴雨避險一鍵推播展示
+   - ⚡ 突發暴雨天候警報一鍵推播展示
 
 ---
 

@@ -9,14 +9,14 @@
     "contents": [
       {
         "type": "text",
-        "text": "天候避險大腦啟動",
+        "text": "天候警報通知",
         "color": "#93C5FD",
         "size": "xs",
         "weight": "bold"
       },
       {
         "type": "text",
-        "text": "突發梅雨警報・專車安全轉移",
+        "text": "突發暴雨警報・田區暫停採收",
         "color": "#FFFFFF",
         "size": "lg",
         "weight": "bold"
@@ -43,8 +43,8 @@
         "layout": "baseline",
         "spacing": "sm",
         "contents": [
-          { "type": "text", "text": "避險成效", "color": "#64748B", "size": "xs", "flex": 2 },
-          { "type": "text", "text": "出勤率 100% (20/20 人在崗) ｜ 零閒置虧損", "color": "#059669", "size": "xs", "weight": "bold", "flex": 5 }
+          { "type": "text", "text": "作業安排", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "暫停田間採收，依現場小工頭通知復工或改期", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
         ]
       },
       {
@@ -52,17 +52,8 @@
         "layout": "baseline",
         "spacing": "sm",
         "contents": [
-          { "type": "text", "text": "轉移據點", "color": "#64748B", "size": "xs", "flex": 2 },
-          { "type": "text", "text": "屏南生鮮冷鏈分級包裝中心 (A/B棟)", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
-        ]
-      },
-      {
-        "type": "box",
-        "layout": "baseline",
-        "spacing": "sm",
-        "contents": [
-          { "type": "text", "text": "作業內容", "color": "#64748B", "size": "xs", "flex": 2 },
-          { "type": "text", "text": "芒果清洗預冷、自動秤重套網袋外銷封箱", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
+          { "type": "text", "text": "接駁專車", "color": "#64748B", "size": "xs", "flex": 2 },
+          { "type": "text", "text": "專車待命，視天候接回工班", "color": "#0F172A", "size": "xs", "weight": "bold", "flex": 5 }
         ]
       }
     ]
@@ -80,7 +71,7 @@
         "height": "sm",
         "action": {
           "type": "uri",
-          "label": "查看避險調度即時戰情",
+          "label": "查看最新派工狀態",
           "uri": "https://agridispatch.tw/web/app.html#admin_tech"
         }
       }

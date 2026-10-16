@@ -9,7 +9,7 @@
     <string name="btn_gps_clockin">📍 Điểm danh GPS tại hiện trường</string>
     <string name="clockin_success">Điểm danh thành công! Đã ghi nhận tọa độ GPS.</string>
     <string name="weather_alert_title">Kích hoạt phòng tránh thời tiết</string>
-    <string name="weather_alert_msg">Mưa lớn! Chuyển ngay đến kho lạnh đóng gói Bình Nam!</string>
+    <string name="weather_alert_msg">Mưa lớn! Tạm dừng thu hoạch và làm theo hướng dẫn của tổ trưởng!</string>
 
     <string name="role_pick_title">Bạn là ai?</string>
     <string name="role_pick_back">Quay lại</string>

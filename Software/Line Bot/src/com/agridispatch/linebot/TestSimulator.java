@@ -213,7 +213,7 @@ public class TestSimulator {
         np.put("orderId", "ORD-2026-001"); np.put("status", "confirmed"); np.put("statusLabel", "已排定");
         np.put("crop", "芒果"); np.put("period", "2026-10-06 ～ 2026-10-08"); np.put("amount", 10584);
         np.put("weather", "暴雨警戒"); np.put("orders", List.of("ORD-2026-001")); np.put("date", "2026-10-03");
-        np.put("place", "枋山"); np.put("indoor", true);
+        np.put("place", "枋山");
         np.put("month", "2026-09"); np.put("netPay", 36850); np.put("payDate", "2026-10-05");
         np.put("leaveId", "LV-2026-001"); np.put("leaveType", "事假"); np.put("leaveTypeCode", "personal"); np.put("note", "請領班安排代班");
         for (String type : NotifyMessages.FARMER_TYPES) {
@@ -225,7 +225,7 @@ public class TestSimulator {
             }
         }
         failed += expect("推播 明日出工（越語）", NotifyMessages.render(W, "tomorrow_task", "vi", np), 0, "Thông báo đi làm ngày mai");
-        failed += expect("推播 天候室內（印尼語）", NotifyMessages.render(W, "weather_worker", "id", np), 0, "dalam ruangan");
+        failed += expect("推播 天候照常（印尼語）", NotifyMessages.render(W, "weather_worker", "id", np), 0, "bekerja seperti biasa");
         failed += expect("推播 定金入帳金額", NotifyMessages.render(F, "deposit_paid", "zh", np), 0, "NT$ 10,584");
         failed += expect("推播 薪資入帳實發金額", NotifyMessages.render(W, "salary_paid", "zh", np), 0, "NT$ 36,850");
         failed += expect("推播 薪資入帳（越語）", NotifyMessages.render(W, "salary_paid", "vi", np), 0, "Thông báo lương đã chuyển");
@@ -300,8 +300,8 @@ public class TestSimulator {
         Map<String, Object> idle = new java.util.HashMap<>(Map.of("kind", "task", "date", "2026-10-13", "workerName", "林小祥",
                 "machinery", true, "items", List.of(),
                 "next", Map.of("startDate", "2026-10-15", "timeSlotLabel", "上午", "place", "雲林縣", "cropName", "蒜頭")));
-        Map<String, Object> wItem = Map.of("orderId", "ORD-2026-005", "timeSlotLabel", "全日", "indoor", true,
-                "place", "屏南冷鏈中心", "work", "分級包裝", "vehicle", "ABC-1234", "driver", "陳司機");
+        Map<String, Object> wItem = Map.of("orderId", "ORD-2026-005", "timeSlotLabel", "全日",
+                "place", "屏東枋山芒果園", "work", "採收分級", "vehicle", "ABC-1234", "driver", "陳司機");
         Map<String, Object> weather = Map.of("kind", "weather", "date", "2026-10-13", "workerName", "林小祥",
                 "weather", "暴雨 24°C", "alertLevel", "danger", "items", List.of(wItem));
         Map<String, Object> salary = new java.util.HashMap<>(Map.of("kind", "salary", "month", "2026-10", "workerName", "林小祥",
@@ -323,8 +323,8 @@ public class TestSimulator {
         failed += expect("W-01 無任務時附下一筆", WorkerCards.task("zh", idle, url), 0, "下一筆：2026-10-15・上午・雲林縣・蒜頭");
         failed += expect("W-01 機耕師標題", WorkerCards.task("zh", idle, url), 0, "今日機耕工單");
         failed += expect("W-01 越語", WorkerCards.task("vi", task, url), 0, "Nhiệm vụ hôm nay");
-        failed += expect("W-03 室內與接駁", List.of(WorkerCards.weather("zh", weather)), 0, "接駁：ABC-1234・司機 陳司機");
-        failed += expect("W-03 改室內（印尼語）", List.of(WorkerCards.weather("id", weather)), 0, "dalam ruangan");
+        failed += expect("W-03 田間與接駁", List.of(WorkerCards.weather("zh", weather)), 0, "接駁：ABC-1234・司機 陳司機");
+        failed += expect("W-03 田間（印尼語）", List.of(WorkerCards.weather("id", weather)), 0, "di ladang");
         String sal = WorkerCards.salary("zh", salary, url);
         failed += expect("W-04 預估實領", List.of(sal), 0, "預估實領：NT$ 30,000");
         failed += expect("W-04 工時", List.of(sal), 0, "本月出勤 64.5 小時（加班 2 小時）");
@@ -372,15 +372,15 @@ public class TestSimulator {
         failed += expect("F-01 沒有訂單", List.of(none), 0, "目前查不到您名下的訂單");
 
         Map<String, Object> wo = new java.util.HashMap<>(Map.of("id", "ORD-2026-001", "cropName", "愛文芒果", "place", "屏東縣枋山鄉",
-                "startDate", "2026-10-13", "endDate", "2026-10-14", "timeSlotLabel", "全日", "workingToday", true, "teamIndoor", true,
+                "startDate", "2026-10-13", "endDate", "2026-10-14", "timeSlotLabel", "全日", "workingToday", true,
                 "region", Map.of("region", "屏東枋山", "condition", "雷陣雨", "temp", "27°C", "rainChance", "80%", "advice", "暫停採收")));
         Map<String, Object> later = Map.of("id", "ORD-2026-013", "cropName", "芒果", "place", "枋山", "startDate", "2026-10-15",
-                "endDate", "2026-10-16", "workingToday", false, "teamIndoor", false);
+                "endDate", "2026-10-16", "workingToday", false);
         String wc = FarmerCards.weather(Map.of("kind", "weather", "date", "2026-10-13", "weather", "暴雨", "alertLevel", "danger",
                 "orders", List.of(wo, later)));
         failed += expectEq("F-04 天候卡 JSON", String.valueOf(validMessages(List.of(wc))), "true");
         failed += expect("F-04 當地天氣", List.of(wc), 0, "當地：雷陣雨・27°C・降雨 80%");
-        failed += expect("F-04 工班改室內", List.of(wc), 0, "今日工班改到室內避險作業");
+        failed += expect("F-04 警戒中今日作業可能調整", List.of(wc), 0, "天候警戒中，今日作業可能調整");
         failed += expect("F-04 近期開工", List.of(wc), 0, "2026-10-15 開工，出發前會依天候再確認");
         failed += expect("F-04 警戒色", List.of(wc), 0, "#B91C1C");
         failed += expect("F-04 沒有訂單", List.of(FarmerCards.weather(Map.of("kind", "weather", "weather", "晴", "alertLevel", "normal",
@@ -395,7 +395,7 @@ public class TestSimulator {
                 IdentityStore.override(F, u, IdentityStore.preset("farmer"));
                 String all = String.join("", LineBotDispatcher.handle(BotEvent.postback(F, u, a)));
                 failed += expectEq("正式模式查不到 " + a + " 不出示範資料", String.valueOf(all.contains("暫時查不到您的資料")
-                        && !all.contains("枋山愛文芒果派工確認單") && !all.contains("突發暴雨避險")), "true");
+                        && !all.contains("枋山愛文芒果派工確認單") && !all.contains("突發暴雨天候警報")), "true");
             }
         } finally {
             F.secret = savedSecret; F.accessToken = savedToken;

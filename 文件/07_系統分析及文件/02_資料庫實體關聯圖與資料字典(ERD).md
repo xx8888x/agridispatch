@@ -37,7 +37,7 @@ erDiagram
         string permitExpiry
         string insuranceStatus
         string currentTask
-        string dispatchStatus "dispatched_field / hedged_indoor / standby"
+        string dispatchStatus "dispatched_field / standby"
         string phone
         string passwordHash "不輸出"
     }
@@ -53,7 +53,7 @@ erDiagram
         string normalTask
         string hedgeLocation
         string hedgeTask
-        string status "active_field / hedged_indoor"
+        string status "active_field / standby"
     }
     crops {
         string id PK
@@ -223,7 +223,7 @@ erDiagram
         string id PK
         string scenarioId
         string scenarioName
-        string isRainMode "Y / N"
+        string isRainMode "已停用，固定 N"
         string currentWeather
         string alertLevel "normal / info / warning / danger"
         string message
@@ -389,7 +389,7 @@ erDiagram
 | `permitExpiry` | String | 聘僱許可效期 | |
 | `insuranceStatus` | String | 納保狀態 | |
 | `currentTask` | String | 目前派遣作業 | |
-| `dispatchStatus` | String | `dispatched_field` / `hedged_indoor` / `standby` | |
+| `dispatchStatus` | String | `dispatched_field` / `standby`（`hedged_indoor` 為舊值，已停用） | |
 | `phone` | String | 電話 | |
 | `passwordHash` | String | 工人登入密碼雜湊 | ✅ 不輸出 |
 
@@ -404,8 +404,8 @@ erDiagram
 | `leader` / `leaderPhone` | String | 帶班師傅與電話 |
 | `vehicle` / `driver` | String | 專車與司機 |
 | `normalLocation` / `normalTask` | String | 晴天作業地點與內容 |
-| `hedgeLocation` / `hedgeTask` | String | 天候避險轉派地點與內容 |
-| `status` | String | `active_field`（田間）/ `hedged_indoor`（已轉派室內） |
+| `hedgeLocation` / `hedgeTask` | String | （已停用）暴雨避險功能已移除，欄位保留相容舊庫，固定「待安排」 |
+| `status` | String | `active_field`（田間）/ `standby`（待命）；`hedged_indoor` 為舊值，已停用 |
 
 ### 2.4 作物基準 `crops`
 | 欄位 | 型別 | 說明 |

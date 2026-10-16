@@ -85,7 +85,7 @@ final class FarmerDispatcher {
                 // 本人施工中與 3 天內開工的訂單 × 天候（後端）；查不到時同 orders
                 Map<String, Object> d = BackendClient.data(CH, userId, "weather", text);
                 if (d != null && !d.isEmpty()) return List.of(FarmerCards.weather(d));
-                return CH.isMock() ? List.of(FlexMessageBuilder.getWeatherHedgeFlex()) : FarmerCards.unavailable();
+                return CH.isMock() ? List.of(FlexMessageBuilder.getWeatherAlertFlex()) : FarmerCards.unavailable();
             }
             case "early_bird":
                 return List.of(FlexMessageBuilder.getEarlyBirdFlex());

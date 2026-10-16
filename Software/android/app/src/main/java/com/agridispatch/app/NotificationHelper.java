@@ -47,7 +47,7 @@ public class NotificationHelper {
                     "採收預警與天候避險",
                     NotificationManager.IMPORTANCE_HIGH
             );
-            weatherChannel.setDescription("突發暴雨冷鏈轉移、產曆採收倒數與防颱搶收");
+            weatherChannel.setDescription("突發暴雨天候警報、產曆採收倒數與防颱搶收");
             weatherChannel.enableLights(true);
             weatherChannel.setLightColor(Color.RED);
             weatherChannel.enableVibration(true);

@@ -49,7 +49,7 @@ final class FarmerCards {
         return FlexMessageBuilder.wrapFlex("我的訂單 " + title, FlexMessageBuilder.simpleBubble("#047857", SUBTITLE, title, lines, buttons));
     }
 
-    /** F-04 天候避險：目前天候＋本人施工中或近期開工的訂單 × 產區天氣、工班是否改室內 */
+    /** F-04 天候避險：目前天候＋本人施工中或近期開工的訂單 × 產區天氣 */
     static String weather(Map<String, Object> d) {
         String level = s(d, "alertLevel");
         boolean alert = "warning".equals(level) || "danger".equals(level);
@@ -65,8 +65,7 @@ final class FarmerCards {
                 if (!s(r, "advice").isEmpty()) lines.add("建議：" + s(r, "advice"));
             }
             boolean today = Boolean.TRUE.equals(o.get("workingToday"));
-            if (Boolean.TRUE.equals(o.get("teamIndoor"))) lines.add("⚠️ 今日工班改到室內避險作業，田間作業暫停；順延安排請洽合作社。");
-            else if (today && alert) lines.add("⚠️ 天候警戒中，今日作業可能調整，合作社會再通知您。");
+            if (today && alert) lines.add("⚠️ 天候警戒中，今日作業可能調整，合作社會再通知您。");
             else if (today) lines.add("今日照常作業。");
             else lines.add(s(o, "startDate") + " 開工，出發前會依天候再確認。");
         }

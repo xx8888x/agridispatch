@@ -2131,6 +2131,14 @@
         roleDesc: (r.farmName || '自助註冊') + ' 農場主' } });
     }
 
+    // 財務傳票（科技後台最高權限）
+    var fvw = /^\/finance\/vouchers(?:\/([^/]+)\/void)?$/.exec(sp.path);
+    if (fvw && method === 'POST') {
+      if ((currentUser() || {}).role !== 'admin_tech') return respond(403, { success: false, error: 'FORBIDDEN' });
+      if (fvw[1]) return finTry(function () { return finVoid(decodeURIComponent(fvw[1]), (body || {}).reason); });
+      return finTry(function () { return finCreate(body || {}); }, 201);
+    }
+
     // 出勤補登／修正、月結算（科技後台）
     var pw = /^\/payroll\/(?:months\/([^/]+)\/(settle|reopen)|attendance(?:\/([^/]+))?)$/.exec(sp.path);
     if (pw && pw[2] === 'settle' && method === 'POST') return payTry(function () { return paySettle(decodeURIComponent(pw[1])); });
@@ -2303,9 +2311,222 @@
     return respond(200, { success: true, mocked: true, message: '示範模式：已模擬送出' });
   }
 
+  // ---------------- 財報與傳票（同後端 FinanceReportService／FinanceVoucherService：訂單 16% 代管費自動入帳 ＋ 傳票） ----------------
+  var FIN_ACCOUNTS = [
+    ['1101', '現金及銀行存款', 'asset', 0], ['1121', '應收帳款（代管費）', 'asset', 1], ['1501', '固定資產（伺服器與設備）', 'asset', 0],
+    ['1509', '累計折舊', 'contra', 0], ['2101', '應付帳款', 'liability', 0], ['2102', '應付所得稅', 'liability', 0],
+    ['2501', '長期借款（青創貸款）', 'liability', 0], ['3101', '股本', 'equity', 0], ['3351', '累積損益（開帳）', 'equity', 0],
+    ['4101', '系統代管與調度服務費', 'revenue', 1], ['4201', '其他營業收入（價差、加值服務）', 'revenue', 0],
+    ['5101', '雲端伺服器與 API', 'cogs', 0], ['5102', '承攬工班品管與保險補貼', 'cogs', 0], ['5103', '現場調度幹部差旅與安全耗材', 'cogs', 0],
+    ['6101', '創辦團隊與後台研發薪資', 'opex', 0], ['6102', '雙語舍監與兼職通譯津貼', 'opex', 0], ['6103', '本土農工與兼職招募推廣費', 'opex', 0],
+    ['6104', '法律顧問、會計與合規規費', 'opex', 0], ['6105', '辦公室租金與水電雜支', 'opex', 0], ['6106', '其他營業費用', 'opex', 0],
+    ['6201', '折舊與攤銷', 'dep', 0], ['7101', '利息費用', 'interest', 0], ['7201', '營業外收入（補助、利息收入）', 'nonop', 0], ['8101', '營利事業所得稅', 'tax', 0]
+  ].map(function (a) { return { code: a[0], name: a[1], kind: a[2], system: !!a[3] }; });
+  var FIN_KEY = 'MOCK /finance/vouchers';
+  function finAcct(code) { for (var i = 0; i < FIN_ACCOUNTS.length; i++) if (FIN_ACCOUNTS[i].code === code) return FIN_ACCOUNTS[i]; return null; }
+  function finOfKind(kind) { return FIN_ACCOUNTS.filter(function (a) { return a.kind === kind; }); }
+  function finLine(no, code, debit, credit, note) { var a = finAcct(code); return { lineNo: no, account: code, accountName: a ? a.name : code, debit: debit, credit: credit, note: note || null }; }
+  function finVoucher(id, date, memo, lines, by) {
+    var total = 0;
+    lines = lines.map(function (l, i) { total += l[1]; return finLine(i + 1, l[0], l[1], l[2], l[3]); });
+    return { id: id, voucherNo: 'V' + date.slice(0, 4) + date.slice(5, 7) + '-' + ('00' + id).slice(-3), date: date, memo: memo, status: 'active', createdBy: by,
+      createdAt: '2026-10-12T09:00:00', voidReason: null, voidedBy: null, voidedAt: null, lines: lines, total: total };
+  }
+  // 示範傳票（同 FinanceVoucherService.seedDemo）；傳票號碼為各月流水：9 月 1～4、10 月 1～2
+  function finSeed() {
+    var list = [
+      finVoucher(1, '2026-09-01', '期初開帳：青創貸款 100 萬、股本 10 萬、開辦費 37 萬', [['1101', 730000, 0], ['3351', 370000, 0, '開辦費（費用化）'], ['2501', 0, 1000000], ['3101', 0, 100000]], 'demo-seed'),
+      finVoucher(2, '2026-09-01', '購置伺服器與辦公設備', [['1501', 280000, 0], ['1101', 0, 280000]], 'demo-seed')
+    ];
+    [['2026-09-30', '2026 年 9 月'], ['2026-10-15', '2026 年 10 月']].forEach(function (m) {
+      var n = list.length;
+      list.push(finVoucher(n + 1, m[0], m[1] + '營業成本與費用（F2 預算月額，示範）', [['5101', 6000, 0], ['5102', 4583, 0], ['5103', 8000, 0], ['6101', 60000, 0], ['6102', 15000, 0],
+        ['6103', 15000, 0], ['6104', 10000, 0], ['6105', 8000, 0], ['1101', 0, 126583, '現金付款']], 'demo-seed'));
+      list.push(finVoucher(n + 2, m[0], m[1] + '折舊', [['6201', 5000, 0], ['1509', 0, 5000]], 'demo-seed'));
+    });
+    list[0].voucherNo = 'V202609-001'; list[1].voucherNo = 'V202609-002'; list[2].voucherNo = 'V202609-003'; list[3].voucherNo = 'V202609-004';
+    list[4].voucherNo = 'V202610-001'; list[5].voucherNo = 'V202610-002';
+    return list;
+  }
+  function finStore() {
+    var e = get(FIN_KEY);
+    if (!e || !e.list) { e = { list: finSeed() }; put(FIN_KEY, e); }
+    return e;
+  }
+  function finAmount(v) {
+    if (v === null || v === undefined || String(v).trim() === '') return 0;
+    var n = Number(String(v).trim());
+    if (!isFinite(n) || n < 0 || Math.floor(n) !== n) throw { s: 400, m: '金額須為 0 以上的整數（元）' };
+    if (n > 1000000000) throw { s: 400, m: '單列金額不可超過 10 億元' };
+    return n;
+  }
+  function finCreate(body) {
+    var b = body || {}, date = String(b.date || ''), memo = String(b.memo == null ? '' : b.memo).trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(new Date(date + 'T00:00:00').getTime())) throw { s: 400, m: '傳票日期格式須為 YYYY-MM-DD' };
+    if (+date.slice(0, 4) < 2000 || +date.slice(0, 4) > 2100) throw { s: 400, m: '傳票日期不合理' };
+    if (!memo) throw { s: 400, m: '請填寫傳票摘要' };
+    if (memo.length > 200) throw { s: 400, m: '摘要最多 200 字' };
+    if (!Array.isArray(b.lines)) throw { s: 400, m: '缺少傳票明細' };
+    var lines = b.lines.map(function (l) {
+      var note = l && l.note != null ? String(l.note).trim() : '';
+      if (note.length > 100) throw { s: 400, m: '明細備註最多 100 字' };
+      return [String(l && l.account), finAmount(l && l.debit), finAmount(l && l.credit), note];
+    });
+    if (lines.length < 2 || lines.length > 30) throw { s: 400, m: '傳票明細須有 2～30 列' };
+    var d = 0, c = 0;
+    lines.forEach(function (l) {
+      var a = finAcct(l[0]);
+      if (!a) throw { s: 400, m: '不存在的會計科目：' + l[0] };
+      if (a.system) throw { s: 400, m: '科目 ' + a.code + ' ' + a.name + ' 由訂單自動入帳，不可用傳票登錄' };
+      if ((l[1] > 0) === (l[2] > 0)) throw { s: 400, m: '每列只能填借方或貸方其中一邊（科目 ' + a.code + '）' };
+      d += l[1]; c += l[2];
+    });
+    if (d !== c) throw { s: 400, m: '借貸不平衡：借方 ' + d + '，貸方 ' + c };
+    var st = finStore(), pre = 'V' + date.slice(0, 4) + date.slice(5, 7) + '-', max = 0;
+    st.list.forEach(function (v) { if (v.voucherNo.indexOf(pre) === 0) max = Math.max(max, parseInt(v.voucherNo.slice(pre.length), 10) || 0); });
+    var id = st.list.reduce(function (m, v) { return Math.max(m, v.id); }, 0) + 1;
+    var v = finVoucher(id, date, memo, lines, (currentUser() || {}).username || 'admin');
+    v.voucherNo = pre + ('00' + (max + 1)).slice(-3);
+    v.createdAt = localStamp(new Date()).replace(' ', 'T');
+    st.list.push(v);
+    put(FIN_KEY, st);
+    return v;
+  }
+  function finVoid(id, reason) {
+    var st = finStore(), v = st.list.filter(function (x) { return String(x.id) === String(id); })[0];
+    if (!v) throw { s: 404, m: '找不到傳票：' + id };
+    if (v.status !== 'active') throw { s: 409, m: '傳票已作廢' };
+    var r = String(reason == null ? '' : reason).trim();
+    if (!r) throw { s: 400, m: '請填寫作廢原因' };
+    if (r.length > 200) throw { s: 400, m: '作廢原因最多 200 字' };
+    v.status = 'void'; v.voidReason = r; v.voidedBy = (currentUser() || {}).username || 'admin'; v.voidedAt = localStamp(new Date()).replace(' ', 'T');
+    put(FIN_KEY, st);
+    return v;
+  }
+  function finTry(fn, okStatus) {
+    try { return respond(okStatus || 200, { success: true, data: fn() }); } catch (e) {
+      if (e && e.s) return respond(e.s, { success: false, error: e.m });
+      throw e;
+    }
+  }
+  function financeReport(period) {
+    var d = new Date(), nowY = d.getFullYear(), nowM = d.getMonth() + 1;
+    if (!period) period = String(nowY);
+    var whole = /^\d{4}$/.test(period), fy, fm, ty, tm;
+    if (whole) { fy = ty = +period; fm = 1; tm = 12; }
+    else if (/^\d{4}-(0[1-9]|1[0-2])$/.test(period)) { fy = ty = +period.slice(0, 4); fm = tm = +period.slice(5); }
+    else return respond(400, { success: false, error: 'period 格式須為 YYYY 或 YYYY-MM' });
+    var ord = function (y, m) { return y * 12 + m; };
+    var ymStr = function (o) { var y = Math.floor((o - 1) / 12), m = o - y * 12; return y + '-' + ('0' + m).slice(-2); };
+    var toO = ord(ty, tm), fromO = ord(fy, fm), asOf = Math.min(toO, ord(nowY, nowM));
+
+    // 總帳：訂單自動分錄 ＋ 生效中的傳票
+    var posts = [], backlog = 0, gmvRows = [];
+    var push = function (y, a, dr, cr) { posts.push({ ym: y, a: a, d: dr, c: cr }); };
+    (listOf(get('GET /orders')) || []).forEach(function (o) {
+      var fee = Math.round((+o.finalAmount || 0) * 0.16), st = o.status;
+      if (st === 'pending' || st === 'confirmed') { backlog += fee; return; }
+      if (st !== 'in_progress' && st !== 'completed') return;
+      var m = /^(\d{4})-(\d{2})/.exec(o.startDate || o.createdAt || '');
+      if (!m) return;
+      var y = ord(+m[1], +m[2]);
+      push(y, '1121', fee, 0); push(y, '4101', 0, fee);
+      if (st === 'completed') { push(y, '1101', fee, 0); push(y, '1121', 0, fee); }
+      gmvRows.push([y, +o.finalAmount || 0]);
+    });
+    var vcount = 0;
+    finStore().list.forEach(function (v) {
+      if (v.status !== 'active') return;
+      vcount++;
+      var y = ord(+v.date.slice(0, 4), +v.date.slice(5, 7));
+      v.lines.forEach(function (l) { push(y, l.account, l.debit, l.credit); });
+    });
+    posts = posts.filter(function (p) { return p.ym <= asOf; });
+    var first = null;
+    posts.forEach(function (p) { if (first === null || p.ym < first) first = p.ym; });
+    var effFrom = first === null ? asOf + 1 : Math.max(fromO, first);
+    var has = first !== null && effFrom <= asOf;
+    if (!has) effFrom = asOf + 1;
+    var gmv = 0;
+    gmvRows.forEach(function (r) { if (r[0] >= effFrom && r[0] <= asOf) gmv += r[1]; });
+
+    var ledger = function (lo, hi) {
+      var net = {};
+      posts.forEach(function (p) { if ((lo === null || p.ym >= lo) && p.ym <= hi) net[p.a] = (net[p.a] || 0) + p.d - p.c; });
+      return {
+        debit: function (c) { return net[c] || 0; },
+        credit: function (c) { return -(net[c] || 0); },
+        netIncome: function () { var s = 0; Object.keys(net).forEach(function (k) { if (k.charAt(0) >= '4') s -= net[k]; }); return s; }
+      };
+    };
+    var opening = ledger(null, effFrom - 1), per = ledger(effFrom, asOf), closing = ledger(null, asOf);
+    var row = function (label, amount, style) { return { label: label, amount: amount, style: style }; };
+
+    var is = [row('營業收入', null, 'head')], rev = 0, cogs = 0, opex = 0;
+    finOfKind('revenue').forEach(function (a) { var v = per.credit(a.code); rev += v; is.push(row(a.name, v, 'line')); });
+    is.push(row('營業收入合計', rev, 'sub'), row('營業成本', null, 'head'));
+    finOfKind('cogs').forEach(function (a) { var v = per.debit(a.code); cogs += v; is.push(row(a.name, v, 'line')); });
+    var gross = rev - cogs;
+    is.push(row('營業成本合計', cogs, 'sub'), row('營業毛利', gross, 'total'), row('營業費用', null, 'head'));
+    finOfKind('opex').forEach(function (a) { var v = per.debit(a.code); opex += v; is.push(row(a.name, v, 'line')); });
+    var ebitda = gross - opex, dep = per.debit('6201'), ebit = ebitda - dep, interest = per.debit('7101'), nonop = per.credit('7201');
+    var preTax = ebit - interest + nonop, tax = per.debit('8101'), net = preTax - tax;
+    is.push(row('營業費用合計', opex, 'sub'), row('EBITDA', ebitda, 'total'), row('折舊與攤銷', -dep, 'line'), row('營業淨利（EBIT）', ebit, 'total'),
+      row('利息費用', -interest, 'line'), row('營業外收入（補助、利息收入）', nonop, 'line'), row('稅前淨利', preTax, 'total'),
+      row('營利事業所得稅', -tax, 'line'), row('稅後淨利', net, 'total'));
+
+    var cash = closing.debit('1101'), ar = closing.debit('1121'), fixedA = closing.debit('1501'), accDep = closing.credit('1509');
+    var assets = cash + ar + fixedA - accDep, ap = closing.credit('2101'), taxPay = closing.credit('2102'), loan = closing.credit('2501');
+    var liab = ap + taxPay + loan, capital = closing.credit('3101'), retained = closing.credit('3351'), cumNet = closing.netIncome();
+    var equity = capital + retained + cumNet;
+    var bs = [row('資產', null, 'head'), row('現金及銀行存款', cash, 'line'), row('應收帳款（代管費）', ar, 'line'), row('固定資產（伺服器與設備）', fixedA, 'line'),
+      row('減：累計折舊', -accDep, 'line'), row('資產總計', assets, 'total'), row('負債', null, 'head'), row('應付帳款', ap, 'line'),
+      row('應付所得稅', taxPay, 'line'), row('長期借款（青創貸款）', loan, 'line'), row('負債合計', liab, 'sub'), row('權益', null, 'head'),
+      row('股本', capital, 'line'), row('累積損益（開帳）', retained, 'line'), row('損益（開帳後累計）', cumNet, 'line'), row('權益合計', equity, 'sub'),
+      row('負債及權益總計', liab + equity, 'total')];
+
+    var depAdd = per.credit('1509'), dAr = per.debit('1121'), dAp = per.credit('2101'), dTax = per.credit('2102');
+    var cfo = net + depAdd - dAr + dAp + dTax, cfi = -per.debit('1501');
+    var dLoan = per.credit('2501'), dCap = per.credit('3101'), dRet = per.credit('3351'), cff = dLoan + dCap + dRet;
+    var netCash = cfo + cfi + cff, openCash = opening.debit('1101');
+    var cf = [row('營業活動', null, 'head'), row('稅後淨利', net, 'line'), row('折舊與攤銷加回', depAdd, 'line'), row('應收帳款（代管費）增加', -dAr, 'line'),
+      row('應付帳款增加', dAp, 'line'), row('應付所得稅增加', dTax, 'line'), row('營業活動淨現金流', cfo, 'sub'), row('投資活動', null, 'head'),
+      row('伺服器與辦公設備購置', cfi, 'line'), row('投資活動淨現金流', cfi, 'sub'), row('融資活動', null, 'head'), row('借款增加（償還為負）', dLoan, 'line'),
+      row('股東出資', dCap, 'line'), row('其他權益項目（含開帳累積損益）', dRet, 'line'), row('融資活動淨現金流', cff, 'sub'), row('現金淨增加額', netCash, 'total'),
+      row('期初現金餘額', openCash, 'line'), row('期末現金餘額', openCash + netCash, 'total')];
+
+    var notes = ['營業收入＝履約中與已完工訂單金額 × 16% 技術代管費（系統依訂單自動入帳）；合作社 84% 為法定人力成本，不計入科技公司收入。已取消與尚未履約的訂單不入帳。',
+      '成本、費用、設備、借款、股本、折舊、所得稅與其他收入，一律依「傳票」登錄的實際收支；系統不自動估列折舊與所得稅，請於結帳時自行開傳票。',
+      '不含政府補助（情境），補助核定入帳時請以傳票登錄於營業外收入【待會計師確認課稅方式】。'];
+    if (vcount === 0) notes.push('尚未登錄任何傳票，成本費用與資產負債皆為 0；請至「傳票」分頁登錄開帳與實際收支。');
+    if (!has) notes.push('所選期間尚無資料，資產負債表為截至 ' + ymStr(asOf) + ' 的累計餘額。');
+    else if (whole && asOf < toO) notes.push('年度尚未結束，累計至 ' + ymStr(asOf) + '。');
+    return respond(200, { success: true, data: {
+      period: period, label: whole ? period + ' 年度' : period, from: has ? ymStr(effFrom) : null, to: first === null ? null : ymStr(asOf),
+      months: has ? asOf - effFrom + 1 : 0,
+      summary: { revenue: rev, grossProfit: gross, ebitda: ebitda, preTaxProfit: preTax, netProfit: net,
+        netMarginPct: rev === 0 ? null : Math.round(net * 1000 / rev) / 10, gmv: gmv, backlogFee: backlog, cash: cash, voucherCount: vcount },
+      incomeStatement: is, balanceSheet: bs, balanceSheetBalanced: assets === liab + equity, cashFlow: cf,
+      cashFlowReconciled: openCash + netCash === cash, notes: notes } });
+  }
+
   function handle(method, p, bodyText) {
     var sp = splitPath(p);
     if (method === 'GET') {
+      if (/^\/finance\//.test(sp.path)) {
+        if ((currentUser() || {}).role !== 'admin_tech') return respond(403, { success: false, error: 'FORBIDDEN' });
+        if (sp.path === '/finance/report') {
+          var fq = /[?&]period=([^&]*)/.exec(sp.query);
+          return financeReport(fq ? decodeURIComponent(fq[1]) : '');
+        }
+        if (sp.path === '/finance/accounts') return respond(200, { success: true, data: FIN_ACCOUNTS });
+        if (sp.path === '/finance/vouchers') {
+          var fm = /[?&]month=([^&]*)/.exec(sp.query), fmv = fm ? decodeURIComponent(fm[1]) : '';
+          var fl = finStore().list.filter(function (v) { return !fmv || v.date.slice(0, 7) === fmv; }).slice();
+          fl.sort(function (a, b) { return String(b.date).localeCompare(String(a.date)) || b.id - a.id; });
+          return respond(200, { success: true, data: fl });
+        }
+      }
       if (sp.path === '/auth/me') {
         var u = currentUser();
         return u ? respond(200, { success: true, user: u, data: u }) : respond(401, { success: false, error: '未登入' });
@@ -2364,98 +2585,9 @@
       }
       var wl = /^\/workers\/([^/]+)\/leaves$/.exec(sp.path);
       if (wl) {
-  // ---------------- 財報（同後端 FinanceReportService：訂單 16% 代管費 ＋ F2 第一年預算按月攤提） ----------------
-  var FIN = {
-    START: [2026, 9], TECH: 0.16, TAX: 0.2, OPEN_CASH: 730000, LOAN: 1000000, CAPITAL: 100000, STARTUP: 370000, CAPEX: 280000, DEP: 60000,
-    COGS: [['雲端伺服器與 API', 72000], ['承攬工班品管與保險補貼', 55000], ['現場調度幹部差旅與安全耗材', 96000]],
-    OPEX: [['創辦團隊與後台研發薪資', 720000], ['雙語舍監與兼職通譯津貼', 180000], ['本土農工與兼職招募推廣費', 180000], ['法律顧問、會計與合規規費', 120000], ['辦公室租金與水電雜支', 96000]]
-  };
-  function financeReport(period) {
-    var d = new Date(), nowY = d.getFullYear(), nowM = d.getMonth() + 1;
-    if (!period) period = String(nowY);
-    var whole = /^\d{4}$/.test(period), fy, fm, ty, tm;
-    if (whole) { fy = ty = +period; fm = 1; tm = 12; }
-    else if (/^\d{4}-(0[1-9]|1[0-2])$/.test(period)) { fy = ty = +period.slice(0, 4); fm = tm = +period.slice(5); whole = false; }
-    else return respond(400, { success: false, error: 'period 格式須為 YYYY 或 YYYY-MM' });
-    var ord = function (y, m) { return y * 12 + m; };
-    var asOfO = Math.min(ord(ty, tm), ord(nowY, nowM)), startO = ord(FIN.START[0], FIN.START[1]);
-    var ymStr = function (o) { var y = Math.floor((o - 1) / 12), m = o - y * 12; return y + '-' + ('0' + m).slice(-2); };
-    var n = asOfO < startO ? 0 : asOfO - startO + 1;
-    var arr = function () { var a = []; for (var i = 0; i < n; i++) a.push(0); return a; };
-    var rev = arr(), col = arr(), gmv = arr(), backlog = 0;
-    (listOf(get('GET /orders')) || []).forEach(function (o) {
-      var fee = Math.round((+o.finalAmount || 0) * FIN.TECH), st = o.status;
-      if (st === 'pending' || st === 'confirmed') { backlog += fee; return; }
-      if (st !== 'in_progress' && st !== 'completed') return;
-      var m = /^(\d{4})-(\d{2})/.exec(o.startDate || o.createdAt || '');
-      if (!m) return;
-      var i = ord(+m[1], +m[2]) - startO;
-      if (i < 0 || i >= n) return;
-      rev[i] += fee; gmv[i] += +o.finalAmount || 0;
-      if (st === 'completed') col[i] += fee;
-    });
-    var accrue = function (annual, k) { return Math.round(annual * k / 12); };
-    var cogs = arr(), opex = arr(), dep = arr(), pretax = arr(), tax = arr();
-    var cl = FIN.COGS.map(arr), ol = FIN.OPEX.map(arr), ytd = 0;
-    var taxOf = function (v) { return v <= 0 ? 0 : Math.round(v * FIN.TAX); };
-    for (var i = 0; i < n; i++) {
-      FIN.COGS.forEach(function (c, k) { cl[k][i] = accrue(c[1], i + 1) - accrue(c[1], i); cogs[i] += cl[k][i]; });
-      FIN.OPEX.forEach(function (c, k) { ol[k][i] = accrue(c[1], i + 1) - accrue(c[1], i); opex[i] += ol[k][i]; });
-      dep[i] = accrue(FIN.DEP, i + 1) - accrue(FIN.DEP, i);
-      pretax[i] = rev[i] - cogs[i] - opex[i] - dep[i];
-      var newYear = i === 0 || ((FIN.START[1] - 1 + i) % 12) === 0, prev = newYear ? 0 : ytd;
-      ytd = prev + pretax[i];
-      tax[i] = taxOf(ytd) - taxOf(prev);
-    }
-    var p0 = n === 0 ? 0 : Math.max(0, Math.max(ord(fy, fm), startO) - startO), p1 = n - 1;
-    var has = n > 0 && p0 <= p1 && ord(fy, fm) <= asOfO;
-    var sum = function (a, from, to, on) { var s = 0; if (!on) return 0; for (var j = from; j <= to && j < a.length; j++) s += a[j]; return s; };
-    var P = function (a) { return sum(a, p0, p1, has); }, C = function (a) { return sum(a, 0, n - 1, n > 0); };
-    var pRev = P(rev), pCogs = P(cogs), pOpex = P(opex), pDep = P(dep), pTax = P(tax);
-    var gross = pRev - pCogs, ebitda = gross - pOpex, ebit = ebitda - pDep, preTax = ebit, net = preTax - pTax;
-    var pAr = pRev - P(col), cfo = net + pDep - pAr, cfi = has && p0 === 0 ? -FIN.CAPEX : 0, netCash = cfo + cfi;
-    var cumNet = 0; for (var j = 0; j < n; j++) cumNet += pretax[j] - tax[j];
-    var cumCapex = n > 0 ? FIN.CAPEX : 0, cumDep = C(dep), ar = C(rev) - C(col);
-    var closing = FIN.OPEN_CASH + cumNet + cumDep - ar - cumCapex, opening = closing - (has ? netCash : 0);
-    var fixedA = cumCapex - cumDep, assets = closing + ar + fixedA, retained = -FIN.STARTUP + cumNet, equity = FIN.CAPITAL + retained;
-    var row = function (label, amount, style) { return { label: label, amount: amount, style: style }; };
-    var is = [row('營業收入', null, 'head'), row('系統代管與調度服務費（16%）', pRev, 'line'), row('營業收入合計', pRev, 'sub'), row('營業成本', null, 'head')];
-    FIN.COGS.forEach(function (c, k) { is.push(row(c[0], P(cl[k]), 'line')); });
-    is.push(row('營業成本合計', pCogs, 'sub'), row('營業毛利', gross, 'total'), row('營業費用', null, 'head'));
-    FIN.OPEX.forEach(function (c, k) { is.push(row(c[0], P(ol[k]), 'line')); });
-    is.push(row('營業費用合計', pOpex, 'sub'), row('EBITDA', ebitda, 'total'), row('折舊與攤銷', -pDep, 'line'), row('營業淨利（EBIT）', ebit, 'total'),
-      row('利息費用', 0, 'line'), row('稅前淨利', preTax, 'total'), row('營利事業所得稅（20%）', -pTax, 'line'), row('稅後淨利', net, 'total'));
-    var cf = [row('營業活動', null, 'head'), row('稅後淨利', net, 'line'), row('折舊與攤銷加回', pDep, 'line'), row('應收帳款（代管費）增加', -pAr, 'line'),
-      row('營業活動淨現金流', cfo, 'sub'), row('投資活動', null, 'head'), row('伺服器與辦公設備購置', cfi, 'line'), row('投資活動淨現金流', cfi, 'sub'),
-      row('融資活動', null, 'head'), row('借款本金償還（F2 第二年起）', 0, 'line'), row('融資活動淨現金流', 0, 'sub'),
-      row('現金淨增加額', netCash, 'total'), row('期初現金餘額', opening, 'line'), row('期末現金餘額', closing, 'total')];
-    var bs = [row('資產', null, 'head'), row('現金', closing, 'line'), row('應收帳款（代管費）', ar, 'line'), row('固定資產淨額', fixedA, 'line'), row('資產總計', assets, 'total'),
-      row('負債', null, 'head'), row('長期借款（青創貸款）', FIN.LOAN, 'line'), row('負債合計', FIN.LOAN, 'sub'),
-      row('權益', null, 'head'), row('股本', FIN.CAPITAL, 'line'), row('累積損益（含開辦費）', retained, 'line'), row('權益合計', equity, 'sub'),
-      row('負債及權益總計', FIN.LOAN + equity, 'total')];
-    var asOfStr = ymStr(asOfO), toStr = ymStr(ord(ty, tm));
-    var notes = ['營業收入＝履約中與已完工訂單金額 × 16% 技術代管費（開立發票）；合作社 84% 為法定人力成本，不計入科技公司收入。已取消與尚未履約的訂單不認列。',
-      '營業成本與費用暫依 F2 v2.4 第一年預算按月攤提（年額 ÷ 12），尚未接會計傳票；折舊、所得稅（20% 簡化）亦為估算【待會計師確認】。',
-      '不含政府補助（情境）、第三層統包價差與加值收入、貸款本金償還（F2 第二年起）。'];
-    if (n === 0) notes.push('尚未到營運起算月（' + ymStr(startO) + '），目前顯示期初資產負債。');
-    else if (!has) notes.push('所選期間尚無資料，資產負債表為截至 ' + asOfStr + ' 的累計餘額。');
-    else if (whole && asOfO < ord(ty, tm)) notes.push('年度尚未結束，累計至 ' + asOfStr + '。');
-    return respond(200, { success: true, data: {
-      period: period, label: whole ? period + ' 年度' : period, from: has ? ymStr(startO + p0) : null, to: n === 0 ? null : asOfStr,
-      months: has ? p1 - p0 + 1 : 0, operationStart: ymStr(startO),
-      summary: { revenue: pRev, grossProfit: gross, ebitda: ebitda, preTaxProfit: preTax, netProfit: net,
-        netMarginPct: pRev === 0 ? null : Math.round(net * 1000 / pRev) / 10, gmv: P(gmv), backlogFee: backlog, cash: closing },
-      incomeStatement: is, balanceSheet: bs, balanceSheetBalanced: assets === FIN.LOAN + equity, cashFlow: cf, notes: notes } });
-  }
-
         var lwid = decodeURIComponent(wl[1]);
         var mine = leaveList().filter(function (x) { return x.workerId === lwid; }).map(leaveView);
         mine.sort(function (a, b) { return String(b.startDate).localeCompare(String(a.startDate)); });
-      if (sp.path === '/finance/report') {
-        if ((currentUser() || {}).role !== 'admin_tech') return respond(403, { success: false, error: 'FORBIDDEN' });
-        var fq = /[?&]period=([^&]*)/.exec(sp.query);
-        return financeReport(fq ? decodeURIComponent(fq[1]) : '');
-      }
         return respond(200, { success: true, data: mine });
       }
       if (sp.path === '/line/config') {

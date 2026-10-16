@@ -60,6 +60,8 @@ public class SeedService {
     private final PasswordHasher passwordHasher;
     private final AgriSettings settings;
     private final com.agridispatch.repository.FinancialLedgerRepository financialLedgerRepository;
+    @org.springframework.beans.factory.annotation.Autowired
+    private FinanceVoucherService financeVoucherService;   // 傳票（財務報表的實際收支）；示範資料才寫入
     private final com.agridispatch.repository.SharedRosterRepository sharedRosterRepository;
     private final com.agridispatch.repository.AttendanceCorrectionRepository attendanceCorrectionRepository;
     private final com.agridispatch.repository.PayrollSlipRepository payrollSlipRepository;
@@ -127,6 +129,7 @@ public class SeedService {
             workerLeaveRepository.deleteAll();            // 參照 workers
             attendanceRepository.deleteAll();
             financialLedgerRepository.deleteAll();
+            financeVoucherService.deleteAll();
             teamRatingRepository.deleteAll();
             legalizeWorkerRepository.deleteAll();
             insuranceRecordRepository.deleteAll();
@@ -161,6 +164,7 @@ public class SeedService {
         if (demoData) {
             seedWeatherStates();
             seedAttendance();
+            financeVoucherService.seedDemo();
             if (settings.isDemoEnabled()) seedRosters();
         } else {
             log.info("[種子] 未寫入示範資料（agri.seed.demo-data 未開啟）；只補齊管理員、作物費率與工時包 DM");

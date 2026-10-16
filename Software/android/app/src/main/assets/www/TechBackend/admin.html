@@ -1497,12 +1497,101 @@
             <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': financeTab === 'incomeStatement' }" :aria-selected="financeTab === 'incomeStatement'" @click="financeTab = 'incomeStatement'">損益表</button>
             <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': financeTab === 'balanceSheet' }" :aria-selected="financeTab === 'balanceSheet'" @click="financeTab = 'balanceSheet'">資產負債表</button>
             <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': financeTab === 'cashFlow' }" :aria-selected="financeTab === 'cashFlow'" @click="financeTab = 'cashFlow'">現金流量表</button>
+            <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': financeTab === 'vouchers' }" :aria-selected="financeTab === 'vouchers'" @click="financeTab = 'vouchers'">傳票（實際收支）<span class="ad-tab__count">{{ finance.summary.voucherCount }}</span></button>
           </div>
 
-          <div class="ad-card" style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- 傳票：後台登錄的實際收支，是成本費用、設備、借款、股本、稅款的來源；不可修改，錯誤以作廢處理 -->
+          <div v-if="financeTab === 'vouchers'" class="ad-card" style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;">
+              <div>
+                <h3 class="ad-heading">傳票<span class="ad-caption" style="margin-left: 8px;">{{ finance.label }}・單位：新台幣元</span></h3>
+                <p class="ad-caption" style="margin-top: 2px;">營業收入由訂單自動入帳；其餘收支請在此開傳票，借貸須平衡。傳票不可修改，登錄錯誤請作廢後重開。</p>
+              </div>
+              <button type="button" class="ad-btn ad-btn--primary" @click="openVoucherForm()">新增傳票</button>
+            </div>
+
+            <form v-if="voucherForm.show" @submit.prevent="saveVoucher()" class="ad-card" style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
+                <div><label class="ad-caption" for="vDate">傳票日期</label><input id="vDate" type="date" v-model="voucherForm.date" class="ad-input" required></div>
+                <div><label class="ad-caption" for="vPreset">常用傳票</label>
+                  <select id="vPreset" v-model="voucherForm.preset" @change="applyVoucherPreset()" class="ad-select">
+                    <option value="">自訂（自行填明細）</option>
+                    <option v-for="p in VOUCHER_PRESETS" :key="p.key" :value="p.key">{{ p.label }}</option>
+                  </select></div>
+                <div v-if="voucherForm.preset"><label class="ad-caption" for="vAmount">金額（元）</label><input id="vAmount" type="number" min="1" step="1" v-model="voucherForm.amount" @input="applyVoucherAmount()" class="ad-input"></div>
+              </div>
+              <div><label class="ad-caption" for="vMemo">摘要</label><input id="vMemo" v-model="voucherForm.memo" maxlength="200" placeholder="例如：2026 年 10 月雲端伺服器費" class="ad-input" required></div>
+              <div class="overflow-x-auto">
+                <table class="ad-table" style="min-width: 560px;">
+                  <thead><tr><th>會計科目</th><th style="text-align: right;">借方</th><th style="text-align: right;">貸方</th><th>備註</th><th></th></tr></thead>
+                  <tbody>
+                    <tr v-for="(l, i) in voucherForm.lines" :key="i">
+                      <td><select v-model="l.account" class="ad-select" :aria-label="'第 ' + (i + 1) + ' 列科目'"><option value="">請選擇科目</option><option v-for="a in voucherAccounts" :key="a.code" :value="a.code">{{ a.code }} {{ a.name }}</option></select></td>
+                      <td><input type="number" min="0" step="1" v-model="l.debit" @input="if (l.debit !== '') l.credit = ''" class="ad-input" style="text-align: right;" :aria-label="'第 ' + (i + 1) + ' 列借方'"></td>
+                      <td><input type="number" min="0" step="1" v-model="l.credit" @input="if (l.credit !== '') l.debit = ''" class="ad-input" style="text-align: right;" :aria-label="'第 ' + (i + 1) + ' 列貸方'"></td>
+                      <td><input v-model="l.note" maxlength="100" class="ad-input" :aria-label="'第 ' + (i + 1) + ' 列備註'"></td>
+                      <td><button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" v-if="voucherForm.lines.length > 2" @click="voucherForm.lines.splice(i, 1)">刪除</button></td>
+                    </tr>
+                    <tr>
+                      <td><button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" @click="voucherForm.lines.push({ account: '', debit: '', credit: '', note: '' })">＋ 新增一列</button></td>
+                      <td class="ad-num" style="text-align: right; font-weight: 700;">{{ money(voucherDebit) }}</td>
+                      <td class="ad-num" style="text-align: right; font-weight: 700;">{{ money(voucherCredit) }}</td>
+                      <td colspan="2"><span class="ad-pill" :class="voucherBalanced ? 'ad-pill--ok' : 'ad-pill--warn'"><span class="ad-pill__dot"></span>{{ voucherBalanced ? '借貸平衡' : '借貸不平衡' }}</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p v-if="voucherForm.error" class="ad-notice">{{ voucherForm.error }}</p>
+              <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                <button type="button" class="ad-btn ad-btn--ghost" @click="voucherForm.show = false">取消</button>
+                <button type="submit" class="ad-btn ad-btn--primary" :disabled="voucherForm.busy || !voucherBalanced">登錄傳票</button>
+              </div>
+            </form>
+
+            <p v-if="periodVouchers.length === 0" class="ad-caption">這個期間沒有傳票。</p>
+            <div v-else class="overflow-x-auto">
+              <table class="ad-table" style="min-width: 640px;">
+                <thead><tr><th>傳票號碼</th><th>日期</th><th>摘要</th><th style="text-align: right;">金額</th><th>狀態</th><th></th></tr></thead>
+                <tbody>
+                  <template v-for="v in periodVouchers" :key="v.id">
+                    <tr :style="{ opacity: v.status === 'void' ? 0.55 : 1 }">
+                      <td class="ad-num font-mono">{{ v.voucherNo }}</td>
+                      <td class="ad-num">{{ v.date }}</td>
+                      <td>{{ v.memo }}</td>
+                      <td class="ad-num" style="text-align: right;">{{ money(v.total) }}</td>
+                      <td><span class="ad-pill" :class="v.status === 'void' ? 'ad-pill--warn' : 'ad-pill--ok'">{{ v.status === 'void' ? '已作廢' : '生效' }}</span></td>
+                      <td style="text-align: right; white-space: nowrap;"><button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" @click="voucherOpen = voucherOpen === v.id ? null : v.id; voidForm.id = null">{{ voucherOpen === v.id ? '收合' : '明細' }}</button></td>
+                    </tr>
+                    <tr v-if="voucherOpen === v.id">
+                      <td colspan="6" style="background: var(--ad-surface-2);">
+                        <table class="ad-table" style="min-width: 480px;">
+                          <thead><tr><th>科目</th><th style="text-align: right;">借方</th><th style="text-align: right;">貸方</th><th>備註</th></tr></thead>
+                          <tbody>
+                            <tr v-for="l in v.lines" :key="l.lineNo"><td>{{ l.account }} {{ l.accountName }}</td><td class="ad-num" style="text-align: right;">{{ l.debit ? money(l.debit) : '' }}</td><td class="ad-num" style="text-align: right;">{{ l.credit ? money(l.credit) : '' }}</td><td>{{ l.note || '' }}</td></tr>
+                          </tbody>
+                        </table>
+                        <p class="ad-caption" style="margin-top: 6px;">登錄：{{ v.createdBy }}・{{ String(v.createdAt).replace('T', ' ').slice(0, 16) }}<template v-if="v.status === 'void'">　作廢：{{ v.voidedBy }}・{{ v.voidReason }}</template></p>
+                        <div v-if="v.status === 'active'" style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                          <template v-if="voidForm.id === v.id">
+                            <input v-model="voidForm.reason" maxlength="200" placeholder="作廢原因（必填）" class="ad-input" style="max-width: 320px;" :aria-label="'作廢 ' + v.voucherNo + ' 的原因'">
+                            <button type="button" class="ad-btn ad-btn--danger ad-btn--sm" @click="voidVoucher(v)" :disabled="!voidForm.reason.trim()">確認作廢</button>
+                            <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" @click="voidForm.id = null">取消</button>
+                          </template>
+                          <button v-else type="button" class="ad-btn ad-btn--ghost ad-btn--sm" @click="voidForm.id = v.id; voidForm.reason = ''">作廢這張傳票</button>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div v-if="financeTab !== 'vouchers'" class="ad-card" style="display: flex; flex-direction: column; gap: 12px;">
             <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;">
               <h3 class="ad-heading">{{ financeTabLabel }}<span class="ad-caption" style="margin-left: 8px;">單位：新台幣元</span></h3>
               <span v-if="financeTab === 'balanceSheet'" class="ad-pill" :class="finance.balanceSheetBalanced ? 'ad-pill--ok' : 'ad-pill--warn'"><span class="ad-pill__dot"></span>{{ finance.balanceSheetBalanced ? '資產 = 負債 + 權益' : '帳不平衡' }}</span>
+              <span v-else-if="financeTab === 'cashFlow'" class="ad-pill" :class="finance.cashFlowReconciled ? 'ad-pill--ok' : 'ad-pill--warn'"><span class="ad-pill__dot"></span>{{ finance.cashFlowReconciled ? '期末現金與資產負債表相符' : '現金不勾稽' }}</span>
               <span v-else class="ad-caption">期間：{{ finance.from ? finance.from + ' ～ ' + finance.to : '尚無資料' }}</span>
             </div>
             <div class="overflow-x-auto">
@@ -3787,15 +3876,6 @@
           showToast('已成功匯出科技公司雙軌營收對帳單 (CSV)！');
         };
 
-        onMounted(() => {
-          fetchWorkers();
-          fetchOrders();
-          fetchCrops();
-          fetchDispatch();
-          fetchTalents();
-          fetchCalendar();
-          fetchOrderCategories();
-          calculateOrderLive();
         // 財報（損益表／資產負債表／現金流量表／淨利）：後端只給 admin_tech，合作社帳號不顯示也不請求
         const financeTab = ref('incomeStatement');
         const finance = ref(null);
@@ -3808,7 +3888,90 @@
           return list;
         })();
         const financePeriod = ref(financePeriods[0].value);
-        const financeTabLabel = computed(() => ({ incomeStatement: '損益表', balanceSheet: '資產負債表', cashFlow: '現金流量表' })[financeTab.value]);
+        const financeTabLabel = computed(() => ({ incomeStatement: '損益表', balanceSheet: '資產負債表', cashFlow: '現金流量表', vouchers: '傳票' })[financeTab.value]);
+
+        // 傳票（實際收支）：成本費用、設備、借款、股本、稅款都從這裡來；不可修改，錯誤作廢後重開
+        const VOUCHER_PRESETS = [
+          { key: 'expense', label: '付現支出（選費用科目）', d: '', c: '1101' },
+          { key: 'expense_credit', label: '賒帳支出（選費用科目）', d: '', c: '2101' },
+          { key: 'pay_ap', label: '支付應付帳款', d: '2101', c: '1101' },
+          { key: 'capex', label: '購置伺服器與設備', d: '1501', c: '1101' },
+          { key: 'dep', label: '提列折舊', d: '6201', c: '1509' },
+          { key: 'tax_accrue', label: '估列所得稅', d: '8101', c: '2102' },
+          { key: 'tax_pay', label: '繳納所得稅', d: '2102', c: '1101' },
+          { key: 'income', label: '其他營業收入入帳', d: '1101', c: '4201' },
+          { key: 'grant', label: '補助款入帳', d: '1101', c: '7201' },
+          { key: 'loan', label: '借款撥入', d: '1101', c: '2501' },
+          { key: 'loan_repay', label: '償還借款本金', d: '2501', c: '1101' },
+          { key: 'capital', label: '股東出資', d: '1101', c: '3101' }
+        ];
+        const voucherAccounts = ref([]);
+        const vouchers = ref([]);
+        const voucherOpen = ref(null);
+        const voidForm = reactive({ id: null, reason: '' });
+        const voucherForm = reactive({ show: false, date: '', memo: '', preset: '', amount: '', lines: [], busy: false, error: '' });
+        const blankLine = () => ({ account: '', debit: '', credit: '', note: '' });
+        const voucherDebit = computed(() => voucherForm.lines.reduce((t, l) => t + (Number(l.debit) || 0), 0));
+        const voucherCredit = computed(() => voucherForm.lines.reduce((t, l) => t + (Number(l.credit) || 0), 0));
+        const voucherBalanced = computed(() => voucherDebit.value > 0 && voucherDebit.value === voucherCredit.value);
+        // 目前選的期間內的傳票（年度＝日期以該年開頭；單月＝以該月開頭）
+        const periodVouchers = computed(() => vouchers.value.filter(v => String(v.date).startsWith(financePeriod.value)));
+        const localDate = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+        const openVoucherForm = () => {
+          Object.assign(voucherForm, { show: true, date: localDate(), memo: '', preset: '', amount: '', error: '', busy: false });
+          voucherForm.lines = [blankLine(), blankLine()];
+        };
+        const applyVoucherAmount = () => {
+          if (!voucherForm.preset || voucherForm.lines.length !== 2) return;
+          const a = voucherForm.amount;
+          voucherForm.lines[0].debit = a; voucherForm.lines[0].credit = '';
+          voucherForm.lines[1].credit = a; voucherForm.lines[1].debit = '';
+        };
+        const applyVoucherPreset = () => {
+          const p = VOUCHER_PRESETS.find(x => x.key === voucherForm.preset);
+          if (!p) return;
+          voucherForm.lines = [{ ...blankLine(), account: p.d }, { ...blankLine(), account: p.c }];
+          if (!voucherForm.memo) voucherForm.memo = p.label.replace(/（.*?）/, '');
+          applyVoucherAmount();
+        };
+        const fetchVouchers = async () => {
+          if (isCoop) return;
+          try {
+            const [va, vs] = await Promise.all([voucherAccounts.value.length ? null : fetch(`${API_BASE}/finance/accounts`), fetch(`${API_BASE}/finance/vouchers`)]);
+            if (va) { const j = plainDeep(await va.json()); if (j.success) voucherAccounts.value = (j.data || []).filter(a => !a.system); }
+            const j2 = plainDeep(await vs.json());
+            if (vs.ok && j2.success) vouchers.value = j2.data || [];
+          } catch (e) { console.error(e); }
+        };
+        const saveVoucher = async () => {
+          voucherForm.error = '';
+          voucherForm.busy = true;
+          try {
+            const body = {
+              date: voucherForm.date, memo: voucherForm.memo,
+              lines: voucherForm.lines.filter(l => l.account || l.debit || l.credit).map(l => ({ account: l.account, debit: Number(l.debit) || 0, credit: Number(l.credit) || 0, note: l.note }))
+            };
+            const res = await fetch(`${API_BASE}/finance/vouchers`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const json = plainDeep(await res.json());
+            if (res.ok && json.success) {
+              voucherForm.show = false;
+              showToast(`已登錄傳票 ${json.data.voucherNo}`);
+              await Promise.all([fetchVouchers(), fetchFinance()]);
+            } else voucherForm.error = json.error || json.message || `HTTP ${res.status}`;
+          } catch (e) { voucherForm.error = '無法連線伺服器，傳票未送出'; }
+          voucherForm.busy = false;
+        };
+        const voidVoucher = async (v) => {
+          try {
+            const res = await fetch(`${API_BASE}/finance/vouchers/${v.id}/void`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: voidForm.reason }) });
+            const json = plainDeep(await res.json());
+            if (res.ok && json.success) {
+              voidForm.id = null;
+              showToast(`已作廢傳票 ${v.voucherNo}`);
+              await Promise.all([fetchVouchers(), fetchFinance()]);
+            } else showToast(json.error || json.message || `作廢失敗（HTTP ${res.status}）`, 'error');
+          } catch (e) { showToast('無法連線伺服器，作廢未送出', 'error'); }
+        };
         const money = (n) => (Number(n) || 0).toLocaleString();
         const fetchFinance = async () => {
           if (isCoop) return;
@@ -3819,7 +3982,7 @@
             else { finance.value = null; financeError.value = res.status === 403 ? '財務報表僅科技後台最高權限可看' : (json.error || json.message || `HTTP ${res.status}`); }
           } catch (e) { finance.value = null; financeError.value = '無法連線伺服器'; }
         };
-        watch(activeTab, (t) => { if (t === 'finance') fetchFinance(); });
+        watch(activeTab, (t) => { if (t === 'finance') { fetchFinance(); fetchVouchers(); } });
         const exportFinanceCSV = () => {
           if (!finance.value) return;
           const f = finance.value;
@@ -3841,6 +4004,15 @@
           showToast('已匯出財務報表 (CSV)');
         };
 
+        onMounted(() => {
+          fetchWorkers();
+          fetchOrders();
+          fetchCrops();
+          fetchDispatch();
+          fetchTalents();
+          fetchCalendar();
+          fetchOrderCategories();
+          calculateOrderLive();
           fetchBrochures();
           fetchLegalize();
           loadWeather();
@@ -3867,6 +4039,9 @@
           techOf,
           settlementLabel,
           exportRevenueCSV,
+          financeTab, finance, financeError, financePeriods, financePeriod, financeTabLabel, money, fetchFinance, exportFinanceCSV,
+          VOUCHER_PRESETS, voucherAccounts, vouchers, voucherOpen, voidForm, voucherForm, voucherDebit, voucherCredit, voucherBalanced, periodVouchers,
+          openVoucherForm, applyVoucherAmount, applyVoucherPreset, saveVoucher, voidVoucher,
 
           workers,
           orders,
@@ -3876,7 +4051,6 @@
           SCOPE_REGIONS, scopeRegion, scopeCounty, scopeFarm, scopeActive, scopeLabel, scopeCounties, scopeFarms,
           scopedOrders, scopedTeams, scopedWorkers, regionOrderCount, countyOrderCount, setScopeRegion,
           crops,
-          financeTab, finance, financeError, financePeriods, financePeriod, financeTabLabel, money, fetchFinance, exportFinanceCSV,
           talents,
           brochures,
           brochureModal,

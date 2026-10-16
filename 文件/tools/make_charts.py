@@ -300,10 +300,244 @@ CHARTS = {
         note="資料來源：F2 財務計畫報表 2（v2.4）第柒章 3 節，年息約 2.145%，6 年 72 期"),
 }
 
+OUT_PITCH = ROOT / "06_簡報與路演Pitch" / "charts"
 
-def render(name, svg, work):
-    OUT.mkdir(parents=True, exist_ok=True)
-    svg_path = OUT / f"{name}.svg"
+
+def build_p03_pain_to_solution():
+    """一頁式提案圖 1：三方結構性痛點 ➔ 雙軌合規與三層人力池 ➔ 平台四大破局效益（1200x330）"""
+    w, h = 1200, 330
+    p = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" font-family="{FONT}">',
+        f'<rect width="{w}" height="{h}" rx="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>',
+        # Top Header Bar
+        '<rect x="0" y="0" width="1200" height="38" rx="10" fill="#0F172A"/>',
+        '<rect x="0" y="20" width="1200" height="18" fill="#0F172A"/>',
+        '<text x="18" y="25" font-size="15" font-weight="700" fill="#FFFFFF">圖 1｜系統化破局邏輯：從「選民與移工三方痛點」到「合作社 ╳ 科技公司雙軌 AI 動態調度」</text>',
+        '<text x="1182" y="25" font-size="12" fill="#94A3B8" text-anchor="end">2026 最低工資基準：月薪 $29,500／時薪 $196（F2 v2.4）</text>',
+
+        # ── Column 1: 痛點診斷 (x=14..374, w=360, y=48..318, h=270) ──
+        '<rect x="14" y="48" width="360" height="270" rx="8" fill="#FFFFFF" stroke="#FCA5A5" stroke-width="1.5"/>',
+        '<rect x="14" y="48" width="360" height="32" rx="8" fill="#DC2626"/>',
+        '<rect x="14" y="68" width="360" height="12" fill="#DC2626"/>',
+        '<text x="194" y="69" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle">① 痛點診斷：農民（選民）、移工與外展困局</text>',
+
+        # Sub-box 1A: 農民（選民）痛點
+        '<rect x="24" y="88" width="340" height="110" rx="6" fill="#FEF2F2" stroke="#FECACA" stroke-width="1"/>',
+        '<text x="32" y="108" font-size="13" font-weight="700" fill="#991B1B">🌾 農場與農民（選民）四大痛點</text>',
+        '<text x="32" y="128" font-size="11.5" fill="#1E293B">• <tspan font-weight="700" fill="#B91C1C">產季被放鳥</tspan>：口頭約工無保障，加價被截工、落果損失慘</text>',
+        '<text x="32" y="147" font-size="11.5" fill="#1E293B">• <tspan font-weight="700" fill="#B91C1C">請黑工重罰</tspan>：冒險聘失聯移工，面臨就服法 <tspan font-weight="700">15～75萬罰鍰</tspan></text>',
+        '<text x="32" y="166" font-size="11.5" fill="#1E293B">• <tspan font-weight="700" fill="#B91C1C">外銷果損退貨</tspan>：臨時工蹭掉果粉破蒂，無發票難過通路稽核</text>',
+        '<text x="32" y="185" font-size="11.5" fill="#1E293B">• <tspan font-weight="700" fill="#B91C1C">梅雨停工損失</tspan>：下雨泥濘停工白付工資，放晴後工人失聯</text>',
+
+        # Sub-box 1B: 移工與外展痛點
+        '<rect x="24" y="204" width="340" height="106" rx="6" fill="#FFF7ED" stroke="#FED7AA" stroke-width="1"/>',
+        '<text x="32" y="224" font-size="13" font-weight="700" fill="#9A3412">👷 移工與傳統外展機構三大困境</text>',
+        '<text x="32" y="244" font-size="11.5" fill="#1E293B">• <tspan font-weight="700" fill="#C2410C">淡季閒置虧損</tspan>：月法定成本 <tspan font-weight="700">$36,312/人</tspan>，雨天或淡季即虧</text>',
+        '<text x="32" y="263" font-size="11.5" fill="#1E293B">• <tspan font-weight="700" fill="#C2410C">語言農藝斷層</tspan>：越/印語不通、不懂留蒂規範，頻遭果農抱怨</text>',
+        '<text x="32" y="282" font-size="11.5" fill="#1E293B">• <tspan font-weight="700" fill="#C2410C">地下牛頭剝削</tspan>：失聯移工遭抽頭、無職保，衍生治安黑數</text>',
+        '<text x="32" y="301" font-size="10.5" fill="#64748B">＊單一雇主制僵化 vs. 農業季節性尖峰需求之結構矛盾</text>',
+
+        # Arrow 1 -> 2
+        '<polygon points="379,175 395,175 395,167 409,183 395,199 395,191 379,191" fill="#059669"/>',
+
+        # ── Column 2: 雙軌架構與三層人力池 (x=414..806, w=392, y=48..318, h=270) ──
+        '<rect x="414" y="48" width="392" height="270" rx="8" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1.5"/>',
+        '<rect x="414" y="48" width="392" height="32" rx="8" fill="#059669"/>',
+        '<rect x="414" y="68" width="392" height="12" fill="#059669"/>',
+        '<text x="610" y="69" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle">② 平台核心：雙軌合規架構 ╳ 三層混合人力池</text>',
+
+        # Dual Entity Boxes (left x=424..580 w=156, gap x=580..640 w=60, right x=640..796 w=156)
+        '<rect x="424" y="88" width="156" height="98" rx="6" fill="#ECFDF5" stroke="#34D399" stroke-width="1.2"/>',
+        '<text x="502" y="107" font-size="12.5" font-weight="700" fill="#065F46" text-anchor="middle">🏛️ 農業勞務合作社</text>',
+        '<text x="502" y="124" font-size="11" font-weight="700" fill="#047857" text-anchor="middle">【法定雇主・合規保護傘】</text>',
+        '<text x="432" y="143" font-size="11" fill="#1E293B">• 申請農業部外展配額</text>',
+        '<text x="432" y="160" font-size="11" fill="#1E293B">• 100% 職保與合法發票</text>',
+        '<text x="432" y="177" font-size="11" fill="#1E293B">• 預收 20% 定金穩金流</text>',
+
+        # Center Link between Coop & Tech (x=580..640, center=610)
+        '<line x1="586" y1="135" x2="634" y2="135" stroke="#059669" stroke-width="2"/>',
+        '<polygon points="630,130 638,135 630,140" fill="#059669"/>',
+        '<polygon points="590,130 582,135 590,140" fill="#059669"/>',
+        '<text x="610" y="123" font-size="10.5" font-weight="700" fill="#065F46" text-anchor="middle">5年協議</text>',
+        '<text x="610" y="152" font-size="10.5" font-weight="700" fill="#065F46" text-anchor="middle">16%代管</text>',
+
+        '<rect x="640" y="88" width="156" height="98" rx="6" fill="#EFF6FF" stroke="#60A5FA" stroke-width="1.2"/>',
+        '<text x="718" y="107" font-size="12.5" font-weight="700" fill="#1E40AF" text-anchor="middle">💻 智農科技公司</text>',
+        '<text x="718" y="124" font-size="11" font-weight="700" fill="#1D4ED8" text-anchor="middle">【AI 調度大腦・營運代管】</text>',
+        '<text x="648" y="143" font-size="11" fill="#1E293B">• 跨產曆與微氣象雷達</text>',
+        '<text x="648" y="160" font-size="11" fill="#1E293B">• LINE 雙帳號免裝 App</text>',
+        '<text x="648" y="177" font-size="11" fill="#1E293B">• 中/越/印三語語音工單</text>',
+
+        # Three-Tier Labor Pool
+        '<rect x="424" y="194" width="372" height="116" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.2"/>',
+        '<text x="610" y="213" font-size="12.5" font-weight="700" fill="#0F172A" text-anchor="middle">⚡ 三層混合人力池（削峰填谷・兼顧穩定度與高毛利）</text>',
+
+        '<rect x="432" y="222" width="114" height="80" rx="5" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1"/>',
+        '<text x="489" y="239" font-size="11.5" font-weight="700" fill="#047857" text-anchor="middle">第一層｜外展移工</text>',
+        '<text x="489" y="256" font-size="10.5" fill="#334155" text-anchor="middle">全職核心 (12➔150人)</text>',
+        '<text x="489" y="272" font-size="10.5" fill="#334155" text-anchor="middle">收費 $315~$325/hr</text>',
+        '<text x="489" y="288" font-size="10" font-weight="700" fill="#059669" text-anchor="middle">師傅1:10＋移工組長</text>',
+
+        '<rect x="553" y="222" width="114" height="80" rx="5" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1"/>',
+        '<text x="610" y="239" font-size="11.5" font-weight="700" fill="#D97706" text-anchor="middle">第二層｜本土兼職</text>',
+        '<text x="610" y="256" font-size="10.5" fill="#334155" text-anchor="middle">中高齡/青年 (時薪)</text>',
+        '<text x="610" y="272" font-size="10.5" fill="#334155" text-anchor="middle">收費 $300~$320/hr</text>',
+        '<text x="610" y="288" font-size="10" font-weight="700" fill="#B45309" text-anchor="middle">出勤才計薪・毛利30%+</text>',
+
+        '<rect x="674" y="222" width="114" height="80" rx="5" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1"/>',
+        '<text x="731" y="239" font-size="11.5" font-weight="700" fill="#1D4ED8" text-anchor="middle">第三層｜統包代耕</text>',
+        '<text x="731" y="256" font-size="10.5" fill="#334155" text-anchor="middle">機耕/無人機 (承攬)</text>',
+        '<text x="731" y="272" font-size="10.5" fill="#334155" text-anchor="middle">自備機具・按面積計</text>',
+        '<text x="731" y="288" font-size="10" font-weight="700" fill="#1E40AF" text-anchor="middle">平台價差 34%~36%</text>',
+
+        # Arrow 2 -> 3
+        '<polygon points="811,175 827,175 827,167 841,183 827,199 827,191 811,191" fill="#1D4ED8"/>',
+
+        # ── Column 3: 四大破局功能與效益 (x=846..1186, w=340, y=48..318, h=270) ──
+        '<rect x="846" y="48" width="340" height="270" rx="8" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1.5"/>',
+        '<rect x="846" y="48" width="340" height="32" rx="8" fill="#1D4ED8"/>',
+        '<rect x="846" y="68" width="340" height="12" fill="#1D4ED8"/>',
+        '<text x="1016" y="69" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle">③ 解決方案：四大系統功能與量化效益</text>',
+
+        # 4 Feature Cards
+        '<rect x="856" y="88" width="320" height="51" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>',
+        '<text x="864" y="107" font-size="12" font-weight="700" fill="#1E3A8A">🛡️ 1. 早鳥儲值工時包（破除產季放鳥）</text>',
+        '<text x="864" y="127" font-size="11" fill="#1E293B">產前付定 20% 鎖定名額，合約明定<tspan font-weight="700" fill="#1D4ED8">遲到免單、放鳥雙倍賠</tspan></text>',
+
+        '<rect x="856" y="144" width="320" height="51" rx="6" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>',
+        '<text x="864" y="163" font-size="12" font-weight="700" fill="#065F46">🌦️ 2. 微氣象雷達 ╳ 冷鏈備援（破除閒置虧損）</text>',
+        '<text x="864" y="183" font-size="11" fill="#1E293B">串接 368 鄉鎮預報，豪雨改派包裝廠，<tspan font-weight="700" fill="#047857">目標稼動率 92%</tspan></text>',
+
+        '<rect x="856" y="200" width="320" height="51" rx="6" fill="#FEF3C7" stroke="#FDE68A" stroke-width="1"/>',
+        '<text x="864" y="219" font-size="12" font-weight="700" fill="#92400E">🗣️ 3. LINE 免裝 App ╳ 三語 SOP（破除果損與落差）</text>',
+        '<text x="864" y="239" font-size="11" fill="#1E293B">農民 LINE 一鍵叫工；越/印語音留蒂 0.5cm，<tspan font-weight="700" fill="#B45309">良率 ≥92%</tspan></text>',
+
+        '<rect x="856" y="256" width="320" height="54" rx="6" fill="#F3E8FF" stroke="#DDD6FE" stroke-width="1"/>',
+        '<text x="864" y="275" font-size="12" font-weight="700" fill="#5B21B6">📑 4. 合法發票 ╳ 職保名冊（破除 75萬罰鍰與退貨）</text>',
+        '<text x="864" y="295" font-size="11" fill="#1E293B">農民 <tspan font-weight="700" fill="#6D28D9">0 罰鍰風險</tspan>，助產銷班通過連鎖超市與日韓外銷稽核</text>',
+
+        '</svg>'
+    ]
+    return "\n".join(p), w, h
+
+
+def build_p03_governance_kpi():
+    """一頁式提案圖 2：民代與縣府四大宣傳政績 ╳ 三年產區服務規模與自給效益（1200x300）"""
+    w, h = 1200, 300
+    p = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" font-family="{FONT}">',
+        f'<rect width="{w}" height="{h}" rx="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>',
+        # Top Header Bar
+        '<rect x="0" y="0" width="1200" height="36" rx="10" fill="#065F46"/>',
+        '<rect x="0" y="20" width="1200" height="16" fill="#065F46"/>',
+        '<text x="18" y="24" font-size="15" font-weight="700" fill="#FFFFFF">圖 2｜施政效益與政績亮點：四大有感問政成果 ╳ 示範基地三年量化推演（F2 v2.4 基本情境 C2）</text>',
+        '<text x="1182" y="24" font-size="12" fill="#A7F3D0" text-anchor="end">民間雙軌自給自足・基本情境不含政府補助</text>',
+
+        # ── Left Panel: 四大宣傳政績 (x=14..646, w=632, y=46..288, h=242) ──
+        '<rect x="14" y="46" width="632" height="242" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.2"/>',
+        '<text x="26" y="68" font-size="13.5" font-weight="700" fill="#0F172A">🏛️ 民意代表與縣市政府可對外發布之「四大宣傳政績」</text>',
+
+        # Card 1 (Top-Left)
+        '<rect x="24" y="78" width="298" height="98" rx="6" fill="#FFFBEB" stroke="#F59E0B" stroke-width="1.5"/>',
+        '<text x="32" y="98" font-size="12.5" font-weight="700" fill="#B45309">🏆 政績 1｜護農增收・選民服務最有感</text>',
+        '<text x="32" y="117" font-size="11.5" font-weight="700" fill="#0F172A">「水果紅了、工人到了！終結放鳥與75萬罰單」</text>',
+        '<text x="32" y="136" font-size="11" fill="#334155">• 解決選區果農產季缺工爛果與挨罰恐懼</text>',
+        '<text x="32" y="154" font-size="11" fill="#334155">• 產銷班座談、農民節與問政報告最響亮民生捷報</text>',
+
+        # Card 2 (Top-Right)
+        '<rect x="334" y="78" width="300" height="98" rx="6" fill="#ECFDF5" stroke="#10B981" stroke-width="1.5"/>',
+        '<text x="342" y="98" font-size="12.5" font-weight="700" fill="#047857">🚀 政績 2｜全台首創・智慧農業數位標竿</text>',
+        '<text x="342" y="117" font-size="11.5" font-weight="700" fill="#0F172A">「AI 微氣象避險 ╳ LINE 三語派工示範縣市」</text>',
+        '<text x="342" y="136" font-size="11" fill="#334155">• 老農免裝 App 用 LINE 叫工、豪雨自動改派冷鏈</text>',
+        '<text x="342" y="154" font-size="11" fill="#334155">• 樹立縣政白皮書數位轉型亮點與中央部會觀摩典範</text>',
+
+        # Card 3 (Bottom-Left)
+        '<rect x="24" y="182" width="298" height="98" rx="6" fill="#EFF6FF" stroke="#3B82F6" stroke-width="1.5"/>',
+        '<text x="32" y="202" font-size="12.5" font-weight="700" fill="#1D4ED8">🌍 政績 3｜外銷升級・接軌國際 ESG 通路</text>',
+        '<text x="32" y="221" font-size="11.5" font-weight="700" fill="#0F172A">「100% 合法發票與職保・打通外銷契作護城河」</text>',
+        '<text x="32" y="240" font-size="11" fill="#334155">• 助芒果、蓮霧、蜜棗、文旦、茶葉過連鎖超市稽核</text>',
+        '<text x="32" y="258" font-size="11" fill="#334155">• 留蒂 0.5cm 護果粉 SOP，守住日韓外銷高單價溢價</text>',
+
+        # Card 4 (Bottom-Right)
+        '<rect x="334" y="182" width="300" height="98" rx="6" fill="#F5F3FF" stroke="#8B5CF6" stroke-width="1.5"/>',
+        '<text x="342" y="202" font-size="12.5" font-weight="700" fill="#6D28D9">🛡️ 政績 4｜零錢坑永續・消弭黑工治安黑數</text>',
+        '<text x="342" y="221" font-size="11.5" font-weight="700" fill="#0F172A">「正規軍取代地下牛頭・公私協力自給自足」</text>',
+        '<text x="342" y="240" font-size="11" fill="#334155">• 活化公有閒置場館（OT），改善失聯移工治安與職災</text>',
+        '<text x="342" y="258" font-size="11" fill="#334155">• 約 7～8 名移工即損益兩平，不留政府長期財政負擔</text>',
+
+        # ── Right Panel: 三年產區服務規模與財務自給推演 (x=658..1186, w=528, y=46..288, h=242) ──
+        '<rect x="658" y="46" width="528" height="242" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.2"/>',
+        '<text x="670" y="68" font-size="13.5" font-weight="700" fill="#0F172A">📊 示範基地三年產區效益推演（單位：萬元｜F2 v2.4）</text>',
+
+        # Legend
+        '<rect x="670" y="78" width="11" height="11" rx="2" fill="#2A78D6"/>',
+        '<text x="685" y="88" font-size="11" fill="#1E293B">產區服務總流水 (GMV)</text>',
+        '<rect x="814" y="78" width="11" height="11" rx="2" fill="#1BAF7A"/>',
+        '<text x="829" y="88" font-size="11" fill="#1E293B">合併營運結果 (科技EBITDA+合作社結餘)</text>',
+        '<rect x="1048" y="78" width="11" height="11" rx="2" fill="#EB6834"/>',
+        '<text x="1063" y="88" font-size="11" fill="#1E293B">合作社結餘</text>',
+
+        # Horizontal Table + Visual Bars for Y1, Y2, Y3
+        # Header Row
+        '<rect x="670" y="96" width="504" height="24" rx="4" fill="#F1F5F9"/>',
+        '<text x="678" y="112" font-size="11" font-weight="700" fill="#334155">期程與人力規模</text>',
+        '<text x="818" y="112" font-size="11" font-weight="700" fill="#334155">合法工時／服務戶</text>',
+        '<text x="936" y="112" font-size="11" font-weight="700" fill="#1E40AF">產區流水 GMV</text>',
+        '<text x="1168" y="112" font-size="11" font-weight="700" fill="#065F46" text-anchor="end">合併結果 (合作社)</text>',
+
+        # Row 1: Year 1
+        '<line x1="670" y1="166" x2="1174" y2="166" stroke="#E2E8F0" stroke-width="1"/>',
+        '<text x="678" y="138" font-size="11.5" font-weight="700" fill="#0F172A">第一年（灘頭堡示範）</text>',
+        '<text x="678" y="156" font-size="10.5" fill="#475569">移工 12 人＋兼職 12 人</text>',
+        '<text x="818" y="138" font-size="11.5" font-weight="700" fill="#0F172A">29,040 小時</text>',
+        '<text x="818" y="156" font-size="10.5" fill="#475569">12 戶｜稼動率 92%</text>',
+        '<rect x="936" y="126" width="12" height="13" rx="2" fill="#2A78D6"/>',
+        '<text x="954" y="138" font-size="12" font-weight="700" fill="#1E40AF">983.3 萬</text>',
+        '<text x="936" y="156" font-size="10.5" fill="#475569">科技營收 183.6 萬</text>',
+        '<text x="1168" y="138" font-size="12" font-weight="700" fill="#047857" text-anchor="end">+49.2 萬</text>',
+        '<text x="1168" y="156" font-size="10.5" fill="#C2410C" text-anchor="end">(合作社 +17.5萬)</text>',
+
+        # Row 2: Year 2
+        '<line x1="670" y1="214" x2="1174" y2="214" stroke="#E2E8F0" stroke-width="1"/>',
+        '<text x="678" y="186" font-size="11.5" font-weight="700" fill="#0F172A">第二年（跨產區輪轉）</text>',
+        '<text x="678" y="204" font-size="10.5" fill="#475569">移工 50 人＋兼職 45 人</text>',
+        '<text x="818" y="186" font-size="11.5" font-weight="700" fill="#0F172A">127,832 小時</text>',
+        '<text x="818" y="204" font-size="10.5" fill="#475569">75 戶｜稼動率 94%</text>',
+        '<rect x="936" y="174" width="26" height="13" rx="2" fill="#2A78D6"/>',
+        '<text x="968" y="186" font-size="12" font-weight="700" fill="#1E40AF">4,533.6 萬</text>',
+        '<text x="936" y="204" font-size="10.5" fill="#475569">科技營收 887.2 萬</text>',
+        '<text x="1168" y="186" font-size="12" font-weight="700" fill="#047857" text-anchor="end">+618.6 萬</text>',
+        '<text x="1168" y="204" font-size="10.5" fill="#C2410C" text-anchor="end">(合作社 +212.4萬)</text>',
+
+        # Row 3: Year 3
+        '<line x1="670" y1="262" x2="1174" y2="262" stroke="#E2E8F0" stroke-width="1"/>',
+        '<text x="678" y="234" font-size="11.5" font-weight="700" fill="#0F172A">第三年（全縣規模化）</text>',
+        '<text x="678" y="252" font-size="10.5" fill="#475569">移工 150 人＋兼職 120 人</text>',
+        '<text x="818" y="234" font-size="11.5" font-weight="700" fill="#0F172A">379,560 小時</text>',
+        '<text x="818" y="252" font-size="10.5" fill="#475569">260 戶｜稼動率 96%</text>',
+        '<rect x="936" y="222" width="46" height="13" rx="2" fill="#2A78D6"/>',
+        '<text x="988" y="234" font-size="12" font-weight="700" fill="#1E40AF">1.39 億</text>',
+        '<text x="936" y="252" font-size="10.5" fill="#475569">科技營收 2,769.7 萬</text>',
+        '<text x="1168" y="234" font-size="12" font-weight="700" fill="#047857" text-anchor="end">+2,608.3 萬</text>',
+        '<text x="1168" y="252" font-size="10.5" fill="#C2410C" text-anchor="end">(合作社 +1,073.6萬)</text>',
+
+        # Bottom Caveat inside Right Panel
+        '<text x="670" y="279" font-size="10" fill="#64748B">⚠️ 揭露：首年合作社損益率 2.3%（利用率 −5% 即轉虧）；C2 定價與配置待市場驗證【待確認】</text>',
+
+        '</svg>'
+    ]
+    return "\n".join(p), w, h
+
+
+PITCH_CHARTS = {
+    "p03_pain_to_solution": build_p03_pain_to_solution,
+    "p03_governance_kpi": build_p03_governance_kpi,
+}
+
+
+def render(name, svg, work, out_dir=OUT, w=W, h=H):
+    out_dir.mkdir(parents=True, exist_ok=True)
+    svg_path = out_dir / f"{name}.svg"
     svg_path.write_text(svg, encoding="utf-8")
     # 瀏覽器 headless 對含中文的路徑會靜默失敗（回傳 0 卻未寫檔），故在 ASCII 暫存資料夾轉檔後再複製回來
     page = work / f"{name}.html"
@@ -314,7 +548,7 @@ def render(name, svg, work):
         if not Path(exe).exists():
             continue
         subprocess.run([exe, "--headless=new", "--disable-gpu", "--hide-scrollbars",
-                        f"--window-size={W},{H}", "--force-device-scale-factor=2",
+                        f"--window-size={w},{h}", "--force-device-scale-factor=2",
                         f"--user-data-dir={work / f'profile{i}'}",   # Edge 與 Chrome 不可共用 profile
                         f"--screenshot={tmp_png}", page.as_uri()],
                        capture_output=True, timeout=120, stdin=subprocess.DEVNULL)
@@ -322,7 +556,7 @@ def render(name, svg, work):
             break
     if not tmp_png.exists():
         raise RuntimeError(f"PNG 轉檔失敗：{name}")
-    png = OUT / f"{name}.png"
+    png = out_dir / f"{name}.png"
     png.write_bytes(tmp_png.read_bytes())
     return png
 
@@ -336,6 +570,12 @@ if __name__ == "__main__":
         for name, build in CHARTS.items():
             if only and name not in only:
                 continue
-            print("OK", render(name, build(), work).name)
+            print("OK", render(name, build(), work, OUT, W, H).name)
+        for name, build in PITCH_CHARTS.items():
+            if only and name not in only:
+                continue
+            svg_str, cw, ch = build()
+            print("OK", render(name, svg_str, work, OUT_PITCH, cw, ch).name)
     finally:
         shutil.rmtree(work, ignore_errors=True)
+

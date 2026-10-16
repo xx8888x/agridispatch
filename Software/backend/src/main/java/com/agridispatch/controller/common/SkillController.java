@@ -18,6 +18,8 @@ import java.util.Map;
  * - GET  /api/skills/teams/{teamId}                  ：工班標籤人數（不列姓名）
  * - GET  /api/evaluations/teams/{teamId}?date=       ：領班查看工班某日班次與評核（該工班領班或 admin）
  * - PUT  /api/evaluations/attendance/{attendanceId}  ：領班評核一班（優／可／需加強）
+ * - GET  /api/evaluations/orders/{orderId}           ：訂單出工名單與農場主評核狀態（訂單農場主或 admin）
+ * - PUT  /api/evaluations/orders/{orderId}/workers/{workerId}：農場主評核某工人在此訂單的表現（優／可／需加強）
  */
 @RestController
 public class SkillController {
@@ -66,6 +68,20 @@ public class SkillController {
             throw ApiException.badRequest("date 格式須為 yyyy-MM-dd");
         }
         return ResponseEntity.ok(Map.of("success", true, "data", evaluationService.teamDay(ctx, teamId, day)));
+    }
+
+    @GetMapping("/api/evaluations/orders/{orderId}")
+    public ResponseEntity<?> orderWorkers(@PathVariable String orderId) {
+        AuthContext ctx = AuthContext.require();
+        return ResponseEntity.ok(Map.of("success", true, "data", evaluationService.orderWorkers(ctx, orderId)));
+    }
+
+    @PutMapping("/api/evaluations/orders/{orderId}/workers/{workerId}")
+    public ResponseEntity<?> rateWorker(@PathVariable String orderId, @PathVariable String workerId,
+                                        @RequestBody Map<String, Object> req) {
+        AuthContext ctx = AuthContext.require();
+        return ResponseEntity.ok(Map.of("success", true, "data",
+                evaluationService.rateWorkerOnOrder(ctx, orderId, workerId, req.get("rating"))));
     }
 
     @PutMapping("/api/evaluations/attendance/{attendanceId}")

@@ -86,6 +86,17 @@ public class Attendance {
     @Column(name = "foreman_rated_at")
     private LocalDateTime foremanRatedAt;
 
+    /** 農場主逐人評核（該訂單下對這位工人的整體表現）：同 foreman_rating 三級；未評核為 null */
+    @Column(name = "farmer_rating", length = 20)
+    private String farmerRating;
+
+    /** 評核者（農場主 ref；admin 代評時為 admin 的 ref） */
+    @Column(name = "farmer_rated_by", length = 32)
+    private String farmerRatedBy;
+
+    @Column(name = "farmer_rated_at")
+    private LocalDateTime farmerRatedAt;
+
     /** 記錄建立時間 */
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -158,6 +169,19 @@ public class Attendance {
     public void setForemanRatedBy(String foremanRatedBy) { this.foremanRatedBy = foremanRatedBy; }
     public LocalDateTime getForemanRatedAt() { return foremanRatedAt; }
     public void setForemanRatedAt(LocalDateTime foremanRatedAt) { this.foremanRatedAt = foremanRatedAt; }
+
+    public String getFarmerRating() { return farmerRating; }
+    public void setFarmerRating(String farmerRating) { this.farmerRating = farmerRating; }
+    public String getFarmerRatedBy() { return farmerRatedBy; }
+    public void setFarmerRatedBy(String farmerRatedBy) { this.farmerRatedBy = farmerRatedBy; }
+    public LocalDateTime getFarmerRatedAt() { return farmerRatedAt; }
+    public void setFarmerRatedAt(LocalDateTime farmerRatedAt) { this.farmerRatedAt = farmerRatedAt; }
+
+    /** 技能標籤採計的評核：領班優先，沒有領班評核才用農場主評核 */
+    public String effectiveRating() { return foremanRating != null ? foremanRating : farmerRating; }
+
+    /** 對應 effectiveRating 的評核時間 */
+    public LocalDateTime effectiveRatedAt() { return foremanRating != null ? foremanRatedAt : farmerRatedAt; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
 

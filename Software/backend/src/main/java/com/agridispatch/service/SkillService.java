@@ -17,7 +17,8 @@ import java.util.*;
  * 熟手：時數 ≥ 80、訂單 ≥ 2、有評價訂單的工班平均 ≥ 4.0（皆未評價亦可）、領班「需加強」≤ 20%
  * 資深熟手：時數 ≥ 240、訂單 ≥ 4、至少 2 張有評價且平均 ≥ 4.3、領班已評核 ≥ 5 班且「優」≥ 50%、「需加強」≤ 20%
  * 暫停（任一，只看最近一次管理員複核之後的資料）：
- *   最近 3 張有評價訂單平均 < 3.0；工班評價標記「需加強訓練」≥ 2 張；最近 5 次領班評核中「需加強」≥ 2 次
+ *   最近 3 張有評價訂單平均 < 3.0；工班評價標記「需加強訓練」≥ 2 張；最近 5 次逐人評核中「需加強」≥ 2 次
+ * 逐人評核＝領班逐班評核；該班沒有領班評核時採農場主對此工人的訂單評核（見 EvaluationService）
  * 標籤只用於派工媒合優先順序，不得作為扣薪或解僱依據【待確認】；規則不使用國籍、性別、年齡。
  */
 @Service
@@ -154,7 +155,7 @@ public class SkillService {
         final Set<String> orders = new LinkedHashSet<>();
         /** 依最近出勤日排序的訂單（暫停規則看最近 3 張） */
         final Map<String, LocalDate> orderLastDay = new HashMap<>();
-        /** 領班評核（由新到舊）：rating 與評核時間 */
+        /** 逐人評核（由新到舊）：領班優先、無領班才用農場主 */
         final List<Attendance> evaluated = new ArrayList<>();
     }
 
@@ -179,7 +180,7 @@ public class SkillService {
             b.hours += a.getActualHours() == null ? 0 : a.getActualHours();
             b.orders.add(o.getId());
             b.orderLastDay.merge(o.getId(), a.getWorkDate(), (x, y) -> x.isAfter(y) ? x : y);
-            if (a.getForemanRating() != null) b.evaluated.add(a);
+            if (a.effectiveRating() != null) b.evaluated.add(a);
         }
 
         Map<String, LocalDateTime> clearedAt = new HashMap<>();
@@ -222,8 +223,8 @@ public class SkillService {
         double avg = ratings.stream().mapToInt(TeamRating::getScore).average().orElse(0);
 
         int evaluated = b.evaluated.size();
-        long excellent = b.evaluated.stream().filter(a -> EvaluationService.EXCELLENT.equals(a.getForemanRating())).count();
-        long needs = b.evaluated.stream().filter(a -> EvaluationService.NEEDS_IMPROVEMENT.equals(a.getForemanRating())).count();
+        long excellent = b.evaluated.stream().filter(a -> EvaluationService.EXCELLENT.equals(a.effectiveRating())).count();
+        long needs = b.evaluated.stream().filter(a -> EvaluationService.NEEDS_IMPROVEMENT.equals(a.effectiveRating())).count();
         double needsRate = evaluated == 0 ? 0 : (double) needs / evaluated;
         double excellentRate = evaluated == 0 ? 0 : (double) excellent / evaluated;
 
@@ -244,11 +245,11 @@ public class SkillService {
         long trainingTags = recentRatings.stream().filter(r -> r.getTags() != null && r.getTags().contains(TRAINING_TAG)).count();
         if (trainingTags >= SUSPEND_TRAINING_TAGS) suspendReasons.add("工班評價 " + trainingTags + " 次標記「需加強訓練」");
         List<Attendance> recentEvals = b.evaluated.stream()
-                .filter(a -> cleared == null || a.getForemanRatedAt() == null || a.getForemanRatedAt().isAfter(cleared))
+                .filter(a -> cleared == null || a.effectiveRatedAt() == null || a.effectiveRatedAt().isAfter(cleared))
                 .sorted(Comparator.comparing(Attendance::getWorkDate).reversed())
                 .limit(5).toList();
-        long needsLast5 = recentEvals.stream().filter(a -> EvaluationService.NEEDS_IMPROVEMENT.equals(a.getForemanRating())).count();
-        if (needsLast5 >= SUSPEND_NEEDS_IN_LAST5) suspendReasons.add("最近 5 次領班評核有 " + needsLast5 + " 次「需加強」");
+        long needsLast5 = recentEvals.stream().filter(a -> EvaluationService.NEEDS_IMPROVEMENT.equals(a.effectiveRating())).count();
+        if (needsLast5 >= SUSPEND_NEEDS_IN_LAST5) suspendReasons.add("最近 5 次評核有 " + needsLast5 + " 次「需加強」");
 
         String level = senior ? "senior" : skilled ? "skilled" : "none";
         boolean suspended = !"none".equals(level) && !suspendReasons.isEmpty();
@@ -266,6 +267,8 @@ public class SkillService {
         s.put("ratedOrders", ratings.size());
         s.put("averageRating", ratings.isEmpty() ? null : round1(avg));
         s.put("evaluatedShifts", evaluated);
+        s.put("foremanEvaluated", b.evaluated.stream().filter(a -> a.getForemanRating() != null).count());
+        s.put("farmerEvaluated", b.evaluated.stream().filter(a -> a.getForemanRating() == null).count());
         s.put("excellentRate", round2(excellentRate));
         s.put("needsImprovementRate", round2(needsRate));
         s.put("next", nextSteps(skilled, b, ratings, avg, evaluated, excellentRate, needsRate));

@@ -1303,6 +1303,42 @@
     return respond(200, { success: true, data: found.shift });
   }
 
+  // ---------------- 農場主逐人評核（依訂單）----------------
+  // 出勤名單取自合法用工證明的錄製資料；評核結果存 state，重新整理後仍在
+  var RATING_LABEL = { excellent: '優', ok: '可', needs_improvement: '需加強' };
+  function orderWorkersFor(orderId) {
+    var key = 'GET /evaluations/orders/' + encodeURIComponent(orderId);
+    var hit = get(key);
+    if (hit) return { key: key, entry: hit };
+    var cert = get('GET /certificates/orders/' + encodeURIComponent(orderId));
+    var list = (cert && cert.b && cert.b.data && cert.b.data.workers) || [];
+    var entry = {
+      s: 200,
+      b: {
+        success: true,
+        data: {
+          orderId: orderId,
+          workers: list.map(function (w) {
+            var done = (w.days || []).filter(function (d) { return d.clockOut; });
+            return { workerId: w.workerId, name: w.name, shifts: done.length, hours: w.hours || 0, ratable: done.length > 0, rating: null, ratingLabel: null };
+          })
+        }
+      }
+    };
+    put(key, entry);
+    return { key: key, entry: entry };
+  }
+  function rateWorkerOnOrder(orderId, workerId, b) {
+    if (!RATING_LABEL[b.rating]) return respond(400, { success: false, error: 'rating 必須為 excellent / ok / needs_improvement' });
+    var v = orderWorkersFor(orderId);
+    var w = v.entry.b.data.workers.filter(function (x) { return x.workerId === workerId && x.ratable; })[0];
+    if (!w) return respond(409, { success: false, error: '這位工人在此訂單沒有已下班簽核的出勤，無法評核' });
+    w.rating = b.rating;
+    w.ratingLabel = RATING_LABEL[b.rating];
+    put(v.key, v.entry);
+    return respond(200, { success: true, data: { orderId: orderId, workerId: workerId, shifts: w.shifts, rating: w.rating, ratingLabel: w.ratingLabel } });
+  }
+
   // ---------------- 技能標籤複核恢復：解除暫停、標籤恢復有效 ----------------
   function restoreSkill(workerId, skillKey, b) {
     var note = b && b.note ? String(b.note).trim() : '';
@@ -2007,6 +2043,9 @@
     if (method === 'PUT' && /^\/evaluations\/attendance\/[^/]+$/.test(sp.path)) return rateShift(decodeURIComponent(seg[2]), body || {});
     if (method === 'PUT' && /^\/matching\/orders\/[^/]+$/.test(sp.path)) return saveCrew(decodeURIComponent(seg[2]), body || {});
     if (method === 'DELETE' && /^\/orders\/[^/]+$/.test(sp.path) && (currentUser() || {}).role === 'farmer') return cancelOrder(decodeURIComponent(seg[1]));
+    if (method === 'PUT' && /^\/evaluations\/orders\/[^/]+\/workers\/[^/]+$/.test(sp.path)) {
+      return rateWorkerOnOrder(decodeURIComponent(seg[2]), decodeURIComponent(seg[4]), body || {});
+    }
     var payBal = /^\/payments\/([^/]+)\/balance$/.exec(sp.path);
     if (method === 'POST' && payBal) return recordBalance(decodeURIComponent(payBal[1]), body || {});
     var payTx = /^\/payments\/transactions\/([^/]+)\/(invoice|void)$/.exec(sp.path);
@@ -2277,3 +2316,5 @@
     }
   };
 })(window);
+      var ow = /^\/evaluations\/orders\/([^/]+)$/.exec(sp.path);
+      if (ow) return respond(200, orderWorkersFor(decodeURIComponent(ow[1])).entry.b);

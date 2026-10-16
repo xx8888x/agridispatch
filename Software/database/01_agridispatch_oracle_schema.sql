@@ -357,6 +357,7 @@ CREATE TABLE workers (
     base_salary         NUMBER(8)     DEFAULT 29500 NOT NULL,
     agri_bonus          NUMBER(8)     DEFAULT 8800 NOT NULL,
     employment_type     VARCHAR2(16 CHAR),   -- 本國工人工作型態：full_time 正職／part_time 兼職／senior 中高齡／casual 臨時打工／student 學生打工
+    home_area           VARCHAR2(40 CHAR),   -- 居住地（縣市＋鄉鎮市區，例：桃園市八德區）：派工媒合依與農場的距離排序
     transport_allowance NUMBER(8)     DEFAULT 2400 NOT NULL,
     arc_number          VARCHAR2(32 CHAR),
     passport_number     VARCHAR2(32 CHAR),
@@ -379,6 +380,7 @@ COMMENT ON COLUMN workers.nationality IS '國籍 (越南, 印尼, 泰國, 本國
 COMMENT ON COLUMN workers.base_salary IS '外展保障基本法定底薪（2026 年最低工資 NT$ 29,500）';
 COMMENT ON COLUMN workers.agri_bonus IS '中央農業部外展就業獎勵 (最高 NT$ 8,800/月)';
 COMMENT ON COLUMN workers.employment_type IS '工作型態 (full_time 正職, part_time 兼職, senior 中高齡, casual 臨時打工, student 學生打工；外籍為 NULL)';
+COMMENT ON COLUMN workers.home_area IS '居住地 (縣市+鄉鎮市區，派工媒合排序用；未登錄為 NULL)';
 COMMENT ON COLUMN workers.transport_allowance IS '高溫與專車交通津貼 (NT$ 2,400/月)';
 
 -- ====================================================================
@@ -404,8 +406,12 @@ CREATE TABLE clock_ins (
     foreman_rating     VARCHAR2(20 CHAR),
     foreman_rated_by   VARCHAR2(32 CHAR),
     foreman_rated_at   TIMESTAMP,
+    farmer_rating      VARCHAR2(20 CHAR),
+    farmer_rated_by    VARCHAR2(32 CHAR),
+    farmer_rated_at    TIMESTAMP,
     created_at         TIMESTAMP      DEFAULT SYSTIMESTAMP,
     CONSTRAINT chk_clock_ins_rating CHECK (foreman_rating IS NULL OR foreman_rating IN ('excellent', 'ok', 'needs_improvement')),
+    CONSTRAINT chk_clock_ins_farmer_rating CHECK (farmer_rating IS NULL OR farmer_rating IN ('excellent', 'ok', 'needs_improvement')),
     CONSTRAINT pk_clock_ins PRIMARY KEY (id),
     CONSTRAINT fk_clock_ins_worker FOREIGN KEY (worker_id) REFERENCES workers(id),
     CONSTRAINT fk_clock_ins_order FOREIGN KEY (order_id) REFERENCES orders(id)
@@ -417,6 +423,8 @@ COMMENT ON TABLE clock_ins IS 'GPS 現場數位打卡紀錄表：工人抵達田
 COMMENT ON COLUMN clock_ins.order_id IS '本次出勤所屬訂單（合法用工證明依此彙整）；舊資料或無法判定時為 NULL';
 COMMENT ON COLUMN clock_ins.foreman_rating IS '領班逐人評核：excellent 優 / ok 可 / needs_improvement 需加強；NULL 為未評核';
 COMMENT ON COLUMN clock_ins.foreman_rated_by IS '評核者工號（同工班領班）或管理員編號';
+COMMENT ON COLUMN clock_ins.farmer_rating IS '農場主逐人評核（依訂單）：excellent 優 / ok 可 / needs_improvement 需加強；技能標籤在無領班評核時採計';
+COMMENT ON COLUMN clock_ins.farmer_rated_by IS '評核者：訂單農場主編號或管理員編號';
 
 -- ====================================================================
 -- 7. 自願登錄人才庫表 (TALENTS)

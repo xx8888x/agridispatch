@@ -129,6 +129,9 @@ erDiagram
         string foremanRating "excellent / ok / needs_improvement"
         string foremanRatedBy "評核者（領班工號或 admin）"
         datetime foremanRatedAt
+        string farmerRating "農場主逐人評核 excellent / ok / needs_improvement"
+        string farmerRatedBy "評核者（農場主 ref 或 admin）"
+        datetime farmerRatedAt
         datetime createdAt
     }
     attendance_corrections {
@@ -473,6 +476,9 @@ erDiagram
 | `foreman_rating` | String(20) | 領班逐人評核：`excellent` 優 / `ok` 可 / `needs_improvement` 需加強；null 表示未評 |
 | `foreman_rated_by` | String(32) | 評核者（同工班領班工號或 admin） |
 | `foreman_rated_at` | LocalDateTime | 評核時間 |
+| `farmer_rating` | String(20) | 農場主逐人評核（依訂單，套用到該工人此訂單所有已下班班次）：同三級；技能標籤採計時領班評核優先，無領班評核才用此欄 |
+| `farmer_rated_by` | String(32) | 評核者（訂單農場主 ref 或 admin） |
+| `farmer_rated_at` | LocalDateTime | 農場主評核時間 |
 | `createdAt` | LocalDateTime | 建立時間（不可更新） |
 
 ### 2.8 人才庫 `talents`

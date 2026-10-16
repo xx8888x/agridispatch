@@ -500,6 +500,22 @@
     </div>
   </div>
 
+  <!-- 評價工人 Modal（PUT /api/evaluations/orders/{orderId}/workers/{workerId}）：優／可／需加強，累計到工人技能標籤 -->
+  <div id="workerRatingModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background: rgba(2, 6, 23, 0.7);">
+    <div class="ad-card w-full" style="max-width: 520px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;" role="dialog" aria-modal="true" aria-labelledby="workerRatingTitle">
+      <div class="ad-card__head" style="margin: 0;">
+        <div>
+          <h3 id="workerRatingTitle" class="ad-title">評價工人</h3>
+          <p id="workerRatingSubtitle" class="ad-caption"></p>
+        </div>
+        <button type="button" onclick="closeWorkerRatingModal()" class="ad-btn ad-btn--ghost ad-btn--icon ad-btn--sm" aria-label="關閉"><i data-lucide="x" class="ad-icon"></i></button>
+      </div>
+      <p class="ad-hint">請依這張訂單中每位工人的整體表現評「優／可／需加強」，會累計到工人的技能標籤，只用於派工媒合優先順序，不作為扣薪或解僱依據。工人下班簽核後才能評，最後出工日後 30 天內可修改；若領班也評了同一班，以領班評核為準。</p>
+      <div id="workerRatingList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      <p id="workerRatingMsg" class="hidden ad-error"></p>
+    </div>
+  </div>
+
   <div id="cancelModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background: rgba(2, 6, 23, 0.7);">
     <div class="ad-card w-full" style="max-width: 448px; display: flex; flex-direction: column; gap: 16px;" role="dialog" aria-modal="true" aria-labelledby="cancelTitle">
       <div class="ad-card__head" style="margin: 0;">
@@ -703,6 +719,81 @@
       }
     }
     document.addEventListener('DOMContentLoaded', loadTeamRatings);
+
+    // ------------------------------------------------------------------
+    // 評價工人：依訂單逐人評「優／可／需加強」；資料存後端 clock_ins，技能標籤在無領班評核時採計
+    // ------------------------------------------------------------------
+    const WORKER_RATING_OPTIONS = [['excellent', '優', ''], ['ok', '可', ''], ['needs_improvement', '需加強', ' ad-seg__btn--danger']];
+    const workerRatingState = { orderId: '' };
+
+    function showWorkerRatingMsg(msg, ok) {
+      const el = document.getElementById('workerRatingMsg');
+      el.textContent = msg;
+      el.classList.toggle('hidden', !msg);
+      el.className = msg ? (ok ? 'ad-hint' : 'ad-error') : 'hidden ad-error';
+    }
+
+    function renderWorkerRatings(workers) {
+      const list = document.getElementById('workerRatingList');
+      if (!workers.length) {
+        list.innerHTML = '<div class="ad-empty"><div class="ad-empty__title">這張訂單還沒有工人的出勤紀錄</div>工人出工並下班簽核後就能評價。</div>';
+        return;
+      }
+      list.innerHTML = workers.map(w => {
+        const buttons = WORKER_RATING_OPTIONS.map(([val, label, extra]) => `
+          <button type="button" data-worker="${escHtml(w.workerId)}" data-rating="${val}" onclick="rateWorker(this)" ${w.ratable ? '' : 'disabled'}
+            class="ad-seg__btn${extra}${w.rating === val ? ' is-active' : ''}" style="padding: 0 14px;" aria-pressed="${w.rating === val}">${label}</button>`).join('');
+        return `<div class="ad-card--inset ad-card" style="padding: 12px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;">
+          <div style="min-width: 0;">
+            <div class="ad-heading" style="font-size: 15px;">${escHtml(w.name)}</div>
+            <div class="ad-caption ad-num">${escHtml(w.shifts)} 班・${escHtml(w.hours)} 小時${w.ratable ? '' : '・尚未下班簽核'}</div>
+            ${w.ratable && !w.rating ? '<div class="ad-caption" style="color: var(--ad-accent-text);">尚未評價</div>' : ''}
+          </div>
+          <div class="ad-seg" role="group" aria-label="評價 ${escHtml(w.name)}">${buttons}</div>
+        </div>`;
+      }).join('');
+    }
+
+    async function openWorkerRatingModal(orderId) {
+      workerRatingState.orderId = orderId;
+      document.getElementById('workerRatingSubtitle').textContent = orderId;
+      document.getElementById('workerRatingList').innerHTML = '<p class="ad-caption">載入中…</p>';
+      showWorkerRatingMsg('');
+      const m = document.getElementById('workerRatingModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+      try {
+        const data = await ratingApi(`/evaluations/orders/${encodeURIComponent(orderId)}`);
+        renderWorkerRatings(data.workers || []);
+      } catch (e) {
+        document.getElementById('workerRatingList').innerHTML = '';
+        showWorkerRatingMsg(`無法載入出工名單：${e.message}`);
+      }
+    }
+
+    function closeWorkerRatingModal() {
+      const m = document.getElementById('workerRatingModal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    async function rateWorker(btn) {
+      btn.disabled = true;
+      showWorkerRatingMsg('');
+      try {
+        await ratingApi(`/evaluations/orders/${encodeURIComponent(workerRatingState.orderId)}/workers/${encodeURIComponent(btn.dataset.worker)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rating: btn.dataset.rating })
+        });
+        const data = await ratingApi(`/evaluations/orders/${encodeURIComponent(workerRatingState.orderId)}`);
+        renderWorkerRatings(data.workers || []);
+        showWorkerRatingMsg('已儲存評價', true);
+      } catch (e) {
+        showWorkerRatingMsg(`評價未儲存：${e.message}`);
+        btn.disabled = false;
+      }
+    }
 
     // 卡片上的工班加保狀態：依後端加退保紀錄即時計算（農場主只看得到人數，看不到缺保名單）
     async function loadTeamInsurance() {
@@ -1822,7 +1913,8 @@
         const compliance = worked
           ? `<a href="farmer-certificate.html?order=${encodeURIComponent(ord.id)}" class="ad-btn ad-btn--ghost ad-btn--sm">合法用工證明</a>
              <a href="expenses.html" class="ad-btn ad-btn--ghost ad-btn--sm">勞務費明細</a>
-             ${teamId ? `<button type="button" id="rateBtn-${id}" data-order="${id}" data-team="${escHtml(teamId)}" data-team-name="${escHtml(teamName)}" onclick="openRatingModal(this.dataset.order, this.dataset.teamName, this.dataset.team)" class="ad-btn ad-btn--ghost ad-btn--sm">評價工班</button>` : ''}`
+             ${teamId ? `<button type="button" id="rateBtn-${id}" data-order="${id}" data-team="${escHtml(teamId)}" data-team-name="${escHtml(teamName)}" onclick="openRatingModal(this.dataset.order, this.dataset.teamName, this.dataset.team)" class="ad-btn ad-btn--ghost ad-btn--sm">評價工班</button>
+               <button type="button" data-order="${id}" onclick="openWorkerRatingModal(this.dataset.order)" class="ad-btn ad-btn--ghost ad-btn--sm">評價工人</button>` : ''}`
           : `<a href="expenses.html" class="ad-btn ad-btn--ghost ad-btn--sm">勞務費明細</a><span class="ad-caption">出工後提供合法用工證明與工班評價</span>`;
 
         return `

@@ -64,8 +64,8 @@
   <main class="flex-1 ad-container w-full" style="max-width: 1280px; padding-block: 24px 40px; display: flex; flex-direction: column; gap: 20px;">
     <div style="min-width: 0;">
       <h1 class="ad-display">技能標籤與複核</h1>
-      <p class="ad-caption" style="margin-top: 6px; max-width: 820px;">依出勤時數、訂單數、工班評價與領班逐人評核自動判定。</p>
-      <details class="ad-details" style="max-width: 820px;"><summary>更多說明</summary><p>被暫停的標籤需由合作社確認原因（面談、補訓）後按「複核恢復」；恢復前的評價不再觸發暫停，但該工人 6 個月內不給「履歷認證」。</p></details>
+      <p class="ad-caption" style="margin-top: 6px; max-width: 820px;">依出勤時數、訂單數、工班評價與逐人評核（領班逐班評核、農場主逐人評價）自動判定。</p>
+      <details class="ad-details" style="max-width: 820px;"><summary>更多說明</summary><p>被暫停的標籤需由合作社確認原因（面談、補訓）後按「複核恢復」；領班與農場主分別在「領班評核」「我的訂單 → 評價工人」打「優／可／需加強」，同一班以領班評核為準；恢復前的評價不再觸發暫停，但該工人 6 個月內不給「履歷認證」。</p></details>
       <p class="ad-caption" style="margin-top: 6px; color: var(--ad-accent-text); max-width: 820px;">【待確認】標籤只用於派工媒合優先順序，不得作為扣薪、解僱或差別待遇依據。</p>
     </div>
     <div id="loadError" class="ad-notice ad-notice--danger" role="alert" hidden></div>
@@ -116,7 +116,9 @@
     }
 
     function cell(s) {
-      const sub = `<div class="ad-caption ad-num">${s.hours}h・${s.orders} 單</div>`;
+      const rated = s.evaluatedShifts || 0;
+      const ratedTxt = rated ? `<div class="ad-caption ad-num" title="領班逐班評核 ${s.foremanEvaluated || 0} 班、農場主評核 ${s.farmerEvaluated || 0} 班（同班以領班為準）">評核 ${rated} 班・優 ${Math.round((s.excellentRate || 0) * 100)}%・需加強 ${Math.round((s.needsImprovementRate || 0) * 100)}%</div>` : '';
+      const sub = `<div class="ad-caption ad-num">${s.hours}h・${s.orders} 單</div>${ratedTxt}`;
       if (s.suspended) return `<span class="ad-pill ad-pill--danger">暫停</span>${sub}`;
       if (s.level === 'senior') return `<span class="ad-pill ad-pill--warn">資深熟手</span>${sub}`;
       if (s.level === 'skilled') return `<span class="ad-pill ad-pill--ok">熟手</span>${sub}`;

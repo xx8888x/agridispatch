@@ -176,6 +176,67 @@ class SkillApiTest extends ApiTestSupport {
     }
 
     @Test
+    void farmerRatesWorkersOnOwnOrder() throws Exception {
+        String farmer = tokenFor("farmer");
+        String foreman = tokenFor("worker_local");
+        // 找出此農場主名下有出工紀錄的訂單
+        String orderId = null;
+        JsonNode workers = null;
+        for (JsonNode o : json(call("GET", "/api/orders", farmer, null)).get("data")) {
+            JsonNode d = json(call("GET", "/api/evaluations/orders/" + o.get("id").asText(), farmer, null)).get("data");
+            if (d.get("workers").size() > 0) { orderId = o.get("id").asText(); workers = d.get("workers"); break; }
+        }
+        assertNotNull(orderId, "農場主應有含出工紀錄的訂單");
+        String workerId = workers.get(0).get("workerId").asText();
+        String url = "/api/evaluations/orders/" + orderId + "/workers/" + workerId;
+
+        assertEquals(400, status("PUT", url, farmer, Map.of("rating", "great")));
+        assertEquals(403, status("PUT", url, foreman, Map.of("rating", "ok")), "領班走逐班評核，不走訂單評核");
+        assertEquals(401, status("PUT", url, null, Map.of("rating", "ok")));
+        assertEquals(409, status("PUT", "/api/evaluations/orders/" + orderId + "/workers/W999", farmer, Map.of("rating", "ok")), "沒出工的人不能評");
+
+        assertEquals(200, status("GET", "/api/evaluations/orders/" + orderId, admin, null));
+        // 超過 30 天的班次農場主不可改（409），admin 可；種子日期隨今天推移，兩種結果都合法
+        MvcResult res = call("PUT", url, farmer, Map.of("rating", "excellent"));
+        if (res.getResponse().getStatus() == 200) {
+            JsonNode d = json(call("GET", "/api/evaluations/orders/" + orderId, farmer, null)).get("data");
+            for (JsonNode w : d.get("workers")) {
+                if (workerId.equals(w.get("workerId").asText())) assertEquals("優", w.get("ratingLabel").asText());
+            }
+        } else {
+            assertEquals(409, res.getResponse().getStatus());
+        }
+        assertEquals(200, status("PUT", url, admin, Map.of("rating", "ok")));
+    }
+
+    @Test
+    void farmerRatingFeedsSkillOnlyWithoutForemanRating() throws Exception {
+        // W010 在 ORD-2026-013 有出勤：農場主評「需加強」→ 沒有領班評核的班次改採此評核
+        Attendance bare = new Attendance("W013", LocalDate.of(2026, 10, 1).atTime(7, 0), "測試", 1.0);
+        bare.completeShift(LocalDate.of(2026, 10, 1).atTime(15, 0), "測試領班");
+        bare.setOrderId("ORD-2026-002");
+        bare.setFarmerRating("needs_improvement");
+        bare.setFarmerRatedBy("F001");
+        bare.setFarmerRatedAt(LocalDateTime.now());
+        Attendance both = new Attendance("W013", LocalDate.of(2026, 10, 2).atTime(7, 0), "測試", 1.0);
+        both.completeShift(LocalDate.of(2026, 10, 2).atTime(15, 0), "測試領班");
+        both.setOrderId("ORD-2026-002");
+        both.setForemanRating("excellent");
+        both.setForemanRatedBy("W006");
+        both.setForemanRatedAt(LocalDateTime.now());
+        both.setFarmerRating("needs_improvement");
+        both.setFarmerRatedAt(LocalDateTime.now());
+        attendanceRepository.saveAll(List.of(bare, both));
+
+        JsonNode s = harvest("W013");
+        assertEquals(2, s.get("evaluatedShifts").asInt());
+        assertEquals(1, s.get("foremanEvaluated").asInt());
+        assertEquals(1, s.get("farmerEvaluated").asInt());
+        assertEquals(0.5, s.get("needsImprovementRate").asDouble(), 0.001, "領班優先：兩班中只有農場主單獨評的那班算需加強");
+        assertEquals(0.5, s.get("excellentRate").asDouble(), 0.001);
+    }
+
+    @Test
     void skillVisibility() throws Exception {
         String farmer = tokenFor("farmer");
         assertEquals(403, status("GET", "/api/skills/workers/W011", farmer, null));

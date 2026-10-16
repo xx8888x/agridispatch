@@ -520,9 +520,77 @@ def build_p03_governance_kpi():
         '<text x="936" y="252" font-size="10.5" fill="#475569">科技營收 2,769.7 萬</text>',
         '<text x="1168" y="234" font-size="12" font-weight="700" fill="#047857" text-anchor="end">+2,608.3 萬</text>',
         '<text x="1168" y="252" font-size="10.5" fill="#C2410C" text-anchor="end">(合作社 +1,073.6萬)</text>',
-
-        # Bottom Caveat inside Right Panel
         '<text x="670" y="279" font-size="10" fill="#64748B">⚠️ 揭露：首年合作社損益率 2.3%（利用率 −5% 即轉虧）；C2 定價與配置待市場驗證【待確認】</text>',
+        '</svg>'
+    ]
+    return "\n".join(p), w, h
+
+
+def build_p03_summary_banner():
+    """簡報用簡化全景橫幅：四大核心步驟（痛點 ➔ 解方 ➔ 支持 ➔ 政績），大字體高清晰（1200x200）"""
+    w, h = 1200, 200
+    p = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" font-family="{FONT}">',
+        f'<rect width="{w}" height="{h}" rx="8" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.2"/>',
+        # Top ribbon
+        '<rect x="0" y="0" width="1200" height="28" rx="8" fill="#0F172A"/>',
+        '<rect x="0" y="16" width="1200" height="12" fill="#0F172A"/>',
+        '<text x="18" y="19" font-size="13" font-weight="700" fill="#FFFFFF">智農派工 (AgriDispatch) ╳ 縣市政府・民意代表 3 分鐘公私協力全景速覽</text>',
+        '<text x="1182" y="19" font-size="11.5" fill="#94A3B8" text-anchor="end">合作社法定雇主 ╳ 科技公司AI調度</text>',
+
+        # 4 Cards side by side (w=265 each: c1=16..281, c2=317..582, c3=618..883, c4=919..1184)
+        # Card 1: 痛點 (x=16..281)
+        '<rect x="16" y="38" width="265" height="150" rx="6" fill="#FEF2F2" stroke="#FCA5A5" stroke-width="1.2"/>',
+        '<rect x="16" y="38" width="265" height="30" rx="6" fill="#DC2626"/>',
+        '<rect x="16" y="56" width="265" height="12" fill="#DC2626"/>',
+        '<text x="148" y="59" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">① 選民（農民）痛點</text>',
+        '<text x="26" y="92" font-size="12.5" font-weight="700" fill="#991B1B">🚨 產季缺工・私人工頭放鳥</text>',
+        '<text x="26" y="112" font-size="11.5" fill="#334155">熟果來不及採收，落果損失慘重</text>',
+        '<text x="26" y="137" font-size="12.5" font-weight="700" fill="#991B1B">⚖️ 冒險聘黑工・重罰75萬</text>',
+        '<text x="26" y="157" font-size="11.5" fill="#334155">面臨《就服法》罰鍰，提心吊膽</text>',
+        '<text x="26" y="177" font-size="10.5" fill="#64748B">傳統外展淡季閒置，每人月成本3.6萬</text>',
+
+        # Arrow 1->2
+        '<polygon points="289,113 303,113 303,106 313,120 303,134 303,127 289,127" fill="#059669"/>',
+
+        # Card 2: 解方 (x=317..582)
+        '<rect x="317" y="38" width="265" height="150" rx="6" fill="#ECFDF5" stroke="#6EE7B7" stroke-width="1.2"/>',
+        '<rect x="317" y="38" width="265" height="30" rx="6" fill="#059669"/>',
+        '<rect x="317" y="56" width="265" height="12" fill="#059669"/>',
+        '<text x="449" y="59" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">② 平台核心解方</text>',
+        '<text x="327" y="92" font-size="12.5" font-weight="700" fill="#065F46">🛡️ 早鳥保證出工・放鳥雙倍賠</text>',
+        '<text x="327" y="112" font-size="11.5" fill="#334155">產前付定 20% 鎖名額，合約保證</text>',
+        '<text x="327" y="137" font-size="12.5" font-weight="700" fill="#065F46">📱 LINE免裝App ╳ 三語語音SOP</text>',
+        '<text x="327" y="157" font-size="11.5" fill="#334155">移工聽懂留蒂0.5cm，外銷良率≥92%</text>',
+        '<text x="327" y="177" font-size="10.5" fill="#047857">微氣象雷達 ╳ 下雨自動改派冷鏈分級</text>',
+
+        # Arrow 2->3
+        '<polygon points="590,113 604,113 604,106 614,120 604,134 604,127 590,127" fill="#1D4ED8"/>',
+
+        # Card 3: 支持 (x=618..883)
+        '<rect x="618" y="38" width="265" height="150" rx="6" fill="#EFF6FF" stroke="#93C5FD" stroke-width="1.2"/>',
+        '<rect x="618" y="38" width="265" height="30" rx="6" fill="#1D4ED8"/>',
+        '<rect x="618" y="56" width="265" height="12" fill="#1D4ED8"/>',
+        '<text x="750" y="59" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">③ 公私協力支持模式</text>',
+        '<text x="628" y="92" font-size="12.5" font-weight="700" fill="#1E40AF">🏛️ 方案A：行政協作（零預算）</text>',
+        '<text x="628" y="112" font-size="11.5" fill="#334155">議會提案示範區，縣府輔導外展資格</text>',
+        '<text x="628" y="137" font-size="12.5" font-weight="700" fill="#1E40AF">💰 方案B：採購／地方SBIR補助</text>',
+        '<text x="628" y="157" font-size="11.5" fill="#334155">比照農機補助，補貼農民工時費用</text>',
+        '<text x="628" y="177" font-size="10.5" fill="#1D4ED8">方案C：公辦民營OT活化閒置公產宿舍</text>',
+
+        # Arrow 3->4
+        '<polygon points="891,113 905,113 905,106 915,120 905,134 905,127 891,127" fill="#7C3AED"/>',
+
+        # Card 4: 政績 (x=919..1184)
+        '<rect x="919" y="38" width="265" height="150" rx="6" fill="#FAF5FF" stroke="#C4B5FD" stroke-width="1.2"/>',
+        '<rect x="919" y="38" width="265" height="30" rx="6" fill="#7C3AED"/>',
+        '<rect x="919" y="56" width="265" height="12" fill="#7C3AED"/>',
+        '<text x="1051" y="59" font-size="13.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">④ 四大施政宣傳政績</text>',
+        '<text x="929" y="92" font-size="12.5" font-weight="700" fill="#5B21B6">🏆 護農鐵票：終結放鳥與罰單</text>',
+        '<text x="929" y="112" font-size="11.5" fill="#334155">「水果紅了工人到了」問政最響亮</text>',
+        '<text x="929" y="137" font-size="12.5" font-weight="700" fill="#5B21B6">🚀 全台首創智慧外展示範縣市</text>',
+        '<text x="929" y="157" font-size="11.5" fill="#334155">100%發票與職保，助攻外銷ESG</text>',
+        '<text x="929" y="177" font-size="10.5" fill="#6D28D9">民間自負盈虧，不留政府財政錢坑</text>',
 
         '</svg>'
     ]
@@ -530,6 +598,7 @@ def build_p03_governance_kpi():
 
 
 PITCH_CHARTS = {
+    "p03_summary_banner": build_p03_summary_banner,
     "p03_pain_to_solution": build_p03_pain_to_solution,
     "p03_governance_kpi": build_p03_governance_kpi,
 }

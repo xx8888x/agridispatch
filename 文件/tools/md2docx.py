@@ -163,7 +163,28 @@ def convert(md_path: Path):
             table = doc.add_table(rows=1, cols=len(header))
             table.style = "Table Grid"
             table.alignment = WD_TABLE_ALIGNMENT.CENTER
-            col_widths_cm = [2.65, 6.75, 6.75, 3.15] if (one_page and len(header) == 4) else None
+            if one_page:
+                if len(header) == 2:
+                    col_widths_cm = [9.4, 9.4]
+                    hdr_size = 9.5
+                    cell_size = 9.0
+                    cell_line_pt = 11.5
+                elif len(header) == 4:
+                    col_widths_cm = [2.65, 6.75, 6.75, 3.15]
+                    hdr_size = 7.2
+                    cell_size = 6.8
+                    cell_line_pt = 8.6
+                else:
+                    col_widths_cm = None
+                    hdr_size = 8.0
+                    cell_size = 7.5
+                    cell_line_pt = 9.5
+            else:
+                col_widths_cm = None
+                hdr_size = 10
+                cell_size = 10
+                cell_line_pt = None
+
             if one_page and col_widths_cm:
                 table.autofit = False
                 tblPr = table._tbl.tblPr
@@ -178,40 +199,49 @@ def convert(md_path: Path):
                 cell.paragraphs[0].text = ""
                 if one_page:
                     set_cell_shading(cell, "0F172A")
-                    set_cell_margins(cell, top=14, bottom=14, left=45, right=45)
-                    tighten_p(cell.paragraphs[0], 0, 0, 9.0)
-                    add_inline(cell.paragraphs[0], h, size=7.2, bold=True)
+                    set_cell_margins(cell, top=18, bottom=18, left=50, right=50)
+                    tighten_p(cell.paragraphs[0], 0, 0, cell_line_pt)
+                    add_inline(cell.paragraphs[0], h, size=hdr_size, bold=True)
                     for run in cell.paragraphs[0].runs:
                         run.font.color.rgb = RGBColor.from_string("FFFFFF")
                     if col_widths_cm:
                         set_cell_width_cm(cell, col_widths_cm[c])
                 else:
-                    add_inline(cell.paragraphs[0], h, size=10, bold=True)
+                    add_inline(cell.paragraphs[0], h, size=hdr_size, bold=True)
             for r_idx, r in enumerate(rows):
                 cells = table.add_row().cells
                 for c in range(len(header)):
                     cells[c].paragraphs[0].text = ""
                     if one_page:
-                        if c == 0:
+                        if len(header) == 2:
+                            set_cell_shading(cells[c], "FAFAFA" if c == 0 else "F8FAFC")
+                        elif c == 0:
                             set_cell_shading(cells[c], "F1F5F9")
                         elif r_idx % 2 == 1:
                             set_cell_shading(cells[c], "F8FAFC")
-                        set_cell_margins(cells[c], top=12, bottom=12, left=45, right=45)
-                        tighten_p(cells[c].paragraphs[0], 0, 0, 8.6)
-                        add_inline(cells[c].paragraphs[0], r[c] if c < len(r) else "", size=6.8)
+                        set_cell_margins(cells[c], top=18, bottom=18, left=50, right=50)
+                        tighten_p(cells[c].paragraphs[0], 0, 0, cell_line_pt)
+                        add_inline(cells[c].paragraphs[0], r[c] if c < len(r) else "", size=cell_size)
                         if col_widths_cm:
                             set_cell_width_cm(cells[c], col_widths_cm[c])
                     else:
-                        add_inline(cells[c].paragraphs[0], r[c] if c < len(r) else "", size=10)
+                        add_inline(cells[c].paragraphs[0], r[c] if c < len(r) else "", size=cell_size)
             if not one_page:
                 doc.add_paragraph()
             continue
 
         img = re.match(r"^!\[([^\]]*)\]\(([^)]+)\)$", stripped)
         if img:
-            # 圖片（相對於 md 檔位置）；寬度 16cm 符合 A4 版心（one_page 為 18.8cm），下方加圖說
-            src = (md_path.parent / img.group(2)).resolve()
-            if src.exists():
+            # 圖片（相對於 md 檔位置；若找不到，向上層或專案目錄尋找）；寬度 16cm 符合 A4 版心（one_page 為 18.8cm），下方加圖說
+            rel_img = Path(img.group(2))
+            candidates = [
+                (md_path.parent / rel_img).resolve(),
+                (md_path.parent.parent / rel_img).resolve(),
+                (ROOT / "06_簡報與路演Pitch" / rel_img).resolve(),
+                (ROOT / rel_img).resolve(),
+            ]
+            src = next((c for c in candidates if c.exists()), None)
+            if src and src.exists():
                 doc.add_picture(str(src), width=Cm(18.8 if one_page else 16))
                 last_p = doc.paragraphs[-1]
                 last_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -234,10 +264,10 @@ def convert(md_path: Path):
                 p = doc.add_paragraph()
                 if level == 1:
                     tighten_p(p, 0, 1.5, 13.5)
-                    set_font(p.add_run(m.group(2).replace("**", "")), size=11.5, bold=True, color="0F172A")
+                    set_font(p.add_run(m.group(2).replace("**", "")), size=12.0, bold=True, color="0F172A")
                 else:
-                    tighten_p(p, 2.0, 1.0, 10.5)
-                    set_font(p.add_run("■ " + m.group(2).replace("**", "")), size=8.5, bold=True, color="065F46")
+                    tighten_p(p, 2.0, 1.0, 11.0)
+                    set_font(p.add_run("■ " + m.group(2).replace("**", "")), size=9.5, bold=True, color="065F46")
             else:
                 h = doc.add_heading(level=0 if level == 1 else level - 1)
                 add_inline(h, m.group(2).replace("**", ""))
@@ -258,8 +288,8 @@ def convert(md_path: Path):
         elif stripped.startswith(">"):
             if one_page:
                 p = doc.add_paragraph()
-                tighten_p(p, 1.0, 1.0, 8.2)
-                add_inline(p, stripped.lstrip("> "), size=6.5)
+                tighten_p(p, 1.0, 1.0, 9.5)
+                add_inline(p, stripped.lstrip("> "), size=7.5)
                 for run in p.runs:
                     if not run.font.color.rgb:
                         run.font.color.rgb = RGBColor.from_string("475569")

@@ -211,7 +211,7 @@
                       <div class="lc-flex__row"><span>出工時間</span><span id="lc-static-time">明日 07:00～16:00</span></div>
                       <div class="lc-flex__row"><span>指派工班</span><span id="lc-static-team">B 組 6 人，領班阿迪</span></div>
                       <div class="lc-flex__row"><span>接送專車</span><span id="lc-static-car">智農 2 號車，司機李大哥</span></div>
-                      <div class="lc-flex__row"><span>作業手路</span><span id="lc-static-notes">留蒂 0.5cm、護果粉採收</span></div>
+                      <div class="lc-flex__row"><span>作業手路</span><span id="lc-static-notes">護果粉採收</span></div>
                       <div class="lc-flex__row" style="border-top: 1px solid #e2e8f0; padding-top: 6px;"><span>應付金額</span><span class="ad-num" style="color: #047857;" id="lc-static-amount">NT$ 52,920（定金已收 20%）</span></div>
                     </div>
                     <div class="lc-flex__foot lc-flex__foot--row">
@@ -301,20 +301,12 @@
           </div>
           <div class="ad-list">
             <div class="ad-row">
-              <div class="ad-row__main"><div class="ad-row__title">午後暴雨避險</div><div class="ad-row__meta">全體工班改到室內預冷包裝線，專車轉移</div></div>
-              <div class="ad-row__aside"><button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" onclick="triggerSimulatedPush('weather_alert', 'all')">推播</button></div>
-            </div>
-            <div class="ad-row">
-              <div class="ad-row__main"><div class="ad-row__title">明日出工派工單（工人端）</div><div class="ad-row__meta">集合 06:30、司機電話、留蒂採收標準</div></div>
+              <div class="ad-row__main"><div class="ad-row__title">明日出工派工單（工人端）</div><div class="ad-row__meta">集合 06:30、司機電話、採收標準</div></div>
               <div class="ad-row__aside"><button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" onclick="triggerSimulatedPush('daily_task', 'worker_foreign')">推播</button></div>
             </div>
             <div class="ad-row">
               <div class="ad-row__main"><div class="ad-row__title">早鳥工時包開放預約（農場主端）</div><div class="ad-row__meta">315 元／小時，預付 20% 定金鎖定名額</div></div>
               <div class="ad-row__aside"><button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" onclick="triggerSimulatedPush('early_bird', 'farmer')">推播</button></div>
-            </div>
-            <div class="ad-row">
-              <div class="ad-row__main"><div class="ad-row__title">就業獎勵 8,800 元入帳（工人端）</div><div class="ad-row__meta">農業部津貼入帳通知</div></div>
-              <div class="ad-row__aside"><button type="button" class="ad-btn ad-btn--secondary ad-btn--sm" onclick="triggerSimulatedPush('salary_bonus', 'worker_foreign')">推播</button></div>
             </div>
             <div class="ad-row">
               <div class="ad-row__main"><div class="ad-row__title">派工單進度（農場主端）</div><div class="ad-row__meta">ORD-2026-001 的工班、司機聯絡方式</div></div>
@@ -1287,7 +1279,7 @@
               { layout: 'baseline', contents: [{ text: '現場小工頭', color: '#64748B' }, { text: v ? `${v.foreman} (${v.foremanPhone}，已交辦手路)` : '林小龍 (0921-999-888，已交辦手路)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '指派工班', color: '#64748B' }, { text: v ? `${v.teamName} (${v.teamSize}人，領班: ${v.leader})` : '工班 B 組 (6人，領班: 阿迪 Agus)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '接送專車', color: '#64748B' }, { text: v ? `${v.vehicle} (司機: ${v.driver})` : '智農 2 號車 (司機: 李大哥 0912-222-444)', color: '#0F172A' }] },
-              { layout: 'baseline', contents: [{ text: '作業手路', color: '#64748B' }, { text: v ? v.notes : '留蒂 0.5cm 護果粉採收 / 完整驗收標準', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '作業手路', color: '#64748B' }, { text: v ? v.notes : '護果粉採收 / 完整驗收標準', color: '#047857' }] },
               { layout: 'baseline', contents: [{ text: '合約保障', color: '#64748B' }, { text: 'SLA 遲到免單、放鳥雙倍賠償、依法加保勞健保', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '總計金額', color: '#64748B' }, { text: v ? `NT$ ${fmtNT(v.amount)} (${v.depositText})` : 'NT$ 52,920 (早鳥 315/hr / 定金已收 20%)', color: '#047857' }] }
             ]
@@ -1540,7 +1532,7 @@
               { text: 'Nhiệm vụ & Tiêu chuẩn thao tác (任務與手路SOP)：', color: '#1E293B', size: 'xs', weight: 'bold' },
               { layout: 'baseline', contents: [{ text: '作物地點', color: '#64748B' }, { text: v ? `${v.location} (${v.area} 分地)` : '屏東枋山善德路芒果示範園 (6.0 分地)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '集合發車', color: '#64748B' }, { text: v ? `06:30 宿舍門口 (${v.vehicle.split(' (')[0]} ${v.driverName})` : '06:30 宿舍門口 (智農 2 號車 李大哥)', color: '#059669' }] },
-              { layout: 'baseline', contents: [{ text: '採收標準', color: '#64748B' }, { text: v ? v.notes : '留蒂 0.5cm・護果粉採收・輕放藍箱', color: '#047857' }] },
+              { layout: 'baseline', contents: [{ text: '採收標準', color: '#64748B' }, { text: v ? v.notes : '護果粉採收・輕放藍箱', color: '#047857' }] },
               { layout: 'baseline', contents: [{ text: '同組夥伴', color: '#64748B' }, { text: v ? `${v.teamName} ${v.teamSize} 人 (帶隊領班: ${v.leader})` : '工班 B 組 6 人 (帶隊領班: 林小祥)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '納保合規', color: '#64748B' }, { text: '100% 勞保與農業職災即時生效中', color: '#047857' }] },
               { layout: 'baseline', contents: [{ text: '今日預估', color: '#64748B' }, { text: 'NT$ 1,840 (8H基本) + 採收品質獎金', color: '#D97706' }] }
@@ -1797,7 +1789,7 @@
           },
           body: {
             contents: [
-              { layout: 'baseline', contents: [{ text: '作業成果', color: '#64748B' }, { text: '採收 4,800 台斤 (留蒂 0.5cm 護粉率 99.8%)', color: '#0F172A' }] },
+              { layout: 'baseline', contents: [{ text: '作業成果', color: '#64748B' }, { text: '採收 4,800 台斤 (護粉率 99.8%)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '手路評分', color: '#64748B' }, { text: '5.0 顆星 (優於外銷標準・零刮傷)', color: '#D97706' }] },
               { layout: 'baseline', contents: [{ text: '帶工責任領班', color: '#64748B' }, { text: v ? `${v.foreman} (簽章核銷完成)` : '林小祥 (簽章核銷完成)', color: '#0F172A' }] },
               { layout: 'baseline', contents: [{ text: '雙軌帳務發票', color: '#64748B' }, { text: '16%科技服務發票 #AG-882199 已雲端開立', color: '#047857' }] },

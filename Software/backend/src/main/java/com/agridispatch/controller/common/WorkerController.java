@@ -1,9 +1,11 @@
 package com.agridispatch.controller.common;
 
 import com.agridispatch.entity.Attendance;
+import com.agridispatch.entity.DispatchTeam;
 import com.agridispatch.entity.Worker;
 import com.agridispatch.security.AuthContext;
 import com.agridispatch.service.AttendanceService;
+import com.agridispatch.service.DispatchService;
 import com.agridispatch.service.WorkerScheduleService;
 import com.agridispatch.service.WorkerService;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -29,13 +31,16 @@ public class WorkerController {
     private final WorkerService workerService;
     private final AttendanceService attendanceService;
     private final WorkerScheduleService scheduleService;
+    private final DispatchService dispatchService;
     private final ObjectMapper objectMapper;
 
     public WorkerController(WorkerService workerService, AttendanceService attendanceService,
-                            WorkerScheduleService scheduleService, ObjectMapper objectMapper) {
+                            WorkerScheduleService scheduleService, DispatchService dispatchService,
+                            ObjectMapper objectMapper) {
         this.workerService = workerService;
         this.attendanceService = attendanceService;
         this.scheduleService = scheduleService;
+        this.dispatchService = dispatchService;
         this.objectMapper = objectMapper;
     }
 
@@ -204,6 +209,18 @@ public class WorkerController {
     @GetMapping("/{id}/team-members")
     public ResponseEntity<?> getTeamMembers(@PathVariable String id) {
         return ResponseEntity.ok(Map.of("success", true, "data", scheduleService.teamRosterOf(id)));
+    }
+
+    /**
+     * 領班自行命名工班：body { "name": "新名稱" }。本人（該工班領班）或 admin；非領班回 403。
+     * 路徑 /api/workers/{id}/team-name 不在 STAFF_ONLY 的 PUT /api/workers/* 之內。
+     */
+    @PutMapping("/{id}/team-name")
+    public ResponseEntity<?> renameTeam(@PathVariable String id, @RequestBody(required = false) Map<String, Object> body) {
+        Object name = body == null ? null : body.get("name");
+        DispatchTeam team = dispatchService.renameTeamByLeader(id, name == null ? null : name.toString());
+        return ResponseEntity.ok(Map.of("success", true, "data", Map.of("teamId", team.getId(), "teamName", team.getName()),
+                "message", "工班名稱已改為：" + team.getName()));
     }
 }
 

@@ -1117,6 +1117,24 @@
     return respond(200, { success: true, data: { workerId: w.id, teamId: w.teamId || null, teamName: t ? t.name : null, members: members } });
   }
 
+  // 領班自行命名工班（同後端 DispatchService.renameTeamByLeader）：只有該工班領班可改；名稱必填、≤50 字、不可與其他工班同名
+  function renameTeam(workerId, body) {
+    var w = findIn('GET /workers', workerId);
+    if (!w) return respond(404, { success: false, error: '找不到該農工編號：' + workerId });
+    if (!w.leader) return respond(403, { success: false, error: 'FORBIDDEN' });
+    if (!w.teamId) return respond(400, { success: false, error: '尚未編入工班，無法命名' });
+    var name = String((body && body.name) == null ? '' : body.name).trim();
+    if (!name) return respond(400, { success: false, error: '工班名稱 (name) 為必填欄位' });
+    if (name.length > 50) return respond(400, { success: false, error: '工班名稱 (name) 最多 50 字' });
+    var teams = listOf(get('GET /dispatch/teams')) || [];
+    var dup = teams.filter(function (t) { return t.id !== w.teamId && String(t.name).toLowerCase() === name.toLowerCase(); })[0];
+    if (dup) return respond(409, { success: false, error: '已有其他工班使用「' + name + '」這個名稱，請換一個' });
+    patchList('GET /dispatch/teams', w.teamId, { name: name });
+    var d = get('GET /dispatch/teams/' + w.teamId);
+    if (d && d.b && d.b.data) { d.b.data.name = name; put('GET /dispatch/teams/' + w.teamId, d); }
+    return respond(200, { success: true, data: { teamId: w.teamId, teamName: name }, message: '工班名稱已改為：' + name });
+  }
+
   // ---------------- 工人本人排班（移植 WorkerScheduleService.scheduleOf） ----------------
   // 由目前的訂單（含示範時新下的單、媒合結果）即時算出，不另外錄製
   function workerSchedule(workerId, query) {
@@ -1985,6 +2003,7 @@
       var bid = decodeURIComponent(seg[2]);
       return lineUnbind(function (x) { return x.id === bid; });
     }
+    if (method === 'PUT' && /^\/workers\/[^/]+\/team-name$/.test(sp.path)) return renameTeam(decodeURIComponent(seg[1]), body || {});
     if (method === 'PUT' && /^\/evaluations\/attendance\/[^/]+$/.test(sp.path)) return rateShift(decodeURIComponent(seg[2]), body || {});
     if (method === 'PUT' && /^\/matching\/orders\/[^/]+$/.test(sp.path)) return saveCrew(decodeURIComponent(seg[2]), body || {});
     if (method === 'DELETE' && /^\/orders\/[^/]+$/.test(sp.path) && (currentUser() || {}).role === 'farmer') return cancelOrder(decodeURIComponent(seg[1]));

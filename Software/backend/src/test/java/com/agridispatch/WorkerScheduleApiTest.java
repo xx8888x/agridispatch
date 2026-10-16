@@ -132,6 +132,32 @@ class WorkerScheduleApiTest extends ApiTestSupport {
     }
 
     @Test
+    @org.junit.jupiter.api.Order(6)
+    void leaderCanRenameOwnTeamOnly() throws Exception {
+        String leader = workerToken("W026");
+        String member = workerToken("W008");
+        String teamBefore = json(call("GET", "/api/workers/W026/team-members", leader, null)).get("data").get("teamName").asText();
+
+        // 領班改名：成功，名冊 API 與工班列表同步
+        var ok = call("PUT", "/api/workers/W026/team-name", leader, Map.of("name", "  彩虹採收隊  "));
+        assertEquals(200, ok.getResponse().getStatus());
+        assertEquals("彩虹採收隊", json(ok).get("data").get("teamName").asText());
+        assertEquals("彩虹採收隊", json(call("GET", "/api/workers/W026/team-members", leader, null)).get("data").get("teamName").asText());
+        assertEquals("彩虹採收隊", json(call("GET", "/api/dispatch/teams/team_b", admin, null)).get("data").get("name").asText());
+
+        // 非領班組員、他人、未登入、空白名稱、與其他工班同名
+        assertEquals(403, call("PUT", "/api/workers/W008/team-name", member, Map.of("name", "組員想改")).getResponse().getStatus());
+        assertEquals(403, call("PUT", "/api/workers/W026/team-name", member, Map.of("name", "別人想改")).getResponse().getStatus());
+        assertEquals(401, call("PUT", "/api/workers/W026/team-name", null, Map.of("name", "沒登入")).getResponse().getStatus());
+        assertEquals(400, call("PUT", "/api/workers/W026/team-name", leader, Map.of("name", "   ")).getResponse().getStatus());
+        String otherName = json(call("GET", "/api/dispatch/teams/team_a", admin, null)).get("data").get("name").asText();
+        assertEquals(409, call("PUT", "/api/workers/W026/team-name", leader, Map.of("name", otherName)).getResponse().getStatus());
+
+        // 還原，避免影響其他測試
+        assertEquals(200, call("PUT", "/api/workers/W026/team-name", leader, Map.of("name", teamBefore)).getResponse().getStatus());
+    }
+
+    @Test
     @org.junit.jupiter.api.Order(4)
     void dateRangeFilterAndValidation() throws Exception {
         String t = workerToken("W026");

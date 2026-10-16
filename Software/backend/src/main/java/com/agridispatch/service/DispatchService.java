@@ -143,6 +143,25 @@ public class DispatchService {
         return teamRepository.save(existing);
     }
 
+    /**
+     * 領班自行改工班名稱（PUT /api/workers/{id}/team-name；AuthInterceptor 已限本人或 admin）。
+     * 只有該工班的領班（isLeader）可改，且只改名稱；名稱不可空白、最多 50 字、不可與其他工班同名。
+     */
+    public DispatchTeam renameTeamByLeader(String workerId, String name) {
+        var worker = workerRepository.findById(workerId)
+                .orElseThrow(() -> ApiException.notFound("找不到該農工編號: " + workerId));
+        if (!worker.isLeader()) throw ApiException.forbidden();
+        if (worker.getTeamId() == null) throw ApiException.badRequest("尚未編入工班，無法命名");
+        DispatchTeam team = teamRepository.findById(worker.getTeamId())
+                .orElseThrow(() -> ApiException.notFound("找不到該工班代號: " + worker.getTeamId()));
+        String next = requireText(name, "工班名稱 (name)", 50);
+        boolean dup = teamRepository.findAll().stream()
+                .anyMatch(t -> !t.getId().equals(team.getId()) && next.equalsIgnoreCase(t.getName()));
+        if (dup) throw ApiException.conflict("已有其他工班使用「" + next + "」這個名稱，請換一個");
+        team.setName(next);
+        return teamRepository.save(team);
+    }
+
     /** 刪除工班：仍有工人、訂單或評價掛在這個工班時拒絕（409），請先移走工人或改派訂單 */
     public void deleteTeam(String id) {
         if (!teamRepository.existsById(id)) throw ApiException.notFound("找不到該工班代號: " + id);

@@ -175,6 +175,19 @@
                 <h4 id="fm-roster-title" class="ad-heading">工班組員簽核名冊（6 名）</h4>
                 <span class="ad-pill ad-pill--ok">全員已 GPS 打卡</span>
               </div>
+              <div id="fm-team-name-row" hidden style="margin-bottom: 12px;">
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+                  <span class="ad-label">工班名稱</span>
+                  <strong id="fm-team-name-text" class="ad-heading" style="white-space: normal;"></strong>
+                  <button type="button" id="fm-rename-open" onclick="openTeamRename()" class="ad-btn ad-btn--ghost ad-btn--sm">改名</button>
+                </div>
+                <form id="fm-rename-form" onsubmit="return saveTeamRename(event)" style="display: none; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                  <input id="fm-rename-input" type="text" class="ad-input" maxlength="50" required placeholder="例：彩虹採收隊" aria-label="工班名稱" style="flex: 1 1 200px; min-width: 0;">
+                  <button type="submit" id="fm-rename-save" class="ad-btn ad-btn--primary ad-btn--sm">儲存</button>
+                  <button type="button" onclick="closeTeamRename()" class="ad-btn ad-btn--ghost ad-btn--sm">取消</button>
+                </form>
+                <p id="fm-rename-msg" class="ad-caption" hidden style="margin-top: 6px;"></p>
+              </div>
               <div id="fm-roster" class="ad-form-grid ad-form-grid--2">
                   <div class="ad-row">
                     <div class="ad-row__main">
@@ -1143,6 +1156,7 @@
     // 規則同 LINE：履約中優先，其次已排定、待付定金；讀不到資料時沿用頁面上的示範文字。
     // ------------------------------------------------------------------
     const LOCAL_TASKS = {};          // { foreman|machinery|labor: { order, team, mine, members } }
+    const FOREMAN_TEAM = { workerId: null, id: null, name: '' };   // 領班所屬工班（名稱可由領班自行修改）
     const TASK_RANK = { in_progress: 0, confirmed: 1, pending: 2 };
     const NAT_TAG = { '越南': '越', '印尼': '印', '泰國': '泰', '菲律賓': '菲', '本國': '台' };
 
@@ -1167,7 +1181,12 @@
       const tracks = (REAL_WORKER && IS_PROD) ? [OWN_TRACK] : Object.keys(DEMO_WORKER);
       await Promise.all(tracks.map(async (track) => {
         const id = workerIdForTrack(track);
+        if (track === 'foreman') FOREMAN_TEAM.workerId = id;
         const data = await get(`/workers/${encodeURIComponent(id)}/schedule`).catch(() => null);
+        // 組員名冊：本工班名冊 API（本人或 admin，不含證號、電話、薪資）；讀不到時名冊沿用示範文字，任務卡照常顯示
+        const roster = track === 'foreman' ? await get(`/workers/${encodeURIComponent(id)}/team-members`).catch(() => null) : null;
+        // 工班名稱由領班自己命名；不依賴有沒有訂單，讀到名冊就顯示名稱與改名鈕
+        if (roster && roster.teamId) Object.assign(FOREMAN_TEAM, { id: roster.teamId, name: roster.teamName || '' });
         if (!data || !data.team) return;
         const mine = (data.items || []).map((i) => Object.assign({}, i, { id: i.orderId }));
         const order = mine.filter((o) => TASK_RANK[o.status] != null)
@@ -1175,12 +1194,66 @@
         if (!order) return;
         // 出工名單可能是別工班的訂單：接送車以訂單所屬工班為準
         const team = Object.assign({}, data.team, order.vehicle ? { vehicle: order.vehicle, driver: order.driver } : {});
-        // 組員名冊：本工班名冊 API（本人或 admin，不含證號、電話、薪資）；讀不到時名冊沿用示範文字，任務卡照常顯示
-        const roster = track === 'foreman' ? await get(`/workers/${encodeURIComponent(id)}/team-members`).catch(() => null) : null;
         const members = roster && Array.isArray(roster.members) ? AgriTheme.visibleWorkers(roster.members) : null;
         LOCAL_TASKS[track] = { order, team, mine, members };
       }));
       applyLocalTasks();
+      renderTeamName();
+    }
+
+    // ------------------------------------------------------------------
+    // 領班自行命名工班：PUT /workers/{id}/team-name（只有該工班領班可改；名稱最多 50 字、不可與其他工班同名）
+    // ------------------------------------------------------------------
+    function renderTeamName() {
+      const row = document.getElementById('fm-team-name-row');
+      if (!row || !FOREMAN_TEAM.id) return;
+      row.hidden = false;
+      document.getElementById('fm-team-name-text').textContent = FOREMAN_TEAM.name;
+    }
+    function showRenameMsg(text, kind) {
+      const el = document.getElementById('fm-rename-msg');
+      el.textContent = text || '';
+      el.style.color = kind === 'ok' ? 'var(--ad-primary-text)' : 'var(--ad-danger-text)';
+      el.hidden = !text;
+    }
+    function openTeamRename() {
+      const input = document.getElementById('fm-rename-input');
+      input.value = FOREMAN_TEAM.name;
+      document.getElementById('fm-rename-form').style.display = 'flex';
+      document.getElementById('fm-rename-open').hidden = true;
+      showRenameMsg('');
+      input.focus();
+      input.select();
+    }
+    function closeTeamRename() {
+      document.getElementById('fm-rename-form').style.display = 'none';
+      document.getElementById('fm-rename-open').hidden = false;
+    }
+    async function saveTeamRename(e) {
+      e.preventDefault();
+      const name = document.getElementById('fm-rename-input').value.trim();
+      if (!name) { showRenameMsg('請輸入工班名稱。'); return false; }
+      if (name === FOREMAN_TEAM.name) { closeTeamRename(); return false; }
+      const btn = document.getElementById('fm-rename-save');
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${API_BASE}/workers/${encodeURIComponent(FOREMAN_TEAM.workerId)}/team-name`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name })
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) {
+          throw new Error(res.status === 403 ? '只有工班領班可以修改工班名稱' : (body.error || body.message || `HTTP ${res.status}`));
+        }
+        FOREMAN_TEAM.name = body.data && body.data.teamName ? body.data.teamName : name;
+        if (LOCAL_TASKS.foreman) { LOCAL_TASKS.foreman.team.name = FOREMAN_TEAM.name; applyLocalTasks(); }
+        renderTeamName();
+        closeTeamRename();
+        showRenameMsg(`工班名稱已改為「${FOREMAN_TEAM.name}」，農場主、後台與組員都會看到新名稱。`, 'ok');
+      } catch (err) {
+        showRenameMsg(`改名失敗：${err instanceof TypeError ? '無法連線伺服器，請稍後再試' : err.message}`);
+      }
+      btn.disabled = false;
+      return false;
     }
 
     function applyLocalTasks() {

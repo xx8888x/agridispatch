@@ -143,7 +143,6 @@ public class LineFarmerQueryService {
                     : OrderService.IN_PROGRESS.equals(st);   // 沒填工期但施工中的也算（與天候推播相同）
             if (!inWindow) continue;
             boolean workingToday = o.hasPeriod() ? o.coversDate(today) : true;
-            Optional<DispatchTeam> team = teamOf(o);
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", o.getId());
             m.put("statusLabel", OrderService.statusLabel(st));
@@ -153,8 +152,6 @@ public class LineFarmerQueryService {
             m.put("endDate", o.getEndDate() == null ? null : o.getEndDate().toString());
             m.put("timeSlotLabel", Order.slotLabel(o.slot()));
             m.put("workingToday", workingToday);
-            // 與天候推播相同：工班狀態為 hedged_indoor 表示今天改到室內避險作業
-            m.put("teamIndoor", workingToday && team.map(t -> "hedged_indoor".equals(t.getStatus())).orElse(false));
             m.put("region", regionFor(o.getFarmLocation(), regions));
             items.add(m);
         }

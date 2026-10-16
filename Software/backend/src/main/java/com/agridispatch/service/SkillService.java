@@ -44,7 +44,7 @@ public class SkillService {
     /** 派工類別 → 技能（無人機植保須證照，不給經驗標籤） */
     public static final Map<String, String> CATEGORY_SKILL = Map.of(
             "harvest_grading", "harvest", "typhoon_emergency", "harvest",
-            "pruning_bagging", "pruning", "tillage_planting", "tillage", "cold_chain_pack", "packing");
+            "pruning_bagging", "pruning", "tillage_planting", "tillage");
 
     public static final Map<String, String> SKILL_LABELS;
     static {

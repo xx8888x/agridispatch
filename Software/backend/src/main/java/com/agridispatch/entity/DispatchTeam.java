@@ -5,7 +5,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * 派工工班實體 (晴天田間作業 vs 暴雨冷鏈避險)
+ * 派工工班實體 (hedgeLocation／hedgeTask 為已停用的舊欄位：暴雨避險功能已移除，資料庫 NOT NULL 故保留)
  */
 @Entity
 @Table(name = "dispatch_teams")
@@ -22,7 +22,7 @@ public class DispatchTeam {
     private String normalTask;
     private String hedgeLocation;
     private String hedgeTask;
-    private String status; // active_field, hedged_indoor
+    private String status; // active_field, standby
 
     public DispatchTeam() {}
 

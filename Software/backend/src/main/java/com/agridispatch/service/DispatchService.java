@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 /**
- * 智慧派遣與天候避險服務
+ * 智慧派遣與天候服務
  * 天候狀態為全域可變狀態：所有讀寫皆以 synchronized 保護，並於啟動時由 weather_states 讀回。
  */
 @Service
@@ -39,7 +39,6 @@ public class DispatchService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private String currentScenarioId = "cloudy";
-    private boolean isRainMode = false;
     private String currentWeather = "舒適多雲 26°C (微風涼爽宜農作)";
     private String weatherMessage = "🟢 全台天候良好・外展農工出勤率 100% (26/26人在崗)・作業稼動率高";
     private String alertLevel = "normal";
@@ -66,13 +65,13 @@ public class DispatchService {
     }
 
     /**
-     * 啟動時從 weather_states（WS-ACTIVE）讀回天候避險狀態，避免重啟後回到預設值
+     * 啟動時從 weather_states（WS-ACTIVE）讀回天候情境狀態，避免重啟後回到預設值
      */
     public synchronized void restoreStateFromDb() {
+        normalizeLegacyIndoorStatus();
         try {
             weatherStateRepository.findById("WS-ACTIVE").ifPresent(ws -> {
                 if (ws.getScenarioId() != null) this.currentScenarioId = ws.getScenarioId();
-                this.isRainMode = "Y".equalsIgnoreCase(ws.getIsRainMode());
                 if (ws.getCurrentWeather() != null) this.currentWeather = ws.getCurrentWeather();
                 if (ws.getAlertLevel() != null) this.alertLevel = ws.getAlertLevel();
                 if (ws.getMessage() != null) this.weatherMessage = ws.getMessage();
@@ -90,6 +89,26 @@ public class DispatchService {
             });
         } catch (Exception e) {
             log.warn("無法從 weather_states 讀回天候狀態：{}", e.getMessage());
+        }
+    }
+
+    /** 暴雨避險（室內冷鏈）功能已移除：舊資料中 hedged_indoor 的工班與工人一律還原成田間出勤 */
+    private void normalizeLegacyIndoorStatus() {
+        try {
+            for (DispatchTeam t : teamRepository.findAll()) {
+                if ("hedged_indoor".equals(t.getStatus())) {
+                    t.setStatus("active_field");
+                    teamRepository.save(t);
+                }
+            }
+            for (var w : workerRepository.findAll()) {
+                if ("hedged_indoor".equals(w.getDispatchStatus())) {
+                    w.setDispatchStatus("dispatched_field");
+                    workerRepository.save(w);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("無法還原舊的室內避險狀態：{}", e.getMessage());
         }
     }
 
@@ -114,6 +133,7 @@ public class DispatchService {
         team.setDriver(orPending(team.getDriver(), "司機 (driver)", 50));
         team.setNormalLocation(orPending(team.getNormalLocation(), "晴天作業地點", 255));
         team.setNormalTask(orPending(team.getNormalTask(), "晴天作業內容", 255));
+        // 雨天避險（室內改派）功能已移除；hedge_location/hedge_task 在資料庫為 NOT NULL，保留欄位並固定存「待安排」
         team.setHedgeLocation(orPending(team.getHedgeLocation(), "雨天避險地點", 255));
         team.setHedgeTask(orPending(team.getHedgeTask(), "雨天避險內容", 255));
         if (team.getStatus() == null || team.getStatus().isBlank()) team.setStatus("active_field");
@@ -175,7 +195,7 @@ public class DispatchService {
         teamRepository.deleteById(id);
     }
 
-    private static final Set<String> TEAM_STATUSES = Set.of("active_field", "hedged_indoor", "standby");
+    private static final Set<String> TEAM_STATUSES = Set.of("active_field", "standby");
 
     private static String requireText(String value, String label, int maxLen) {
         if (value == null || value.isBlank()) throw ApiException.badRequest(label + " 為必填欄位");
@@ -191,7 +211,6 @@ public class DispatchService {
         return value;
     }
 
-    public synchronized boolean isRainMode() { return isRainMode; }
     public synchronized String getCurrentWeather() { return currentWeather; }
     public synchronized String getWeatherMessage() { return weatherMessage; }
     public synchronized String getCurrentScenarioId() { return currentScenarioId; }
@@ -202,7 +221,6 @@ public class DispatchService {
     public synchronized Map<String, Object> getWeatherStateSnapshot() {
         Map<String, Object> state = new LinkedHashMap<>();
         state.put("scenarioId", currentScenarioId);
-        state.put("isRainMode", isRainMode);
         state.put("currentWeather", currentWeather);
         state.put("alertLevel", alertLevel);
         state.put("weatherMessage", weatherMessage);
@@ -228,102 +246,56 @@ public class DispatchService {
         switch (scenarioId) {
             case "sunny":
                 scenarioName = "全台晴朗炎熱";
-                this.isRainMode = false;
                 this.currentWeather = "全台晴朗 31°C (高溫無雨)";
                 this.alertLevel = "normal";
                 this.weatherMessage = "🟢 全台晴朗田間作業中・5 大核心產區出勤率 100%・注意防曬與定時補水";
                 this.securedRevenue = 62500;
                 this.dailyCapacityHrs = 160;
-                for (DispatchTeam t : teams) {
-                    if (!"team_d".equals(t.getId())) {
-                        t.setStatus("active_field");
-                    } else {
-                        t.setStatus("hedged_indoor");
-                    }
-                    teamRepository.save(t);
-                }
                 break;
 
             case "cloudy":
                 scenarioName = "舒適多雲時晴";
-                this.isRainMode = false;
                 this.currentWeather = "舒適多雲 26°C (微風涼爽宜農作)";
                 this.alertLevel = "normal";
                 this.weatherMessage = "🟢 舒適天候正常出勤中・氣溫宜人作業稼動率高・無人機航測與田間管理順暢";
                 this.securedRevenue = 62500;
                 this.dailyCapacityHrs = 160;
-                for (DispatchTeam t : teams) {
-                    if (!"team_d".equals(t.getId())) {
-                        t.setStatus("active_field");
-                    } else {
-                        t.setStatus("hedged_indoor");
-                    }
-                    teamRepository.save(t);
-                }
                 break;
 
             case "shower":
                 scenarioName = "局部短暫對流陣雨";
-                this.isRainMode = false;
                 this.currentWeather = "短暫陣雨 25°C (對流雨胞逼近)";
                 this.alertLevel = "info";
-                this.weatherMessage = "⚠️ 局部產區有雨・宜蘭三星與北部啟動半室內洗蔥與預冷彈性備援・枋山雲林維持田間出勤";
+                this.weatherMessage = "⚠️ 局部產區有雨・宜蘭三星與北部留意雨勢調整作業時段・枋山雲林維持田間出勤";
                 this.securedRevenue = 62500;
                 this.dailyCapacityHrs = 160;
-                for (DispatchTeam t : teams) {
-                    if ("team_b".equals(t.getId()) || "team_d".equals(t.getId())) {
-                        t.setStatus("hedged_indoor");
-                    } else {
-                        t.setStatus("active_field");
-                    }
-                    teamRepository.save(t);
-                }
                 break;
 
             case "heavy_rain":
-                scenarioName = "滯留鋒面大暴雨 (避險模式)";
-                this.isRainMode = true;
+                scenarioName = "滯留鋒面大暴雨";
                 this.currentWeather = "暴雨警戒 22°C (滯留鋒面豪雨特報)";
                 this.alertLevel = "warning";
-                this.weatherMessage = "⚡ 突發暴雨避險啟動：全體工班已專車轉派八德蔬果預冷冷鏈包裝線，出勤率 100%，零閒置虧損！保全營收 NT$ 62,500！";
+                this.weatherMessage = "⚡ 突發暴雨警戒：田區泥濘暫停採收，工班依現場小工頭通知復工或改期，專車待命接回。";
                 this.securedRevenue = 62500;
                 this.dailyCapacityHrs = 160;
-                for (DispatchTeam t : teams) {
-                    t.setStatus("hedged_indoor");
-                    teamRepository.save(t);
-                }
                 break;
 
             case "typhoon":
                 scenarioName = "強烈颱風陸警警戒";
-                this.isRainMode = true;
                 this.currentWeather = "強颱警戒 25°C (陸上強風豪雨特報)";
                 this.alertLevel = "danger";
-                this.weatherMessage = "🚨 強烈颱風警戒發布：啟動 24H 緊急搶收應變方案，全區設施加固防汛，全員調度至冷鏈物流中心備戰！";
+                this.weatherMessage = "🚨 強烈颱風警戒發布：啟動 24H 緊急搶收應變方案，全區設施加固防汛，工班依小工頭指示待命。";
                 this.securedRevenue = 85000;
                 this.dailyCapacityHrs = 192;
-                for (DispatchTeam t : teams) {
-                    t.setStatus("hedged_indoor");
-                    teamRepository.save(t);
-                }
                 break;
 
             case "cold_wave":
                 scenarioName = "強烈寒流低溫特報";
-                this.isRainMode = false;
                 this.currentWeather = "寒流低溫 9°C (橙色低溫霜害警報)";
                 this.alertLevel = "warning";
-                this.weatherMessage = "❄️ 寒流急凍防霜警戒：溫室全面密閉保溫防霜害，田間噴防凍保護劑，工班於恆溫冷鏈中心進行精緻分級";
+                this.weatherMessage = "❄️ 寒流急凍防霜警戒：溫室全面密閉保溫防霜害，田間噴防凍保護劑，工班注意保暖並依小工頭指示作業";
                 this.securedRevenue = 62500;
                 this.dailyCapacityHrs = 160;
-                for (DispatchTeam t : teams) {
-                    if ("team_d".equals(t.getId())) {
-                        t.setStatus("hedged_indoor");
-                    } else {
-                        t.setStatus("active_field");
-                    }
-                    teamRepository.save(t);
-                }
                 break;
 
             default:
@@ -340,7 +312,6 @@ public class DispatchService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("scenarioId", this.currentScenarioId);
         result.put("scenarioName", scenarioName);
-        result.put("isRainMode", this.isRainMode);
         result.put("currentWeather", this.currentWeather);
         result.put("alertLevel", this.alertLevel);
         result.put("weatherMessage", this.weatherMessage);
@@ -366,14 +337,9 @@ public class DispatchService {
         return new ArrayList<>(this.currentRegionalWeather);
     }
 
-    public synchronized Map<String, Object> setRainMode(boolean rain) {
-        return applyWeatherScenario(rain ? "heavy_rain" : "sunny");
-    }
-
     public synchronized Map<String, Object> getOverview() {
         Map<String, Object> overview = new LinkedHashMap<>();
         overview.put("scenarioId", currentScenarioId);
-        overview.put("isRainMode", isRainMode);
         overview.put("currentWeather", currentWeather);
         overview.put("weatherMessage", weatherMessage);
         overview.put("alertLevel", alertLevel);
@@ -389,13 +355,13 @@ public class DispatchService {
             String regionalJson = objectMapper.writeValueAsString(currentRegionalWeather);
             WeatherState state = weatherStateRepository.findById("WS-ACTIVE")
                     .orElse(new WeatherState("WS-ACTIVE", scenarioId, scenarioName,
-                            isRainMode ? "Y" : "N", currentWeather, alertLevel,
+                            "N", currentWeather, alertLevel,
                             weatherMessage, securedRevenue, dailyCapacityHrs,
                             regionalJson, LocalDateTime.now()));
 
             state.setScenarioId(scenarioId);
             state.setScenarioName(scenarioName);
-            state.setIsRainMode(isRainMode ? "Y" : "N");
+            state.setIsRainMode("N");
             state.setCurrentWeather(currentWeather);
             state.setAlertLevel(alertLevel);
             state.setMessage(weatherMessage);
@@ -454,7 +420,7 @@ public class DispatchService {
                     temp = "32°C"; icon = "☀️"; condition = "晴空萬里炎熱"; rainChance = "10%"; humidity = "56%"; uv = "過量 (9)";
                 }
                 if (isTea) advice = "微風涼爽適宜，利於人工採摘一心二葉，適合植保機執行超低空精準追肥巡查。";
-                else if (isVeg) advice = "設施溫室雙層遮陽網展開，加強水簾通風降溫，持續精緻修葉採收直送冷鏈。";
+                else if (isVeg) advice = "設施溫室雙層遮陽網展開，加強水簾通風降溫，持續精緻修葉採收。";
                 else advice = "果園外銷採收與套袋作業正常推進，正午加強果實遮陰防日燒，適時補充灌溉水。";
                 break;
 
@@ -468,7 +434,7 @@ public class DispatchService {
                 }
                 if (isTea) advice = "午後陣雨山區易起霧，採青作業提早收工，轉入室內浪菁萎凋與茶葉精緻分級。";
                 else if (isVeg) advice = "溫室遮雨簾閉合，防潮排濕開啟，溫室內無風雨阻礙正常採收與水洗。";
-                else advice = "田間搶收果品，注意降雨泥濘；若遇豪大雨全員專車轉移至冷鏈包裝線。";
+                else advice = "田間搶收果品，注意降雨泥濘；若遇豪大雨即刻停工，專車接回工班。";
                 break;
 
             case "heavy_rain":
@@ -478,7 +444,7 @@ public class DispatchService {
                 rainChance = "95%";
                 humidity = "95%";
                 uv = "微弱 (1)";
-                advice = "田區泥濘安全停工！啟動暴雨避險機制，外展工班專車轉派至周邊冷鏈蔬果集貨包裝線，保全 100% 稼動率！";
+                advice = "田區泥濘安全停工！外展工班專車接回，依現場小工頭通知復工或改期。";
                 break;
 
             case "typhoon":
@@ -488,7 +454,7 @@ public class DispatchService {
                 rainChance = "100%";
                 humidity = "98%";
                 uv = "微弱 (1)";
-                advice = "🚨 防颱緊急搶收完成，設施溫網室壓條加固，抽水機待命，工班全員進駐室內集貨場避險包裝！";
+                advice = "🚨 防颱緊急搶收完成，設施溫網室壓條加固，抽水機待命，工班全員撤離田區待命！";
                 break;
 
             case "cold_wave":
@@ -514,7 +480,7 @@ public class DispatchService {
                     temp = "26°C"; icon = "⛅"; condition = "舒適多雲溫和"; rainChance = "20%"; humidity = "66%"; uv = "中量 (5)";
                 }
                 if (isTea) advice = "微風氣候極利於無人機巡檢噴施與精緻一心二葉採收，排程作業順暢。";
-                else if (isVeg) advice = "溫室通風良好溫度適宜，進行吊蔓修葉、採收與冷鏈直配。";
+                else if (isVeg) advice = "溫室通風良好溫度適宜，進行吊蔓修葉、採收與直配。";
                 else advice = "果園採收與套袋作業正常推進，果實外觀品相優良，農工出勤滿載。";
                 break;
         }
@@ -547,24 +513,24 @@ public class DispatchService {
                 break;
 
             case "shower":
-                list.add(createRegionMap("屏東枋山", "🥭 愛文芒果專區", "31°C", "☀️", "晴午後短暫對流", "45%", "72%", "極高 (9)", "套袋疏果中，若遇雷陣雨即刻專車轉移至屏南冷鏈物流園區。"));
+                list.add(createRegionMap("屏東枋山", "🥭 愛文芒果專區", "31°C", "☀️", "晴午後短暫對流", "45%", "72%", "極高 (9)", "套袋疏果中，若遇雷陣雨即刻暫停作業，專車接回。"));
                 list.add(createRegionMap("桃園八德", "🥬 設施有機蔬菜", "25°C", "🌧️", "陣雨轉多雲", "60%", "82%", "低量 (3)", "溫室遮雨簾閉合，防潮排濕開啟，溫室內無風雨阻礙正常採收。"));
-                list.add(createRegionMap("宜蘭三星", "🌱 三星青蔥專班", "24°C", "🌧️", "陰短暫雷陣雨", "75%", "88%", "低量 (2)", "田間拔蔥提早 1 小時收工，全員轉入農會青蔥冷鏈場操作洗蔥機。"));
+                list.add(createRegionMap("宜蘭三星", "🌱 三星青蔥專班", "24°C", "🌧️", "陰短暫雷陣雨", "75%", "88%", "低量 (2)", "田間拔蔥提早 1 小時收工，全員轉入農會洗蔥場操作洗蔥機。"));
                 list.add(createRegionMap("雲林元長", "🫑 設施彩椒專區", "29°C", "⛅", "晴時多雲", "20%", "66%", "過量 (8)", "溫室整枝摘心，注意防中暑補水與高溫通風。"));
                 list.add(createRegionMap("新竹峨眉", "🍵 東方美人茶園", "26°C", "⛅", "多雲偶陣雨", "35%", "70%", "中量 (5)", "暫緩無人機噴灑作業，轉為室內茶葉分級挑枝。"));
                 break;
 
             case "heavy_rain":
-                list.add(createRegionMap("屏東枋山", "🥭 愛文芒果專區", "24°C", "⛈️", "大雨滂沱", "90%", "92%", "微弱 (1)", "田區泥濘停工，工班全員專車進駐屏南冷鏈預冷分級場清洗包裝。"));
-                list.add(createRegionMap("桃園八德", "🥬 設施有機蔬菜", "22°C", "⛈️", "豪雨強降水", "95%", "95%", "微弱 (1)", "八德溫室外部排水啟動，工班全員轉入室內 B 棟冷鏈包裝線。"));
-                list.add(createRegionMap("宜蘭三星", "🌱 三星青蔥專班", "21°C", "⛈️", "連續豪大雨", "95%", "96%", "微弱 (1)", "田區防汛排澇，全員移至三星冷鏈中心進行青蔥差壓預冷與封裝。"));
-                list.add(createRegionMap("雲林元長", "🫑 設施彩椒專區", "23°C", "⛈️", "雷雨交加", "85%", "90%", "微弱 (1)", "巡檢溫室排水溝渠，工班轉移至西螺蔬果集貨冷藏中心包裝。"));
+                list.add(createRegionMap("屏東枋山", "🥭 愛文芒果專區", "24°C", "⛈️", "大雨滂沱", "90%", "92%", "微弱 (1)", "田區泥濘停工，工班全員專車接回，等候復工通知。"));
+                list.add(createRegionMap("桃園八德", "🥬 設施有機蔬菜", "22°C", "⛈️", "豪雨強降水", "95%", "95%", "微弱 (1)", "八德溫室外部排水啟動，注意溫室結構與排水。"));
+                list.add(createRegionMap("宜蘭三星", "🌱 三星青蔥專班", "21°C", "⛈️", "連續豪大雨", "95%", "96%", "微弱 (1)", "田區防汛排澇，全員撤離田區待命。"));
+                list.add(createRegionMap("雲林元長", "🫑 設施彩椒專區", "23°C", "⛈️", "雷雨交加", "85%", "90%", "微弱 (1)", "巡檢溫室排水溝渠，工班待命。"));
                 list.add(createRegionMap("新竹峨眉", "🍵 東方美人茶園", "22°C", "⛈️", "豪雨雷鳴", "90%", "92%", "微弱 (1)", "戶外全面暫停，機耕隊轉入資材維護所執行無人機深層保養。"));
                 break;
 
             case "typhoon":
-                list.add(createRegionMap("屏東枋山", "🥭 愛文芒果專區", "26°C", "🌀", "暴風圈籠罩", "100%", "98%", "微弱 (1)", "🚨 外銷芒果防颱緊急搶收完成，全員進駐屏南冷鏈中心全力裝箱。"));
-                list.add(createRegionMap("桃園八德", "🥬 設施有機蔬菜", "24°C", "🌀", "強風驟雨", "95%", "96%", "微弱 (1)", "溫室壓條加固防風網，排水抽水機待命，採收蔬菜直送冷鏈庫。"));
+                list.add(createRegionMap("屏東枋山", "🥭 愛文芒果專區", "26°C", "🌀", "暴風圈籠罩", "100%", "98%", "微弱 (1)", "🚨 外銷芒果防颱緊急搶收完成，全員撤離田區待命。"));
+                list.add(createRegionMap("桃園八德", "🥬 設施有機蔬菜", "24°C", "🌀", "強風驟雨", "95%", "96%", "微弱 (1)", "溫室壓條加固防風網，排水抽水機待命，完成已採收蔬菜出貨。"));
                 list.add(createRegionMap("宜蘭三星", "🌱 三星青蔥專班", "23°C", "🌀", "狂風暴雨", "100%", "99%", "微弱 (1)", "青蔥搶收完成避免折損，全員集貨場通宵進行截切與冷凍保溫。"));
                 list.add(createRegionMap("雲林元長", "🫑 設施彩椒專區", "25°C", "🌀", "豪雨強陣風", "90%", "95%", "微弱 (1)", "檢查溫室捲揚防強風灌入，工班全員至集貨場支援備援出貨。"));
                 list.add(createRegionMap("新竹峨眉", "🍵 東方美人茶園", "24°C", "🌀", "豪大雨警戒", "95%", "96%", "微弱 (1)", "茶園邊坡排水防塌，機具機耕設備進庫防颱固定。"));
@@ -581,7 +547,7 @@ public class DispatchService {
             case "cloudy":
             default:
                 list.add(createRegionMap("屏東枋山", "🥭 愛文芒果專區", "30°C", "⛅", "多雲時晴", "20%", "68%", "中量 (6)", "果園採收與套袋作業正常推進，果實外觀品相優良。"));
-                list.add(createRegionMap("桃園八德", "🥬 設施有機蔬菜", "26°C", "⛅", "多雲舒適", "20%", "68%", "中量 (5)", "溫室通風良好，持續精緻修葉分級與生鮮冷鏈直配。"));
+                list.add(createRegionMap("桃園八德", "🥬 設施有機蔬菜", "26°C", "⛅", "多雲舒適", "20%", "68%", "中量 (5)", "溫室通風良好，持續精緻修葉分級與生鮮直配。"));
                 list.add(createRegionMap("宜蘭三星", "🌱 三星青蔥專班", "25°C", "⛅", "陰天多雲", "25%", "75%", "低量 (4)", "氣溫涼爽極利拔蔥，洗蔥機水線高效作業中。"));
                 list.add(createRegionMap("雲林元長", "🫑 設施彩椒專區", "28°C", "⛅", "多雲微風", "15%", "65%", "中量 (6)", "設施內溫度適宜，進行吊蔓修葉與病蟲害巡視。"));
                 list.add(createRegionMap("新竹峨眉", "🍵 東方美人茶園", "26°C", "⛅", "多雲風輕", "15%", "65%", "中量 (5)", "適合大疆 T50 執行大面積超低空精準施肥作業。"));

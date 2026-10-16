@@ -77,12 +77,8 @@ class LineFarmerQueryApiTest extends ApiTestSupport {
     }
 
     @Test
-    void weatherListsOwnActiveOrdersWithRegionAndIndoorTeam() throws Exception {
-        DispatchTeam b = teamRepository.findById("team_b").orElseThrow();
-        String saved = b.getStatus();
-        try {
-            b.setStatus("hedged_indoor");
-            teamRepository.save(b);
+    void weatherListsOwnActiveOrdersWithRegion() throws Exception {
+        {
             JsonNode d = query("farmer", F001_LINE, "weather", "").get("data");
             assertEquals("weather", d.get("kind").asText());
             assertTrue(d.hasNonNull("weather"));
@@ -95,13 +91,10 @@ class LineFarmerQueryApiTest extends ApiTestSupport {
             }
             assertNotNull(mine, d.toString());
             assertTrue(mine.get("workingToday").asBoolean());
-            assertTrue(mine.get("teamIndoor").asBoolean());
+            assertFalse(mine.has("teamIndoor"), "暴雨避險（室內）已移除");
             assertEquals("屏東縣枋山鄉", mine.get("place").asText());
             assertTrue(mine.get("region").isObject(), "屏東縣枋山鄉應對到「屏東枋山」產區：" + mine);
             assertEquals("屏東枋山", mine.get("region").get("region").asText());
-        } finally {
-            b.setStatus(saved);
-            teamRepository.save(b);
         }
     }
 

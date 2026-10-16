@@ -128,7 +128,7 @@ public class LineNotifyService {
 
     /**
      * 天候發布（科技後台切換天候情境）：只在切到警戒（warning／danger）時通知今天施工中的訂單：
-     * 農場主收「訂單受影響」，出工名單收「集合／室內作業」
+     * 農場主收「訂單受影響」，出工名單收「天候警報」
      */
     public void weatherChanged(String previousScenario, Map<String, Object> state) {
         String scenario = String.valueOf(state.get("scenarioId"));
@@ -145,23 +145,13 @@ public class LineNotifyService {
             fp.put("orders", today.stream().map(Order::getId).toList());
             Map<String, Object> farmerResult = send(LineUser.CHANNEL_FARMER, "weather_farmer", fp, farmerRecipients(farmers));
 
-            // 工人：依所屬工班是否改到室內，分兩批
-            Map<Boolean, Set<String>> byIndoor = new LinkedHashMap<>();
-            for (Order o : today) {
-                boolean indoor = teamRepository.findById(nz(o.getAssignedTeamId()))
-                        .map(t -> "hedged_indoor".equals(t.getStatus())).orElse(false);
-                byIndoor.computeIfAbsent(indoor, k -> new LinkedHashSet<>()).addAll(crewOf(o));
-            }
-            int sent = 0, skipped = 0;
-            for (Map.Entry<Boolean, Set<String>> e : byIndoor.entrySet()) {
-                Map<String, Object> wp = new LinkedHashMap<>();
-                wp.put("weather", weather);
-                wp.put("indoor", e.getKey());
-                Map<String, Object> r = sendWorker("weather_worker", wp, workerRecipients(e.getValue()));
-                sent += num(r.get("recipients"));
-                skipped += num(r.get("skippedQuietHours"));
-            }
-            return summary("weather", today.size(), num(farmerResult.get("recipients")), sent, skipped);
+            // 工人：今天出工名單一律收天候警報
+            Set<String> crew = new LinkedHashSet<>();
+            for (Order o : today) crew.addAll(crewOf(o));
+            Map<String, Object> wp = new LinkedHashMap<>();
+            wp.put("weather", weather);
+            Map<String, Object> r = sendWorker("weather_worker", wp, workerRecipients(crew));
+            return summary("weather", today.size(), num(farmerResult.get("recipients")), num(r.get("recipients")), num(r.get("skippedQuietHours")));
         });
     }
 

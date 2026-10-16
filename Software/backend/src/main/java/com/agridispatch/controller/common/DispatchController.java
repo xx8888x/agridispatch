@@ -48,8 +48,6 @@ public class DispatchController {
         m.put("workerCount", t.getWorkerCount());
         m.put("normalLocation", t.getNormalLocation());
         m.put("normalTask", t.getNormalTask());
-        m.put("hedgeLocation", t.getHedgeLocation());
-        m.put("hedgeTask", t.getHedgeTask());
         m.put("status", t.getStatus());
         return m;
     }
@@ -114,18 +112,5 @@ public class DispatchController {
         return ResponseEntity.ok(Map.of("success", true, "data", updated, "message", "成功更新工班資訊"));
     }
 
-    @PostMapping("/weather-switch")
-    public ResponseEntity<?> toggleWeatherSwitch(@RequestBody(required = false) Map<String, Object> req) {
-        boolean rain = true;
-        if (req != null && req.containsKey("isRainMode")) {
-            rain = Boolean.parseBoolean(req.get("isRainMode").toString());
-        } else {
-            rain = !dispatchService.isRainMode();
-        }
-        String previous = dispatchService.getCurrentScenarioId();
-        Map<String, Object> result = dispatchService.setRainMode(rain);
-        lineNotifyService.weatherChanged(previous, result);
-        return ResponseEntity.ok(Map.of("success", true, "data", result, "message", "天候避險狀態已切換"));
-    }
 }
 

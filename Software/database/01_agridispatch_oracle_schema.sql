@@ -191,7 +191,7 @@ COMMENT ON COLUMN crops.workers_per_fen IS '每分地建議派遣人數';
 COMMENT ON COLUMN crops.rate IS '每工時標準牌價 (新台幣)';
 COMMENT ON COLUMN crops.season IS '盛產作業產季週期';
 COMMENT ON COLUMN crops.task_description IS '田間外銷級採收作業標準SOP';
-COMMENT ON COLUMN crops.indoor_alternative IS '突發暴雨室內冷鏈集貨備援作業';
+COMMENT ON COLUMN crops.indoor_alternative IS '（已停用）暴雨避險功能已移除，欄位保留相容舊庫，固定存 —';
 
 -- ====================================================================
 -- 2. 小農/契作商表 (FARMERS)
@@ -263,8 +263,8 @@ COMMENT ON COLUMN dispatch_teams.worker_count IS '在籍農工人數';
 COMMENT ON COLUMN dispatch_teams.leader IS '帶隊組長姓名';
 COMMENT ON COLUMN dispatch_teams.vehicle IS '專屬接送專車車號 (如 智農 1 號車 RBF-8899)';
 COMMENT ON COLUMN dispatch_teams.normal_location IS '晴天天候田間出勤場域';
-COMMENT ON COLUMN dispatch_teams.hedge_location IS '暴雨天候室內冷鏈避險場域';
-COMMENT ON COLUMN dispatch_teams.status IS '出勤狀態 (active_field:田間出勤, hedged_indoor:冷鏈避險, standby:待命)';
+COMMENT ON COLUMN dispatch_teams.hedge_location IS '（已停用）暴雨避險功能已移除，欄位保留相容舊庫，固定存「待安排」';
+COMMENT ON COLUMN dispatch_teams.status IS '出勤狀態 (active_field:田間出勤, standby:待命；hedged_indoor 為舊值，已不再使用)';
 
 -- ====================================================================
 -- 社區共享班表 (SHARED_ROSTERS)：合作社開班、農戶認領上午／下午時段（每次認領 = 一張訂單）
@@ -434,7 +434,7 @@ CREATE TABLE clock_ins (
 
 CREATE INDEX idx_clock_ins_order ON clock_ins (order_id, work_date);
 
-COMMENT ON TABLE clock_ins IS 'GPS 現場數位打卡紀錄表：工人抵達田區或冷鏈場打卡';
+COMMENT ON TABLE clock_ins IS 'GPS 現場數位打卡紀錄表：工人抵達田區打卡';
 COMMENT ON COLUMN clock_ins.order_id IS '本次出勤所屬訂單（合法用工證明依此彙整）；舊資料或無法判定時為 NULL';
 COMMENT ON COLUMN clock_ins.foreman_rating IS '領班逐人評核：excellent 優 / ok 可 / needs_improvement 需加強；NULL 為未評核';
 COMMENT ON COLUMN clock_ins.foreman_rated_by IS '評核者工號（同工班領班）或管理員編號';
@@ -1014,23 +1014,23 @@ COMMENT ON TABLE finance_voucher_lines IS '傳票明細：一列只有借方或�
 -- 1. 作物基準
 INSERT INTO crops VALUES ('mango', '愛文芒果 (屏東枋山/台南玉井)', 28, 4, 300, '4月 ~ 7月',
     '外銷級採收 (留蒂 0.5cm 護果粉)、疏果、防菌套袋',
-    '屏南冷鏈預冷分級場 (清洗、重量自動分級、外銷裝箱)', SYSTIMESTAMP);
+    '—', SYSTIMESTAMP);
 
 INSERT INTO crops VALUES ('onion', '洋蔥 (屏東恆春/高樹)', 32, 4, 290, '1月 ~ 4月',
     '拔蔥、剪根剪葉、田間裝袋 (每袋 20kg)、搬運上埂',
-    '恆春恆農洋蔥低溫冷藏通風庫 (分級篩選、冷藏排板)', SYSTIMESTAMP);
+    '—', SYSTIMESTAMP);
 
 INSERT INTO crops VALUES ('pepper', '設施彩椒/小黃瓜 (彰化/雲林)', 20, 3, 310, '全年設施溫室',
     '整枝修芽、溫室精準分批採摘、防蟲網維護',
-    '雲林西螺蔬果集貨冷藏中心 (生鮮小包裝、貼標封口)', SYSTIMESTAMP);
+    '—', SYSTIMESTAMP);
 
 INSERT INTO crops VALUES ('scallion', '三星青蔥 (宜蘭三星)', 24, 3, 300, '6月 ~ 10月',
     '洗蔥、拔蔥、分級束捆、冷藏保鮮預備',
-    '三星地區農會洗蔥預冷處理場 (水洗機操作、蔥管套袋)', SYSTIMESTAMP);
+    '—', SYSTIMESTAMP);
 
 INSERT INTO crops VALUES ('pomelo', '文旦柚 (台南麻豆/花蓮鶴岡)', 36, 5, 320, '8月 ~ 9月',
     '白露產季搶收、全區動員、果樹修剪',
-    '麻豆文旦產銷集貨場 (甜度光波檢測、辭水儲存箱包裝)', SYSTIMESTAMP);
+    '—', SYSTIMESTAMP);
 
 -- 2. 小農
 INSERT INTO farmers VALUES ('F001', '陳建龍 (阿龍班長)', '0912-345-678', '屏東縣枋山鄉加祿段 32 號', '88776655', '產銷班', SYSTIMESTAMP);
@@ -1040,22 +1040,22 @@ INSERT INTO farmers VALUES ('F002', '高樹金牌洋蔥合作社', '0922-333-444
 INSERT INTO dispatch_teams VALUES ('team_a', '工班 A 組', 5, '阮文雄 (Nguyễn Văn Hùng)', '0988-111-222',
     '智農 1 號車 (RBF-8899)', '張大哥 (0912-111-333)',
     '🌾 高樹洋蔥專區 (第 3 田區)', '洋蔥採收、剪葉裝袋 (每袋 20kg)',
-    '🏢 屏南蔬果冷鏈預冷集貨場 (B棟 分級包裝線)', '洋蔥低溫乾燥分級、電腦秤重篩選網袋包裝', 'active_field');
+    '待安排', '待安排', 'active_field');
 
 INSERT INTO dispatch_teams VALUES ('team_b', '工班 B 組', 6, '阿迪 (Agus Santoso)', '0988-222-333',
     '智農 2 號車 (RBF-6688)', '李大哥 (0912-222-444)',
     '🌾 枋山愛文芒果 (山坡地外銷供果園)', '套袋疏果、防菌果袋封口、留蒂 0.5cm 採收',
-    '🏢 枋寮生鮮冷鏈物流中心 (A棟 清洗預冷場)', '芒果清洗預冷、自動重量分級套網袋、出口外銷箱貼標封箱', 'active_field');
+    '待安排', '待安排', 'active_field');
 
 INSERT INTO dispatch_teams VALUES ('team_c', '工班 C 組 (機耕隊)', 4, '陳建宏 (資深農機技師)', '0988-333-444',
     '智農 3 號工程車 (大疆 T50 植保機)', '陳建宏',
     '🌾 雲林設施甜椒園區', '無人機代噴 + 溫室整枝修剪',
-    '🏢 西螺農會智慧農業資材維護所', '無人機機隊拆解保養、噴嘴超音波清洗、調配資材準備', 'active_field');
+    '待安排', '待安排', 'active_field');
 
-INSERT INTO dispatch_teams VALUES ('team_d', '工班 D 組 (冷鏈常態組)', 5, '范氏紅 (Phạm Thị Hồng)', '0988-444-555',
+INSERT INTO dispatch_teams VALUES ('team_d', '工班 D 組 (機動支援組)', 5, '范氏紅 (Phạm Thị Hồng)', '0988-444-555',
     '智農專車固定專線', '王大哥 (0912-555-666)',
-    '🏢 屏南冷鏈預冷分級場 (室內 A 棟)', '蔬果預冷降溫、外銷精密秤重分級、冷鏈櫃裝櫃',
-    '🏢 屏南冷鏈預冷分級場 (室內 A 棟)', '蔬果預冷降溫、外銷精密秤重分級、冷鏈櫃裝櫃', 'hedged_indoor');
+    '🌾 八德有機蔬菜專銷班 溫室第 5 區', '有機葉菜採收、精密秤重分級、外銷裝箱',
+    '待安排', '待安排', 'active_field');
 
 -- 4. 派工訂單
 INSERT INTO orders (id, farmer_id, farmer_name, phone, farm_location, crop_id, crop_name, area, plan, plan_name, total_hours, suggested_workers, unit_rate, standard_amount, final_amount, deposit_amount, deposit_paid, status, assigned_team_id, created_at) VALUES ('ORD-2026-001', 'F001', '陳建龍 (阿龍班長)', '0912-345-678', '屏東縣枋山鄉加祿段 32 號',

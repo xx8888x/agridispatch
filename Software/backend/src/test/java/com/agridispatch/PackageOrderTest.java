@@ -30,13 +30,12 @@ class PackageOrderTest {
 
     @Test
     void packageQuoteMatchesTheBrochurePrice() {
-        // DM 標價：芒果 60 工時 18,900／溫室 120 工時 37,800／無人機 30 工時 25,200（牌價 28,800）／冷鏈 80 工時 25,200
+        // DM 標價：芒果 60 工時 18,900／溫室 120 工時 37,800／無人機 30 工時 25,200（牌價 28,800）
         // 欄位：id、工時、牌價、成交價、定金、建議人數
         Object[][] expected = {
                 {"dm-mango-2026", 60, 18900, 18900, 3780, 4},
                 {"dm-greenhouse-2026", 120, 37800, 37800, 7560, 6},
                 {"dm-drone-2026", 30, 28800, 25200, 5040, 2},
-                {"dm-coldchain-2026", 80, 25200, 25200, 5040, 5},
         };
         for (Object[] e : expected) {
             Map<String, Object> q = orderService.calculatePackage((String) e[0], "core_35km", null);

@@ -113,14 +113,9 @@ public class LineWorkerQueryService {
         List<Map<String, Object>> items = new ArrayList<>();
         for (Map<String, Object> it : scheduleOn(w, today, today)) {
             DispatchTeam team = it.get("teamId") == null ? null : teamRepository.findById(it.get("teamId").toString()).orElse(null);
-            // 與天候推播相同：工班狀態為 hedged_indoor 即改到室內避險地點
-            boolean indoor = team != null && "hedged_indoor".equals(team.getStatus());
             Map<String, Object> m = pick(it, "orderId", "timeSlotLabel", "vehicle", "driver", "foremanName", "foremanPhone");
-            m.put("indoor", indoor);
-            m.put("place", indoor ? firstText(team.getHedgeLocation(), it.get("farmLocation"))
-                    : firstText(it.get("farmLocation"), team == null ? null : team.getNormalLocation()));
-            m.put("work", indoor ? firstText(team.getHedgeTask(), it.get("categoryName"))
-                    : firstText(it.get("categoryName"), team == null ? null : team.getNormalTask()));
+            m.put("place", firstText(it.get("farmLocation"), team == null ? null : team.getNormalLocation()));
+            m.put("work", firstText(it.get("categoryName"), team == null ? null : team.getNormalTask()));
             items.add(m);
         }
         d.put("items", items);

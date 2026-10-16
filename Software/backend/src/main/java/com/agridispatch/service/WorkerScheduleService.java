@@ -165,8 +165,6 @@ public class WorkerScheduleService {
         m.put("foremanNotes", o.getForemanNotes());
         m.put("vehicle", team != null ? team.getVehicle() : null);
         m.put("driver", team != null ? team.getDriver() : null);
-        m.put("hedgeLocation", team != null ? team.getHedgeLocation() : null);
-        m.put("hedgeTask", team != null ? team.getHedgeTask() : null);
         return m;
     }
 
@@ -180,8 +178,6 @@ public class WorkerScheduleService {
         m.put("driver", t.getDriver());
         m.put("normalLocation", t.getNormalLocation());
         m.put("normalTask", t.getNormalTask());
-        m.put("hedgeLocation", t.getHedgeLocation());
-        m.put("hedgeTask", t.getHedgeTask());
         return m;
     }
 

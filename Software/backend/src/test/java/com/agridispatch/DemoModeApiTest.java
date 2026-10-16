@@ -287,7 +287,6 @@ class DemoModeApiTest extends ApiTestSupport {
         assertEquals("cloudy", fresh.getCurrentScenarioId());
         fresh.restoreStateFromDb();
         assertEquals("typhoon", fresh.getCurrentScenarioId());
-        assertTrue(fresh.isRainMode());
         assertEquals("danger", fresh.getAlertLevel());
         dispatchService.applyWeatherScenario("cloudy");
     }

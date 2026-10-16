@@ -50,7 +50,6 @@ public class Attendance {
      *   working   → 已上班打卡，尚未下班
      *   completed → 今日出勤已完成
      *   absent    → 缺勤
-     *   hedged    → 天候避險（雨天室內替代）
      */
     @Column(name = "status", length = 20)
     private String status;

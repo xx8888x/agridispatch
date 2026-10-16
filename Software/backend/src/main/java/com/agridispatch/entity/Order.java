@@ -21,7 +21,7 @@ public class Order {
     private double area;
     private String plan;
     private String planName;
-    private String dispatchCategory; // harvest_grading, tillage_planting, pruning_bagging, drone_pest_control, cold_chain_pack, typhoon_emergency
+    private String dispatchCategory; // harvest_grading, tillage_planting, pruning_bagging, drone_pest_control, typhoon_emergency
     private String categoryName;
     private String transportZone;
     private int transportSurcharge;

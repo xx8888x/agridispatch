@@ -29,8 +29,8 @@ public class NotificationController {
         Map<String, Object> n1 = new LinkedHashMap<>();
         n1.put("id", "NOTIF-001");
         n1.put("channel", "weather");
-        n1.put("title", "🚨 午後雷陣雨避險廣播");
-        n1.put("message", "枋山芒果產區田間泥濘，工班即刻移轉至屏南冷鏈預冷包裝線！");
+        n1.put("title", "🌧️ 午後雷陣雨天候通知");
+        n1.put("message", "枋山芒果產區午後雷陣雨，田間泥濘暫停採收，請依現場小工頭通知復工！");
         n1.put("timestamp", LocalDateTime.now().minusHours(2).toString());
         n1.put("target", "all");
         notificationHistory.add(n1);

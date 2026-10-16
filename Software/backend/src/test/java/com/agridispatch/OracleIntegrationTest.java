@@ -82,8 +82,8 @@ class OracleIntegrationTest extends ApiTestSupport {
     @Order(2)
     void ordersRoundTripWithChineseTextAndTimestamps() throws Exception {
         // 工時包 DM 標題換算後 plan_name 超過 100 bytes（舊 schema 為 BYTE 語意會 ORA-12899）
-        MvcResult pkg = call("POST", "/api/orders", admin, Map.of("farmerName", "冷鏈測試農場", "farmerId", "F999",
-                "phone", "0912000333", "farmLocation", "屏東縣高樹鄉測試段 1 號", "packageId", "dm-coldchain-2026"));
+        MvcResult pkg = call("POST", "/api/orders", admin, Map.of("farmerName", "植保測試農場", "farmerId", "F999",
+                "phone", "0912000333", "farmLocation", "屏東縣高樹鄉測試段 1 號", "packageId", "dm-drone-2026"));
         assertEquals(201, status(pkg), body(pkg));
         JsonNode data = json(pkg).get("data");
         assertTrue(data.get("planName").asText().length() > 34);

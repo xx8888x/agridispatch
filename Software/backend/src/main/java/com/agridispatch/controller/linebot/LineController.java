@@ -429,7 +429,6 @@ public class LineController {
         bItems.add(createRowKV("防颱搶收馳援", "NT$ 360 / 小時 (24H 優先調度加乘)"));
         bItems.add(createRowKV("大型曳引機整地", "NT$ 310 / 小時 (80hp 機具另計)"));
         bItems.add(createRowKV("無人機精準代噴", "NT$ 250 / 分地 (大疆 T50 植保機)"));
-        bItems.add(createRowKV("暴雨避險條款", "室內冷鏈預冷分級場替代，免停工損失"));
         body.put("contents", bItems);
         contents.put("body", body);
 
@@ -461,7 +460,7 @@ public class LineController {
     private Map<String, Object> buildWeatherAlertFlex() {
         Map<String, Object> flex = new LinkedHashMap<>();
         flex.put("type", "flex");
-        flex.put("altText", "🌧️ 突發午後暴雨・冷鏈避險緊急通知");
+        flex.put("altText", "🌧️ 午後暴雨・天候警報通知");
 
         Map<String, Object> contents = new LinkedHashMap<>();
         contents.put("type", "bubble");
@@ -474,9 +473,9 @@ public class LineController {
         header.put("paddingAll", "20px");
 
         List<Map<String, Object>> hItems = new ArrayList<>();
-        hItems.add(createLabel("🌧️ 突發暴雨避險機制啟動", "#93C5FD", "xs", "bold"));
-        hItems.add(createLabel("全體專車轉移至冷鏈集貨場", "#FFFFFF", "xl", "bold"));
-        hItems.add(createLabel("屏東枋山/高樹午後強降雨・演算法避險大腦運作", "#BFDBFE", "xs", "regular"));
+        hItems.add(createLabel("🌧️ 天候警報通知", "#93C5FD", "xs", "bold"));
+        hItems.add(createLabel("午後強降雨・田區暫停採收", "#FFFFFF", "xl", "bold"));
+        hItems.add(createLabel("屏東枋山/高樹午後強降雨特報", "#BFDBFE", "xs", "regular"));
         header.put("contents", hItems);
         contents.put("header", header);
 
@@ -487,10 +486,9 @@ public class LineController {
         body.put("paddingAll", "20px");
 
         List<Map<String, Object>> bItems = new ArrayList<>();
-        bItems.add(createRowKV("轉移地點", "🏢 屏南冷鏈預冷分級場 (B棟 室內分級線)"));
-        bItems.add(createRowKV("作業內容", "芒果低溫預冷、外銷秤重、洋蔥乾燥裝箱"));
-        bItems.add(createRowKV("接駁專車", "智農 1、2 號車已抵達各田區載運工班"));
-        bItems.add(createRowKV("出勤保全", "100% 正常出勤，零工時浪費，保全 $62,500 產值"));
+        bItems.add(createRowKV("受影響田區", "屏東枋山、高樹"));
+        bItems.add(createRowKV("作業安排", "暫停田間採收，依現場小工頭通知復工或改期"));
+        bItems.add(createRowKV("接駁專車", "智農 1、2 號車待命，視天候接回工班"));
         body.put("contents", bItems);
         contents.put("body", body);
 
@@ -501,7 +499,7 @@ public class LineController {
         footer.put("paddingAll", "16px");
 
         List<Map<String, Object>> fItems = new ArrayList<>();
-        fItems.add(createButton("📍 查看冷鏈接送專車即時車隊", "https://agridispatch.tw/track/fleet", "#2563EB"));
+        fItems.add(createButton("📍 查看接送專車即時車隊", "https://agridispatch.tw/track/fleet", "#2563EB"));
         footer.put("contents", fItems);
         contents.put("footer", footer);
 

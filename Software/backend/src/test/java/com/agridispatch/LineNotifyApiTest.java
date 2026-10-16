@@ -141,7 +141,7 @@ class LineNotifyApiTest extends ApiTestSupport {
         Map<String, String> crew = bot.recipients("worker", "weather_worker");
         assertEquals("vi", crew.get(VN_UID));
         assertEquals("id", crew.get(ID_UID));
-        assertNotNull(bot.of("worker", "weather_worker").get(0).params().get("indoor"));
+        assertFalse(bot.of("worker", "weather_worker").get(0).params().containsKey("indoor"));
 
         // 同一情境重複切換、切回晴天：不再通知
         bot.clear();

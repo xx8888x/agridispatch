@@ -27,8 +27,9 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * 天候戰情切換（科技後台）：POST /api/dispatch/weather-scenario、/weather-switch、PUT /weather-regions，
- * 以及切換後對工班狀態（田間／室內避險）、weather_states 持久化、總覽與 LINE 通知（受影響訂單）的影響。
+ * 天候戰情切換（科技後台）：POST /api/dispatch/weather-scenario、PUT /weather-regions，
+ * 以及切換後對工班狀態（不變，一律田間出勤）、weather_states 持久化、總覽與 LINE 通知（受影響訂單）的影響。
+ * 暴雨避險（室內冷鏈）功能已移除：沒有 /weather-switch，也不再有 isRainMode 與室內避險狀態。
  * GET /api/dispatch/weather-state、/overview 為公開端點；POST/PUT /api/dispatch/** 僅 admin。
  */
 @SpringBootTest(properties = {
@@ -73,16 +74,6 @@ class WeatherScenarioApiTest extends ApiTestSupport {
         return json(r).get("data");
     }
 
-    /** 各情境的工班狀態規則：回傳在室內避險（hedged_indoor）的工班代號 */
-    private static Set<String> indoorTeams(String scenario, List<String> allTeams) {
-        return switch (scenario) {
-            case "sunny", "cloudy", "cold_wave" -> Set.of("team_d");
-            case "shower" -> Set.of("team_b", "team_d");
-            case "heavy_rain", "typhoon" -> Set.copyOf(allTeams);
-            default -> throw new IllegalArgumentException(scenario);
-        };
-    }
-
     @Test
     void scenarioSwitchIsAdminOnly() throws Exception {
         String farmer = login("farmer", "123456");
@@ -90,8 +81,6 @@ class WeatherScenarioApiTest extends ApiTestSupport {
         assertEquals(401, call("POST", SCENARIO, null, Map.of("scenarioId", "typhoon")).getResponse().getStatus());
         assertEquals(403, call("POST", SCENARIO, farmer, Map.of("scenarioId", "typhoon")).getResponse().getStatus());
         assertEquals(403, call("POST", SCENARIO, worker, Map.of("scenarioId", "typhoon")).getResponse().getStatus());
-        assertEquals(401, call("POST", "/api/dispatch/weather-switch", null, null).getResponse().getStatus());
-        assertEquals(403, call("POST", "/api/dispatch/weather-switch", farmer, Map.of("isRainMode", true)).getResponse().getStatus());
         assertEquals(403, call("PUT", "/api/dispatch/weather-regions", worker, List.of(Map.of("region", "x"))).getResponse().getStatus());
         // 讀取天候狀態公開
         assertEquals(200, call("GET", "/api/dispatch/weather-state", null, null).getResponse().getStatus());
@@ -113,18 +102,18 @@ class WeatherScenarioApiTest extends ApiTestSupport {
     }
 
     @Test
-    void eachScenarioSetsStateTeamsAndPersists() throws Exception {
+    void eachScenarioSetsStateAndPersistsWithoutMovingTeams() throws Exception {
         List<String> allTeams = teamRepository.findAll().stream().map(DispatchTeam::getId).toList();
         assertTrue(allTeams.containsAll(List.of("team_a", "team_b", "team_c", "team_d")), allTeams.toString());
 
-        record Expect(String alert, boolean rain, int revenue, int capacity) {}
+        record Expect(String alert, int revenue, int capacity) {}
         Map<String, Expect> expect = Map.of(
-                "sunny", new Expect("normal", false, 62500, 160),
-                "cloudy", new Expect("normal", false, 62500, 160),
-                "shower", new Expect("info", false, 62500, 160),
-                "heavy_rain", new Expect("warning", true, 62500, 160),
-                "typhoon", new Expect("danger", true, 85000, 192),
-                "cold_wave", new Expect("warning", false, 62500, 160));
+                "sunny", new Expect("normal", 62500, 160),
+                "cloudy", new Expect("normal", 62500, 160),
+                "shower", new Expect("info", 62500, 160),
+                "heavy_rain", new Expect("warning", 62500, 160),
+                "typhoon", new Expect("danger", 85000, 192),
+                "cold_wave", new Expect("warning", 62500, 160));
 
         for (String s : List.of("sunny", "shower", "heavy_rain", "typhoon", "cold_wave", "cloudy")) {
             Expect e = expect.get(s);
@@ -132,31 +121,30 @@ class WeatherScenarioApiTest extends ApiTestSupport {
             assertEquals(s, d.get("scenarioId").asText());
             assertFalse(d.get("scenarioName").asText().isBlank());
             assertEquals(e.alert(), d.get("alertLevel").asText(), s);
-            assertEquals(e.rain(), d.get("isRainMode").asBoolean(), s);
+            assertFalse(d.has("isRainMode"), s);
             assertEquals(e.revenue(), d.get("securedRevenue").asInt(), s);
             assertEquals(e.capacity(), d.get("dailyCapacityHrs").asInt(), s);
             assertTrue(d.get("regionalWeather").size() > 0);
 
-            // 工班狀態：回傳內容與資料庫一致
-            Set<String> indoor = indoorTeams(s, allTeams);
+            // 工班狀態：任何情境都不動，維持田間出勤（回傳內容與資料庫一致）
             for (JsonNode t : d.get("teams")) {
-                assertEquals(indoor.contains(t.get("id").asText()) ? "hedged_indoor" : "active_field", t.get("status").asText(), s + " " + t.get("id"));
+                assertEquals("active_field", t.get("status").asText(), s + " " + t.get("id"));
             }
             for (DispatchTeam t : teamRepository.findAll()) {
-                assertEquals(indoor.contains(t.getId()) ? "hedged_indoor" : "active_field", t.getStatus(), s + " " + t.getId());
+                assertEquals("active_field", t.getStatus(), s + " " + t.getId());
             }
 
             // 公開讀取的天候狀態
             JsonNode ws = weatherState();
             assertEquals(s, ws.get("scenarioId").asText());
-            assertEquals(e.rain(), ws.get("isRainMode").asBoolean());
+            assertFalse(ws.has("isRainMode"));
             assertEquals(e.alert(), ws.get("alertLevel").asText());
             assertEquals(d.get("weatherMessage").asText(), ws.get("weatherMessage").asText());
 
             // 持久化到 weather_states（WS-ACTIVE）
             WeatherState row = weatherStateRepository.findById("WS-ACTIVE").orElseThrow();
             assertEquals(s, row.getScenarioId());
-            assertEquals(e.rain() ? "Y" : "N", row.getIsRainMode());
+            assertEquals("N", row.getIsRainMode());
             assertEquals(e.alert(), row.getAlertLevel());
             assertEquals(e.revenue(), row.getSecuredRevenue());
             assertEquals(e.capacity(), row.getDailyCapacityHrs());
@@ -169,12 +157,12 @@ class WeatherScenarioApiTest extends ApiTestSupport {
         apply("typhoon");
         JsonNode pub = json(call("GET", "/api/dispatch/overview", null, null)).get("data");
         assertEquals("typhoon", pub.get("scenarioId").asText());
-        assertTrue(pub.get("isRainMode").asBoolean());
+        assertFalse(pub.has("isRainMode"));
         assertFalse(pub.has("securedRevenue"));
         for (JsonNode t : pub.get("teams")) {
             assertFalse(t.has("leaderPhone"), t.toString());
             assertFalse(t.has("driver"), t.toString());
-            assertEquals("hedged_indoor", t.get("status").asText());
+            assertEquals("active_field", t.get("status").asText());
         }
         JsonNode farmerView = json(call("GET", "/api/dispatch/overview", login("farmer", "123456"), null)).get("data");
         assertFalse(farmerView.has("securedRevenue"));
@@ -187,27 +175,14 @@ class WeatherScenarioApiTest extends ApiTestSupport {
     }
 
     @Test
-    void emptyBodyMeansSunnyAndRainSwitchToggles() throws Exception {
+    void emptyBodyMeansSunnyAndWeatherSwitchIsGone() throws Exception {
         apply("typhoon");
         MvcResult r = call("POST", SCENARIO, admin, null);
         assertEquals(200, r.getResponse().getStatus());
         assertEquals("sunny", json(r).get("data").get("scenarioId").asText());
 
-        String sw = "/api/dispatch/weather-switch";
-        // 沒帶 isRainMode：切換晴雨
-        JsonNode d = json(call("POST", sw, admin, null)).get("data");
-        assertEquals("heavy_rain", d.get("scenarioId").asText());
-        assertTrue(d.get("isRainMode").asBoolean());
-        d = json(call("POST", sw, admin, Map.of())).get("data");
-        assertEquals("sunny", d.get("scenarioId").asText());
-        assertFalse(d.get("isRainMode").asBoolean());
-        // 指定 isRainMode（布林或字串）
-        d = json(call("POST", sw, admin, Map.of("isRainMode", true))).get("data");
-        assertEquals("heavy_rain", d.get("scenarioId").asText());
-        d = json(call("POST", sw, admin, Map.of("isRainMode", true))).get("data");
-        assertEquals("heavy_rain", d.get("scenarioId").asText(), "重複指定雨天維持雨天");
-        d = json(call("POST", sw, admin, Map.of("isRainMode", "false"))).get("data");
-        assertEquals("sunny", d.get("scenarioId").asText());
+        // 暴雨避險開關已移除
+        assertEquals(404, call("POST", "/api/dispatch/weather-switch", admin, Map.of("isRainMode", true)).getResponse().getStatus());
         assertEquals("sunny", weatherStateRepository.findById("WS-ACTIVE").orElseThrow().getScenarioId());
     }
 
@@ -234,7 +209,7 @@ class WeatherScenarioApiTest extends ApiTestSupport {
         JsonNode rain = apply("heavy_rain").get("regionalWeather");
         assertEquals("24°C", rain.get(0).get("temp").asText());
         assertEquals("95%", rain.get(0).get("rainChance").asText());
-        assertTrue(rain.get(1).get("advice").asText().contains("避險"));
+        assertTrue(rain.get(1).get("advice").asText().contains("安全停工"));
 
         // 空清單不覆蓋；超過 50 筆 400
         MvcResult empty = call("PUT", "/api/dispatch/weather-regions", admin, List.of());
@@ -252,7 +227,6 @@ class WeatherScenarioApiTest extends ApiTestSupport {
         apply("typhoon");
         WeatherState row = weatherStateRepository.findById("WS-ACTIVE").orElseThrow();
         row.setScenarioId("cold_wave");
-        row.setIsRainMode("N");
         row.setAlertLevel("warning");
         row.setCurrentWeather("寒流測試");
         row.setMessage("由資料庫讀回");
@@ -262,7 +236,6 @@ class WeatherScenarioApiTest extends ApiTestSupport {
         dispatchService.restoreStateFromDb();
         JsonNode ws = weatherState();
         assertEquals("cold_wave", ws.get("scenarioId").asText());
-        assertFalse(ws.get("isRainMode").asBoolean());
         assertEquals("warning", ws.get("alertLevel").asText());
         assertEquals("寒流測試", ws.get("currentWeather").asText());
         assertEquals("由資料庫讀回", ws.get("weatherMessage").asText());
@@ -282,10 +255,10 @@ class WeatherScenarioApiTest extends ApiTestSupport {
 
     /**
      * 切換後對訂單與派工的影響：切到警戒（warning／danger）時，今天施工中的訂單
-     * 農場主收「訂單受影響」、出工名單依所屬工班是否改到室內收「集合／室內作業」；一般天候不通知。
+     * 農場主收「訂單受影響」、出工名單收「天候警報」；一般天候不通知。
      */
     @Test
-    void alertSwitchNotifiesAffectedOrderWithIndoorFlagFromTeamStatus() throws Exception {
+    void alertSwitchNotifiesAffectedOrderAndCrew() throws Exception {
         lineUserRepository.deleteAll();
         assertEquals(200, call("POST", "/api/line/bind", login("farmer", "123456"),
                 Map.of("channel", "farmer", "idToken", "mock:" + FARMER_UID)).getResponse().getStatus());
@@ -314,7 +287,7 @@ class WeatherScenarioApiTest extends ApiTestSupport {
             apply("sunny");
             bot.clear();
 
-            // 寒流（warning）：工班 A 仍在田間 → indoor=false
+            // 寒流（warning）：農場主與出工名單都收通知
             apply("cold_wave");
             List<RecordingLineBotClient.Call> farmerCalls = bot.of("farmer", "weather_farmer");
             assertEquals(1, farmerCalls.size());
@@ -322,27 +295,26 @@ class WeatherScenarioApiTest extends ApiTestSupport {
             assertEquals(Map.of(FARMER_UID, "zh"), bot.recipients("farmer", "weather_farmer"));
             List<RecordingLineBotClient.Call> crew = bot.of("worker", "weather_worker");
             assertEquals(1, crew.size());
-            assertEquals(false, crew.get(0).params().get("indoor"));
+            assertFalse(crew.get(0).params().containsKey("indoor"));
             assertEquals("vi", bot.recipients("worker", "weather_worker").get(VN_UID));
             assertEquals(json(call("GET", "/api/dispatch/weather-state", null, null)).get("data").get("currentWeather").asText(),
                     crew.get(0).params().get("weather"));
 
-            // 寒流 → 颱風（danger）：工班 A 改室內避險 → indoor=true
+            // 寒流 → 颱風（danger）：同樣通知
             bot.clear();
             apply("typhoon");
             crew = bot.of("worker", "weather_worker");
             assertEquals(1, crew.size());
-            assertEquals(true, crew.get(0).params().get("indoor"));
             assertEquals(1, bot.of("farmer", "weather_farmer").size());
 
-            // 切回一般天候（normal／info）不通知；雨天開關切到暴雨（warning）會通知
+            // 切回一般天候（normal／info）不通知；切到暴雨（warning）會通知
             bot.clear();
             apply("shower");
             apply("cloudy");
             assertTrue(bot.calls.isEmpty(), bot.calls.toString());
-            call("POST", "/api/dispatch/weather-switch", admin, Map.of("isRainMode", true));
+            apply("heavy_rain");
             assertEquals(1, bot.of("farmer", "weather_farmer").size());
-            assertEquals(true, bot.of("worker", "weather_worker").get(0).params().get("indoor"));
+            assertEquals(1, bot.of("worker", "weather_worker").size());
 
             // 訂單不在今天（已排定但工期在明天）：警戒也不通知
             apply("sunny");

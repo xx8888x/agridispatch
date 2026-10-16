@@ -94,28 +94,16 @@ class LineWorkerQueryApiTest extends ApiTestSupport {
     }
 
     @Test
-    void weatherUsesHedgeLocationWhenTeamMovedIndoorAndHidesAdminMessage() throws Exception {
-        DispatchTeam b = teamRepository.findById("team_b").orElseThrow();
-        String saved = b.getStatus();
-        try {
-            b.setStatus("hedged_indoor");
-            teamRepository.save(b);
+    void weatherShowsFarmPlaceAndHidesAdminMessage() throws Exception {
+        {
             JsonNode d = query("worker", W026_LINE, "weather").get("data");
             assertEquals("weather", d.get("kind").asText());
             assertTrue(d.hasNonNull("weather"));
             assertFalse(d.has("weatherMessage"), "後台天候訊息含營收數字，不應給工人");
             assertFalse(d.has("securedRevenue"));
             JsonNode i = item(d, "ORD-2026-005");
-            assertTrue(i.get("indoor").asBoolean());
-            assertEquals(b.getHedgeLocation(), i.get("place").asText());
-
-            b.setStatus("active_field");
-            teamRepository.save(b);
-            JsonNode field = item(query("worker", W026_LINE, "weather").get("data"), "ORD-2026-005");
-            assertFalse(field.get("indoor").asBoolean());
-        } finally {
-            b.setStatus(saved);
-            teamRepository.save(b);
+            assertFalse(i.has("indoor"), "暴雨避險（室內）已移除");
+            assertTrue(i.hasNonNull("place"));
         }
     }
 

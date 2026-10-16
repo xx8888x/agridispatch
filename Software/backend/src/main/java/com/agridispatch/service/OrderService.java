@@ -22,14 +22,14 @@ import java.util.*;
 public class OrderService {
     public static final Set<String> PLANS = Set.of("early_bird", "hourly_flex", "turnkey");
     public static final Set<String> CATEGORIES = Set.of("harvest_grading", "tillage_planting", "pruning_bagging",
-            "drone_pest_control", "cold_chain_pack", "typhoon_emergency");
+            "drone_pest_control", "typhoon_emergency");
     /**
      * 各派工類別的慣用工班（示範資料的 team_a～team_d）：只在媒合排序最後一關當同分時的偏好，
      * 建議工班一律取自實際存在的工班（MatchingService.suggestTeamId），這些代號不存在也不影響。
      */
     public static final Map<String, String> CATEGORY_DEFAULT_TEAM = Map.of(
             "harvest_grading", "team_a", "tillage_planting", "team_c", "pruning_bagging", "team_b",
-            "drone_pest_control", "team_c", "cold_chain_pack", "team_d", "typhoon_emergency", "team_b");
+            "drone_pest_control", "team_c", "typhoon_emergency", "team_b");
     /** 單筆訂單面積上限（分地），防止誤植或惡意輸入造成金額溢位 */
     public static final double MAX_AREA = 10_000;
     /** 產季早鳥工時包單價（元/hr）：不打折，全案統一 315，高於 F2 v2.3 方案 C2 損益兩平價約 306 */
@@ -58,8 +58,7 @@ public class OrderService {
     private static final Map<String, String[]> PACKAGE_SPECS = Map.of(
             "dm-mango-2026", new String[]{"mango", "harvest_grading", "3.5"},
             "dm-greenhouse-2026", new String[]{"taoyuan_veg", "tillage_planting", "3.0"},
-            "dm-drone-2026", new String[]{"rice", "drone_pest_control", "5.0"},
-            "dm-coldchain-2026", new String[]{"pineapple", "cold_chain_pack", "4.0"});
+            "dm-drone-2026", new String[]{"rice", "drone_pest_control", "5.0"});
 
     public OrderService(OrderRepository orderRepository, CropRepository cropRepository, AgriSettings settings,
                         InsuranceService insuranceService, LineNotifyService lineNotifyService,
@@ -117,13 +116,6 @@ public class OrderService {
                 "icon", "🛸",
                 "description", "專業植保機低空定點噴藥、粒肥精準拋撒、土壤改良劑代噴，附 GPS 航跡報告。",
                 "rateNote", "成果代耕 ($800/分地)"
-            ),
-            Map.of(
-                "id", "cold_chain_pack",
-                "name", "【冷鏈包裝】室內預冷與生鮮截切",
-                "icon", "❄️",
-                "description", "蔬果預冷入庫、自動光波秤重、生鮮超市小包裝、外銷標準貼標封箱。",
-                "rateNote", "雨天避險替代作業"
             ),
             Map.of(
                 "id", "typhoon_emergency",
@@ -248,9 +240,6 @@ public class OrderService {
                 break;
             case "drone_pest_control":
                 categoryName = "【科技植保】無人機精準噴藥施肥";
-                break;
-            case "cold_chain_pack":
-                categoryName = "【冷鏈包裝】室內預冷與生鮮截切";
                 break;
             case "typhoon_emergency":
                 categoryName = "【緊急救火】防颱搶收 24H 馳援";
@@ -871,12 +860,6 @@ public class OrderService {
     private boolean workerCanSee(AuthContext ctx, Order order, String teamId) {
         if (settings.isDemoEnabled()) return true;
         if (teamId != null && teamId.equals(order.getAssignedTeamId())) return true;
-        if (ctx.isAdmin() || isOwner(ctx, order)) return;
-        throw ApiException.forbidden();
-    }
-
-    /** ��Ū�d�ߡ]�I�ڪ��A�B�X�k�Τu�ҩ��^�G��x�H���]�t�X�@���^�έq��֦��� */
-    public void checkOwnerOrStaff(AuthContext ctx, Order order) {
         String crew = order.getCrewWorkerIds();
         return crew != null && Arrays.asList(crew.split(",")).contains(ctx.ref());
     }
@@ -886,8 +869,14 @@ public class OrderService {
         return workerRepository.findById(ctx.ref()).map(w -> w.getTeamId()).orElse(null);
     }
 
-    /** 付款 / 修改 / 取消：admin 或訂單擁有者 */
+    /** 付款 / 修改 / 取消 / 評價：科技後台（admin_tech）或訂單擁有者；合作社（coop_admin）不可（規格 13 §2.2） */
     public void checkOwnerOrAdmin(AuthContext ctx, Order order) {
+        if (ctx.isAdmin() || isOwner(ctx, order)) return;
+        throw ApiException.forbidden();
+    }
+
+    /** 唯讀查詢（付款狀態、合法用工證明）：後台人員（含合作社）或訂單擁有者 */
+    public void checkOwnerOrStaff(AuthContext ctx, Order order) {
         if (ctx.isStaff() || isOwner(ctx, order)) return;
         throw ApiException.forbidden();
     }

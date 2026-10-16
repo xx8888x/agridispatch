@@ -40,7 +40,7 @@ public class Worker {
     private String permitExpiry;       // 聘僱許可效期 (例如 2027-10-31)
     private String insuranceStatus;    // 勞健保與職災險狀態 (例如 "已納保 (勞/健/職災)")
     private String currentTask;        // 目前派遣作業 (例如 "八德有機蔬菜採收")
-    private String dispatchStatus;     // 派遣狀態 (dispatched_field, hedged_indoor, standby)
+    private String dispatchStatus;     // 派遣狀態 (dispatched_field, standby)
     private String phone;              // 聯絡電話
 
     /** 農工登入密碼雜湊（pbkdf2$...）；永不序列化輸出，也不接受由 JSON 寫入 */

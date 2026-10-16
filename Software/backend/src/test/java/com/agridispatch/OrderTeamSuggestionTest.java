@@ -71,24 +71,24 @@ class OrderTeamSuggestionTest extends ApiTestSupport {
                 "baseHoursPerFen", 8, "workersPerFen", 2, "rate", 300)));
 
         // 1. 還沒有任何工班：待分派
-        JsonNode none = calc("cold_chain_pack");
+        JsonNode none = calc("typhoon_emergency");
         assertTrue(none.get("suggestedTeam").isNull(), none.toString());
         assertTrue(none.get("suggestedTeamName").asText().contains("待分派"));
-        assertTrue(createOrder("cold_chain_pack").get("assignedTeamId").isNull(), "沒有工班時訂單為待分派");
+        assertTrue(createOrder("typhoon_emergency").get("assignedTeamId").isNull(), "沒有工班時訂單為待分派");
 
-        // 2. 兩個工班都沒有人手（同分）：類別慣用代號 team_d 只在同分時優先；其他類別依代號
-        team("team_d", "冷鏈組");
+        // 2. 兩個工班都沒有人手（同分）：類別慣用代號 team_b 只在同分時優先；其他類別依代號
+        team("team_b", "南區工班");
         team("T-north", "北區工班");
-        assertEquals("team_d", calc("cold_chain_pack").get("suggestedTeam").asText());
+        assertEquals("team_b", calc("typhoon_emergency").get("suggestedTeam").asText());
         JsonNode harvest = calc("harvest_grading");
         assertEquals("T-north", harvest.get("suggestedTeam").asText(), "慣用的 team_a 不存在：改依實際工班排序");
         assertEquals("北區工班", harvest.get("suggestedTeamName").asText());
 
-        // 3. 北區工班有 2 位完整加保的工人＝合格：勝過慣用代號 team_d
+        // 3. 北區工班有 2 位完整加保的工人＝合格：勝過慣用代號 team_b
         insuredWorker("W801", "T-north");
         insuredWorker("W802", "T-north");
-        assertEquals("T-north", calc("cold_chain_pack").get("suggestedTeam").asText(), "合格工班優先於類別慣用工班");
-        assertEquals("T-north", createOrder("cold_chain_pack").get("assignedTeamId").asText(), "建立訂單也用同一套排序");
+        assertEquals("T-north", calc("typhoon_emergency").get("suggestedTeam").asText(), "合格工班優先於類別慣用工班");
+        assertEquals("T-north", createOrder("typhoon_emergency").get("assignedTeamId").asText(), "建立訂單也用同一套排序");
 
         // 4. 類別清單不再帶寫死的建議工班
         JsonNode categories = json(expect(200, call("GET", "/api/orders/categories", null, null))).get("data");

@@ -1838,8 +1838,10 @@
     payMonth(month);
     var d = payMonthInfo(month), pm = payrollState().months[month];
     var issues = payIssues(payRecords(month));
-    var blockers = issues.filter(function (i) { return i.type === 'missing_clock_out'; }).length;
+    var pendingReq = attReqPendingCount(month);
+    var blockers = issues.filter(function (i) { return i.type === 'missing_clock_out'; }).length + pendingReq;
     d.issues = issues;
+    d.pendingRequests = pendingReq;
     d.blockers = blockers;
     d.canSettle = month < ymNow() && !d.settled && blockers === 0;
     d.workers = d.settled ? clone(pm.slips) : payWorkersWith(month).map(function (w) {
@@ -1857,6 +1859,8 @@
     if (pm && pm.status === 'settled') throw payFail(409, month + ' 已結算');
     var open = payRecords(month).filter(function (a) { return !a.clockOutTime; });
     if (open.length) throw payFail(409, '還有 ' + open.length + ' 筆未下班的出勤，請先修正：' + open.map(function (a) { return a.workerId + '（' + a.workDate + '）'; }).join('、'));
+    var pendingReq = attReqPendingCount(month);
+    if (pendingReq) throw payFail(409, '還有 ' + pendingReq + ' 筆工人的出勤補登申請待審核，請先核准或駁回');
     var slips = payWorkersWith(month).map(function (w) {
       var s = paySlip(w, month);
       s.slipId = 'PS-' + month.replace('-', '') + '-' + w.id; s.period = month.slice(0, 4) + '年' + month.slice(5) + '月'; s.month = month;
@@ -1986,6 +1990,117 @@
     return entry;
   }
 
+  // ---------------- 工人出勤補登／修正申請（移植自後端 AttendanceRequestService；狀態存 localStorage）----------------
+  var ATTREQ_KEY = 'MOCK /attendance-requests';
+  var ATTREQ_STATUS = { pending: '待審核', approved: '已核准', rejected: '已駁回', cancelled: '已取消' };
+  function attReqList() { var e = get(ATTREQ_KEY); return (e && e.list) || []; }
+  function saveAttReqs(list) { put(ATTREQ_KEY, { list: list }); }
+  function attReqPendingCount(month) {
+    return attReqList().filter(function (r) { return r.status === 'pending' && String(r.workDate).slice(0, 7) === month; }).length;
+  }
+  function attReqView(r) {
+    var w = findIn('GET /workers', r.workerId) || {};
+    var v = clone(r);
+    v.workerName = payName(w) || null;
+    v.kindLabel = r.kind === 'create' ? '補登' : '修正';
+    v.statusLabel = ATTREQ_STATUS[r.status] || r.status;
+    v.cancellable = r.status === 'pending';
+    if (r.attendanceId != null) {
+      var hit = payFind(r.attendanceId);
+      if (hit) { v.currentClockIn = hit.rec.clockInTime; v.currentClockOut = hit.rec.clockOutTime || null; }
+    }
+    return v;
+  }
+  /** 預檢（不寫入）：同後端 PayrollService.checkRequest */
+  function attReqCheck(workerId, attendanceId, workDate, inText, outText) {
+    var date, selfId = null;
+    if (attendanceId == null) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(workDate || ''))) throw payFail(400, '請填出勤日期（workDate，YYYY-MM-DD）');
+      if (workDate > ymdToday(0)) throw payFail(400, '出勤日期不可晚於今天');
+      date = workDate;
+    } else {
+      var hit = payFind(attendanceId);
+      if (!hit) throw payFail(404, '找不到出勤紀錄：' + attendanceId);
+      if (hit.workerId !== workerId) throw payFail(403, 'FORBIDDEN');
+      date = hit.rec.workDate;
+      selfId = hit.rec.id;
+      if (blank(inText)) inText = String(hit.rec.clockInTime).slice(11, 16);
+      if (blank(outText) && hit.rec.clockOutTime) outText = String(hit.rec.clockOutTime).slice(11, 16);
+    }
+    var shift = payShift(date, inText, outText);
+    if (selfId != null) {
+      var cur = payFind(selfId).rec;
+      if (localStamp(shift[0]) === cur.clockInTime && localStamp(shift[1]) === cur.clockOutTime) throw payFail(400, '時間沒有變更');
+    }
+    payLocked(date);
+    payOverlap(workerId, shift, selfId);
+    return { date: date, clockIn: localStamp(shift[0]).slice(11, 16), clockOut: localStamp(shift[1]).slice(11, 16) };
+  }
+  function attReqCreate(workerId, b) {
+    try {
+      var w = findIn('GET /workers', workerId);
+      if (!w) throw payFail(404, '找不到工人：' + workerId);
+      var attId = blank(b.attendanceId) ? null : b.attendanceId;
+      var reason = payReason(b.reason);
+      var chk = attReqCheck(workerId, attId, b.workDate, b.clockIn, b.clockOut);
+      if (chk.date < ymdToday(-30)) throw payFail(400, '只能申請補登或修正 30 天內的出勤，更早的請聯絡合作社');
+      var list = attReqList();
+      var dup = list.filter(function (x) {
+        return x.workerId === workerId && x.status === 'pending' &&
+          (attId != null ? String(x.attendanceId) === String(attId) : x.attendanceId == null && x.workDate === chk.date);
+      })[0];
+      if (dup) throw payFail(409, '已有一筆待審核的申請（' + dup.id + '），請等合作社處理或先取消');
+      var year = new Date().getFullYear(), n = 900;
+      list.forEach(function (x) { var m = /^AR-\d+-(\d+)$/.exec(x.id); if (m) n = Math.max(n, +m[1]); });
+      var u = currentUser() || {};
+      var r = { id: 'AR-' + year + '-' + (n + 1), workerId: workerId, kind: attId == null ? 'create' : 'update', attendanceId: attId,
+        workDate: chk.date, clockIn: chk.clockIn, clockOut: chk.clockOut, orderId: attId == null && !blank(b.orderId) ? String(b.orderId).trim() : null,
+        reason: reason, status: 'pending', requestedBy: u.username || null, createdAt: localStamp(new Date()),
+        decidedBy: null, decidedAt: null, decisionNote: null, resultAttendanceId: null };
+      list.unshift(r);
+      saveAttReqs(list);
+      return respond(201, { success: true, data: attReqView(r), message: '已送出補登申請，等合作社審核' });
+    } catch (err) {
+      return respond(err.status || 400, { success: false, error: err.message });
+    }
+  }
+  function attReqAction(id, action, b) {
+    var list = attReqList(), r = list.filter(function (x) { return x.id === id; })[0];
+    if (!r) return respond(404, { success: false, error: '查無申請：' + id });
+    var note = (b && b.note ? String(b.note).trim() : '') || null;
+    var admin = ['admin_tech', 'coop_admin'].indexOf((currentUser() || {}).role) >= 0;
+    try {
+      if (action === 'cancel') {
+        if (r.status !== 'pending') throw payFail(409, '這筆申請「' + ATTREQ_STATUS[r.status] + '」，不能取消');
+        r.status = 'cancelled';
+      } else {
+        if (!admin) throw payFail(403, 'FORBIDDEN');
+        if (r.status !== 'pending') throw payFail(409, '這筆申請已「' + ATTREQ_STATUS[r.status] + '」，不能再審核');
+        if (action === 'reject') {
+          if (!note) throw payFail(400, '請填寫駁回原因');
+          r.status = 'rejected';
+        } else {
+          var inT = blank(b && b.clockIn) ? r.clockIn : b.clockIn, outT = blank(b && b.clockOut) ? r.clockOut : b.clockOut;
+          var why = ('工人申請 ' + r.id + '：' + r.reason).slice(0, 200), rec;
+          if (r.kind === 'update') rec = payUpdate(r.attendanceId, { clockIn: inT, clockOut: outT, reason: why });
+          else rec = payCreate({ workerId: r.workerId, workDate: r.workDate, clockIn: inT, clockOut: outT, orderId: r.orderId, reason: why });
+          r.clockIn = payTime(inT, '上班時間');
+          r.clockOut = payTime(outT, '下班時間');
+          r.resultAttendanceId = rec.id;
+          r.status = 'approved';
+        }
+      }
+      r.decidedBy = (currentUser() || {}).username || null;
+      r.decidedAt = localStamp(new Date());
+      r.decisionNote = note;
+      saveAttReqs(list);
+      return respond(200, { success: true, data: attReqView(r),
+        message: { approve: '已核准，出勤已補登', reject: '已駁回申請', cancel: '已取消申請' }[action] });
+    } catch (err) {
+      return respond(err.status || 400, { success: false, error: err.message });
+    }
+  }
+
   function handleWrite(method, p, bodyText) {
     var sp = splitPath(p);
     var body = null;
@@ -2022,6 +2137,11 @@
     if (pw && pw[2] === 'reopen' && method === 'POST') return payTry(function () { return payReopen(decodeURIComponent(pw[1]), (body || {}).reason); });
     if (pw && !pw[2] && !pw[3] && method === 'POST') return payTry(function () { return payCreate(body || {}); });
     if (pw && pw[3] && method === 'PUT') return payTry(function () { return payUpdate(decodeURIComponent(pw[3]), body || {}); });
+
+    var arw = /^\/workers\/([^/]+)\/attendance-requests$/.exec(sp.path);
+    if (arw && method === 'POST') return attReqCreate(decodeURIComponent(arw[1]), body || {});
+    var ara = /^\/(?:payroll\/)?attendance-requests\/([^/]+)\/(approve|reject|cancel)$/.exec(sp.path);
+    if (ara && method === 'POST') return attReqAction(decodeURIComponent(ara[1]), ara[2], body || {});
 
     var lw = /^\/workers\/([^/]+)\/leaves$/.exec(sp.path);
     if (lw && method === 'POST') return leaveCreate(decodeURIComponent(lw[1]), body || {});
@@ -2197,6 +2317,19 @@
       if (sp.path === '/farmers/me/past-workers') return pastWorkersApi(sp.query);
       var rg = /^\/rosters(?:\/([^/]+))?$/.exec(sp.path);
       if (rg) return rostersApi(rg[1] && decodeURIComponent(rg[1]));
+      if (sp.path === '/payroll/attendance-requests') {
+        var arst = (/[?&]status=([^&]*)/.exec(sp.query) || [])[1];
+        var arl = attReqList().filter(function (x) { return !arst || x.status === decodeURIComponent(arst); }).map(attReqView);
+        arl.sort(function (a, b) { return (a.status !== 'pending') - (b.status !== 'pending') || String(b.createdAt).localeCompare(String(a.createdAt)); });
+        return respond(200, { success: true, data: arl });
+      }
+      var arg = /^\/workers\/([^/]+)\/attendance-requests$/.exec(sp.path);
+      if (arg) {
+        var arwid = decodeURIComponent(arg[1]);
+        var arm = attReqList().filter(function (x) { return x.workerId === arwid; }).map(attReqView);
+        arm.sort(function (a, b) { return String(b.createdAt).localeCompare(String(a.createdAt)); });
+        return respond(200, { success: true, data: arm });
+      }
       if (sp.path === '/payroll/months') return payTry(payMonths);
       var pg = /^\/payroll\/months\/([^/]+)$/.exec(sp.path);
       if (pg) return payTry(function () { return payOverview(decodeURIComponent(pg[1])); });

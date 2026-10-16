@@ -46,6 +46,7 @@
   <!-- AgriDocs: Document & Payslip Downloader -->
   <script src="js/agri-docs.js"></script>
   <script src="js/schedule-calendar.js"></script>
+  <script src="js/attendance-request.js"></script>
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/agri.css">
@@ -313,6 +314,9 @@
         <h4 class="ad-heading" style="margin: 24px 0 10px;" data-i18n="leaveListTitle">我的請假紀錄</h4>
         <div id="leaveList" class="ad-list"><p class="ad-caption" data-i18n="leaveLoading">讀取中…</p></div>
       </div>
+
+      <!-- 出勤補登申請：漏打卡或忘記下班時送出，合作社審核後才補進出勤（js/attendance-request.js，自帶中／越／印三語） -->
+      <div id="attReqMount"></div>
     </div>
 
     <!-- TAB 2: 薪資與薪資單 -->
@@ -1006,6 +1010,7 @@
       else if (payrollError) renderPayrollError(payrollError);
       if (window.ScheduleCalendar) ScheduleCalendar.setLang(currentLang);
       if (leaveData) renderLeaves();
+      if (window.AttendanceRequest) AttendanceRequest.setLang(currentLang);
     }
     // 範本字串 {key} 代換
     const fill = (tpl, vars) => String(tpl).replace(/\{(\w+)\}/g, (m, k) => (vars[k] != null ? vars[k] : m));
@@ -1038,6 +1043,9 @@
         });
       }
       if (currentTab === 'calendar') loadLeaves();
+      if (currentTab === 'calendar' && window.AttendanceRequest) {
+        AttendanceRequest.mount(document.getElementById('attReqMount'), { workerId: currentWorkerId, lang: currentLang });
+      }
       if (window.scrollY > 200) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 

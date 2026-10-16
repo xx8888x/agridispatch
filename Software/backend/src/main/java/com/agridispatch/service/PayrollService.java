@@ -38,6 +38,7 @@ public class PayrollService {
 
     private final AttendanceRepository attendanceRepository;
     private final AttendanceCorrectionRepository correctionRepository;
+    private final AttendanceRequestRepository requestRepository;
     private final PayrollMonthRepository monthRepository;
     private final PayrollSlipRepository slipRepository;
     private final WorkerRepository workerRepository;
@@ -46,10 +47,11 @@ public class PayrollService {
     private final Object lock = new Object();
 
     public PayrollService(AttendanceRepository attendanceRepository, AttendanceCorrectionRepository correctionRepository,
-                          PayrollMonthRepository monthRepository, PayrollSlipRepository slipRepository,
+                          AttendanceRequestRepository requestRepository, PayrollMonthRepository monthRepository, PayrollSlipRepository slipRepository,
                           WorkerRepository workerRepository, OrderRepository orderRepository, WorkerService workerService) {
         this.attendanceRepository = attendanceRepository;
         this.correctionRepository = correctionRepository;
+        this.requestRepository = requestRepository;
         this.monthRepository = monthRepository;
         this.slipRepository = slipRepository;
         this.workerRepository = workerRepository;
@@ -80,7 +82,10 @@ public class PayrollService {
         Map<String, Object> d = monthInfo(ym, pm);
         List<Map<String, Object>> issues = issuesOf(records);
         d.put("issues", issues);
-        long blockers = issues.stream().filter(i -> "missing_clock_out".equals(i.get("type"))).count();
+        long pendingRequests = requestRepository.findByStatusAndWorkDateBetween(
+                AttendanceRequest.PENDING, ym.atDay(1), ym.atEndOfMonth()).size();
+        d.put("pendingRequests", pendingRequests);
+        long blockers = issues.stream().filter(i -> "missing_clock_out".equals(i.get("type"))).count() + pendingRequests;
         d.put("blockers", blockers);
         d.put("canSettle", ym.isBefore(YearMonth.now()) && (pm == null || !pm.isSettled()) && blockers == 0);
 
@@ -123,6 +128,9 @@ public class PayrollService {
             if (!open.isEmpty()) {
                 throw ApiException.conflict("還有 " + open.size() + " 筆未下班的出勤，請先修正：" + String.join("、", open));
             }
+            long pending = requestRepository.findByStatusAndWorkDateBetween(
+                    AttendanceRequest.PENDING, ym.atDay(1), ym.atEndOfMonth()).size();
+            if (pending > 0) throw ApiException.conflict("還有 " + pending + " 筆工人的出勤補登申請待審核，請先核准或駁回");
             List<PayrollSlip> slips = new ArrayList<>();
             for (Worker w : workersWithAttendance(records)) slips.add(toSlip(ym, w, workerService.slipFor(w, ym)));
             pm.setStatus(PayrollMonth.SETTLED);
@@ -228,6 +236,42 @@ public class PayrollService {
         }
     }
 
+    /**
+     * 工人申請補登／修正時的預檢（不寫入）：時間格式、不晚於現在、月份未結算、不與其他出勤重疊。
+     * 補登（attendanceId = null）回傳 {date, clockIn, clockOut}；修正回傳同樣欄位（未給的時間沿用原值）。
+     * 工人只能修正自己的出勤，由呼叫端傳入 workerId 比對。
+     */
+    Map<String, Object> checkRequest(String workerId, Long attendanceId, Object workDate, Object clockIn, Object clockOut) {
+        LocalDate date;
+        Object inText = clockIn, outText = clockOut;
+        Long selfId = null;
+        if (attendanceId == null) {
+            date = parseDate(workDate);
+        } else {
+            Attendance a = attendanceRepository.findById(attendanceId)
+                    .orElseThrow(() -> ApiException.notFound("找不到出勤紀錄：" + attendanceId));
+            if (!a.getWorkerId().equals(workerId)) throw ApiException.forbidden();
+            date = a.getWorkDate();
+            if (text(inText) == null) inText = hhmm(a.getClockInTime());
+            if (text(outText) == null && a.getClockOutTime() != null) outText = hhmm(a.getClockOutTime());
+            selfId = a.getId();
+        }
+        LocalDateTime[] shift = shiftOf(date, inText, outText);
+        if (selfId != null) {
+            Attendance a = attendanceRepository.findById(selfId).orElseThrow();
+            if (shift[0].equals(a.getClockInTime()) && shift[1].equals(a.getClockOutTime())) throw ApiException.badRequest("時間沒有變更");
+        }
+        synchronized (lock) {
+            requireUnlocked(date);
+            requireNoOverlap(workerId, date, shift, selfId);
+        }
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("date", date);
+        m.put("clockIn", hhmm(shift[0]));
+        m.put("clockOut", hhmm(shift[1]));
+        return m;
+    }
+
     /** 一筆出勤的補登／修正歷程 */
     public List<Map<String, Object>> corrections(Long id) {
         if (!attendanceRepository.existsById(id)) throw ApiException.notFound("找不到出勤紀錄：" + id);
@@ -328,7 +372,7 @@ public class PayrollService {
         }
     }
 
-    private static String requireReason(Object v) {
+    static String requireReason(Object v) {
         String s = text(v);
         if (s == null) throw ApiException.badRequest("請填寫原因");
         if (s.length() > REASON_MAX) throw ApiException.badRequest("原因最多 " + REASON_MAX + " 字");

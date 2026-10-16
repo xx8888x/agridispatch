@@ -64,6 +64,26 @@
     <div id="kpiRow" class="ad-stat-grid"></div>
     <div id="issues"></div>
 
+    <!-- 工人送來的補登／修正申請：核准才寫入出勤（GET /payroll/attendance-requests） -->
+    <section id="reqSection">
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 10px;">
+        <h2 class="ad-title" style="flex: 1 1 auto;">工人補登申請 <span id="reqBadge" class="ad-pill ad-pill--warn" hidden></span></h2>
+        <select id="reqFilter" class="ad-select" aria-label="篩選補登申請" style="width: auto; min-width: 150px;">
+          <option value="pending">待審核（全部月份）</option>
+          <option value="month">本月全部申請</option>
+        </select>
+      </div>
+      <div class="ad-card" style="padding: 8px 16px; overflow-x: auto;">
+        <table class="ad-table" style="min-width: 860px;">
+          <thead>
+            <tr><th>申請</th><th>工人</th><th>出勤日期</th><th>時間</th><th>原因</th><th>狀態</th><th></th></tr>
+          </thead>
+          <tbody id="reqRows"><tr><td colspan="7" class="ad-caption" style="text-align: center; padding: 24px;">載入中…</td></tr></tbody>
+        </table>
+      </div>
+      <p class="ad-caption" style="margin-top: 6px;">工人在自己的頁面申請；核准時可調整上下班時間，系統會補登／修正出勤並留紀錄。該月還有待審申請時不能結算。</p>
+    </section>
+
     <section>
       <h2 class="ad-title" style="margin-bottom: 10px;">薪資（<span id="slipKind">試算</span>）</h2>
       <div class="ad-card" style="padding: 8px 16px; overflow-x: auto;">
@@ -141,6 +161,36 @@
     </form>
   </dialog>
 
+  <!-- 審核工人補登申請 -->
+  <dialog id="reviewDialog" class="ad-card" style="max-width: 480px; width: calc(100vw - 32px); border: 1px solid var(--ad-border); padding: 20px;">
+    <form id="reviewForm" method="dialog" style="display: flex; flex-direction: column; gap: 14px;">
+      <h2 id="reviewTitle" class="ad-heading">審核補登申請</h2>
+      <p id="reviewWho" class="ad-caption"></p>
+      <p id="reviewReason" class="ad-caption" style="color: var(--ad-text);"></p>
+      <div style="display: flex; gap: 12px;">
+        <div class="ad-field" style="flex: 1;">
+          <label class="ad-label" for="rIn">上班時間</label>
+          <input id="rIn" type="time" class="ad-input">
+        </div>
+        <div class="ad-field" style="flex: 1;">
+          <label class="ad-label" for="rOut">下班時間</label>
+          <input id="rOut" type="time" class="ad-input">
+        </div>
+      </div>
+      <p class="ad-caption" style="margin-top: -6px;">核准前可依查證結果調整時間；下班早於上班視為隔天下班。</p>
+      <div class="ad-field">
+        <label class="ad-label" for="rNote">備註（核准選填，駁回必填）</label>
+        <input id="rNote" type="text" class="ad-input" maxlength="200" autocomplete="off" placeholder="例：已向領班確認到場">
+      </div>
+      <div id="reviewMsg" role="alert" hidden></div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap;">
+        <button type="button" class="ad-btn ad-btn--ghost" onclick="document.getElementById('reviewDialog').close()">關閉</button>
+        <button id="rejectBtn" type="button" class="ad-btn ad-btn--danger">駁回</button>
+        <button id="approveBtn" type="submit" class="ad-btn ad-btn--primary">核准並補登</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- 結算／重新開放 -->
   <dialog id="monthDialog" class="ad-card" style="max-width: 460px; width: calc(100vw - 32px); border: 1px solid var(--ad-border); padding: 20px;">
     <form id="monthForm" method="dialog" style="display: flex; flex-direction: column; gap: 14px;">
@@ -179,6 +229,8 @@
     let workers = [];       // 補登用工人清單
     let editing = null;     // 修正中的出勤；null 表示補登
     let monthAction = null; // 'settle' | 'reopen'
+    let requests = [];      // 工人補登／修正申請（全部月份）
+    let reviewing = null;   // 審核中的申請
 
     function esc(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -197,7 +249,7 @@
       const res = await fetch(`${API}${path}`, init);
       const body = await res.json().catch(() => ({}));
       if (!res.ok || body.success === false) {
-        throw new Error(res.status === 403 ? '只有科技後台管理員可以操作出勤與月結算' : (body.error || body.message || `HTTP ${res.status}`));
+        throw new Error(res.status === 403 ? '只有科技後台與合作社管理員可以操作出勤與月結算' : (body.error || body.message || `HTTP ${res.status}`));
       }
       return body;
     }
@@ -229,10 +281,12 @@
         const [ov, recs] = await Promise.all([api(`/payroll/months/${encodeURIComponent(month)}`), api(`/payroll/attendance?month=${encodeURIComponent(month)}`)]);
         view = ov.data;
         records = recs.data || [];
+        requests = (await api('/payroll/attendance-requests')).data || [];
         err.hidden = true;
       } catch (e) {
         view = null;
         records = [];
+        requests = [];
         err.textContent = `無法載入出勤與結算資料：${errText(e)}`;
         err.hidden = false;
       }
@@ -249,7 +303,8 @@
         : v.ended === false ? '本月尚未結束，不能結算' : '';
       document.getElementById('settleBtn').hidden = !(view && !v.settled && v.ended);
       document.getElementById('settleBtn').disabled = !v.canSettle;
-      document.getElementById('settleBtn').title = v.canSettle ? '' : (v.blockers ? '還有未下班的出勤，請先修正' : '');
+      const unclosed = (v.blockers || 0) - (v.pendingRequests || 0);
+      document.getElementById('settleBtn').title = v.canSettle ? '' : [unclosed > 0 ? '還有未下班的出勤，請先修正' : '', v.pendingRequests ? '還有待審核的補登申請' : ''].filter(Boolean).join('；');
       document.getElementById('reopenBtn').hidden = !v.settled;
       document.getElementById('createBtn').disabled = !!v.settled;
       document.getElementById('createBtn').title = v.settled ? '該月已結算，請先重新開放' : '';
@@ -266,8 +321,8 @@
 
       const issues = v.issues || [];
       document.getElementById('issues').innerHTML = issues.length ? `
-        <div class="ad-notice ${v.blockers ? 'ad-notice--danger' : 'ad-notice--warn'}" style="flex-direction: column; align-items: flex-start; gap: 6px;">
-          <div style="font-weight: 600;">${v.blockers ? `有 ${v.blockers} 筆未下班的出勤，修正後才能結算` : '請確認以下出勤'}</div>
+        <div class="ad-notice ${unclosed ? 'ad-notice--danger' : 'ad-notice--warn'}" style="flex-direction: column; align-items: flex-start; gap: 6px;">
+          <div style="font-weight: 600;">${unclosed ? `有 ${unclosed} 筆未下班的出勤，修正後才能結算` : '請確認以下出勤'}</div>
           ${issues.map(i => {
             const r = records.find(x => String(x.id) === String(i.attendanceId));
             return `<div>${esc(i.workDate)}・${esc(r ? r.workerName : i.workerId)}（${esc(i.workerId)}）・${esc(i.label)}
@@ -287,8 +342,93 @@
           <td>${w.settled ? `<span class="ad-pill ad-pill--ok">${esc(w.slipId)}</span>` : '<span class="ad-pill">試算</span>'}</td>
         </tr>`).join('') : '<tr><td colspan="8" class="ad-caption" style="text-align: center; padding: 24px;">這個月沒有已下班的出勤。</td></tr>';
 
+      renderRequests();
       renderRecords();
     }
+
+    // ---------------- 工人補登申請 ----------------
+    const REQ_PILL = { pending: 'ad-pill ad-pill--warn', approved: 'ad-pill ad-pill--ok', rejected: 'ad-pill ad-pill--danger', cancelled: 'ad-pill' };
+
+    function reqTimes(r) {
+      const t = `${esc(r.clockIn)}～${esc(r.clockOut)}`;
+      if (r.kind !== 'update') return t;
+      const cur = r.currentClockIn ? `${esc(hm(r.currentClockIn))}～${r.currentClockOut ? esc(hm(r.currentClockOut)) : '未下班'}` : '—';
+      return `<span class="ad-caption">原 ${cur}</span><br>${t}`;
+    }
+
+    function renderRequests() {
+      const month = document.getElementById('monthSel').value;
+      const pendingAll = requests.filter(r => r.status === 'pending');
+      const badge = document.getElementById('reqBadge');
+      badge.hidden = !pendingAll.length;
+      badge.textContent = `${pendingAll.length} 筆待審`;
+      const byMonth = document.getElementById('reqFilter').value === 'month';
+      const list = byMonth ? requests.filter(r => String(r.workDate).slice(0, 7) === month) : pendingAll;
+      document.getElementById('reqRows').innerHTML = list.length ? list.map(r => `
+        <tr>
+          <td><span class="ad-pill">${esc(r.kindLabel)}</span> <span class="ad-caption">${esc(r.id)}</span><div class="ad-caption">${esc(stamp(r.createdAt))}</div></td>
+          <td>${esc(r.workerName || r.workerId)} <span class="ad-caption">${esc(r.workerId)}</span></td>
+          <td class="ad-num">${esc(r.workDate)}</td>
+          <td class="ad-num">${reqTimes(r)}</td>
+          <td style="white-space: normal; max-width: 260px;">${esc(r.reason)}${r.decisionNote ? `<div class="ad-caption">合作社備註：${esc(r.decisionNote)}</div>` : ''}</td>
+          <td><span class="${REQ_PILL[r.status] || 'ad-pill'}">${esc(r.statusLabel)}</span></td>
+          <td style="white-space: nowrap; text-align: right;">
+            ${r.status === 'pending' ? `<button type="button" class="ad-btn ad-btn--primary ad-btn--sm" data-review="${esc(r.id)}">審核</button>` : ''}
+          </td>
+        </tr>`).join('') : `<tr><td colspan="7" class="ad-caption" style="text-align: center; padding: 24px;">${byMonth ? '這個月沒有補登申請。' : '目前沒有待審核的申請。'}</td></tr>`;
+    }
+
+    function reviewMsg(text, kind) {
+      const el = document.getElementById('reviewMsg');
+      el.className = `ad-notice ad-notice--${kind || 'danger'}`;
+      el.textContent = text;
+      el.hidden = !text;
+    }
+
+    function openReview(id) {
+      const r = requests.find(x => x.id === id);
+      if (!r) return;
+      reviewing = r;
+      document.getElementById('reviewTitle').textContent = r.kind === 'update' ? '審核修正申請' : '審核補登申請';
+      document.getElementById('reviewWho').textContent = `${r.workerName || r.workerId}（${r.workerId}）・${r.workDate}・${r.id}`
+        + (r.kind === 'update' && r.currentClockIn ? `・原本 ${hm(r.currentClockIn)}～${r.currentClockOut ? hm(r.currentClockOut) : '未下班'}` : '');
+      document.getElementById('reviewReason').textContent = `申請原因：${r.reason}`;
+      document.getElementById('rIn').value = r.clockIn || '';
+      document.getElementById('rOut').value = r.clockOut || '';
+      document.getElementById('rNote').value = '';
+      document.getElementById('approveBtn').disabled = false;
+      document.getElementById('rejectBtn').disabled = false;
+      reviewMsg('');
+      document.getElementById('reviewDialog').showModal();
+    }
+
+    async function decide(action) {
+      if (!reviewing) return;
+      const note = document.getElementById('rNote').value.trim();
+      const body = { note };
+      if (action === 'approve') {
+        body.clockIn = document.getElementById('rIn').value;
+        body.clockOut = document.getElementById('rOut').value;
+        if (!body.clockIn || !body.clockOut) return reviewMsg('請填上班與下班時間。');
+      } else if (!note) {
+        return reviewMsg('駁回請填寫原因，工人會看到。');
+      }
+      const btns = ['approveBtn', 'rejectBtn'].map(i => document.getElementById(i));
+      btns.forEach(b => { b.disabled = true; });
+      try {
+        await post(`/payroll/attendance-requests/${encodeURIComponent(reviewing.id)}/${action}`, body);
+        document.getElementById('reviewDialog').close();
+        showPageMsg(action === 'approve' ? `已核准 ${reviewing.id}，出勤已${reviewing.kind === 'update' ? '修正' : '補登'}。` : `已駁回 ${reviewing.id}。`);
+        await loadMonths();
+        await load();
+      } catch (err) {
+        btns.forEach(b => { b.disabled = false; });
+        reviewMsg(`未完成：${errText(err)}`);
+      }
+    }
+
+    document.getElementById('reviewForm').addEventListener('submit', (e) => { e.preventDefault(); decide('approve'); });
+    document.getElementById('rejectBtn').addEventListener('click', () => decide('reject'));
 
     function renderRecords() {
       const q = document.getElementById('q').value.trim().toLowerCase();
@@ -471,7 +611,10 @@
       if (ed) return openEdit(ed.dataset.edit);
       const h = e.target.closest('button[data-history]');
       if (h) return openHistory(h.dataset.history);
+      const rv = e.target.closest('button[data-review]');
+      if (rv) return openReview(rv.dataset.review);
     });
+    document.getElementById('reqFilter').addEventListener('change', renderRequests);
     document.getElementById('createBtn').addEventListener('click', openCreate);
     document.getElementById('settleBtn').addEventListener('click', () => openMonth('settle'));
     document.getElementById('reopenBtn').addEventListener('click', () => openMonth('reopen'));

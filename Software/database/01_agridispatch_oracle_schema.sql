@@ -17,6 +17,11 @@ ALTER SESSION SET CURRENT_SCHEMA = c##agridispatch;
 
 -- 清理舊有資料表 (若存在)
 BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE attendance_requests CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
     EXECUTE IMMEDIATE 'DROP TABLE attendance_corrections CASCADE CONSTRAINTS';
 EXCEPTION WHEN OTHERS THEN NULL;
 END;
@@ -358,7 +363,6 @@ CREATE TABLE workers (
     agri_bonus          NUMBER(8)     DEFAULT 8800 NOT NULL,
     employment_type     VARCHAR2(16 CHAR),   -- 本國工人工作型態：full_time 正職／part_time 兼職／senior 中高齡／casual 臨時打工／student 學生打工
     home_area           VARCHAR2(40 CHAR),   -- 居住地（縣市＋鄉鎮市區，例：桃園市八德區）：派工媒合依與農場的距離排序
-    home_area           VARCHAR2(40 CHAR),   -- 居住地（縣市＋鄉鎮市區，例：桃園市八德區）：派工媒合依與農場的距離排序
     transport_allowance NUMBER(8)     DEFAULT 2400 NOT NULL,
     arc_number          VARCHAR2(32 CHAR),
     passport_number     VARCHAR2(32 CHAR),
@@ -381,7 +385,6 @@ COMMENT ON COLUMN workers.nationality IS '國籍 (越南, 印尼, 泰國, 本國
 COMMENT ON COLUMN workers.base_salary IS '外展保障基本法定底薪（2026 年最低工資 NT$ 29,500）';
 COMMENT ON COLUMN workers.agri_bonus IS '中央農業部外展就業獎勵 (最高 NT$ 8,800/月)';
 COMMENT ON COLUMN workers.employment_type IS '工作型態 (full_time 正職, part_time 兼職, senior 中高齡, casual 臨時打工, student 學生打工；外籍為 NULL)';
-COMMENT ON COLUMN workers.home_area IS '居住地 (縣市+鄉鎮市區，派工媒合排序用；未登錄為 NULL)';
 COMMENT ON COLUMN workers.home_area IS '居住地 (縣市+鄉鎮市區，派工媒合排序用；未登錄為 NULL)';
 COMMENT ON COLUMN workers.transport_allowance IS '高溫與專車交通津貼 (NT$ 2,400/月)';
 
@@ -874,6 +877,40 @@ CREATE INDEX idx_att_corr_clock_in ON attendance_corrections (clock_in_id);
 
 COMMENT ON TABLE attendance_corrections IS '出勤補登／修正紀錄：科技後台每次補登或修正 clock_ins 留改前、改後、原因與操作人；不可修改刪除';
 COMMENT ON COLUMN attendance_corrections.action IS 'create 補登 / update 修正';
+
+CREATE TABLE attendance_requests (
+    id                   VARCHAR2(32 CHAR)   NOT NULL,
+    worker_id            VARCHAR2(32 CHAR)   NOT NULL,
+    kind                 VARCHAR2(10 CHAR)   NOT NULL,
+    attendance_id        NUMBER(19),
+    work_date            DATE                NOT NULL,
+    clock_in             VARCHAR2(5 CHAR),
+    clock_out            VARCHAR2(5 CHAR),
+    order_id             VARCHAR2(32 CHAR),
+    reason               VARCHAR2(200 CHAR)  NOT NULL,
+    status               VARCHAR2(20 CHAR)   NOT NULL,
+    requested_by         VARCHAR2(64 CHAR),
+    created_at           TIMESTAMP           DEFAULT SYSTIMESTAMP NOT NULL,
+    decided_by           VARCHAR2(64 CHAR),
+    decided_at           TIMESTAMP,
+    decision_note        VARCHAR2(200 CHAR),
+    result_attendance_id NUMBER(19),
+    CONSTRAINT pk_attendance_requests PRIMARY KEY (id),
+    CONSTRAINT fk_att_req_worker FOREIGN KEY (worker_id) REFERENCES workers(id),
+    CONSTRAINT fk_att_req_clock_in FOREIGN KEY (attendance_id) REFERENCES clock_ins(id),
+    CONSTRAINT chk_att_req_kind CHECK (kind IN ('create', 'update')),
+    CONSTRAINT chk_att_req_status CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled'))
+);
+
+CREATE INDEX idx_att_req_worker ON attendance_requests (worker_id, created_at);
+CREATE INDEX idx_att_req_status ON attendance_requests (status, work_date);
+
+COMMENT ON TABLE attendance_requests IS '工人出勤補登／修正申請：工人本人申請、合作社審核；核准時才寫入 clock_ins 並留 attendance_corrections 紀錄';
+COMMENT ON COLUMN attendance_requests.id IS '申請編號：AR-<年>-<流水號>';
+COMMENT ON COLUMN attendance_requests.kind IS 'create 補登新出勤 / update 修正既有出勤（attendance_id）';
+COMMENT ON COLUMN attendance_requests.clock_in IS '申請的上班時間 HH:mm；下班早於上班視為隔天';
+COMMENT ON COLUMN attendance_requests.status IS 'pending 待審核 / approved 已核准 / rejected 已駁回 / cancelled 已取消';
+COMMENT ON COLUMN attendance_requests.result_attendance_id IS '核准後寫入或修正的出勤紀錄（clock_ins.id）';
 
 CREATE TABLE payroll_months (
     pay_month          VARCHAR2(7 CHAR)    NOT NULL,

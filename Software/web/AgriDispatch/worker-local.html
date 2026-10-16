@@ -40,6 +40,7 @@
   <!-- AgriDocs: Document & Payslip Downloader -->
   <script src="js/agri-docs.js"></script>
   <script src="js/schedule-calendar.js"></script>
+  <script src="js/attendance-request.js"></script>
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/agri.css">
@@ -578,6 +579,9 @@
         <h4 class="ad-heading" style="margin: 24px 0 10px;">我的請假紀錄</h4>
         <div id="leaveList" class="ad-list"><p class="ad-caption">讀取中…</p></div>
       </div>
+
+      <!-- 出勤補登申請：漏打卡或忘記下班時送出，合作社審核後才補進出勤（js/attendance-request.js） -->
+      <div id="attReqMount"></div>
     </div>
 
     <!-- TAB 2: 薪酬與分紅 -->
@@ -817,6 +821,7 @@
     function mountLocalCalendar() {
       if (window.ScheduleCalendar) ScheduleCalendar.mount(document.getElementById('localCalendar'), { workerId: payrollWorkerId(), lang: 'zh' });
       loadLeaves();
+      if (window.AttendanceRequest) AttendanceRequest.mount(document.getElementById('attReqMount'), { workerId: payrollWorkerId, lang: 'zh' });
     }
 
     // ===== 請假：GET／POST /workers/{id}/leaves，取消 POST /leaves/{id}/cancel（本人；已核准的假只能在開始前取消）=====

@@ -9,6 +9,7 @@ import com.agridispatch.entity.WorkerLeave;
 import com.agridispatch.repository.OrderRepository;
 import com.agridispatch.repository.SharedRosterRepository;
 import com.agridispatch.repository.WorkerLeaveRepository;
+import com.agridispatch.repository.WorkerRepository;
 import com.agridispatch.security.AuthContext;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +30,8 @@ import java.util.*;
  *
  * 通知（背景送出，失敗不影響審核）：工人本人申請 → App 推播給合作社與科技後台（後台人員不使用 LINE）；
  * 核准、駁回、合作社取消已核准的假 → LINE 工作者帳號（三語，時段外略過）與 App 推播給工人本人。
+ * 另外每次申請、核准、駁回、已核准的假被取消，都通知工班領班（LINE 工作者帳號＋App）與科技後台（App）；
+ * 核准或取消已核准的假時，若工人已排入的訂單與請假重疊，再通知該筆訂單的農場主（LINE 農場主帳號＋App）。
  */
 @Service
 public class LeaveService {
@@ -67,14 +70,17 @@ public class LeaveService {
     private final WorkerService workerService;
     private final OrderRepository orderRepository;
     private final SharedRosterRepository rosterRepository;
+    private final WorkerRepository workerRepository;
     private final LineNotifyService lineNotifyService;
     private final FcmPushService pushService;
     private final Object lock = new Object();
 
     public LeaveService(WorkerLeaveRepository leaveRepository, WorkerService workerService,
                         OrderRepository orderRepository, SharedRosterRepository rosterRepository,
+                        WorkerRepository workerRepository,
                         LineNotifyService lineNotifyService, FcmPushService pushService) {
         this.leaveRepository = leaveRepository;
+        this.workerRepository = workerRepository;
         this.workerService = workerService;
         this.orderRepository = orderRepository;
         this.rosterRepository = rosterRepository;
@@ -161,9 +167,8 @@ public class LeaveService {
         if (!ctx.isStaff()) {
             notifySafely(() -> pushService.send(AuthContext.ROLE_COOP, "新的請假申請",
                     MatchingService.displayName(w) + "（" + w.getId() + "）" + TYPE_LABELS.get(type) + "・" + period(l) + "，請到「請假審核」處理", "dispatch"));
-            notifySafely(() -> pushService.send(AuthContext.ROLE_ADMIN, "新的請假申請",
-                    MatchingService.displayName(w) + "（" + w.getId() + "）" + TYPE_LABELS.get(type) + "・" + period(l) + "，請到「請假審核」處理", "dispatch"));
         }
+        notifyStakeholders(l, w, false);
         return view(l, w, true);
     }
 
@@ -174,6 +179,7 @@ public class LeaveService {
             WorkerLeave l = requirePending(id);
             decide(l, WorkerLeave.APPROVED, ctx, note);
             notifyWorker(l);
+            notifyStakeholders(l, workerService.getWorkerById(l.getWorkerId()).orElse(null), true);
             return view(l, workerService.getWorkerById(l.getWorkerId()).orElse(null), true);
         }
     }
@@ -186,6 +192,7 @@ public class LeaveService {
             WorkerLeave l = requirePending(id);
             decide(l, WorkerLeave.REJECTED, ctx, note);
             notifyWorker(l);
+            notifyStakeholders(l, workerService.getWorkerById(l.getWorkerId()).orElse(null), true);
             return view(l, workerService.getWorkerById(l.getWorkerId()).orElse(null), false);
         }
     }
@@ -204,8 +211,17 @@ public class LeaveService {
             }
             boolean wasApproved = WorkerLeave.APPROVED.equals(l.getStatus());
             decide(l, WorkerLeave.CANCELLED, ctx, note);
-            // 合作社取消已核准的假才通知（本人取消自己的假不必通知）
+            // 合作社取消已核准的假才通知工人本人（本人取消自己的假不必通知自己）
             if (wasApproved && ctx.isStaff()) notifyWorker(l);
+            // 已核准的假被取消，領班、科技後台與受影響的農場主要知道；待審核的假取消沒有影響，不通知
+            if (wasApproved) {
+                Worker w = workerService.getWorkerById(l.getWorkerId()).orElse(null);
+                if (!ctx.isStaff()) {
+                    notifySafely(() -> pushService.send(AuthContext.ROLE_COOP, "請假已取消",
+                            who(l, w) + TYPE_LABELS.getOrDefault(l.getLeaveType(), l.getLeaveType()) + "・" + period(l) + "，本人取消已核准的假", "dispatch"));
+                }
+                notifyStakeholders(l, w, true);
+            }
             return view(l, workerService.getWorkerById(l.getWorkerId()).orElse(null), false);
         }
     }
@@ -236,6 +252,71 @@ public class LeaveService {
         notifySafely(() -> pushService.send(l.getWorkerId(), title, body, "dispatch"));
     }
 
+    /**
+     * 請假的相關人通知（申請、核准、駁回、已核准的假被取消）：
+     * 領班（請假工人所屬工班的領班，App 推播＋LINE 工作者帳號）、科技後台（App 推播）、
+     * 農場主（只在核准或取消已核准的假，且工人已排入的訂單與請假重疊時，推給該筆訂單的農場主）。
+     * 合作社與工人本人另有處理，這裡不重複。
+     */
+    private void notifyStakeholders(WorkerLeave l, Worker w, boolean decided) {
+        String typeLabel = TYPE_LABELS.getOrDefault(l.getLeaveType(), l.getLeaveType());
+        String status = l.getStatus();
+        String name = w == null ? l.getWorkerId() : MatchingService.displayName(w);
+        String note = l.getDecisionNote();
+        String who = who(l, w);
+        String statusText = WorkerLeave.PENDING.equals(status) ? "待審核" : STATUS_LABELS.getOrDefault(status, status);
+        String detail = who + typeLabel + "・" + period(l) + "（" + statusText + "）" + (note == null ? "" : "：" + note);
+
+        // 科技後台（申請時由 create 另外通知合作社；後台人員不使用 LINE）
+        notifySafely(() -> pushService.send(AuthContext.ROLE_ADMIN, "請假" + statusText, detail, "dispatch"));
+
+        // 領班：請假工人本人是領班時不重複通知自己
+        Set<String> foremen = new LinkedHashSet<>();
+        if (w != null && w.getTeamId() != null) {
+            for (Worker m : workerRepository.findByTeamId(w.getTeamId())) {
+                if (m.isLeader() && !m.getId().equalsIgnoreCase(w.getId())) foremen.add(m.getId());
+            }
+        }
+        if (!foremen.isEmpty()) {
+            Map<String, Object> p = new LinkedHashMap<>();
+            p.put("leaveId", l.getId());
+            p.put("status", status);
+            p.put("workerName", name);
+            p.put("leaveType", typeLabel);
+            p.put("period", period(l));
+            p.put("note", note == null ? "" : note);
+            notifySafely(() -> lineNotifyService.leaveTeamNotice(foremen, p));
+            for (String f : foremen) notifySafely(() -> pushService.send(f, "組員請假" + statusText, detail, "dispatch"));
+        }
+
+        // 農場主：只有生效中的假（核准）被取消或核准時才有影響
+        if (!decided || !(WorkerLeave.APPROVED.equals(status) || WorkerLeave.CANCELLED.equals(status))) return;
+        Map<String, List<String>> byFarmer = new LinkedHashMap<>();
+        for (Order o : conflictOrders(l)) {
+            if (o.getFarmerId() != null && !o.getFarmerId().isBlank()) {
+                byFarmer.computeIfAbsent(o.getFarmerId(), k -> new ArrayList<>()).add(o.getId());
+            }
+        }
+        boolean approved = WorkerLeave.APPROVED.equals(status);
+        byFarmer.forEach((farmerId, orderIds) -> {
+            Map<String, Object> p = new LinkedHashMap<>();
+            p.put("leaveId", l.getId());
+            p.put("status", status);
+            p.put("workerName", name);
+            p.put("leaveType", typeLabel);
+            p.put("period", period(l));
+            p.put("orders", orderIds);
+            notifySafely(() -> lineNotifyService.leaveAffectsFarmer(farmerId, p));
+            notifySafely(() -> pushService.send(farmerId, approved ? "您的訂單有工人請假" : "工人請假已取消",
+                    name + " " + typeLabel + "・" + period(l) + (approved ? "，影響訂單 " : "，原受影響訂單 ") + String.join("、", orderIds)
+                            + (approved ? "；合作社會安排改派" : "；出工名單回復"), "dispatch"));
+        });
+    }
+
+    private static String who(WorkerLeave l, Worker w) {
+        return (w == null ? l.getWorkerId() : MatchingService.displayName(w) + "（" + w.getId() + "）");
+    }
+
     /** 通知失敗只記錄，不影響請假本身的操作 */
     private static void notifySafely(Runnable r) {
         try {
@@ -254,15 +335,25 @@ public class LeaveService {
         leaveRepository.save(l);
     }
 
-    /** 本人已排入、與請假期間重疊的訂單（出工名單有本人，或尚無名單但被指名）與共享班表 */
-    List<Map<String, Object>> conflicts(WorkerLeave l) {
+    /** 本人已排入、與請假期間重疊的進行中訂單（出工名單有本人，或尚無名單但被指名） */
+    private List<Order> conflictOrders(WorkerLeave l) {
         Order hold = l.asHold();
-        List<Map<String, Object>> out = new ArrayList<>();
+        List<Order> out = new ArrayList<>();
         for (Order o : orderRepository.findAll()) {
             if (!ACTIVE_ORDER.contains(o.getStatus()) || !o.overlaps(hold)) continue;
             List<String> crew = o.crewList();
             boolean mine = crew.contains(l.getWorkerId()) || (crew.isEmpty() && l.getWorkerId().equals(o.getPreferredWorkerId()));
-            if (!mine) continue;
+            if (mine) out.add(o);
+        }
+        return out;
+    }
+
+    /** 本人已排入、與請假期間重疊的訂單（出工名單有本人，或尚無名單但被指名）與共享班表 */
+    List<Map<String, Object>> conflicts(WorkerLeave l) {
+        Order hold = l.asHold();
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Order o : conflictOrders(l)) {
+            List<String> crew = o.crewList();
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("kind", "order");
             m.put("id", o.getId());

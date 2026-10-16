@@ -239,6 +239,15 @@ public class TestSimulator {
         for (String lang : List.of("zh", "vi", "id")) {
             failed += expectEq("推播 worker leave_decided rejected " + lang, String.valueOf(validMessages(NotifyMessages.render(W, "leave_decided", lang, lp))), "true");
         }
+        Map<String, Object> tp = new java.util.HashMap<>(np);
+        tp.put("workerName", "林小祥"); tp.put("status", "approved");
+        failed += expect("推播 請假通知領班（核准）", NotifyMessages.render(W, "leave_team", "zh", tp), 0, "組員請假已核准");
+        tp.put("status", "pending");
+        failed += expect("推播 請假通知領班（申請）", NotifyMessages.render(W, "leave_team", "vi", tp), 0, "組員申請請假");
+        tp.put("status", "approved");
+        failed += expect("推播 請假通知農場主（受影響訂單）", NotifyMessages.render(F, "leave_farmer", "zh", tp), 0, "ORD-2026-001");
+        tp.put("status", "cancelled");
+        failed += expect("推播 請假通知農場主（取消）", NotifyMessages.render(F, "leave_farmer", "zh", tp), 0, "工人請假已取消");
         lp.put("leaveTypeCode", "unknown_type"); lp.put("leaveType", "測試假別");
         failed += expect("推播 請假未知假別退回中文名稱", NotifyMessages.render(W, "leave_decided", "vi", lp), 0, "測試假別");
         failed += workerCardChecks();

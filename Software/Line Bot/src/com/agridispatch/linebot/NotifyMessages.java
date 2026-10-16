@@ -12,8 +12,8 @@ import java.util.Set;
 public final class NotifyMessages {
     private NotifyMessages() {}
 
-    public static final Set<String> FARMER_TYPES = Set.of("order_status", "deposit_paid", "weather_farmer");
-    public static final Set<String> WORKER_TYPES = Set.of("tomorrow_task", "weather_worker", "salary_paid", "leave_decided");
+    public static final Set<String> FARMER_TYPES = Set.of("order_status", "deposit_paid", "weather_farmer", "leave_farmer");
+    public static final Set<String> WORKER_TYPES = Set.of("tomorrow_task", "weather_worker", "salary_paid", "leave_decided", "leave_team");
 
     public static boolean supports(Channel channel, String type) {
         return (channel == Channel.FARMER ? FARMER_TYPES : WORKER_TYPES).contains(type);
@@ -58,6 +58,19 @@ public final class NotifyMessages {
                                 "您施工中的訂單 " + list(p.get("orders")) + " 可能受影響。",
                                 "合作社正依天候調度工班；若需改期或改到室內作業，會再個別通知您。"),
                         FlexMessageBuilder.notifyUriButton("查看訂單", orderUrl)));
+            case "leave_farmer": {
+                // 工人請假核准，或已核准的假被取消：只推給工人已排入的訂單的農場主
+                boolean cancelled = "cancelled".equals(s(p, "status"));
+                String title = cancelled ? "工人請假已取消" : "您的訂單有工人請假";
+                List<String> lines = new ArrayList<>();
+                lines.add("工人：" + s(p, "workerName"));
+                lines.add("假別：" + s(p, "leaveType"));
+                lines.add("請假期間：" + s(p, "period"));
+                lines.add((cancelled ? "原受影響訂單：" : "受影響訂單：") + list(p.get("orders")));
+                lines.add(cancelled ? "請假已取消，該工人的出工名單回復。" : "合作社會安排改派，工班人力若有異動會再通知您。");
+                return List.of(FlexMessageBuilder.notifyBubble(title + " " + s(p, "period"), cancelled ? "#047857" : "#B45309",
+                        "智農派工（農場主）", title, lines, FlexMessageBuilder.notifyUriButton("查看訂單", orderUrl)));
+            }
             default:
                 return List.of();
         }
@@ -114,6 +127,30 @@ public final class NotifyMessages {
                 String color = "approved".equals(status) ? "#047857" : "#B45309";
                 return List.of(FlexMessageBuilder.notifyBubble(title + " " + s(p, "period"), color, "智農派工（工作者）", title, lines,
                         FlexMessageBuilder.notifyPostbackButton(I18n.t(lang, "notify.leave.button"), "a=attendance")));
+            }
+            case "leave_team": {
+                // 領班：組員申請、核准、駁回或取消請假（領班為本國工人，訊息一律中文）
+                String status = s(p, "status");
+                String title = switch (status) {
+                    case "approved" -> "組員請假已核准";
+                    case "rejected" -> "組員請假已駁回";
+                    case "cancelled" -> "組員請假已取消";
+                    default -> "組員申請請假";
+                };
+                List<String> lines = new ArrayList<>();
+                lines.add("組員：" + s(p, "workerName"));
+                lines.add("假別：" + s(p, "leaveType"));
+                lines.add("請假期間：" + s(p, "period"));
+                if (!s(p, "note").isEmpty()) lines.add(("rejected".equals(status) ? "原因：" : "備註：") + s(p, "note"));
+                lines.add(switch (status) {
+                    case "approved" -> "請假期間不會排入出工名單，請留意工班人力。";
+                    case "cancelled" -> "請假已取消，該組員恢復可排班。";
+                    case "rejected" -> "該組員照常出工。";
+                    default -> "合作社審核中，結果會再通知您。";
+                });
+                String color = "approved".equals(status) || "cancelled".equals(status) ? "#B45309" : "#047857";
+                return List.of(FlexMessageBuilder.notifyBubble(title + " " + s(p, "period"), color, "智農派工（工作者）", title, lines,
+                        FlexMessageBuilder.notifyPostbackButton("查看今日任務", "a=task")));
             }
             default:
                 return List.of();

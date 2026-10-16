@@ -264,6 +264,22 @@ public class LineNotifyService {
         submit(() -> sendWorker("leave_decided", params, workerRecipients(Set.of(nz(workerId)))));
     }
 
+    /**
+     * 請假對農場主的影響（核准、或取消已核准的假，且工人已排入的訂單與請假重疊）→ 農場主帳號，推給該筆訂單的農場主。
+     * params：leaveId、status（approved／cancelled）、workerName、leaveType、period、orders（該農場主受影響的訂單編號）
+     */
+    public void leaveAffectsFarmer(String farmerId, Map<String, Object> params) {
+        submit(() -> send(LineUser.CHANNEL_FARMER, "leave_farmer", params, farmerRecipients(Set.of(nz(farmerId)))));
+    }
+
+    /**
+     * 請假通知工班領班（申請、核准、駁回、取消）→ 工作者帳號，推給請假工人所屬工班的領班。
+     * params：leaveId、status（pending／approved／rejected／cancelled）、workerName、leaveType、period、note
+     */
+    public void leaveTeamNotice(Collection<String> foremanIds, Map<String, Object> params) {
+        submit(() -> sendWorker("leave_team", params, workerRecipients(foremanIds)));
+    }
+
     /** 方案行銷（科技後台手動）→ 只限農場主帳號 broadcast（規格第柒章；工作者帳號禁止 broadcast） */
     public Map<String, Object> farmerBroadcast(String text) {
         if (text == null || text.isBlank() || text.length() > 1000) {

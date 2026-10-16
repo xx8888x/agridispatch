@@ -156,6 +156,9 @@ Invoke-RestMethod -Uri "http://localhost:5000/health"
 | 天候警戒 `weather_farmer` | 農場主 | 科技後台切到警戒等級的天候情境 |
 | 明日出工 `tomorrow_task` | 工作者（三語） | 每天 18:00 排程，或科技後台「立即發送」 |
 | 天候與集合 `weather_worker` | 工作者（三語） | 同天候警戒；依工班是否改到室內分兩種內容 |
+| 請假審核結果 `leave_decided` | 工作者（三語） | 合作社核准、駁回，或取消已核准的假，推給請假的工人本人 |
+| 組員請假 `leave_team` | 工作者 | 工人申請、核准、駁回、已核准的假被取消，推給所屬工班領班 |
+| 工人請假 `leave_farmer` | 農場主 | 核准或取消已核准的假，且工人已排入的訂單與請假重疊，推給該訂單的農場主 |
 | 方案通知 | 農場主（broadcast） | 科技後台手動；工作者帳號不做 broadcast |
 
 - 內部端點：`POST /internal/notify`（`{channel, type, params, recipients:[{lineUserId, lang}]}`）、`POST /internal/push`（原始訊息；`broadcast:true` 只限農場主帳號），都要 `X-Internal-Key`。Mock 模式只印 log、不呼叫 LINE。

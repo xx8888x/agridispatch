@@ -366,6 +366,8 @@ flowchart LR
 | 天候集合／接駁變更 | 工作者 | 受影響訂單的出工名單成員 | 科技後台發布 | Multicast，依語言分組 |
 | 薪資入帳 | 工作者 | 本人 | 合作社撥款後由後台手動發送（系統尚無發薪作業） | Push |
 | 請假審核結果（2026-10-13 起） | 工作者 | 請假的工人本人 | 合作社核准、駁回，或取消已核准的假 | Push |
+| 組員請假（2026-10-16 起） | 工作者 | 請假工人所屬工班的領班 | 申請、核准、駁回、已核准的假被取消 | Push |
+| 工人請假影響訂單（2026-10-16 起） | 農場主 | 工人已排入、與請假重疊之訂單的農場主 | 核准、或取消已核准的假 | Push |
 | 方案行銷（早鳥等） | 農場主 | 全部好友或分眾 | 科技後台手動 | Broadcast／Narrowcast，僅限農場主帳號 |
 
 規則：
@@ -384,6 +386,7 @@ flowchart LR
 - **後台**：`GET /api/line/notify/status`、`POST /api/line/notify/tomorrow`、`POST /api/line/notify/farmer-broadcast`（皆僅 admin），操作介面在 `TechBackend/admin-line.html`。
 - **薪資入帳通知**：系統沒有「發薪作業完成」事件（薪資只有試算），改由科技後台在合作社實際撥款後呼叫 `POST /api/line/notify/salary-paid`（僅 admin）`{month: yyyy-MM, payDate?, items: [{workerId, netPay}]}`，逐人推給本人（`salary_paid`，三語），金額一律用呼叫端提供的實發數字、不用試算值；回傳 `workerRecipients`、`skippedQuietHours`、`notReached`（未綁定／封鎖／外籍功能關閉）、`unknownWorkers`。時段外略過，可於時段內重送。日後建發薪功能時改由發薪完成事件呼叫 `LineNotifyService.salaryPaid`。後台尚無操作畫面。
 - **請假審核結果**（2026-10-13 起）：`LeaveService` 核准、駁回、合作社取消已核准的假時呼叫 `LineNotifyService.leaveDecided`，推給工人本人（`leave_decided`，三語）；參數 `leaveId`、`status`（approved／rejected／cancelled）、`leaveType`（中文假別）、`leaveTypeCode`（LINE Bot 依代碼以 `notify.leave.type.<代碼>` 翻譯，沒有對應時用中文名稱）、`period`、`note`（合作社手寫，維持原文；駁回時標為「原因」）；按鈕 postback `a=attendance` 開啟本人工作者頁。工人自行取消不通知；時段外略過、不補發。合作社收到新申請則用 App 推播（後台人員不使用 LINE）。
+- **請假的其他相關人**（2026-10-16 起）：`LeaveService.notifyStakeholders` 在申請、核准、駁回、已核准的假被取消（含本人取消）時，另外通知三方——① 領班：請假工人所屬工班中 `is_leader` 的工人（請假者本人是領班時不通知自己），LINE 工作者帳號 `leave_team`（中文；參數 `leaveId`、`status`（pending／approved／rejected／cancelled）、`workerName`、`leaveType`、`period`、`note`）＋App 推播；② 科技後台：App 推播給 `admin_tech`；③ 農場主：只在核准或取消已核准的假，且工人已排入的進行中訂單與請假期間重疊時，推給該筆訂單的農場主，LINE 農場主帳號 `leave_farmer`（參數另有 `orders` 受影響訂單編號）＋App 推播；申請與駁回不影響訂單，不通知農場主。工人本人取消已核准的假時，合作社也收到 App 推播。LINE 照工作者帳號時段規則，時段外略過、不補發，App 推播不受影響。
 - **未做**：推播紀錄不存表（`line_messages` 仍未啟用，見第拾肆章第 11 項）。
 - 推播一律在背景執行，LINE Bot 離線或失敗不影響訂單、付款、天候操作本身。
 

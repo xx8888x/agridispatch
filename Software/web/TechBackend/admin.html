@@ -1601,6 +1601,12 @@
             </select>
           </div>
           <div>
+            <label class="tb-text-2 block mb-1">居住地（縣市＋鄉鎮）</label>
+            <input v-model="workerModal.form.homeArea" list="homeAreaList" type="text" placeholder="例如：桃園市八德區" autocomplete="off" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
+            <datalist id="homeAreaList"><option v-for="t in townOptions" :key="t" :value="t"></option></datalist>
+            <p class="ad-caption" style="margin-top: 4px;">派工媒合依「居住地到農場的距離」優先排住在附近的工人；只填到鄉鎮，不用填住址。</p>
+          </div>
+          <div>
             <label class="tb-text-2 block mb-1">目前派遣狀態</label>
             <select v-model="workerModal.form.dispatchStatus" class="w-full px-3 py-2 rounded-lg tb-surface border tb-border tb-text">
               <option value="dispatched_field">田間作業 (dispatched_field)</option>
@@ -2239,6 +2245,8 @@
         // 功能開關 features.foreignWorkers：關閉時名冊不列外籍移工、新增農工預設本國
         const foreignOn = AgriTheme.feature('foreignWorkers');
         const EMPLOYMENT = AgriTheme.employment;
+        // 居住地輸入建議：全台鄉鎮市區（縣市＋鄉鎮）
+        const townOptions = window.AgriWeather ? window.AgriWeather.towns().map(t => t.key) : [];
 
         // Toast Feedback
         const toast = reactive({ show: false, message: '', type: 'success' });
@@ -2564,7 +2572,7 @@
         const openWorkerModal = (worker = null) => {
           if (worker) {
             workerModal.isEdit = true;
-            workerModal.form = { ...worker, employmentType: worker.employmentType || '' };
+            workerModal.form = { ...worker, employmentType: worker.employmentType || '', homeArea: worker.homeArea || '' };
           } else {
             workerModal.isEdit = false;
             // 工號留空由後端依現有最大序號 +1（名冊可能隱藏外籍移工，前端算的序號會撞號）
@@ -2580,6 +2588,7 @@
               leader: false,
               tier: foreignOn ? 'tier1_foreign' : 'tier2_local_flex',
               employmentType: foreignOn ? '' : 'part_time',
+              homeArea: '',
               baseSalary: 29500,
               agriBonus: 8800,
               transportAllowance: 1200,
@@ -3891,7 +3900,7 @@
           workerNationalityFilter,
           workerEmploymentFilter,
           foreignOn,
-          EMPLOYMENT,
+          EMPLOYMENT, townOptions,
           filteredWorkers,
           exportWorkerCSV,
           toast,

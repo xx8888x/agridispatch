@@ -1217,6 +1217,51 @@
     put('GET /matching/orders/' + encodeURIComponent(o.id), e);
     return e;
   }
+  // 新訂單換了農場，範本名單的距離不適用：依工人居住地（錄製的 GET /workers 的 homeArea）重算到新農場的距離，
+  // 住在附近的排前面（穩定排序：同級維持範本的經驗標籤順序）。比對規則與後端 TownGeo 一致；沒有座標表時維持範本順序
+  function geoTowns() {
+    var src = window.AGRI_TW_TOWNS || {}, list = [];
+    Object.keys(src).forEach(function (county) {
+      src[county].forEach(function (t) { list.push({ county: county, town: t[0].replace(/臺/g, '台'), lat: t[1], lon: t[2] }); });
+    });
+    return list;
+  }
+  function geoMatch(text) {
+    if (!text) return null;
+    var s = String(text).replace(/臺/g, '台'), list = geoTowns();
+    var hit = list.filter(function (t) { return s.indexOf(t.county) >= 0 && s.indexOf(t.town) >= 0; });
+    if (!hit.length) hit = list.filter(function (t) { return s.indexOf(t.town) >= 0 && t.town.length > 2; });
+    hit.sort(function (a, b) { return b.town.length - a.town.length; });
+    return hit[0] || null;
+  }
+  function geoKm(a, b) {
+    var rad = function (d) { return d * Math.PI / 180; };
+    var dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return Math.round(2 * 6371 * Math.asin(Math.min(1, Math.sqrt(h))) * 10) / 10;
+  }
+  var BAND_LABEL = ['住在附近', '同區域', '距離較遠', '未登錄居住地'];
+  function nearFirst(c, o) {
+    var farm = geoMatch(o.farmLocation);
+    var homes = {};
+    (listOf(get('GET /workers')) || []).forEach(function (w) { homes[w.id] = w.homeArea || null; });
+    (c.candidates || []).concat(c.excluded || []).forEach(function (x) {
+      var home = geoMatch(homes[x.workerId]);
+      var km = home && farm ? geoKm(home, farm) : null;
+      var band = !farm || km == null ? 3 : km <= 15 ? 0 : km <= 40 ? 1 : 2;
+      x.homeArea = home ? home.county + home.town : null;
+      x.distanceKm = km;
+      x.distanceBand = band;
+      x.distanceLabel = BAND_LABEL[band];
+    });
+    c.farmArea = farm ? farm.county + farm.town : null;
+    c.distanceNote = farm
+      ? '農場位於 ' + c.farmArea + '；依工人居住地由近到遠排序，其次看前後 2 天班表有空檔'
+      : '無法從作業地點「' + (o.farmLocation || '未填') + '」判斷鄉鎮，未依距離排序';
+    var idx = {};
+    (c.candidates || []).forEach(function (x, i) { idx[x.workerId] = i; });
+    if (c.candidates) c.candidates.sort(function (a, b) { return a.distanceBand - b.distanceBand || idx[a.workerId] - idx[b.workerId]; });
+  }
   function synthCrew(orderId, teamId) {
     var o = orderRef(orderId);
     o = o && o.order;
@@ -1226,6 +1271,7 @@
     var c = clone(src.b.data), need = o.suggestedWorkers || c.needed, picked = 0;
     c.needed = need;
     c.currentCrew = [];
+    nearFirst(c, o);
     (c.candidates || []).forEach(function (x) {
       x.onCurrentCrew = false;
       x.recommended = !x.suspended && picked < need;

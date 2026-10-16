@@ -358,6 +358,7 @@ CREATE TABLE workers (
     agri_bonus          NUMBER(8)     DEFAULT 8800 NOT NULL,
     employment_type     VARCHAR2(16 CHAR),   -- 本國工人工作型態：full_time 正職／part_time 兼職／senior 中高齡／casual 臨時打工／student 學生打工
     home_area           VARCHAR2(40 CHAR),   -- 居住地（縣市＋鄉鎮市區，例：桃園市八德區）：派工媒合依與農場的距離排序
+    home_area           VARCHAR2(40 CHAR),   -- 居住地（縣市＋鄉鎮市區，例：桃園市八德區）：派工媒合依與農場的距離排序
     transport_allowance NUMBER(8)     DEFAULT 2400 NOT NULL,
     arc_number          VARCHAR2(32 CHAR),
     passport_number     VARCHAR2(32 CHAR),
@@ -380,6 +381,7 @@ COMMENT ON COLUMN workers.nationality IS '國籍 (越南, 印尼, 泰國, 本國
 COMMENT ON COLUMN workers.base_salary IS '外展保障基本法定底薪（2026 年最低工資 NT$ 29,500）';
 COMMENT ON COLUMN workers.agri_bonus IS '中央農業部外展就業獎勵 (最高 NT$ 8,800/月)';
 COMMENT ON COLUMN workers.employment_type IS '工作型態 (full_time 正職, part_time 兼職, senior 中高齡, casual 臨時打工, student 學生打工；外籍為 NULL)';
+COMMENT ON COLUMN workers.home_area IS '居住地 (縣市+鄉鎮市區，派工媒合排序用；未登錄為 NULL)';
 COMMENT ON COLUMN workers.home_area IS '居住地 (縣市+鄉鎮市區，派工媒合排序用；未登錄為 NULL)';
 COMMENT ON COLUMN workers.transport_allowance IS '高溫與專車交通津貼 (NT$ 2,400/月)';
 

@@ -25,6 +25,9 @@ public class Worker {
     /** 工作型態（本國工人）：full_time 正職 / part_time 兼職 / senior 中高齡 / casual 臨時打工 / student 學生打工；外籍為 null。代碼見 WorkerService.EMPLOYMENT_TYPES */
     @jakarta.persistence.Column(name = "employment_type", length = 16)
     private String employmentType;
+    /** 居住地（只到縣市＋鄉鎮市區，例如「桃園市八德區」）：派工媒合依與農場的距離，優先排住在附近的工人；未登錄者不參與距離排序 */
+    @jakarta.persistence.Column(name = "home_area", length = 40)
+    private String homeArea;
     private int baseSalary;
     private int agriBonus;
     private int transportAllowance;
@@ -105,6 +108,9 @@ public class Worker {
 
     public String getEmploymentType() { return employmentType; }
     public void setEmploymentType(String employmentType) { this.employmentType = employmentType; }
+
+    public String getHomeArea() { return homeArea; }
+    public void setHomeArea(String homeArea) { this.homeArea = homeArea; }
 
     public int getBaseSalary() { return baseSalary; }
     public void setBaseSalary(int baseSalary) { this.baseSalary = baseSalary; }

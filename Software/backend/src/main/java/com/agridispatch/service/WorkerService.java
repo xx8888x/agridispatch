@@ -35,14 +35,16 @@ public class WorkerService {
     private final AttendanceService attendanceService;
     private final ObjectMapper objectMapper;
     private final PayrollSlipRepository payrollSlipRepository;
+    private final TownGeo townGeo;
     private final Object idLock = new Object();
 
     public WorkerService(WorkerRepository workerRepository, AttendanceService attendanceService, ObjectMapper objectMapper,
-                         PayrollSlipRepository payrollSlipRepository) {
+                         PayrollSlipRepository payrollSlipRepository, TownGeo townGeo) {
         this.workerRepository = workerRepository;
         this.attendanceService = attendanceService;
         this.objectMapper = objectMapper;
         this.payrollSlipRepository = payrollSlipRepository;
+        this.townGeo = townGeo;
     }
 
     public List<Worker> getAllWorkers() {
@@ -79,6 +81,7 @@ public class WorkerService {
         }
         validateMoney(worker);
         worker.setEmploymentType(normalizeEmploymentType(worker.getEmploymentType()));
+        worker.setHomeArea(normalizeHomeArea(worker.getHomeArea()));
         if (Masking.isMasked(worker.getArcNumber()) || Masking.isMasked(worker.getPassportNumber())) {
             throw ApiException.badRequest("證件號碼不可為遮罩值");
         }
@@ -130,6 +133,7 @@ public class WorkerService {
             existing.setTier(u.getTier());
         }
         if (copy.containsKey("employmentType")) existing.setEmploymentType(normalizeEmploymentType(u.getEmploymentType()));
+        if (copy.containsKey("homeArea")) existing.setHomeArea(normalizeHomeArea(u.getHomeArea()));
         if (copy.containsKey("baseSalary")) existing.setBaseSalary(u.getBaseSalary());
         if (copy.containsKey("agriBonus")) existing.setAgriBonus(u.getAgriBonus());
         if (copy.containsKey("transportAllowance")) existing.setTransportAllowance(u.getTransportAllowance());
@@ -158,6 +162,15 @@ public class WorkerService {
             throw ApiException.badRequest("employmentType 必須為 " + String.join(" / ", new TreeSet<>(EMPLOYMENT_TYPES.keySet())));
         }
         return t;
+    }
+
+    /** 居住地：空字串視為未設定；其餘須能比對到鄉鎮市區，存成標準寫法（例如「桃園市八德區」），供派工媒合算距離 */
+    private String normalizeHomeArea(String area) {
+        String a = emptyToNull(area);
+        if (a == null) return null;
+        TownGeo.Town t = townGeo.match(a);
+        if (t == null) throw ApiException.badRequest("homeArea 找不到對應的鄉鎮市區，請填「縣市＋鄉鎮市區」，例如桃園市八德區");
+        return t.label();
     }
 
     private static String emptyToNull(String s) {

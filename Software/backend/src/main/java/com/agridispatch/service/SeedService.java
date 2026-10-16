@@ -524,6 +524,33 @@ public class SeedService {
                     workerRepository.save(w);
                 }
             }));
+
+            // 居住地（縣市＋鄉鎮市區）：派工媒合依與農場的距離排序用；外籍移工填宿舍所在地。既有資料庫未設定者一併補上
+            Map<String, String> homes = new java.util.HashMap<>();
+            for (String id : List.of("W001", "W002", "W003", "W004", "W005", "W016", "W017", "W018", "W019", "W020", "W030", "W031"))
+                homes.put(id, "桃園市八德區");
+            for (String id : List.of("W006", "W007", "W008", "W009", "W010", "W011", "W024", "W037", "W038"))
+                homes.put(id, "宜蘭縣三星鄉");
+            for (String id : List.of("W023", "W026", "W033", "W034"))
+                homes.put(id, "屏東縣枋山鄉");
+            homes.put("W035", "屏東縣內埔鄉");
+            homes.put("W036", "屏東縣內埔鄉");
+            homes.put("W012", "新竹縣峨眉鄉");
+            homes.put("W014", "新竹縣峨眉鄉");
+            homes.put("W015", "新竹縣峨眉鄉");
+            homes.put("W013", "桃園市大溪區");
+            homes.put("W022", "桃園市大溪區");
+            homes.put("W039", "桃園市大溪區");
+            homes.put("W021", "桃園市桃園區");
+            homes.put("W040", "新北市三峽區");
+            homes.put("W032", "新竹縣新埔鎮");
+            homes.put("W025", "雲林縣元長鄉");
+            homes.forEach((id, area) -> workerRepository.findById(id).ifPresent(w -> {
+                if (w.getHomeArea() == null) {
+                    w.setHomeArea(area);
+                    workerRepository.save(w);
+                }
+            }));
         }
     }
 

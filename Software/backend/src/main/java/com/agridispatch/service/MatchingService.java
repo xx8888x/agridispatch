@@ -15,9 +15,13 @@ import java.util.*;
  * 工班排序（先過硬性條件：成員皆完整加保、人數足夠）：
  *   該類別有效熟手人數 → 資深熟手人數 → 工班評價平均 → 同期間訂單數（少者優先；未排工期時改看施工中訂單數）→ 該類別預設工班
  * 工期撞期：已排入其他工期重疊訂單出工名單的工人，不列入名單、也不計入合格人數
- * 出工名單（先過硬性條件：工作許可有效、完整加保）：
- *   必含一位領班；其餘依 資深＞熟手＞培養中 → 領班「需加強」比例低 → 「優」比例高 → 該類別時數多
- *   名單 ≥ 4 人時保留至少 1 個「培養中」名額，讓新進工人也能累積經驗（避免熟手壟斷）
+ * 出工名單（先過硬性條件：工作許可有效、完整加保、工期不撞期／未請假）：
+ *   必含一位領班；其餘依
+ *     ① 距離：工人居住地（鄉鎮）到農場作業地點的直線距離分級——附近（≤15 公里）＞同區域（≤40 公里）＞較遠＞未登錄居住地
+ *     ② 班表空檔：工期前後各 2 天已排的班（訂單、共享班表、請假）少者優先，避免連續出工
+ *     ③ 資深＞熟手＞培養中 → 領班「需加強」比例低 → 「優」比例高 → 該類別時數多 → 距離較近
+ *   名單 ≥ 4 人時保留至少 1 個「培養中」名額（同樣先看距離，再看時數），讓新進工人也能累積經驗（避免熟手壟斷）
+ *   農場位置或工人居住地無法判斷時不做距離分級（視同同級），不會因為資料缺漏而被排除。
  * 排序完全不使用國籍、性別、年齡；標籤只影響優先順序，不排除任何合格工人【待確認】。
  * 農場主指名（order.preferredWorkerId）：指名工人所屬工班排在合格工班第一位、指名工人排在出工名單第一位（角色「農場主指名」）；
  *   指名工人不合格或撞期時照常推薦其他人，並以 preferredWarning 提醒調度告知農場主。
@@ -28,6 +32,11 @@ import java.util.*;
 public class MatchingService {
 
     public static final int TRAINEE_SLOT_MIN_CREW = 4;
+    /** 住在附近／同區域的直線距離上限（公里）；超過為「較遠」，沒有居住地為「未登錄」 */
+    public static final double NEAR_KM = 15, REGION_KM = 40;
+    /** 計算班表空檔時，工期前後各看幾天 */
+    public static final int SCHEDULE_MARGIN_DAYS = 2;
+    private static final String[] DISTANCE_LABELS = {"住在附近", "同區域", "距離較遠", "未登錄居住地"};
     private static final Set<String> ASSIGNABLE_STATUS = Set.of(OrderService.PENDING, OrderService.CONFIRMED, OrderService.IN_PROGRESS);
 
     private final OrderService orderService;
@@ -41,12 +50,13 @@ public class MatchingService {
     private final AgriSettings settings;
     private final SharedRosterRepository rosterRepository;
     private final WorkerLeaveRepository leaveRepository;
+    private final TownGeo townGeo;
 
     public MatchingService(OrderService orderService, OrderRepository orderRepository, DispatchTeamRepository teamRepository,
                            WorkerRepository workerRepository, InsuranceRecordRepository insuranceRecordRepository,
                            InsuranceService insuranceService, SkillService skillService, RatingService ratingService,
                            AgriSettings settings, SharedRosterRepository rosterRepository,
-                           WorkerLeaveRepository leaveRepository) {
+                           WorkerLeaveRepository leaveRepository, TownGeo townGeo) {
         this.orderService = orderService;
         this.orderRepository = orderRepository;
         this.teamRepository = teamRepository;
@@ -58,6 +68,7 @@ public class MatchingService {
         this.settings = settings;
         this.rosterRepository = rosterRepository;
         this.leaveRepository = leaveRepository;
+        this.townGeo = townGeo;
     }
 
     /** 可參與派工的工班成員（外籍移工功能關閉時不含外籍工人） */
@@ -221,10 +232,14 @@ public class MatchingService {
         List<InsuranceRecord> records = insuranceRecordRepository.findByWorkerIdIn(members.stream().map(Worker::getId).toList());
 
         Map<String, Order> busy = busyWorkers(order);
+        TownGeo.Town farmTown = townGeo.match(order.getFarmLocation());
+        Map<String, Integer> nearbyLoad = surroundingLoad(order);
         List<Map<String, Object>> eligible = new ArrayList<>();
         List<Map<String, Object>> excluded = new ArrayList<>();
         for (Worker w : members) {
             Map<String, Object> c = candidate(w, skill, today);
+            addDistance(c, w, farmTown);
+            c.put("nearbyLoad", nearbyLoad.getOrDefault(w.getId(), 0));
             String reason = ineligibleReason(w, records, today);
             if (reason == null && busy.containsKey(w.getId())) reason = clashText(busy.get(w.getId()));
             if (reason == null) eligible.add(c);
@@ -234,10 +249,13 @@ public class MatchingService {
             }
         }
         eligible.sort(Comparator
-                .comparing((Map<String, Object> c) -> -(Integer) c.get("levelRank"))
+                .comparing((Map<String, Object> c) -> (Integer) c.get("distanceBand"))
+                .thenComparing(c -> (Integer) c.get("nearbyLoad"))
+                .thenComparing(c -> -(Integer) c.get("levelRank"))
                 .thenComparing(c -> (Double) c.get("needsImprovementRate"))
                 .thenComparing(c -> -(Double) c.get("excellentRate"))
                 .thenComparing(c -> -(Double) c.get("hours"))
+                .thenComparing(c -> c.get("distanceKm") == null ? Double.MAX_VALUE : (Double) c.get("distanceKm"))
                 .thenComparing(c -> (String) c.get("workerId")));
 
         List<Map<String, Object>> picks = new ArrayList<>();
@@ -272,7 +290,8 @@ public class MatchingService {
         if (needed >= TRAINEE_SLOT_MIN_CREW && !hasTrainee) {
             Optional<Map<String, Object>> trainee = eligible.stream()
                     .filter(c -> isTrainee(c) && !picks.contains(c))
-                    .max(Comparator.comparing(c -> (Double) c.get("hours")));
+                    .max(Comparator.comparing((Map<String, Object> c) -> -(Integer) c.get("distanceBand"))
+                            .thenComparing(c -> (Double) c.get("hours")));
             for (int i = picks.size() - 1; i >= 0 && trainee.isPresent(); i--) {
                 String role = (String) picks.get(i).get("role");
                 if (role == null) {
@@ -298,6 +317,10 @@ public class MatchingService {
         m.put("shortage", Math.max(0, needed - eligible.size()));
         m.put("currentCrew", order.crewList());
         m.put("periodChecked", order.hasPeriod());
+        m.put("farmArea", farmTown == null ? null : farmTown.label());
+        m.put("distanceNote", farmTown == null
+                ? "無法從作業地點「" + nameOr(order.getFarmLocation(), "未填") + "」判斷鄉鎮，未依距離排序"
+                : "農場位於 " + farmTown.label() + "；依工人居住地由近到遠排序，其次看前後 " + SCHEDULE_MARGIN_DAYS + " 天班表空檔");
         m.put("preferredWorkerId", preferredId);
         m.put("preferredWarning", preferredWarning);
         m.put("candidates", eligible);
@@ -320,6 +343,46 @@ public class MatchingService {
         c.put("excellentRate", s == null ? 0.0 : ((Number) s.get("excellentRate")).doubleValue());
         c.put("needsImprovementRate", s == null ? 0.0 : ((Number) s.get("needsImprovementRate")).doubleValue());
         return c;
+    }
+
+    /**
+     * 寫入距離資訊：homeArea（居住地）、distanceKm（到農場的直線公里，任一邊無法判斷為 null）、
+     * distanceBand（0 附近／1 同區域／2 較遠／3 未登錄，排序用）、distanceLabel（顯示用）。
+     */
+    private void addDistance(Map<String, Object> c, Worker w, TownGeo.Town farmTown) {
+        TownGeo.Town home = townGeo.match(w.getHomeArea());
+        Double km = home == null || farmTown == null ? null : TownGeo.distanceKm(home, farmTown);
+        int band = km == null ? 3 : km <= NEAR_KM ? 0 : km <= REGION_KM ? 1 : 2;
+        // 農場位置判斷不出來時，所有人視同未登錄（同級），不做距離排序
+        if (farmTown == null) band = 3;
+        c.put("homeArea", home == null ? null : home.label());
+        c.put("distanceKm", km);
+        c.put("distanceBand", band);
+        c.put("distanceLabel", DISTANCE_LABELS[band]);
+    }
+
+    /** 工期前後各 SCHEDULE_MARGIN_DAYS 天（含工期內其他時段）每位工人已有幾筆排班：訂單、共享班表、請假；此訂單未排工期時回空 */
+    private Map<String, Integer> surroundingLoad(Order order) {
+        Map<String, Integer> load = new HashMap<>();
+        if (!order.hasPeriod()) return load;
+        Order window = new Order();
+        window.setStartDate(order.getStartDate().minusDays(SCHEDULE_MARGIN_DAYS));
+        window.setEndDate(order.getEndDate().plusDays(SCHEDULE_MARGIN_DAYS));
+        window.setTimeSlot(Order.FULL_DAY);
+        for (Order o : orderRepository.findAll()) {
+            if (Objects.equals(o.getId(), order.getId()) || !ACTIVE_STATUS.contains(o.getStatus()) || !o.overlaps(window)) continue;
+            List<String> crew = o.crewList();
+            for (String id : crew) load.merge(id, 1, Integer::sum);
+            if (crew.isEmpty() && o.getPreferredWorkerId() != null) load.merge(o.getPreferredWorkerId(), 1, Integer::sum);
+        }
+        for (SharedRoster r : rosterRepository.findByStatusIn(List.of(SharedRoster.OPEN, SharedRoster.CONFIRMED))) {
+            if (r.getId().equals(order.getSharedRosterId()) || !rosterHold(r).overlaps(window)) continue;
+            for (String id : r.crewList()) load.merge(id, 1, Integer::sum);
+        }
+        for (WorkerLeave l : leaveRepository.findByStatusIn(List.of(WorkerLeave.APPROVED))) {
+            if (l.asHold().overlaps(window)) load.merge(l.getWorkerId(), 1, Integer::sum);
+        }
+        return load;
     }
 
     /** 會佔用工人的訂單狀態 */

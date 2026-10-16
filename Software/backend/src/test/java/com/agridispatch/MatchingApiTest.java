@@ -66,7 +66,16 @@ class MatchingApiTest extends ApiTestSupport {
 
         JsonNode crew = rec.get("crew");
         assertEquals("team_b", crew.get("teamId").asText());
-        assertEquals(Set.of("W026", "W011", "W009", "W010", "W006", "W007"), recommendedIds(crew));
+        // 枋山訂單：住枋山的 W026、W033、W034、W023 先排（距離），其餘依經驗標籤
+        assertEquals("屏東縣枋山鄉", crew.get("farmArea").asText());
+        assertEquals(Set.of("W026", "W033", "W034", "W023", "W011", "W009"), recommendedIds(crew));
+        for (JsonNode c : crew.get("candidates")) {
+            if ("W033".equals(c.get("workerId").asText())) {
+                assertEquals(0, c.get("distanceBand").asInt());
+                assertEquals("住在附近", c.get("distanceLabel").asText());
+            }
+            if ("W010".equals(c.get("workerId").asText())) assertEquals(2, c.get("distanceBand").asInt(), "住宜蘭三星，距枋山較遠");
+        }
         for (JsonNode c : crew.get("candidates")) {
             if ("W026".equals(c.get("workerId").asText())) assertEquals("帶隊領班", c.get("role").asText());
             if ("W009".equals(c.get("workerId").asText())) assertEquals("培養名額", c.get("role").asText());
@@ -133,6 +142,10 @@ class MatchingApiTest extends ApiTestSupport {
         }
         attendanceRepository.saveAll(list);
 
+        // 本測試只看經驗標籤與培養名額：清掉工班 B 的居住地（同時驗證後台可清空居住地），避免距離排序介入
+        for (String w : List.of("W006", "W007", "W008", "W009", "W010", "W011", "W023", "W024", "W026", "W033", "W034", "W035", "W036", "W037", "W038")) {
+            assertEquals(200, status("PUT", "/api/workers/" + w, admin, Map.of("homeArea", "")), w);
+        }
         JsonNode crew = json(call("GET", "/api/matching/orders/ORD-2026-005/crew?teamId=team_b", admin, null)).get("data");
         Set<String> picks = recommendedIds(crew);
         assertEquals(6, picks.size());
@@ -218,5 +231,57 @@ class MatchingApiTest extends ApiTestSupport {
         assertEquals(403, status("PUT", "/api/matching/orders/ORD-2026-013", farmer, Map.of("teamId", "team_b", "crew", List.of("W026"))));
         assertEquals(401, status("GET", "/api/matching/orders/ORD-2026-013", null, null));
         assertEquals(404, status("GET", "/api/matching/orders/ORD-9999-999", admin, null));
+    }
+
+    @Test
+    @Order(7)
+    void nearbyWorkersFirstThenFreeSchedule() throws Exception {
+        // 001（八德）：工班 A 住八德、桃園、大溪的本國工人先排，住新埔（約 25 公里）的 W032 排後面
+        JsonNode crew = json(call("GET", "/api/matching/orders/ORD-2026-001/crew?teamId=team_a", admin, null)).get("data");
+        assertEquals("桃園市八德區", crew.get("farmArea").asText());
+        List<String> order = new ArrayList<>();
+        Map<String, JsonNode> byId = new HashMap<>();
+        for (JsonNode c : crew.get("candidates")) {
+            order.add(c.get("workerId").asText());
+            byId.put(c.get("workerId").asText(), c);
+        }
+        assertEquals(0, byId.get("W030").get("distanceBand").asInt());
+        assertEquals(0, byId.get("W021").get("distanceBand").asInt(), "桃園區距八德約 6 公里");
+        assertEquals(1, byId.get("W032").get("distanceBand").asInt(), "新埔鎮距八德約 25 公里：同區域");
+        assertEquals("新竹縣新埔鎮", byId.get("W032").get("homeArea").asText());
+        int lastNear = -1, firstFar = Integer.MAX_VALUE;
+        for (int i = 0; i < order.size(); i++) {
+            int band = byId.get(order.get(i)).get("distanceBand").asInt();
+            if (band == 0) lastNear = i; else firstFar = Math.min(firstFar, i);
+        }
+        assertTrue(lastNear < firstFar, "住在附近的排在較遠者前面：" + order);
+
+        // 班表空檔：001 排在 +60～+62 天；另一張新單 +63～+64 天排 W030（落在 001 工期後 2 天內）→ 同樣住附近，W030 排到 W031 後面
+        LocalDate d0 = LocalDate.now().plusDays(60);
+        assertEquals(200, status("PUT", "/api/orders/ORD-2026-001", admin,
+                Map.of("startDate", d0.toString(), "endDate", d0.plusDays(2).toString())));
+        Map<String, Object> next = new HashMap<>(Map.of("farmerName", "班表空檔測試", "cropId", "taoyuan_veg", "area", 2.0, "plan", "early_bird"));
+        next.put("startDate", d0.plusDays(3).toString());
+        next.put("endDate", d0.plusDays(4).toString());
+        String nextId = json(call("POST", "/api/orders", admin, next)).get("data").get("id").asText();
+        MvcResult a = call("PUT", "/api/matching/orders/" + nextId, admin, Map.of("teamId", "team_a", "crew", List.of("W030")));
+        assertEquals(200, a.getResponse().getStatus(), a.getResponse().getContentAsString(StandardCharsets.UTF_8));
+
+        crew = json(call("GET", "/api/matching/orders/ORD-2026-001/crew?teamId=team_a", admin, null)).get("data");
+        order.clear();
+        byId.clear();
+        for (JsonNode c : crew.get("candidates")) {
+            order.add(c.get("workerId").asText());
+            byId.put(c.get("workerId").asText(), c);
+        }
+        assertEquals(1, byId.get("W030").get("nearbyLoad").asInt());
+        assertEquals(0, byId.get("W031").get("nearbyLoad").asInt());
+        assertTrue(order.indexOf("W031") < order.indexOf("W030"), "同樣住附近，前後 2 天已排班者排後面：" + order);
+
+        // 居住地須是看得出鄉鎮的地址
+        assertEquals(400, status("PUT", "/api/workers/W030", admin, Map.of("homeArea", "火星基地")));
+        assertEquals(200, status("PUT", "/api/workers/W030", admin, Map.of("homeArea", "臺北市信義區")));
+        assertEquals("台北市信義區", json(call("GET", "/api/workers/W030", admin, null)).get("data").get("homeArea").asText());
+        assertEquals(200, status("PUT", "/api/workers/W030", admin, Map.of("homeArea", "桃園市八德區")));
     }
 }

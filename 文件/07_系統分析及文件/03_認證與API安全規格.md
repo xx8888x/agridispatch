@@ -26,6 +26,8 @@
 
 `admin_tech`（科技公司管理員）、`coop_admin`（合作社管理員，2026-10-15 起，詳見規格 11 與下方「後台人員」）、`farmer`（農場主）、`worker_foreign`（外展移工）、`worker_local`（本地工 / 領班 / 機耕 / 勞務員，`subRole` 區分）。
 
+各角色的功能權限一覽見 `13_各角色權限總表.md`。
+
 ## 4. 認證端點
 
 | Method | Path | 權限 | 說明 |

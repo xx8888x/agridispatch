@@ -2183,9 +2183,98 @@
       }
       var wl = /^\/workers\/([^/]+)\/leaves$/.exec(sp.path);
       if (wl) {
+  // ---------------- 財報（同後端 FinanceReportService：訂單 16% 代管費 ＋ F2 第一年預算按月攤提） ----------------
+  var FIN = {
+    START: [2026, 9], TECH: 0.16, TAX: 0.2, OPEN_CASH: 730000, LOAN: 1000000, CAPITAL: 100000, STARTUP: 370000, CAPEX: 280000, DEP: 60000,
+    COGS: [['雲端伺服器與 API', 72000], ['承攬工班品管與保險補貼', 55000], ['現場調度幹部差旅與安全耗材', 96000]],
+    OPEX: [['創辦團隊與後台研發薪資', 720000], ['雙語舍監與兼職通譯津貼', 180000], ['本土農工與兼職招募推廣費', 180000], ['法律顧問、會計與合規規費', 120000], ['辦公室租金與水電雜支', 96000]]
+  };
+  function financeReport(period) {
+    var d = new Date(), nowY = d.getFullYear(), nowM = d.getMonth() + 1;
+    if (!period) period = String(nowY);
+    var whole = /^\d{4}$/.test(period), fy, fm, ty, tm;
+    if (whole) { fy = ty = +period; fm = 1; tm = 12; }
+    else if (/^\d{4}-(0[1-9]|1[0-2])$/.test(period)) { fy = ty = +period.slice(0, 4); fm = tm = +period.slice(5); whole = false; }
+    else return respond(400, { success: false, error: 'period 格式須為 YYYY 或 YYYY-MM' });
+    var ord = function (y, m) { return y * 12 + m; };
+    var asOfO = Math.min(ord(ty, tm), ord(nowY, nowM)), startO = ord(FIN.START[0], FIN.START[1]);
+    var ymStr = function (o) { var y = Math.floor((o - 1) / 12), m = o - y * 12; return y + '-' + ('0' + m).slice(-2); };
+    var n = asOfO < startO ? 0 : asOfO - startO + 1;
+    var arr = function () { var a = []; for (var i = 0; i < n; i++) a.push(0); return a; };
+    var rev = arr(), col = arr(), gmv = arr(), backlog = 0;
+    (listOf(get('GET /orders')) || []).forEach(function (o) {
+      var fee = Math.round((+o.finalAmount || 0) * FIN.TECH), st = o.status;
+      if (st === 'pending' || st === 'confirmed') { backlog += fee; return; }
+      if (st !== 'in_progress' && st !== 'completed') return;
+      var m = /^(\d{4})-(\d{2})/.exec(o.startDate || o.createdAt || '');
+      if (!m) return;
+      var i = ord(+m[1], +m[2]) - startO;
+      if (i < 0 || i >= n) return;
+      rev[i] += fee; gmv[i] += +o.finalAmount || 0;
+      if (st === 'completed') col[i] += fee;
+    });
+    var accrue = function (annual, k) { return Math.round(annual * k / 12); };
+    var cogs = arr(), opex = arr(), dep = arr(), pretax = arr(), tax = arr();
+    var cl = FIN.COGS.map(arr), ol = FIN.OPEX.map(arr), ytd = 0;
+    var taxOf = function (v) { return v <= 0 ? 0 : Math.round(v * FIN.TAX); };
+    for (var i = 0; i < n; i++) {
+      FIN.COGS.forEach(function (c, k) { cl[k][i] = accrue(c[1], i + 1) - accrue(c[1], i); cogs[i] += cl[k][i]; });
+      FIN.OPEX.forEach(function (c, k) { ol[k][i] = accrue(c[1], i + 1) - accrue(c[1], i); opex[i] += ol[k][i]; });
+      dep[i] = accrue(FIN.DEP, i + 1) - accrue(FIN.DEP, i);
+      pretax[i] = rev[i] - cogs[i] - opex[i] - dep[i];
+      var newYear = i === 0 || ((FIN.START[1] - 1 + i) % 12) === 0, prev = newYear ? 0 : ytd;
+      ytd = prev + pretax[i];
+      tax[i] = taxOf(ytd) - taxOf(prev);
+    }
+    var p0 = n === 0 ? 0 : Math.max(0, Math.max(ord(fy, fm), startO) - startO), p1 = n - 1;
+    var has = n > 0 && p0 <= p1 && ord(fy, fm) <= asOfO;
+    var sum = function (a, from, to, on) { var s = 0; if (!on) return 0; for (var j = from; j <= to && j < a.length; j++) s += a[j]; return s; };
+    var P = function (a) { return sum(a, p0, p1, has); }, C = function (a) { return sum(a, 0, n - 1, n > 0); };
+    var pRev = P(rev), pCogs = P(cogs), pOpex = P(opex), pDep = P(dep), pTax = P(tax);
+    var gross = pRev - pCogs, ebitda = gross - pOpex, ebit = ebitda - pDep, preTax = ebit, net = preTax - pTax;
+    var pAr = pRev - P(col), cfo = net + pDep - pAr, cfi = has && p0 === 0 ? -FIN.CAPEX : 0, netCash = cfo + cfi;
+    var cumNet = 0; for (var j = 0; j < n; j++) cumNet += pretax[j] - tax[j];
+    var cumCapex = n > 0 ? FIN.CAPEX : 0, cumDep = C(dep), ar = C(rev) - C(col);
+    var closing = FIN.OPEN_CASH + cumNet + cumDep - ar - cumCapex, opening = closing - (has ? netCash : 0);
+    var fixedA = cumCapex - cumDep, assets = closing + ar + fixedA, retained = -FIN.STARTUP + cumNet, equity = FIN.CAPITAL + retained;
+    var row = function (label, amount, style) { return { label: label, amount: amount, style: style }; };
+    var is = [row('營業收入', null, 'head'), row('系統代管與調度服務費（16%）', pRev, 'line'), row('營業收入合計', pRev, 'sub'), row('營業成本', null, 'head')];
+    FIN.COGS.forEach(function (c, k) { is.push(row(c[0], P(cl[k]), 'line')); });
+    is.push(row('營業成本合計', pCogs, 'sub'), row('營業毛利', gross, 'total'), row('營業費用', null, 'head'));
+    FIN.OPEX.forEach(function (c, k) { is.push(row(c[0], P(ol[k]), 'line')); });
+    is.push(row('營業費用合計', pOpex, 'sub'), row('EBITDA', ebitda, 'total'), row('折舊與攤銷', -pDep, 'line'), row('營業淨利（EBIT）', ebit, 'total'),
+      row('利息費用', 0, 'line'), row('稅前淨利', preTax, 'total'), row('營利事業所得稅（20%）', -pTax, 'line'), row('稅後淨利', net, 'total'));
+    var cf = [row('營業活動', null, 'head'), row('稅後淨利', net, 'line'), row('折舊與攤銷加回', pDep, 'line'), row('應收帳款（代管費）增加', -pAr, 'line'),
+      row('營業活動淨現金流', cfo, 'sub'), row('投資活動', null, 'head'), row('伺服器與辦公設備購置', cfi, 'line'), row('投資活動淨現金流', cfi, 'sub'),
+      row('融資活動', null, 'head'), row('借款本金償還（F2 第二年起）', 0, 'line'), row('融資活動淨現金流', 0, 'sub'),
+      row('現金淨增加額', netCash, 'total'), row('期初現金餘額', opening, 'line'), row('期末現金餘額', closing, 'total')];
+    var bs = [row('資產', null, 'head'), row('現金', closing, 'line'), row('應收帳款（代管費）', ar, 'line'), row('固定資產淨額', fixedA, 'line'), row('資產總計', assets, 'total'),
+      row('負債', null, 'head'), row('長期借款（青創貸款）', FIN.LOAN, 'line'), row('負債合計', FIN.LOAN, 'sub'),
+      row('權益', null, 'head'), row('股本', FIN.CAPITAL, 'line'), row('累積損益（含開辦費）', retained, 'line'), row('權益合計', equity, 'sub'),
+      row('負債及權益總計', FIN.LOAN + equity, 'total')];
+    var asOfStr = ymStr(asOfO), toStr = ymStr(ord(ty, tm));
+    var notes = ['營業收入＝履約中與已完工訂單金額 × 16% 技術代管費（開立發票）；合作社 84% 為法定人力成本，不計入科技公司收入。已取消與尚未履約的訂單不認列。',
+      '營業成本與費用暫依 F2 v2.4 第一年預算按月攤提（年額 ÷ 12），尚未接會計傳票；折舊、所得稅（20% 簡化）亦為估算【待會計師確認】。',
+      '不含政府補助（情境）、第三層統包價差與加值收入、貸款本金償還（F2 第二年起）。'];
+    if (n === 0) notes.push('尚未到營運起算月（' + ymStr(startO) + '），目前顯示期初資產負債。');
+    else if (!has) notes.push('所選期間尚無資料，資產負債表為截至 ' + asOfStr + ' 的累計餘額。');
+    else if (whole && asOfO < ord(ty, tm)) notes.push('年度尚未結束，累計至 ' + asOfStr + '。');
+    return respond(200, { success: true, data: {
+      period: period, label: whole ? period + ' 年度' : period, from: has ? ymStr(startO + p0) : null, to: n === 0 ? null : asOfStr,
+      months: has ? p1 - p0 + 1 : 0, operationStart: ymStr(startO),
+      summary: { revenue: pRev, grossProfit: gross, ebitda: ebitda, preTaxProfit: preTax, netProfit: net,
+        netMarginPct: pRev === 0 ? null : Math.round(net * 1000 / pRev) / 10, gmv: P(gmv), backlogFee: backlog, cash: closing },
+      incomeStatement: is, balanceSheet: bs, balanceSheetBalanced: assets === FIN.LOAN + equity, cashFlow: cf, notes: notes } });
+  }
+
         var lwid = decodeURIComponent(wl[1]);
         var mine = leaveList().filter(function (x) { return x.workerId === lwid; }).map(leaveView);
         mine.sort(function (a, b) { return String(b.startDate).localeCompare(String(a.startDate)); });
+      if (sp.path === '/finance/report') {
+        if ((currentUser() || {}).role !== 'admin_tech') return respond(403, { success: false, error: 'FORBIDDEN' });
+        var fq = /[?&]period=([^&]*)/.exec(sp.query);
+        return financeReport(fq ? decodeURIComponent(fq[1]) : '');
+      }
         return respond(200, { success: true, data: mine });
       }
       if (sp.path === '/line/config') {

@@ -26,8 +26,8 @@ public class DispatchController {
     public ResponseEntity<?> getOverview() {
         Map<String, Object> overview = dispatchService.getOverview();
         AuthContext ctx = AuthContext.current();
+        if (ctx == null || !ctx.isAdmin()) overview.remove("securedRevenue");   // 營收數字僅科技後台最高權限（合作社管理員也不給）
         if (!isAdmin()) {
-            overview.remove("securedRevenue");
             List<Map<String, Object>> teams = new ArrayList<>();
             for (Object o : (List<?>) overview.get("teams")) teams.add(publicView((DispatchTeam) o));
             overview.put("teams", teams);

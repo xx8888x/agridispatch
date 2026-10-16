@@ -43,6 +43,7 @@
 | POST／GET／DELETE | `/api/account/deletion-request` | 需登入（本人，admin_tech 除外） | 刪除帳號申請（2026-10-15 起，Google Play 規定）：POST `{reason?}` 申請（同時只能一筆待處理，重複 409）、GET 本人最近一筆、DELETE 撤回待處理。回應不含後台欄位 |
 | POST | `/api/public/account-deletion` | 公開 | 免登入網頁申請 `{name, phone, account?, reason?}`：同一 IP 每小時 5 次（429）；不查帳號是否存在、回應一律相同 |
 | GET／POST | `/api/account-deletions`、`/{id}/complete`、`/{id}/reject` | 僅 admin_tech | 申請清單（待處理附未完成訂單等提醒，網頁申請附 `suggestedAccount`）；complete `{identifier?（網頁申請必填）, note?}`、reject `{note}`（必填）。完成時的處理見 ERD 第參章第 17 點 |
+| GET | `/api/finance/report?period=` | 僅 admin_tech（coop_admin 403） | 科技公司財務報表（2026-10-16 起）：period 為 `YYYY`（年度累計，未結束的年度累計至本月）或 `YYYY-MM`（單月），預設本年度。回 `summary`（營收、毛利、EBITDA、稅後淨利、淨利率、現金）、`incomeStatement`／`balanceSheet`／`cashFlow`（`{label, amount, style}` 列）與編製說明。營收＝履約中與已完工訂單 × 16% 代管費；成本費用暫依 F2 v2.4 第一年預算按月攤提，見 `FinanceReportService` 說明【待會計師確認】 |
 | GET | `/api/referrals/me` | farmer／worker_local／worker_foreign | 推薦裂變（2026-10-15 起）：本人推薦碼（首次呼叫時產生，8 碼大寫英數、去掉 I O 0 1）、成效 `stats{opens, farmersRegistered, workerLeads, workersOnboarded}` 與被邀請者清單（姓名遮罩如「王○明」、不含電話與合作社備註）。後台帳號 403 |
 | GET | `/api/public/referral/{code}` | 公開 | 開啟邀請連結：連結開啟數 +1，回 `{valid, inviterName（遮罩）, inviterRole}`；碼無效回 `valid:false`（200） |
 | POST | `/api/public/referral/lead` | 公開 | 工人意願登記 `{code, name, phone, pdpaConsent:true, channel?}`：工人不能自助註冊，登記後由合作社聯絡查驗證件。同一 IP 每小時 10 次（429）；同碼同電話重複送出視為同一筆；用自己的電話登記 400。個資告知文字【待確認：律師審閱】 |

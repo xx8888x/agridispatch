@@ -142,7 +142,8 @@
         <nav class="ad-nav" aria-label="營運後台導覽">
           <button type="button" class="ad-nav__link" :class="{ 'is-active': activeTab === 'weather' }" @click="activeTab = 'weather'">天候戰情</button>
           <button type="button" class="ad-nav__link" :class="{ 'is-active': activeTab === 'dispatch' }" @click="activeTab = 'dispatch'">派工調度</button>
-          <button type="button" class="ad-nav__link" :class="{ 'is-active': activeTab === 'revenue' }" @click="activeTab = 'revenue'">營收</button>
+          <button type="button" v-if="!isCoop" class="ad-nav__link" :class="{ 'is-active': activeTab === 'revenue' }" @click="activeTab = 'revenue'">營收</button>
+          <button type="button" v-if="!isCoop" class="ad-nav__link" :class="{ 'is-active': activeTab === 'finance' }" @click="activeTab = 'finance'">財報</button>
         </nav>
         <div class="ad-header__actions">
           <button type="button" v-if="!isCoop" class="ad-btn ad-btn--ghost ad-btn--sm" @click="activeTab = 'dispatch'; dispatchSubTab = 'brochures'" title="管理與上傳文宣 DM" aria-label="文宣管理"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ad-icon ad-icon--sm"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg><span class="ad-hide-sm">文宣 {{ brochures.length }}</span></button>
@@ -159,7 +160,8 @@
     <nav class="ad-tabbar" aria-label="營運後台導覽">
       <button type="button" class="ad-tabbar__item" :class="{ 'is-active': activeTab === 'weather' }" @click="activeTab = 'weather'"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ad-icon"><path d="M12 2v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="M20 12h2"></path><path d="m19.07 4.93-1.41 1.41"></path><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"></path><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"></path></svg>天候</button>
       <button type="button" class="ad-tabbar__item" :class="{ 'is-active': activeTab === 'dispatch' }" @click="activeTab = 'dispatch'"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ad-icon"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg>派工</button>
-      <button type="button" class="ad-tabbar__item" :class="{ 'is-active': activeTab === 'revenue' }" @click="activeTab = 'revenue'"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ad-icon"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>營收</button>
+      <button type="button" v-if="!isCoop" class="ad-tabbar__item" :class="{ 'is-active': activeTab === 'revenue' }" @click="activeTab = 'revenue'"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ad-icon"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>營收</button>
+      <button type="button" v-if="!isCoop" class="ad-tabbar__item" :class="{ 'is-active': activeTab === 'finance' }" @click="activeTab = 'finance'"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ad-icon"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg>財報</button>
     </nav>
 
     <!-- Toast Notification Banner -->
@@ -1311,7 +1313,7 @@
       <!-- ============================================================= -->
       <!-- TAB 3: REVENUE (營收 - 雙軌金流 ╳ 16% 技術代管 ╳ 財務流水帳)      -->
       <!-- ============================================================= -->
-      <section v-if="activeTab === 'revenue'" class="space-y-6">
+      <section v-if="activeTab === 'revenue' && !isCoop" class="space-y-6">
         <!-- Dual-Track Architecture Banner -->
         <div class="p-5 rounded-xl tb-surface border tb-border-ok flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div class="space-y-1">
@@ -1455,6 +1457,74 @@
             </table>
           </div>
         </div>
+      </section>
+
+      <!-- ============================================================= -->
+      <!-- TAB 4: FINANCE (財報 - 損益表 ╳ 資產負債表 ╳ 現金流量表 ╳ 淨利；僅科技後台最高權限) -->
+      <!-- ============================================================= -->
+      <section v-if="activeTab === 'finance' && !isCoop" class="space-y-6">
+        <div class="ad-card" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
+          <div>
+            <h2 class="ad-title">財務報表</h2>
+            <p class="ad-caption" style="margin-top: 4px;">科技公司損益表、資產負債表、現金流量表與淨利。營收來自履約中與已完工訂單的 {{ techPct }}% 技術代管費；成本費用暫依 F2 v2.4 第一年預算按月攤提。僅科技後台最高權限可見。</p>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+            <label for="financePeriod" class="ad-caption">期間</label>
+            <select id="financePeriod" v-model="financePeriod" @change="fetchFinance()" class="ad-select" style="max-width: 200px;">
+              <option v-for="p in financePeriods" :key="p.value" :value="p.value">{{ p.label }}</option>
+            </select>
+            <button type="button" @click="exportFinanceCSV()" class="ad-btn ad-btn--primary" :disabled="!finance">匯出財報 (CSV)</button>
+          </div>
+        </div>
+
+        <p v-if="financeError" class="ad-notice">{{ financeError }}</p>
+        <p v-else-if="!finance" class="ad-caption">載入中…</p>
+
+        <template v-if="finance">
+          <!-- 淨利與重點數字 -->
+          <div class="ad-stat-grid">
+            <div class="ad-stat ad-stat--primary"><div class="ad-stat__label">營業收入（代管費）</div><div class="ad-stat__value ad-num">NT$ {{ money(finance.summary.revenue) }}</div></div>
+            <div class="ad-stat"><div class="ad-stat__label">營業毛利</div><div class="ad-stat__value ad-num">NT$ {{ money(finance.summary.grossProfit) }}</div></div>
+            <div class="ad-stat" :class="finance.summary.netProfit >= 0 ? 'ad-stat--accent' : 'ad-stat--danger'"><div class="ad-stat__label">稅後淨利{{ finance.summary.netMarginPct != null ? '（淨利率 ' + finance.summary.netMarginPct + '%）' : '' }}</div><div class="ad-stat__value ad-num">NT$ {{ money(finance.summary.netProfit) }}</div></div>
+            <div class="ad-stat"><div class="ad-stat__label">期末現金</div><div class="ad-stat__value ad-num">NT$ {{ money(finance.summary.cash) }}</div></div>
+          </div>
+          <p class="ad-caption">
+            {{ finance.label }}<template v-if="finance.from">（{{ finance.from }} ～ {{ finance.to }}，共 {{ finance.months }} 個月）</template>
+            ・期間交易額 NT$ {{ money(finance.summary.gmv) }}・在手訂單（尚未履約）預估代管費 NT$ {{ money(finance.summary.backlogFee) }}
+          </p>
+
+          <div class="ad-tabs" role="tablist" aria-label="財報">
+            <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': financeTab === 'incomeStatement' }" :aria-selected="financeTab === 'incomeStatement'" @click="financeTab = 'incomeStatement'">損益表</button>
+            <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': financeTab === 'balanceSheet' }" :aria-selected="financeTab === 'balanceSheet'" @click="financeTab = 'balanceSheet'">資產負債表</button>
+            <button type="button" role="tab" class="ad-tab" :class="{ 'is-active': financeTab === 'cashFlow' }" :aria-selected="financeTab === 'cashFlow'" @click="financeTab = 'cashFlow'">現金流量表</button>
+          </div>
+
+          <div class="ad-card" style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;">
+              <h3 class="ad-heading">{{ financeTabLabel }}<span class="ad-caption" style="margin-left: 8px;">單位：新台幣元</span></h3>
+              <span v-if="financeTab === 'balanceSheet'" class="ad-pill" :class="finance.balanceSheetBalanced ? 'ad-pill--ok' : 'ad-pill--warn'"><span class="ad-pill__dot"></span>{{ finance.balanceSheetBalanced ? '資產 = 負債 + 權益' : '帳不平衡' }}</span>
+              <span v-else class="ad-caption">期間：{{ finance.from ? finance.from + ' ～ ' + finance.to : '尚無資料' }}</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="ad-table" style="min-width: 420px;">
+                <thead><tr><th>項目</th><th style="text-align: right;">金額</th></tr></thead>
+                <tbody>
+                  <tr v-for="(r, i) in finance[financeTab]" :key="financeTab + i">
+                    <td :style="{ fontWeight: r.style === 'line' ? 400 : 700, paddingLeft: r.style === 'line' ? '28px' : '12px', borderTop: r.style === 'total' ? '2px solid var(--ad-border)' : '' }">{{ r.label }}</td>
+                    <td class="ad-num" :style="{ textAlign: 'right', fontWeight: r.style === 'line' ? 400 : 700, borderTop: r.style === 'total' ? '2px solid var(--ad-border)' : '', color: r.amount < 0 ? 'var(--ad-danger-text)' : '' }">{{ r.amount == null ? '' : money(r.amount) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="ad-card">
+            <h3 class="ad-heading">編製說明</h3>
+            <ul class="ad-caption" style="margin-top: 8px; padding-left: 18px; list-style: disc; display: flex; flex-direction: column; gap: 4px;">
+              <li v-for="(n, i) in finance.notes" :key="i">{{ n }}</li>
+            </ul>
+          </div>
+        </template>
       </section>
 
     </main>
@@ -3717,6 +3787,51 @@
           fetchCalendar();
           fetchOrderCategories();
           calculateOrderLive();
+        // 財報（損益表／資產負債表／現金流量表／淨利）：後端只給 admin_tech，合作社帳號不顯示也不請求
+        const financeTab = ref('incomeStatement');
+        const finance = ref(null);
+        const financeError = ref('');
+        const financePeriods = (() => {
+          const now = new Date(), y = now.getFullYear();
+          const list = [{ value: String(y), label: `${y} 年度（累計）` }];
+          for (let m = now.getMonth() + 1; m >= 1; m--) list.push({ value: `${y}-${String(m).padStart(2, '0')}`, label: `${y} 年 ${m} 月` });
+          if (y > 2026) list.push({ value: String(y - 1), label: `${y - 1} 年度` });
+          return list;
+        })();
+        const financePeriod = ref(financePeriods[0].value);
+        const financeTabLabel = computed(() => ({ incomeStatement: '損益表', balanceSheet: '資產負債表', cashFlow: '現金流量表' })[financeTab.value]);
+        const money = (n) => (Number(n) || 0).toLocaleString();
+        const fetchFinance = async () => {
+          if (isCoop) return;
+          try {
+            const res = await fetch(`${API_BASE}/finance/report?period=${encodeURIComponent(financePeriod.value)}`);
+            const json = plainDeep(await res.json());
+            if (res.ok && json.success && json.data) { finance.value = json.data; financeError.value = ''; }
+            else { finance.value = null; financeError.value = res.status === 403 ? '財務報表僅科技後台最高權限可看' : (json.error || json.message || `HTTP ${res.status}`); }
+          } catch (e) { finance.value = null; financeError.value = '無法連線伺服器'; }
+        };
+        watch(activeTab, (t) => { if (t === 'finance') fetchFinance(); });
+        const exportFinanceCSV = () => {
+          if (!finance.value) return;
+          const f = finance.value;
+          const sections = [['損益表', f.incomeStatement], ['資產負債表', f.balanceSheet], ['現金流量表', f.cashFlow]];
+          const lines = [['智農派工 科技公司財務報表', f.label + (f.from ? `（${f.from}～${f.to}）` : ''), '單位：新台幣元']];
+          sections.forEach(([title, rows]) => {
+            lines.push([], [title, '金額']);
+            rows.forEach(r => lines.push([r.label, r.amount == null ? '' : r.amount]));
+          });
+          lines.push([], ['編製說明']);
+          f.notes.forEach(n => lines.push([n]));
+          const csv = '﻿' + lines.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+          const link = document.createElement('a');
+          link.setAttribute('href', URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })));
+          link.setAttribute('download', `智農派工_科技公司財務報表_${f.period}.csv`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          showToast('已匯出財務報表 (CSV)');
+        };
+
           fetchBrochures();
           fetchLegalize();
           loadWeather();
@@ -3752,6 +3867,7 @@
           SCOPE_REGIONS, scopeRegion, scopeCounty, scopeFarm, scopeActive, scopeLabel, scopeCounties, scopeFarms,
           scopedOrders, scopedTeams, scopedWorkers, regionOrderCount, countyOrderCount, setScopeRegion,
           crops,
+          financeTab, finance, financeError, financePeriods, financePeriod, financeTabLabel, money, fetchFinance, exportFinanceCSV,
           talents,
           brochures,
           brochureModal,

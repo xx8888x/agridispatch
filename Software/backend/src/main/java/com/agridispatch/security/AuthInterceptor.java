@@ -79,6 +79,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             new String[]{"POST", "/api/notifications/send"},
             new String[]{"PUT", "/api/orders/*/status"},
             new String[]{"*", "/api/account-deletions"}, new String[]{"*", "/api/account-deletions/**"},  // 刪除帳號申請審核
+            new String[]{"*", "/api/finance/**"},                // 財務報表與淨利：僅科技後台最高權限
             new String[]{"*", "/api/dev/**"}
     );
 

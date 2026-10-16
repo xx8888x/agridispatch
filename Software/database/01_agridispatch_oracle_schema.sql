@@ -719,7 +719,7 @@ CREATE TABLE users (
     role_desc          VARCHAR2(200 CHAR),
     token_version      NUMBER(10)     DEFAULT 0 NOT NULL,   -- 改密碼／重設／變更角色時 +1，舊 token 立即失效
     CONSTRAINT pk_users PRIMARY KEY (username),
-    CONSTRAINT chk_user_role CHECK (role IN ('admin_tech', 'farmer', 'worker_foreign', 'worker_local'))
+    CONSTRAINT chk_user_role CHECK (role IN ('admin_tech', 'coop_admin', 'farmer', 'worker_foreign', 'worker_local'))
 );
 
 COMMENT ON TABLE users IS '系統帳號表：各角色登入身分與 PBKDF2 密碼雜湊';
